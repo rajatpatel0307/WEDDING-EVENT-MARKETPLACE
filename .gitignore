@@ -1,0 +1,73 @@
+# =====================================
+# Dependencies
+# =====================================
+node_modules/
+**/node_modules/
+
+# =====================================
+# Environment variables and secrets
+# =====================================
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# =====================================
+# Build output
+# =====================================
+dist/
+build/
+coverage/
+
+# =====================================
+# Logs
+# =====================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# =====================================
+# Operating system files
+# =====================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =====================================
+# Editor and IDE files
+# =====================================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# =====================================
+# Temporary and cache files
+# =====================================
+.tmp/
+.temp/
+.cache/
+.eslintcache
+
+# =====================================
+# Testing
+# =====================================
+.nyc_output/
+
+# =====================================
+# Local database and backup files
+# =====================================
+*.bak
+*.mdf
+*.ldf
+
+# =====================================
+# Python artifacts (if needed later)
+# =====================================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
