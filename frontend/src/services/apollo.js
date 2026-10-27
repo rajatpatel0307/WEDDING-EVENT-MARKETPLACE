@@ -9,7 +9,7 @@ export const client = new ApolloClient({
   defaultOptions: { query: { fetchPolicy: "cache-first" } },
 });
 export const userFields =
-  "id firstName lastName email phone profilePhotoUrl role accountStatus vendor { id businessName verificationStatus rejectionReason }";
+  "id firstName lastName email phone profilePhotoUrl role accountStatus vendor { id businessName active verificationStatus rejectionReason }";
 export const ME = gql(
   `query Me { me { ${userFields} wishlistCount unreadNotificationCount unreadMessageCount } }`,
 );

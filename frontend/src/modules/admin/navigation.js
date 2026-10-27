@@ -32,7 +32,7 @@ export const adminNavigation = [
     items: [
       ["customers", "All Customers", Users],
       ["vendors", "All Vendors", Store],
-      ["applications", "Vendor Applications", ClipboardCheck],
+      ["vendors/pending", "Vendor Approvals", ClipboardCheck],
       ["documents", "Vendor Documents", Files],
     ],
   },

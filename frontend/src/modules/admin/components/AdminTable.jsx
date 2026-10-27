@@ -1,5 +1,7 @@
+import VendorDecisionDialog from "./VendorDecisionDialog";
+import { canDecide, vendorChangedEvent } from "../vendor-workflow";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
   SlidersHorizontal,
@@ -29,7 +31,7 @@ export function Badge({ children }) {
     <span
       className={`ad-badge ad-badge-${String(children).toLowerCase().replace(/\s/g, "")}`}
     >
-      {children || "—"}
+      {children === "UnderReview" ? "Under Review" : children || "—"}
     </span>
   );
 }
@@ -95,6 +97,7 @@ export default function AdminTable({
   initialQuery = "",
 }) {
   const { notify } = useAuth();
+  const navigate = useNavigate();
   const [q, setQ] = useState(initialQuery),
     [search, setSearch] = useState(initialQuery),
     [status, setStatus] = useState(initialStatus),
@@ -111,6 +114,7 @@ export default function AdminTable({
     [visible, setVisible] = useState(null),
     [columnsOpen, setColumnsOpen] = useState(false),
     [dialog, setDialog] = useState(null),
+    [decision, setDecision] = useState(null),
     [busy, setBusy] = useState(false),
     [formError, setFormError] = useState(""),
     [exporting, setExporting] = useState(false);
@@ -184,11 +188,31 @@ export default function AdminTable({
       });
     return () => abort.abort();
   }, [resource, params, revision, version]);
+  useEffect(() => {
+    const changed = () => setRevision((value) => value + 1);
+    window.addEventListener(vendorChangedEvent, changed);
+    return () => window.removeEventListener(vendorChangedEvent, changed);
+  }, []);
   function refresh() {
     setRevision((v) => v + 1);
     onChange?.();
   }
   function open(row, action) {
+    if (
+      ["vendors", "applications"].includes(resource) &&
+      ["Approved", "Rejected", "Suspended"].includes(action)
+    ) {
+      setDecision({ id: row.id, action });
+      return;
+    }
+    if (["vendors", "applications"].includes(resource) && action === "view") {
+      navigate(`/admin/vendors/${row.id}`);
+      return;
+    }
+    if (resource === "customers" && action === "view") {
+      navigate(`/admin/customers/${row.id}`);
+      return;
+    }
     setFormError("");
     setDialog({ row, action });
   }
@@ -559,6 +583,13 @@ export default function AdminTable({
           </div>
         </footer>
       )}
+      {decision && (
+        <VendorDecisionDialog
+          vendorId={decision.id}
+          action={decision.action}
+          close={() => setDecision(null)}
+        />
+      )}
       {dialog && (
         <AdminDialog
           title={
@@ -608,7 +639,11 @@ export default function AdminTable({
               )}
               <div className="ad-dialog-actions">
                 {data.actions
-                  .filter((a) => a !== dialog.row.status)
+                  .filter((a) =>
+                    ["vendors", "applications"].includes(resource)
+                      ? canDecide(dialog.row.status, a)
+                      : a !== dialog.row.status,
+                  )
                   .map((a) => (
                     <button
                       className={`ad-button ${a === "Rejected" || a === "Block" || a === "Cancelled" ? "ad-danger" : ""}`}

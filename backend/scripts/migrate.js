@@ -1,4 +1,6 @@
+import { up as verificationUp } from "../migrations/007-vendor-verification.js";
 import { up as profileUp } from "../migrations/005-profile-photo.js";
+import { up as customerDetailsUp } from "../migrations/006-customer-details.js";
 import { up as contactUp } from "../migrations/003-contact-messages.js";
 import { up as adminUp } from "../migrations/004-admin-workspace.js";
 import { sequelize } from "../src/config/database.js";
@@ -76,6 +78,40 @@ try {
       "IF NOT EXISTS (SELECT 1 FROM dbo.AuthMigrations WHERE Name='005-profile-photo') INSERT INTO dbo.AuthMigrations(Name) VALUES ('005-profile-photo')",
       { transaction },
     );
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @result int; EXEC @result=sp_getapplock @Resource='MarryNestAdminMigration', @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @result < 0 THROW 51000, 'Migration lock unavailable', 1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='006-customer-details'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await customerDetailsUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES ('006-customer-details')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @result int; EXEC @result=sp_getapplock @Resource='MarryNestAdminMigration', @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @result < 0 THROW 51000, 'Migration lock unavailable', 1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='007-vendor-verification'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await verificationUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES ('007-vendor-verification')",
+        { transaction },
+      );
+    }
   });
   console.log("Database migrations are current.");
 } catch (error) {

@@ -84,7 +84,7 @@ try {
     await reviewVendor(
       vendorId,
       {
-        status: "Rejected",
+        status: "Suspended",
         expectedStatus: "Approved",
         reason: "Verification check",
         note: "Internal test note",
@@ -103,7 +103,7 @@ try {
       { id: vendorId },
       tx,
     );
-    assert.equal(row.total, 2);
+    assert.equal(row.total, 3);
     const r = getResource("categories");
     const [category] = await insert(
       r,
@@ -128,5 +128,5 @@ try {
 }
 if (passed && !process.exitCode)
   console.log(
-    "PASS vendor approval/rejection, reason validation, stale status rejection, audit and notifications, category insert/update. All fixtures rolled back.",
+    "PASS vendor approval/suspension, reason validation, stale status rejection, audit and notifications, category insert/update. All fixtures rolled back.",
   );

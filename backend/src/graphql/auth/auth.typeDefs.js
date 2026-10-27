@@ -3,7 +3,7 @@ export const typeDefs = `#graphql
   type Category { id: ID!, name: String! }
   type Location { id: ID!, address: String!, city: String!, state: String!, country: String!, postalCode: String, latitude: Float, longitude: Float }
   type Document { id: ID!, type: String! }
-  type Vendor { id: ID!, businessName: String!, businessDescription: String, businessEmail: String, businessPhone: String, verificationStatus: String!, rejectionReason: String, createdAt: String!, user: User, categories: [Category!]!, locations: [Location!]!, documents: [Document!]! }
+  type Vendor { active: Boolean!, id: ID!, businessName: String!, businessDescription: String, businessEmail: String, businessPhone: String, verificationStatus: String!, rejectionReason: String, createdAt: String!, user: User, categories: [Category!]!, locations: [Location!]!, documents: [Document!]! }
   type AuthResponse { success: Boolean!, message: String!, user: User, resetToken: String }
   type UploadedDocument { uploadToken: String!, name: String! }
   type UploadedPhoto { uploadToken: String!, url: String! }
@@ -21,7 +21,7 @@ export const typeDefs = `#graphql
   input ResetPasswordInput { resetToken: String!, password: String!, confirmPassword: String! }
   input ChangePasswordInput { currentPassword: String!, password: String!, confirmPassword: String! }
   input UploadDocumentInput { email: String!, name: String!, base64: String! }
-  input ReviewVendorInput { id: ID!, status: String!, reason: String }
+  input ReviewVendorInput { id: ID!, status: String!, reason: String, notes: String, expectedStatus: String }
   type Query { me: User, serviceCategories: [String!]!, adminVendors(offset: Int): [Vendor!]!, vendorWorkspace: Vendor!, adminDocument(id: ID!): DownloadedDocument! }
   type NewsletterResponse { success: Boolean!, message: String! }
   type Mutation {

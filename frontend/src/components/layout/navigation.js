@@ -19,7 +19,7 @@ export function navigationFor(user) {
       "Reports",
     ].map((name) => [name, `/admin/${name.toLowerCase()}`]);
   if (user.role === "Vendor")
-    return user.vendor?.verificationStatus === "Approved"
+    return user.vendor?.verificationStatus === "Approved" && user.vendor.active
       ? [
           "Dashboard",
           "My Services",
@@ -37,11 +37,14 @@ export function navigationFor(user) {
 }
 export function profileFor(user) {
   const role = user?.role?.toLowerCase();
-  if (role === "vendor" && user.vendor?.verificationStatus !== "Approved")
+  if (
+    role === "vendor" &&
+    (user.vendor?.verificationStatus !== "Approved" || !user.vendor.active)
+  )
     return [
       [
         "Application status",
-        `/vendor/${{ Rejected: "rejected", Suspended: "suspended" }[user.vendor?.verificationStatus] || "pending"}`,
+        `/vendor/${{ Rejected: "rejected", Suspended: "suspended", Approved: "inactive" }[user.vendor?.verificationStatus] || "pending"}`,
       ],
       ["My profile", "/vendor/profile"],
       ["Settings", "/auth/change-password"],

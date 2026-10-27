@@ -58,6 +58,9 @@ export const Vendor = sequelize.define("Vendors", {
   businessDescription: col(D.TEXT, "BusinessDescription"),
   businessEmail: col(D.STRING(320), "ContactEmail"),
   businessPhone: col(D.STRING(20), "ContactPhone"),
+  verifiedAt: col(D.DATE, "VerifiedAt"),
+  verifiedBy: col(UUID, "VerifiedBy"),
+  verificationCycle: col(D.INTEGER, "VerificationCycle", { defaultValue: 1 }),
   verificationStatus: col(D.STRING(30), "VerificationStatus", {
     defaultValue: "Pending",
   }),

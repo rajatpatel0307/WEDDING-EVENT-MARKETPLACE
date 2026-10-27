@@ -1,3 +1,4 @@
+import { decideVendor } from "./vendor-verification.service.js";
 import { z } from "zod";
 import { sequelize } from "../../config/database.js";
 import { getResource } from "./admin.resources.js";
@@ -18,52 +19,18 @@ export async function reviewVendor(
   ctx,
   withTransaction = repo.transaction,
 ) {
-  requireRole(ctx, "ADMIN");
-  z.uuid().parse(id);
-  const body = reviewInput.parse(input),
-    r = getResource("vendors");
-  return withTransaction(async (tx) => {
-    const old = await repo.lockRecord(r, id, tx);
-    if (old.VerificationStatus !== body.expectedStatus)
-      error("This application changed. Refresh and review it again.", 409);
-    if (old.VerificationStatus === body.status)
-      error("The vendor already has this status.", 409);
-    const [user] = await repo.select(
-      "SELECT IsEmailVerified FROM dbo.Users WHERE UserId=:id",
-      { id: old.UserId },
-      tx,
-    );
-    if (body.status === "Approved" && !user.IsEmailVerified)
-      error("The owner must verify their email before approval.");
-    await repo.update(
-      r,
-      id,
-      {
-        VerificationStatus: body.status,
-        VerificationRemarks: body.reason || null,
-        UpdatedAt: new Date(),
-      },
-      tx,
-    );
-    if (body.status === "Suspended")
-      await sequelize.query(
-        "UPDATE dbo.AuthSessions SET revokedAt=SYSUTCDATETIME() WHERE userId=:id AND revokedAt IS NULL",
-        { replacements: { id: old.UserId }, transaction: tx },
-      );
-    await repo.auditAdmin(
-      ctx,
-      `ADMIN_VENDOR_${body.status.toUpperCase()}`,
-      "Vendors",
-      id,
-      { status: old.VerificationStatus },
-      { status: body.status, reason: body.reason, note: body.note },
-      tx,
-    );
-    await repo.notifyVendor(old.UserId, id, body.status, body.reason, tx);
-    return {
-      message: `Vendor ${body.status.toLowerCase()}. The vendor has been notified.`,
-    };
-  });
+  const body = reviewInput.parse(input);
+  return decideVendor(
+    id,
+    body.status,
+    {
+      expectedStatus: body.expectedStatus,
+      reason: body.reason,
+      notes: body.note,
+    },
+    ctx,
+    withTransaction,
+  );
 }
 const transitions = {
   Pending: ["Confirmed", "Cancelled"],

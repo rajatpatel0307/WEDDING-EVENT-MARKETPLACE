@@ -124,13 +124,17 @@ export async function auditAdmin(
   );
 }
 export async function notifyVendor(userId, vendorId, status, reason, tx) {
+  const label =
+    status === "UnderReview" ? "under review" : status.toLowerCase();
+  const message = reason || `Your application has been ${label}.`;
   await sequelize.query(
     "INSERT INTO dbo.Notifications(UserId,NotificationType,Title,Message,ReferenceType,ReferenceId) VALUES(:user,'VendorVerification',:title,:message,'Vendor',:id)",
     {
       replacements: {
         user: userId,
-        title: `Vendor application ${status.toLowerCase()}`,
-        message: reason || `Your application has been ${status.toLowerCase()}.`,
+        title: `Vendor application ${label}`,
+        message:
+          message.length > 2000 ? `${message.slice(0, 1997)}...` : message,
         id: vendorId,
       },
       transaction: tx,

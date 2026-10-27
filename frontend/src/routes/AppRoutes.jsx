@@ -19,6 +19,15 @@ const AdminLayout = lazy(() => import("../modules/admin/AdminLayout"));
 const AdminDashboard = lazy(
   () => import("../modules/admin/pages/AdminDashboard"),
 );
+const VendorApprovalPage = lazy(
+  () => import("../modules/admin/pages/VendorApprovalPage"),
+);
+const VendorDetailsPage = lazy(
+  () => import("../modules/admin/pages/VendorDetailsPage"),
+);
+const CustomerDetailsPage = lazy(
+  () => import("../modules/admin/pages/CustomerDetailsPage"),
+);
 const AdminManagement = lazy(
   () => import("../modules/admin/pages/AdminManagement"),
 );
@@ -235,6 +244,7 @@ export default function AppRoutes() {
         </Route>
         <Route element={<RoleRoute role="Vendor" />}>
           <Route path="/vendor/profile" element={<ProfilePage />} />
+          <Route path="/vendor/inactive" element={<VendorStatusPage />} />
           <Route path="/vendor/pending" element={<VendorStatusPage />} />
           <Route path="/vendor/rejected" element={<VendorStatusPage />} />
           <Route path="/vendor/suspended" element={<VendorStatusPage />} />
@@ -273,6 +283,52 @@ export default function AppRoutes() {
                   }
                 >
                   <AdminDashboard />
+                </Suspense>
+              }
+            />
+            <Route
+              path="applications"
+              element={<Navigate to="/admin/vendors/pending" replace />}
+            />
+            <Route
+              path="vendors/pending"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="ad-panel" role="status">
+                      Loading vendor approval queue...
+                    </div>
+                  }
+                >
+                  <VendorApprovalPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="vendors/:id"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="ad-panel" role="status">
+                      Loading vendor details...
+                    </div>
+                  }
+                >
+                  <VendorDetailsPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="customers/:id"
+              element={
+                <Suspense
+                  fallback={
+                    <div className="ad-panel" role="status">
+                      Loading customer details...
+                    </div>
+                  }
+                >
+                  <CustomerDetailsPage />
                 </Suspense>
               }
             />

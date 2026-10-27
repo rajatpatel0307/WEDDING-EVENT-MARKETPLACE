@@ -1,3 +1,4 @@
+import { vendorChangedEvent } from "../vendor-workflow";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -33,7 +34,7 @@ import {
 const metrics = [
   ["customers", "Total customers", Users, "customers"],
   ["vendors", "Total vendors", Store, "vendors"],
-  ["approvals", "Pending approvals", ClipboardCheck, "applications"],
+  ["approvals", "Pending approvals", ClipboardCheck, "vendors/pending"],
   ["services", "Active services", BriefcaseBusiness, "services"],
   ["bookings", "Total bookings", CalendarCheck, "bookings"],
   ["today", "Today’s bookings", CalendarDays, "bookings"],
@@ -186,6 +187,11 @@ export default function AdminDashboard() {
     [loading, setLoading] = useState(true),
     [error, setError] = useState(null),
     [version, setVersion] = useState(0);
+  useEffect(() => {
+    const changed = () => setVersion((value) => value + 1);
+    window.addEventListener(vendorChangedEvent, changed);
+    return () => window.removeEventListener(vendorChangedEvent, changed);
+  }, []);
   useEffect(() => {
     const abort = new AbortController();
     setLoading(true);

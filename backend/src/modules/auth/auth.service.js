@@ -114,6 +114,7 @@ export async function register(input, role, ctx) {
       const v = await Vendor.create(
         {
           ...vendor,
+          active: false,
           userId: user.id,
           slug: `${vendor.businessName
             .toLowerCase()

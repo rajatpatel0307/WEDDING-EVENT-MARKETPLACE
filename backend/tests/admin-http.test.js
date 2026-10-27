@@ -55,3 +55,54 @@ test("REST errors do not expose SQL or internal exception details", async () => 
 test("authenticated requests cannot choose unknown or prototype resources", async () => {
   assert.equal((await request(user("ADMIN"), "/constructor")).status, 404);
 });
+test("customer profile routes enforce admin access and validate IDs before querying", async () => {
+  for (const path of [
+    "/customers/example/details",
+    "/customers/example/records/messages",
+  ]) {
+    assert.equal((await request(null, path)).status, 401);
+    assert.equal((await request(user("CUSTOMER"), path)).status, 403);
+    assert.equal((await request(user("ADMIN"), path)).status, 400);
+  }
+  const response = await request(
+    user("ADMIN"),
+    "/customers/example/notifications",
+    {
+      method: "POST",
+      headers: {
+        Origin: "https://untrusted.invalid",
+        "X-Admin-Request": "1",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title: "Title", message: "Message" }),
+    },
+  );
+  assert.equal(response.status, 403);
+});
+test("vendor detail and document routes enforce admin access and reject invalid IDs", async () => {
+  for (const path of [
+    "/vendors/example/details",
+    "/vendors/example/records/audit",
+    "/vendors/example/documents/example/download",
+  ]) {
+    assert.equal((await request(null, path)).status, 401);
+    assert.equal((await request(user("CUSTOMER"), path)).status, 403);
+    assert.equal((await request(user("VENDOR"), path)).status, 403);
+    assert.equal((await request(user("ADMIN"), path)).status, 400);
+  }
+  for (const [path, method] of [
+    ["/vendors/example/account", "PATCH"],
+    ["/vendors/example/documents/example/review", "POST"],
+  ]) {
+    const response = await request(user("ADMIN"), path, {
+      method,
+      headers: {
+        Origin: "https://untrusted.invalid",
+        "Content-Type": "application/json",
+        "X-Admin-Request": "1",
+      },
+      body: "{}",
+    });
+    assert.equal(response.status, 403);
+  }
+});

@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { adminRequest } from "./api";
+import { vendorChangedEvent } from "./vendor-workflow";
+import "./vendor-workflow.css";
+import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   PanelLeftClose,
@@ -25,6 +28,22 @@ export default function AdminLayout() {
     [mobile, setMobile] = useState(false),
     [query, setQuery] = useState(""),
     [profile, setProfile] = useState(false);
+  const [pendingCount, setPendingCount] = useState(null);
+  useEffect(() => {
+    const abort = new AbortController();
+    const refreshCount = () =>
+      adminRequest("/vendors/pending-count", { signal: abort.signal })
+        .then((result) => setPendingCount(result.data.pendingCount))
+        .catch(() => {});
+    refreshCount();
+    window.addEventListener(vendorChangedEvent, refreshCount);
+    window.addEventListener("focus", refreshCount);
+    return () => {
+      abort.abort();
+      window.removeEventListener(vendorChangedEvent, refreshCount);
+      window.removeEventListener("focus", refreshCount);
+    };
+  }, []);
   const section = location.pathname.split("/")[2] || "dashboard";
   function toggle() {
     setCollapsed((value) => {
@@ -57,14 +76,38 @@ export default function AdminLayout() {
         aria-label="Admin navigation"
       >
         <div className="ad-sidebar-header">
-          <Link to="/admin/dashboard" className="ad-compact-brand" aria-label="MarryNest admin dashboard">
+          <Link
+            to="/admin/dashboard"
+            className="ad-compact-brand"
+            aria-label="MarryNest admin dashboard"
+          >
             <img src={compactLogo} alt="MarryNest" width="44" height="39" />
           </Link>
-          <Link to="/admin/dashboard" className="ad-brand" aria-label="MarryNest admin dashboard">
-            <img src="/images/marrynest-logo-320.webp" alt="MarryNest" width="160" height="68" />
+          <Link
+            to="/admin/dashboard"
+            className="ad-brand"
+            aria-label="MarryNest admin dashboard"
+          >
+            <img
+              src="/images/marrynest-logo-320.webp"
+              alt="MarryNest"
+              width="160"
+              height="68"
+            />
           </Link>
-          <button className="ad-icon ad-sidebar-toggle" aria-label={collapsed?'Expand sidebar':'Collapse sidebar'} title={collapsed?'Expand sidebar':'Collapse sidebar'} aria-controls="admin-sidebar" aria-expanded={!collapsed} onClick={toggle}>
-            {collapsed?<PanelLeftOpen size={20}/>:<PanelLeftClose size={20}/>}
+          <button
+            className="ad-icon ad-sidebar-toggle"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-controls="admin-sidebar"
+            aria-expanded={!collapsed}
+            onClick={toggle}
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={20} />
+            ) : (
+              <PanelLeftClose size={20} />
+            )}
           </button>
         </div>
         <button
@@ -79,28 +122,34 @@ export default function AdminLayout() {
             <div className="ad-nav-group" key={group.label}>
               <h2 className="ad-nav-label">{group.label}</h2>
               {group.items.map(([path, label, Icon]) => {
-                  const [pathname, search = ""] = path.split("?"),
-                    active =
-                      pathname === section &&
-                      (search
-                        ? location.search === `?${search}`
-                        : !location.search ||
-                          !location.search.includes("status="));
-                  return (
-                    <Link
-                      key={path}
-                      aria-label={label}
-                      title={collapsed ? label : undefined}
-                      className={`ad-nav-link ${active ? "ad-nav-active" : ""} ${search ? "ad-nav-child" : ""}`}
-                      to={`/admin/${path}`}
-                      onClick={() => setMobile(false)}
-                    >
-                      <Icon size={18} strokeWidth={1.7} />
-                      <span>{label}</span>
-                      {path === "dashboard" && <i />}
-                    </Link>
-                  );
-                })}
+                const [pathname, search = ""] = path.split("?"),
+                  active =
+                    (pathname === "vendors/pending"
+                      ? location.pathname === "/admin/vendors/pending"
+                      : pathname === section &&
+                        location.pathname !== "/admin/vendors/pending") &&
+                    (search
+                      ? location.search === `?${search}`
+                      : !location.search ||
+                        !location.search.includes("status="));
+                return (
+                  <Link
+                    key={path}
+                    aria-label={label}
+                    title={collapsed ? label : undefined}
+                    className={`ad-nav-link ${active ? "ad-nav-active" : ""} ${search ? "ad-nav-child" : ""}`}
+                    to={`/admin/${path}`}
+                    onClick={() => setMobile(false)}
+                  >
+                    <Icon size={18} strokeWidth={1.7} />
+                    <span>{label}</span>
+                    {path === "vendors/pending" && pendingCount !== null && (
+                      <span className="va-pending-badge">{pendingCount}</span>
+                    )}
+                    {path === "dashboard" && <i />}
+                  </Link>
+                );
+              })}
             </div>
           ))}
         </nav>
@@ -109,7 +158,7 @@ export default function AdminLayout() {
         <header className="ad-topbar">
           <div className="ad-topbar-left">
             <button
-              className={`ad-icon ad-desktop-toggle ${collapsed?'ad-show-sidebar-toggle':''}`}
+              className={`ad-icon ad-desktop-toggle ${collapsed ? "ad-show-sidebar-toggle" : ""}`}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               title="Open sidebar"
               aria-controls="admin-sidebar"

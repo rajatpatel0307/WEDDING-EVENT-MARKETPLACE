@@ -26,8 +26,10 @@ export function VendorStatusPage() {
   const { user, reload, notify } = useAuth(),
     [busy, setBusy] = useState(false);
   const status = user.vendor?.verificationStatus || "Pending";
-  if (status === "Approved") return <Navigate to="/vendor/dashboard" replace />;
+  if (status === "Approved" && user.vendor.active)
+    return <Navigate to="/vendor/dashboard" replace />;
   const pending = ["Pending", "UnderReview"].includes(status);
+  const inactive = status === "Approved" && !user.vendor.active;
   async function check() {
     setBusy(true);
     try {
@@ -51,7 +53,9 @@ export function VendorStatusPage() {
             ? "Registration Submitted Successfully"
             : status === "Rejected"
               ? "Your application needs attention."
-              : "Your vendor account is suspended."}
+              : inactive
+                ? "Your vendor account is inactive."
+                : "Your vendor account is suspended."}
         </h1>
         <p>
           {pending

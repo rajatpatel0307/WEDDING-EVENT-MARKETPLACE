@@ -22,6 +22,13 @@ try {
     throw new Error(
       "Profile photo migration is missing. Run npm run db:migrate before starting the API.",
     );
+  const [verificationMigration] = await sequelize.query(
+    "SELECT Name FROM dbo.AuthMigrations WHERE Name='007-vendor-verification'",
+  );
+  if (!verificationMigration.length)
+    throw new Error(
+      "Vendor verification migration is missing. Run npm run db:migrate before starting the API.",
+    );
   const { httpServer, apollo } = await createApp();
   httpServer.listen(Number(process.env.PORT || 5000), () =>
     console.log("Wedding marketplace API started."),
