@@ -1,0 +1,236 @@
+{
+  "name": "MarryNest",
+  "legalName": null,
+  "contactIsPlaceholder": true,
+  "email": "support@yourdomain.com",
+  "phone": "+91 XXXXXXXXXX",
+  "address": "Your Business Address",
+  "supportHours": "Monday – Saturday, 9:00 AM – 6:00 PM",
+  "mapAddress": null,
+  "terms": {
+    "published": false,
+    "lastUpdated": "To Be Updated",
+    "sections": [
+      {
+        "id": "introduction",
+        "title": "Introduction",
+        "paragraphs": [
+          "These Terms & Conditions describe the intended framework for using the MarryNest Wedding Marketplace and its services. This document is a configurable draft, not a finalized agreement.",
+          "Before publication, identify the legal operator, its registration and contact information, the platform’s business model, and the date these terms take effect. A qualified legal professional must review the final wording against the actual service and applicable law."
+        ]
+      },
+      {
+        "id": "definitions",
+        "title": "Definitions",
+        "paragraphs": [
+          "In this draft, ‘platform’ means the MarryNest website; ‘customer’ means a person exploring or requesting services; ‘vendor’ means a wedding professional applying to or listing on the marketplace; and ‘listing’ means information about a venue, service or package.",
+          "Finalize definitions for confirmed bookings, quotations, fees, payment providers and other business-specific terms before publishing."
+        ]
+      },
+      {
+        "id": "eligibility",
+        "title": "Eligibility",
+        "paragraphs": [
+          "The operator must specify the age, legal capacity and geographic eligibility requirements for customers and vendors. Any arrangements involving a representative or business account must also be defined. These requirements have not yet been finalized."
+        ]
+      },
+      {
+        "id": "accounts",
+        "title": "User Accounts",
+        "paragraphs": [
+          "The current account workflow collects registration details, requires email verification and provides password recovery. Users should provide accurate details, protect their credentials, and avoid sharing passwords or verification codes.",
+          "The final terms must explain account ownership, permitted account types, correction of account information and how to report unauthorized use."
+        ]
+      },
+      {
+        "id": "customers",
+        "title": "Customer Responsibilities",
+        "paragraphs": [
+          "Customers should check dates, location, guest count, scope, pricing and vendor-specific conditions before requesting or agreeing to services. Requirements and changes should be communicated clearly.",
+          "Before launch, publish the responsibilities associated with booking requests, event permissions, access to venues, guest safety and payment obligations."
+        ]
+      },
+      {
+        "id": "vendor-registration",
+        "title": "Vendor Registration",
+        "paragraphs": [
+          "Vendor registration collects business information, service categories, locations and supporting documents. Submitting an application does not itself approve a vendor or create a confirmed service listing.",
+          "Replace this draft with the operator’s approved eligibility, documentation, review and onboarding requirements."
+        ]
+      },
+      {
+        "id": "verification",
+        "title": "Vendor Verification",
+        "paragraphs": [
+          "The current workflow requires email verification and administrative approval before vendor dashboard access. Administrators can review documents and approve, reject or suspend an application.",
+          "The final policy must explain what verification checks cover and their limitations. An approval badge must not be described as a guarantee of service quality or fulfillment."
+        ]
+      },
+      {
+        "id": "vendor-responsibilities",
+        "title": "Vendor Responsibilities",
+        "paragraphs": [
+          "Vendors should keep their service descriptions, images, prices, availability and business information accurate, and communicate clearly with customers. The final agreement must address required permissions, appropriate documentation, booking fulfillment, substitutions and service changes.",
+          "Define conduct standards, complaint handling, review responses and the process for correcting inaccurate listings before publication."
+        ]
+      },
+      {
+        "id": "listings",
+        "title": "Services and Listings",
+        "paragraphs": [
+          "Listings describe vendor-provided services, venues and packages. Customers should verify the included items, exclusions, taxes, location and availability with the relevant vendor before making a commitment.",
+          "The operator must finalize its content review, ranking, sponsored-placement disclosures and listing correction processes. The current featured vendor and venue sections rank eligible records by stored rating and review count; featured packages use the database’s featured flag."
+        ]
+      },
+      {
+        "id": "bookings",
+        "title": "Booking Process",
+        "paragraphs": [
+          "A customer, a vendor and the platform have distinct roles. Vendors supply the services they agree to provide; the platform currently supports discovery and account onboarding. A listing, inquiry or account registration is not a confirmed booking.",
+          "Before enabling bookings, publish the request, acceptance, confirmation and change process and accurately define the platform’s contractual role. Do not imply that an unimplemented booking workflow is available."
+        ]
+      },
+      {
+        "id": "quotations",
+        "title": "Quotations",
+        "paragraphs": [
+          "The final quotation policy must specify the scope of work, included and excluded services, pricing basis, taxes, validity, availability conditions and how a customer accepts a quotation. No quotation validity period is specified in this draft."
+        ]
+      },
+      {
+        "id": "payments",
+        "title": "Payments",
+        "paragraphs": [
+          "Payment collection, provider selection and settlement rules have not been finalized for this marketplace. This draft does not authorize charges or describe a live checkout service.",
+          "Before accepting payments, identify the payment processor, supported methods, booking payment schedule, receipts, failed-payment handling, reconciliation, refunds and cancellation charges. Never request passwords, one-time codes or full card details through the contact form."
+        ]
+      },
+      {
+        "id": "commission",
+        "title": "Platform Commission",
+        "paragraphs": [
+          "The operator must publish any platform fee or commission, the party responsible for it, how it is calculated, applicable taxes and when it is charged. No rate, percentage or amount is established by this draft."
+        ]
+      },
+      {
+        "id": "payouts",
+        "title": "Vendor Payouts",
+        "paragraphs": [
+          "Vendor payout eligibility, verification requirements, settlement schedules, deductions, failed settlements and reconciliation must reflect the implemented payment system and vendor agreement. This draft sets no payout deadline or guaranteed settlement date."
+        ]
+      },
+      {
+        "id": "cancellation",
+        "title": "Cancellation",
+        "paragraphs": [
+          "Publish separate processes for customer cancellation, vendor cancellation, rescheduling and failure to deliver a service. Explain how a request is made, who reviews it, how the outcome is communicated and how disputes are handled.",
+          "Any cancellation charges and non-refundable items must be disclosed before a customer confirms a booking. No cancellation charge or deadline is invented here."
+        ]
+      },
+      {
+        "id": "refunds",
+        "title": "Refunds",
+        "paragraphs": [
+          "The final refund policy must explain eligibility, review, approved refund amounts, payment reversal methods, processing estimates and escalation routes. It must distinguish failed payments, cancellations and service disputes.",
+          "No refund percentage, processing deadline, blanket exclusion or guaranteed outcome is specified by this draft. Publish the approved policy before taking booking payments."
+        ]
+      },
+      {
+        "id": "reviews",
+        "title": "Reviews and Ratings",
+        "paragraphs": [
+          "Reviews should reflect genuine service experiences. The homepage displays only published, verified reviews tied to completed bookings. Vendors must not impersonate customers or manufacture reviews.",
+          "Finalize moderation, reporting, correction, removal and vendor response procedures, and explain how ratings are calculated."
+        ]
+      },
+      {
+        "id": "prohibited",
+        "title": "Prohibited Activities",
+        "paragraphs": [
+          "Proposed conduct standards prohibit impersonation, fraudulent listings, misleading prices, fabricated reviews, harassment, unauthorized access, malicious uploads and misuse of personal information.",
+          "The final terms must define the investigation, reporting, appeal and enforcement processes appropriate to these standards."
+        ]
+      },
+      {
+        "id": "intellectual-property",
+        "title": "Intellectual Property",
+        "paragraphs": [
+          "The operator must identify ownership and permitted use of platform branding, software and editorial materials. Vendor and customer content requires appropriate permissions.",
+          "Finalize the licenses necessary to display submitted content, the infringement reporting process and any takedown procedures. This draft does not assert ownership over third-party material."
+        ]
+      },
+      {
+        "id": "privacy",
+        "title": "Privacy",
+        "paragraphs": [
+          "Account data, vendor documents and contact inquiries are processed by the platform’s implemented workflows. The separate Privacy Policy must explain purposes, retention, recipients, security practices and available rights.",
+          "Do not submit identity documents, passwords, payment card details or other sensitive records through general support messages. Review the Privacy Policy using the link on this page."
+        ]
+      },
+      {
+        "id": "third-parties",
+        "title": "Third-Party Services",
+        "paragraphs": [
+          "Any external payment, communication, map or other service must be identified where it is used. Explain which provider receives information and which terms apply. A link to another site does not by itself describe the platform’s responsibility for that service."
+        ]
+      },
+      {
+        "id": "liability",
+        "title": "Limitation of Liability",
+        "paragraphs": [
+          "This section requires legal review based on the platform’s actual role, applicable consumer protections and the responsibilities of customers and vendors. No blanket disclaimer, liability cap, exclusion of statutory rights or legally binding limitation is established by this draft."
+        ]
+      },
+      {
+        "id": "indemnification",
+        "title": "Indemnification",
+        "paragraphs": [
+          "Any proposed indemnification clause must be tailored by a qualified legal professional to the actual marketplace model and applicable law. This placeholder creates no indemnity obligation."
+        ]
+      },
+      {
+        "id": "suspension",
+        "title": "Account Suspension",
+        "paragraphs": [
+          "The current system supports blocked accounts and suspended vendor applications. Finalize the reasons, notice, review, appeal and reinstatement processes, including treatment of pending inquiries, confirmed bookings and unpaid balances where relevant."
+        ]
+      },
+      {
+        "id": "termination",
+        "title": "Account Termination",
+        "paragraphs": [
+          "Specify how an account holder requests closure and how the operator handles termination, outstanding service obligations, record retention and deletion requests. These processes and their legal effects have not been finalized."
+        ]
+      },
+      {
+        "id": "disputes",
+        "title": "Dispute Resolution",
+        "paragraphs": [
+          "Before launch, publish verified grievance contact details and a process for reporting, acknowledging, investigating and resolving complaints. Identify appropriate escalation routes without restricting rights that applicable law protects.",
+          "This draft does not establish an arbitration clause, exclusive forum, resolution deadline or waiver of remedies."
+        ]
+      },
+      {
+        "id": "governing-law",
+        "title": "Governing Law",
+        "paragraphs": [
+          "The operator’s legal location, applicable governing law and appropriate jurisdiction must be confirmed and reviewed before publication. No jurisdiction or governing-law claim is made in this placeholder."
+        ]
+      },
+      {
+        "id": "changes",
+        "title": "Changes to Terms",
+        "paragraphs": [
+          "Finalize how changes will be communicated, how effective dates and prior versions are recorded, and whether fresh acceptance is required. The last-updated field must be set to an approved date when this document is published."
+        ]
+      },
+      {
+        "id": "contact",
+        "title": "Contact Information",
+        "paragraphs": [
+          "Company name, legal identity, support channels, public business address and grievance contact must be replaced with verified operator details. The contact page currently displays clearly marked configurable placeholders."
+        ]
+      }
+    ]
+  }
+}

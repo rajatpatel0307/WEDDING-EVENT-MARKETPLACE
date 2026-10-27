@@ -1,0 +1,92 @@
+{
+  "generator": "Built-in image_gen tool",
+  "outputDirectory": "frontend/src/assets/service-categories",
+  "format": "WebP, maximum 900 by 680 pixels, quality 85",
+  "images": [
+    {
+      "file": "venue.webp",
+      "category": "Venue & Location",
+      "prompt": "Use case: photorealistic-natural. Create one landscape editorial photograph for an Indian wedding marketplace service category card: Venue & Location. An elegant Indian palace garden wedding venue at golden hour, landscaped lawn, ivory floral mandap and warm heritage architecture, refined natural colors, realistic photography. Composition suitable for a 450 by 340 card cropped from landscape, clear main subject in upper two-thirds with quiet lower area for website text overlay. No text, logos, watermarks, collage or borders."
+    },
+    {
+      "file": "catering.webp",
+      "category": "Catering & Food",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Catering & Food. Scene: An elegant Indian wedding buffet with copper serving dishes of biryani, curries, naan and colorful appetizers, beautifully styled catering counter. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "tent.webp",
+      "category": "Tent & Infrastructure",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Tent & Infrastructure. Scene: A luxurious ivory draped wedding marquee with elegant structural canopy, chandeliers and rows of reception chairs, wide architectural view. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "decoration.webp",
+      "category": "Decoration",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Decoration. Scene: A stunning Indian wedding floral stage with ivory and blush roses, graceful drapery and gold accents. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "lighting.webp",
+      "category": "Lighting",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Lighting. Scene: An Indian wedding courtyard at blue hour with glowing fairy lights overhead, amber uplighting and lanterns creating a magical evening. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "dj.webp",
+      "category": "DJ & Entertainment",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for DJ & Entertainment. Scene: A wedding DJ mixing desk in foreground with elegant purple and amber stage lighting and blurred dancing wedding guests behind. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "photography.webp",
+      "category": "Photography & Videography",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Photography & Videography. Scene: A professional wedding camera on a gimbal and another camera with portrait lens in foreground, softly blurred Indian wedding mandap behind. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "makeup.webp",
+      "category": "Makeup & Beauty",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Makeup & Beauty. Scene: Close-up editorial photograph of a makeup artist gently applying makeup to a South Asian bride wearing understated bridal jewellery, natural skin texture. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "mehndi.webp",
+      "category": "Mehndi",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Mehndi. Scene: Close-up of bridal hands with intricate beautiful fresh mehndi patterns and delicate gold bangles against soft silk fabric. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "clothing.webp",
+      "category": "Wedding Clothing",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Wedding Clothing. Scene: A richly embroidered rose and burgundy bridal lehenga displayed on a dress form beside an ivory embroidered sherwani in an elegant boutique. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "jewellery.webp",
+      "category": "Jewellery & Accessories",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Jewellery & Accessories. Scene: Exquisite Indian bridal gold necklace, earrings and maang tikka with pearl accents carefully arranged on warm ivory silk. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "transportation.webp",
+      "category": "Transportation",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Transportation. Scene: An elegant ivory wedding car decorated with delicate fresh flowers parked in front of a heritage Indian venue. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "traditional.webp",
+      "category": "Traditional Wedding Services",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Traditional Wedding Services. Scene: Traditional Indian wedding preparation still life of ceremonial thali, marigold garlands, brass vessels and rich red fabrics, thoughtfully arranged. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "ceremony.webp",
+      "category": "Religious & Ceremony Services",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Religious & Ceremony Services. Scene: An intimate Indian wedding havan setup with a small sacred fire, brass ritual vessels, flowers and warm softly blurred mandap in background. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "flowers.webp",
+      "category": "Flowers & Florist",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Flowers & Florist. Scene: Florist hands arranging a lush fresh bouquet of blush roses, ivory flowers and greenery on a wedding florist work table. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "support.webp",
+      "category": "Event Support",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Event Support. Scene: Indian wedding event coordinators in elegant neutral attire discreetly arranging table settings in a beautiful reception venue. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    },
+    {
+      "file": "technology.webp",
+      "category": "Technology",
+      "prompt": "Use case: photorealistic-natural. Asset: Indian wedding marketplace category card for Technology. Scene: A polished wedding AV setup with a professional video camera, audio control console and softly glowing large event display in elegant reception venue, no legible content. Style: high-end editorial photography, realistic texture, coordinated ivory, warm gold and muted blush tones with appropriate natural lighting. Landscape composition, main subject in upper two-thirds, suitable for cropping to 450 by 340. No text, letters, logos, watermarks, borders or collage."
+    }
+  ]
+}

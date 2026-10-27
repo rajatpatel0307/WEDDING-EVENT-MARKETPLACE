@@ -612,6 +612,59 @@ CREATE TABLE PackageItems
 );
 GO
 
+
+CREATE TABLE Events
+(
+    EventId UNIQUEIDENTIFIER NOT NULL
+        CONSTRAINT DF_Events_Id DEFAULT NEWSEQUENTIALID(),
+
+    CustomerId UNIQUEIDENTIFIER NOT NULL,
+
+    EventName NVARCHAR(200) NOT NULL,
+
+    EventType VARCHAR(50) NOT NULL,
+
+    EventDate DATE NOT NULL,
+
+    StartTime TIME(0) NULL,
+    EndTime TIME(0) NULL,
+
+    GuestCount INT NULL,
+
+    Budget DECIMAL(18,2) NULL,
+
+    Description NVARCHAR(MAX) NULL,
+
+    City NVARCHAR(100) NULL,
+    State NVARCHAR(100) NULL,
+
+    Status VARCHAR(30) NOT NULL DEFAULT 'Planning',
+
+    CreatedAt DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
+    UpdatedAt DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
+
+    CONSTRAINT PK_Events PRIMARY KEY (EventId),
+
+    CONSTRAINT FK_Events_Customer
+        FOREIGN KEY (CustomerId)
+        REFERENCES Users(UserId),
+
+    CONSTRAINT CK_Events_Status
+        CHECK
+        (
+            Status IN
+            (
+                'Planning',
+                'Confirmed',
+                'Completed',
+                'Cancelled'
+            )
+        )
+);
+GO
+
+
+
 /* =========================================================
    33. VENDOR AVAILABILITY
    ========================================================= */
@@ -1602,55 +1655,6 @@ GO
    31. EVENTS
    ========================================================= */
 
-CREATE TABLE Events
-(
-    EventId UNIQUEIDENTIFIER NOT NULL
-        CONSTRAINT DF_Events_Id DEFAULT NEWSEQUENTIALID(),
-
-    CustomerId UNIQUEIDENTIFIER NOT NULL,
-
-    EventName NVARCHAR(200) NOT NULL,
-
-    EventType VARCHAR(50) NOT NULL,
-
-    EventDate DATE NOT NULL,
-
-    StartTime TIME(0) NULL,
-    EndTime TIME(0) NULL,
-
-    GuestCount INT NULL,
-
-    Budget DECIMAL(18,2) NULL,
-
-    Description NVARCHAR(MAX) NULL,
-
-    City NVARCHAR(100) NULL,
-    State NVARCHAR(100) NULL,
-
-    Status VARCHAR(30) NOT NULL DEFAULT 'Planning',
-
-    CreatedAt DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
-    UpdatedAt DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
-
-    CONSTRAINT PK_Events PRIMARY KEY (EventId),
-
-    CONSTRAINT FK_Events_Customer
-        FOREIGN KEY (CustomerId)
-        REFERENCES Users(UserId),
-
-    CONSTRAINT CK_Events_Status
-        CHECK
-        (
-            Status IN
-            (
-                'Planning',
-                'Confirmed',
-                'Completed',
-                'Cancelled'
-            )
-        )
-);
-GO
 
 
 

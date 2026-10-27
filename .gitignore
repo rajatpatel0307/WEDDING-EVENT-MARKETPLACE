@@ -50,6 +50,8 @@ desktop.ini
 .tmp/
 .temp/
 .cache/
+.npm-cache/
+**/private-documents/
 .eslintcache
 
 # =====================================
