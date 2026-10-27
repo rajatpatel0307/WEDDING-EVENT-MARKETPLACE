@@ -41,6 +41,7 @@ export default function HomePage() {
         items={data?.popularServices}
         loading={loading}
         retry={retry}
+        visual
       />
       <section className="mp-section mp-venues-section">
         <SectionHeader
@@ -74,12 +75,6 @@ export default function HomePage() {
         />
       </Suspense>
       <HowItWorks />
-      <ServiceCategories
-        items={data?.popularServices}
-        loading={loading}
-        retry={retry}
-        visual
-      />
       <Suspense fallback={<CollectionState loading />}>
         <HomeCollections
           data={data}

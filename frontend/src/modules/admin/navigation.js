@@ -1,0 +1,117 @@
+import {
+  LayoutDashboard,
+  Users,
+  Store,
+  ClipboardCheck,
+  Files,
+  Tags,
+  Layers,
+  BriefcaseBusiness,
+  CalendarCheck,
+  FileText,
+  CreditCard,
+  RotateCcw,
+  Wallet,
+  Landmark,
+  Star,
+  Heart,
+  MessagesSquare,
+  Bell,
+  TicketPercent,
+  BadgePercent,
+  CalendarDays,
+  ContactRound,
+  Image,
+  ScrollText,
+  Settings,
+} from "lucide-react";
+export const adminNavigation = [
+  { label: "WORKSPACE", items: [["dashboard", "Overview", LayoutDashboard]] },
+  {
+    label: "USERS",
+    items: [
+      ["customers", "All Customers", Users],
+      ["vendors", "All Vendors", Store],
+      ["applications", "Vendor Applications", ClipboardCheck],
+      ["documents", "Vendor Documents", Files],
+    ],
+  },
+  {
+    label: "CATALOG",
+    items: [
+      ["categories", "Categories", Tags],
+      ["sub-categories", "Sub Categories", Layers],
+      ["services", "Services", BriefcaseBusiness],
+    ],
+  },
+  {
+    label: "BOOKINGS",
+    items: [
+      ["bookings", "All Bookings", CalendarCheck],
+      ...["Pending", "Confirmed", "Completed", "Cancelled", "Disputed"].map(
+        (s) => [`bookings?status=${s}`, s, CalendarCheck],
+      ),
+    ],
+  },
+  {
+    label: "FINANCE",
+    items: [
+      ["quotations", "Quotations", FileText],
+      ["payments", "Payments", CreditCard],
+      ["refunds", "Refunds", RotateCcw],
+      ["payouts", "Vendor Payouts", Wallet],
+      ["commission", "Platform Commission", Landmark],
+    ],
+  },
+  {
+    label: "ENGAGEMENT",
+    items: [
+      ["reviews", "Reviews", Star],
+      ["wishlists", "Wishlists", Heart],
+      ["messages", "Messages", MessagesSquare],
+      ["notifications", "Notifications", Bell],
+      ["coupons", "Coupons", TicketPercent],
+      ["offers", "Offers", BadgePercent],
+    ],
+  },
+  {
+    label: "OPERATIONS",
+    items: [
+      ["events", "Events", CalendarDays],
+      ["guests", "Event Guests", ContactRound],
+      ["media", "Media", Image],
+      ["audit-logs", "Audit Logs", ScrollText],
+      ["settings", "Settings", Settings],
+    ],
+  },
+];
+export const resourceTitle = (key) =>
+  adminNavigation.flatMap((g) => g.items).find((i) => i[0] === key)?.[1] ||
+  "Overview";
+export const columnLabels = {
+  name: "Name",
+  owner: "Owner",
+  email: "Email",
+  phone: "Phone",
+  city: "City",
+  categories: "Categories",
+  documents: "Documents",
+  status: "Status",
+  createdAt: "Created",
+  updatedAt: "Updated",
+  amount: "Amount",
+  vendor: "Vendor",
+  customer: "Customer",
+  category: "Category",
+  rating: "Rating",
+  description: "Description",
+  eventDate: "Event date",
+  discountValue: "Discount value",
+  discountType: "Discount type",
+  startDate: "Valid from",
+  endDate: "Valid until",
+  categoryId: "Parent category",
+  code: "Code",
+  usageLimit: "Usage limit",
+  emailVerified: "Email verified",
+};

@@ -12,6 +12,7 @@ import { authenticate } from "./modules/auth/token.service.js";
 import { production } from "./config/environment.js";
 import { limit } from "./modules/auth/security.service.js";
 import { securityValidation } from "./graphql/security.validation.js";
+import adminRoutes from "./modules/admin/admin.routes.js";
 export async function createApp() {
   const app = express(),
     httpServer = createServer(app);
@@ -29,6 +30,7 @@ export async function createApp() {
   app.get("/api/health", (_, res) =>
     res.json({ success: true, message: "Wedding marketplace API" }),
   );
+  app.use("/api/admin", adminRoutes);
   const apollo = new ApolloServer({
     typeDefs,
     resolvers,

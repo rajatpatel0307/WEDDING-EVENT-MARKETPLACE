@@ -9,17 +9,22 @@ export const cookieOptions = {
   httpOnly: true,
   secure: production,
   sameSite: "strict",
-  path: "/graphql",
+  path: "/",
 };
 export const cookieNames = {
   access: production ? "__Secure-mn_access" : "mn_access",
   refresh: production ? "__Secure-mn_refresh" : "mn_refresh",
 };
 export const clearCookies = (ctx) =>
-  Object.values(cookieNames).forEach((name) =>
-    ctx.res.clearCookie(name, cookieOptions),
-  );
+  Object.values(cookieNames).forEach((name) => {
+    ctx.res.clearCookie(name, cookieOptions);
+    ctx.res.clearCookie(name, { ...cookieOptions, path: "/graphql" });
+  });
 export function setCookies(ctx, id, refresh, userId) {
+  // Clear legacy cookies before issuing the shared GraphQL/REST session.
+  Object.values(cookieNames).forEach((name) =>
+    ctx.res.clearCookie(name, { ...cookieOptions, path: "/graphql" }),
+  );
   ctx.res.cookie(
     cookieNames.access,
     sign({ sub: userId, sid: id, purpose: "access" }, "10m"),

@@ -1,4 +1,4 @@
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, useLocation } from "react-router-dom";
 import { ApolloProvider } from "@apollo/client/react";
 import { client } from "./services/apollo";
 import { AuthProvider } from "./context/AuthContext";
@@ -12,11 +12,19 @@ export default function App() {
     <ApolloProvider client={client}>
       <BrowserRouter>
         <AuthProvider>
-          <Navbar />
-          <AppRoutes />
-          <Footer />
+          <ApplicationContent />
         </AuthProvider>
       </BrowserRouter>
     </ApolloProvider>
+  );
+}
+function ApplicationContent() {
+  const admin = useLocation().pathname.startsWith("/admin");
+  return (
+    <>
+      {!admin && <Navbar />}
+      <AppRoutes />
+      {!admin && <Footer />}
+    </>
   );
 }

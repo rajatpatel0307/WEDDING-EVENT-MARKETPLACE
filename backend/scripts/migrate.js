@@ -1,4 +1,5 @@
 import { up as contactUp } from "../migrations/003-contact-messages.js";
+import { up as adminUp } from "../migrations/004-admin-workspace.js";
 import { sequelize } from "../src/config/database.js";
 import { up as newsletterUp } from "../migrations/002-newsletter.js";
 import { up } from "../migrations/001-auth.js";
@@ -43,6 +44,23 @@ try {
       await contactUp(sequelize.getQueryInterface(), transaction);
       await sequelize.query(
         "INSERT INTO dbo.AuthMigrations(Name) VALUES ('003-contact-messages')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @result int; EXEC @result=sp_getapplock @Resource='MarryNestAdminMigration', @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @result < 0 THROW 51000, 'Migration lock unavailable', 1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='004-admin-workspace'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await adminUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES ('004-admin-workspace')",
         { transaction },
       );
     }

@@ -14,8 +14,12 @@ import {
   AccountLayout,
   VendorStatusPage,
 } from "../modules/auth/pages/AccountPages";
-const VendorVerificationPage = lazy(
-  () => import("../modules/admin/pages/VendorVerificationPage"),
+const AdminLayout = lazy(() => import("../modules/admin/AdminLayout"));
+const AdminDashboard = lazy(
+  () => import("../modules/admin/pages/AdminDashboard"),
+);
+const AdminManagement = lazy(
+  () => import("../modules/admin/pages/AdminManagement"),
 );
 import MarketplacePage from "../modules/public/pages/MarketplacePage";
 const HomePage = lazy(() => import("../modules/public/pages/HomePage"));
@@ -237,22 +241,54 @@ export default function AppRoutes() {
           </Route>
         </Route>
         <Route element={<RoleRoute role="Admin" />}>
-          <Route path="/admin/dashboard" element={<Dashboard />} />
-          <Route path="/admin/:section" element={<AccountFeaturePage />} />
           <Route
-            path="/admin/vendors"
+            path="/admin"
             element={
               <Suspense
                 fallback={
-                  <div className="loading-page" role="status">
-                    Loading vendor applications…
+                  <div className="p-8 animate-pulse" role="status">
+                    Loading administration…
                   </div>
                 }
               >
-                <VendorVerificationPage />
+                <AdminLayout />
               </Suspense>
             }
-          />
+          >
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route
+              path="dashboard"
+              element={
+                <Suspense
+                  fallback={
+                    <div
+                      className="h-72 animate-pulse rounded-xl bg-white"
+                      role="status"
+                      aria-label="Loading dashboard"
+                    />
+                  }
+                >
+                  <AdminDashboard />
+                </Suspense>
+              }
+            />
+            <Route
+              path=":resource"
+              element={
+                <Suspense
+                  fallback={
+                    <div
+                      className="h-72 animate-pulse rounded-xl bg-white"
+                      role="status"
+                      aria-label="Loading management tools"
+                    />
+                  }
+                >
+                  <AdminManagement />
+                </Suspense>
+              }
+            />
+          </Route>
         </Route>
       </Route>
       <Route
