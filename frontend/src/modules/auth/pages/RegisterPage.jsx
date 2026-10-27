@@ -9,6 +9,7 @@ import {
   X,
   ArrowLeft,
 } from "lucide-react";
+import PhotoUpload from "../../../components/common/PhotoUpload";
 import AuthLayout from "../components/AuthLayout";
 import {
   Field,
@@ -47,6 +48,8 @@ const steps = [
   "Verify",
 ];
 const initial = {
+  profilePhotoToken: "",
+  profilePhotoUrl: "",
   firstName: "",
   lastName: "",
   email: "",
@@ -95,7 +98,13 @@ export default function RegisterPage() {
     heading = useRef();
   const vendor = role === "Vendor";
   function update(name, value) {
-    setData((old) => ({ ...old, [name]: value }));
+    setData((old) => ({
+      ...old,
+      [name]: value,
+      ...(name === "email"
+        ? { profilePhotoToken: "", profilePhotoUrl: "", documents: [] }
+        : {}),
+    }));
   }
   function field(name, label, type = "text", extra = {}) {
     return (
@@ -185,6 +194,7 @@ export default function RegisterPage() {
         categories: services,
         location,
         documents,
+        profilePhotoUrl: _photoPreview,
         ...account
       } = data;
       const input = vendor
@@ -295,7 +305,20 @@ export default function RegisterPage() {
               autoComplete: "email",
               placeholder: "you@example.com",
               maxLength: 320,
+              disabled: uploading,
             })}
+            <PhotoUpload
+              email={data.email}
+              url={data.profilePhotoUrl}
+              onBusy={setUploading}
+              onUploaded={({ uploadToken, url }) =>
+                setData((old) => ({
+                  ...old,
+                  profilePhotoToken: uploadToken,
+                  profilePhotoUrl: url,
+                }))
+              }
+            />
             {field("phone", "Phone Number", "tel", {
               autoComplete: "tel",
               placeholder: "+919876543210",

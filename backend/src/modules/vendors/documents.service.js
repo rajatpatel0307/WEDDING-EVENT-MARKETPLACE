@@ -1,5 +1,5 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, writeFile, readFile, unlink } from "node:fs/promises";
+import { uploadAsset, downloadAsset } from "../media/cloudinary.service.js";
+import { readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { sign, verify } from "../../config/jwt.js";
 import { fail, limit } from "../auth/security.service.js";
@@ -9,20 +9,7 @@ const root = () =>
 export async function uploadDocument(input, ctx) {
   await limit(`upload:${ctx.req.ip}`, 12, 3600);
   const owner = email.parse(input.email);
-  if (input.base64.length > 7 * 1024 * 1024)
-    fail("Document must be under 5 MB.");
-  const bytes = Buffer.from(input.base64, "base64");
-  if (!bytes.length || bytes.length > 5 * 1024 * 1024)
-    fail("Document must be under 5 MB.");
-  const pdf = bytes.subarray(0, 5).toString() === "%PDF-",
-    png = bytes
-      .subarray(0, 8)
-      .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
-    jpg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
-  if (!pdf && !png && !jpg) fail("Upload a PDF, PNG or JPEG document.");
-  const key = `${randomUUID()}.${pdf ? "pdf" : png ? "png" : "jpg"}`;
-  await mkdir(root(), { recursive: true });
-  await writeFile(path.join(root(), key), bytes, { flag: "wx", mode: 0o600 });
+  const { key } = await uploadAsset(input.base64);
   return {
     uploadToken: sign({ purpose: "document", owner, key }, "24h"),
     name: input.name.slice(0, 200),
@@ -39,6 +26,7 @@ export function documentKey(token, owner) {
 }
 export async function downloadDocument(document) {
   const key = document.key;
+  if (key.startsWith("cloudinary:")) return downloadAsset(key);
   if (!/^[a-f0-9-]{36}\.(pdf|png|jpg)$/.test(key))
     fail("Document storage requires migration.");
   return {

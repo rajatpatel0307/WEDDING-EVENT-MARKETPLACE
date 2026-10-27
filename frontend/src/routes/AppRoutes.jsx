@@ -4,6 +4,7 @@ import GuestRoute from "./GuestRoute";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
 import VendorApprovalRoute from "./VendorApprovalRoute";
+import ProfilePage from "../modules/auth/pages/ProfilePage";
 import LoginPage from "../modules/auth/pages/LoginPage";
 import RegisterPage from "../modules/auth/pages/RegisterPage";
 import ForgotPasswordPage from "../modules/auth/pages/ForgotPasswordPage";
@@ -228,10 +229,12 @@ export default function AppRoutes() {
           element={<ResetPasswordPage change />}
         />
         <Route element={<RoleRoute role="Customer" />}>
+          <Route path="/customer/profile" element={<ProfilePage />} />
           <Route path="/customer/dashboard" element={<Dashboard />} />
           <Route path="/customer/:section" element={<AccountFeaturePage />} />
         </Route>
         <Route element={<RoleRoute role="Vendor" />}>
+          <Route path="/vendor/profile" element={<ProfilePage />} />
           <Route path="/vendor/pending" element={<VendorStatusPage />} />
           <Route path="/vendor/rejected" element={<VendorStatusPage />} />
           <Route path="/vendor/suspended" element={<VendorStatusPage />} />
@@ -255,6 +258,7 @@ export default function AppRoutes() {
               </Suspense>
             }
           >
+            <Route path="profile" element={<ProfilePage />} />
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route
               path="dashboard"

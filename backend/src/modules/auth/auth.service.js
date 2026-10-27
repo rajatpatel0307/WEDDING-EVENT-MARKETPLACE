@@ -33,6 +33,7 @@ import {
   cookieNames,
 } from "./token.service.js";
 import { requireAuth } from "../../middleware/auth.middleware.js";
+import { profilePhotoUrl } from "../media/profile.service.js";
 import { documentKey } from "../vendors/documents.service.js";
 const generic =
   "If an account exists with these details, a verification code has been sent.";
@@ -51,6 +52,7 @@ export function publicUser(user) {
     lastName: user.lastName,
     email: user.email,
     phone: user.phone,
+    profilePhotoUrl: user.profilePhotoUrl,
     role: roles.includes("ADMIN")
       ? "Admin"
       : roles.includes("VENDOR")
@@ -93,7 +95,15 @@ export async function register(input, role, ctx) {
     if (!dbRole) throw Error("Required role missing");
     const now = new Date();
     const user = await User.create(
-      { ...data, passwordHash, termsAcceptedAt: now, privacyAcceptedAt: now },
+      {
+        ...data,
+        profilePhotoUrl: data.profilePhotoToken
+          ? profilePhotoUrl(data.profilePhotoToken, data.email)
+          : null,
+        passwordHash,
+        termsAcceptedAt: now,
+        privacyAcceptedAt: now,
+      },
       { transaction },
     );
     await UserRole.create(

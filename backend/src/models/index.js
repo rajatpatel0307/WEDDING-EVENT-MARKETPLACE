@@ -18,6 +18,7 @@ export const User = sequelize.define("Users", {
   lastName: col(D.STRING(100), "LastName"),
   email: col(D.STRING(320), "Email"),
   phone: col(D.STRING(20), "PhoneNumber"),
+  profilePhotoUrl: col(D.STRING(1000), "ProfilePhotoUrl"),
   passwordHash: col(D.STRING(500), "PasswordHash"),
   emailVerified: col(D.BOOLEAN, "IsEmailVerified", { defaultValue: false }),
   active: col(D.BOOLEAN, "IsActive", { defaultValue: true }),

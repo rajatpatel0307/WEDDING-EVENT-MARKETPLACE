@@ -2,6 +2,10 @@ import {
   layoutUserResolvers,
   subscribeNewsletter,
 } from "../layout.resolvers.js";
+import {
+  uploadProfilePhoto,
+  updateProfilePhoto,
+} from "../../modules/media/profile.service.js";
 import * as auth from "../../modules/auth/auth.service.js";
 import { categories } from "../../modules/auth/auth.validation.js";
 import {
@@ -69,6 +73,8 @@ export const resolvers = {
     ),
     logout: (_, a, c) => auth.logout(c),
     refreshToken: (_, a, c) => auth.refreshToken(c),
+    uploadProfilePhoto: (_, a, c) => uploadProfilePhoto(a.input, c),
+    updateProfilePhoto: (_, a, c) => updateProfilePhoto(a.uploadToken, c),
     uploadVendorDocument: (_, a, c) => uploadDocument(a.input, c),
     reviewVendor: (_, a, c) => reviewVendor(a.input, c),
   },

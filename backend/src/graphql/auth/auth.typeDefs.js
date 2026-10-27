@@ -1,16 +1,18 @@
 export const typeDefs = `#graphql
-  type User { id: ID!, firstName: String!, lastName: String, email: String!, phone: String, role: String!, accountStatus: String!, vendor: Vendor, wishlistCount: Int!, unreadNotificationCount: Int!, unreadMessageCount: Int! }
+  type User { id: ID!, firstName: String!, lastName: String, email: String!, phone: String, profilePhotoUrl: String, role: String!, accountStatus: String!, vendor: Vendor, wishlistCount: Int!, unreadNotificationCount: Int!, unreadMessageCount: Int! }
   type Category { id: ID!, name: String! }
   type Location { id: ID!, address: String!, city: String!, state: String!, country: String!, postalCode: String, latitude: Float, longitude: Float }
   type Document { id: ID!, type: String! }
   type Vendor { id: ID!, businessName: String!, businessDescription: String, businessEmail: String, businessPhone: String, verificationStatus: String!, rejectionReason: String, createdAt: String!, user: User, categories: [Category!]!, locations: [Location!]!, documents: [Document!]! }
   type AuthResponse { success: Boolean!, message: String!, user: User, resetToken: String }
   type UploadedDocument { uploadToken: String!, name: String! }
+  type UploadedPhoto { uploadToken: String!, url: String! }
+  input UploadPhotoInput { email: String, base64: String! }
   type DownloadedDocument { name: String!, mimeType: String!, base64: String! }
-  input CustomerInput { firstName: String!, lastName: String!, email: String!, phone: String!, password: String!, confirmPassword: String!, terms: Boolean!, privacy: Boolean! }
+  input CustomerInput { profilePhotoToken: String, firstName: String!, lastName: String!, email: String!, phone: String!, password: String!, confirmPassword: String!, terms: Boolean!, privacy: Boolean! }
   input LocationInput { address: String!, city: String!, state: String!, country: String!, postalCode: String!, latitude: Float, longitude: Float }
   input DocumentInput { type: String!, uploadToken: String! }
-  input VendorInput { firstName: String!, lastName: String!, email: String!, phone: String!, password: String!, confirmPassword: String!, terms: Boolean!, privacy: Boolean!, businessName: String!, businessDescription: String!, businessEmail: String!, businessPhone: String!, categories: [String!]!, location: LocationInput!, documents: [DocumentInput!]! }
+  input VendorInput { profilePhotoToken: String, firstName: String!, lastName: String!, email: String!, phone: String!, password: String!, confirmPassword: String!, terms: Boolean!, privacy: Boolean!, businessName: String!, businessDescription: String!, businessEmail: String!, businessPhone: String!, categories: [String!]!, location: LocationInput!, documents: [DocumentInput!]! }
   input LoginInput { identifier: String!, password: String! }
   input EmailOtpInput { email: String!, code: String! }
   input EmailInput { email: String! }
@@ -35,6 +37,8 @@ export const typeDefs = `#graphql
     resetPassword(input: ResetPasswordInput!): AuthResponse!
     changePassword(input: ChangePasswordInput!): AuthResponse!
     refreshToken: AuthResponse!
+    uploadProfilePhoto(input: UploadPhotoInput!): UploadedPhoto!
+    updateProfilePhoto(uploadToken: String!): AuthResponse!
     uploadVendorDocument(input: UploadDocumentInput!): UploadedDocument!
     reviewVendor(input: ReviewVendorInput!): Vendor!
   }

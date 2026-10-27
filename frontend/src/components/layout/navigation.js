@@ -43,6 +43,7 @@ export function profileFor(user) {
         "Application status",
         `/vendor/${{ Rejected: "rejected", Suspended: "suspended" }[user.vendor?.verificationStatus] || "pending"}`,
       ],
+      ["My profile", "/vendor/profile"],
       ["Settings", "/auth/change-password"],
     ];
   const items =

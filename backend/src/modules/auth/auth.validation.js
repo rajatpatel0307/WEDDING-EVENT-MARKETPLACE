@@ -37,6 +37,7 @@ export const phone = z
   .regex(/^\+?[1-9]\d{7,14}$/, "Use country code and 8–15 digits");
 export const account = z
   .object({
+    profilePhotoToken: z.string().max(3000).optional(),
     firstName: z.string().trim().min(1).max(100),
     lastName: z.string().trim().min(1).max(100),
     email,

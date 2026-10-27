@@ -28,7 +28,22 @@ export default function ProfileDropdown({ open, setOpen }) {
       className="mn-profile"
       label={
         <>
-          <span className="mn-avatar">{user.firstName?.[0]}</span>
+          <span className="mn-avatar">
+            {user.profilePhotoUrl ? (
+              <img
+                src={user.profilePhotoUrl}
+                alt=""
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              user.firstName?.[0]
+            )}
+          </span>
           <span className="mn-profile-name">{user.firstName}</span>
           <ChevronDown size={12} />
         </>

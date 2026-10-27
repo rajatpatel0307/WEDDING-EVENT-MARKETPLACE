@@ -15,6 +15,13 @@ try {
   );
   if (!migrations.length)
     throw new Error("Run npm run db:migrate before starting the API.");
+  const [profileColumns] = await sequelize.query(
+    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='Users' AND COLUMN_NAME='ProfilePhotoUrl'",
+  );
+  if (!profileColumns.length)
+    throw new Error(
+      "Profile photo migration is missing. Run npm run db:migrate before starting the API.",
+    );
   const { httpServer, apollo } = await createApp();
   httpServer.listen(Number(process.env.PORT || 5000), () =>
     console.log("Wedding marketplace API started."),
