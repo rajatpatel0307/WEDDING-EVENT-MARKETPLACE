@@ -66,6 +66,8 @@ export function validateService(data, { submit = false, imageCount = 0 } = {}) {
     return { step: 2, message: "Maximum quantity must be at least the minimum." };
   if (!amountIsValid(pricing.discount, 100))
     return { step: 2, message: "Discount must be between 0 and 100." };
+  if (!amountIsValid(pricing.taxRate ?? 0, 100))
+    return { step: 2, message: "Tax must be between 0 and 100." };
   const seasonalEmpty =
     !pricing.seasonalFrom &&
     !pricing.seasonalTo &&

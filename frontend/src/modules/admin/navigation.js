@@ -1,4 +1,9 @@
 import {
+  CheckCircle2 as CheckCircleIcon,
+  XCircle as XCircleIcon,
+  ShieldOff as ShieldOffIcon,
+} from "lucide-react";
+import {
   LayoutDashboard,
   Users,
   Store,
@@ -37,20 +42,36 @@ export const adminNavigation = [
     ],
   },
   {
-    label: "CATALOG",
+    label: "SERVICES",
     items: [
+      ["services", "All Services", BriefcaseBusiness],
+      ["services/pending", "Pending Approval", ClipboardCheck],
+      ["services?status=Approved", "Approved Services", CheckCircleIcon],
+      ["services?status=Rejected", "Rejected Services", XCircleIcon],
+      ["services?status=Suspended", "Suspended Services", ShieldOffIcon],
       ["categories", "Categories", Tags],
-      ["sub-categories", "Sub Categories", Layers],
-      ["services", "Services", BriefcaseBusiness],
+      ["sub-categories", "Subcategories", Layers],
+      ["service-items", "Service Items", Layers],
+      ["service-packages", "Service Packages", Files],
     ],
   },
   {
     label: "BOOKINGS",
     items: [
       ["bookings", "All Bookings", CalendarCheck],
-      ...["Pending", "Confirmed", "Completed", "Cancelled", "Disputed"].map(
-        (s) => [`bookings?status=${s}`, s, CalendarCheck],
-      ),
+      ...[
+        "Pending",
+        "Confirmed",
+        "InProgress",
+        "Completed",
+        "Cancelled",
+        "Rejected",
+        "Disputed",
+      ].map((s) => [
+        `bookings?status=${s}`,
+        s === "InProgress" ? "In Progress" : s,
+        CalendarCheck,
+      ]),
     ],
   },
   {

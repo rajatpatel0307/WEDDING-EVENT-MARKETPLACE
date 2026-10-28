@@ -108,7 +108,7 @@ export async function auditAdmin(
   tx,
 ) {
   await sequelize.query(
-    "INSERT INTO dbo.AuditLogs(UserId,ActionType,EntityType,EntityId,OldValue,NewValue,IPAddress) VALUES(:user,:action,:entity,:id,:old,:next,:ip)",
+    "INSERT INTO dbo.AuditLogs(UserId,ActionType,EntityType,EntityId,OldValue,NewValue,IPAddress,UserAgent) VALUES(:user,:action,:entity,:id,:old,:next,:ip,:agent)",
     {
       replacements: {
         user: ctx.auth.user.id,
@@ -118,6 +118,7 @@ export async function auditAdmin(
         old: JSON.stringify(oldValue),
         next: JSON.stringify(newValue),
         ip: ctx.req.ip,
+        agent: String(ctx.req.get?.("user-agent") || "").slice(0, 1000),
       },
       transaction: tx,
     },

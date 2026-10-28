@@ -29,6 +29,22 @@ export default function AdminLayout() {
     [query, setQuery] = useState(""),
     [profile, setProfile] = useState(false);
   const [pendingCount, setPendingCount] = useState(null);
+  const [serviceCount, setServiceCount] = useState(null);
+  useEffect(() => {
+    const abort = new AbortController();
+    const refresh = () =>
+      adminRequest("/services/pending-count", { signal: abort.signal })
+        .then((r) => setServiceCount(r.pendingCount))
+        .catch(() => {});
+    refresh();
+    window.addEventListener("marrynest:service-decision", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      abort.abort();
+      window.removeEventListener("marrynest:service-decision", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
   useEffect(() => {
     const abort = new AbortController();
     const refreshCount = () =>
@@ -124,12 +140,16 @@ export default function AdminLayout() {
               {group.items.map(([path, label, Icon]) => {
                 const [pathname, search = ""] = path.split("?"),
                   active =
-                    (pathname === "vendors/pending"
-                      ? location.pathname === "/admin/vendors/pending"
+                    (pathname.includes("/pending")
+                      ? location.pathname === `/admin/${pathname}`
                       : pathname === section &&
-                        location.pathname !== "/admin/vendors/pending") &&
+                        !location.pathname.endsWith("/pending")) &&
                     (search
-                      ? location.search === `?${search}`
+                      ? Array.from(new URLSearchParams(search)).every(
+                          ([key, value]) =>
+                            new URLSearchParams(location.search).get(key) ===
+                            value,
+                        )
                       : !location.search ||
                         !location.search.includes("status="));
                 return (
@@ -145,6 +165,9 @@ export default function AdminLayout() {
                     <span>{label}</span>
                     {path === "vendors/pending" && pendingCount !== null && (
                       <span className="va-pending-badge">{pendingCount}</span>
+                    )}
+                    {path === "services/pending" && serviceCount !== null && (
+                      <span className="va-pending-badge">{serviceCount}</span>
                     )}
                     {path === "dashboard" && <i />}
                   </Link>

@@ -28,6 +28,7 @@ export const pricingSchema = z
     seasonalFrom: z.iso.date().nullable().default(null),
     seasonalTo: z.iso.date().nullable().default(null),
     additionalCharges: amount.default(0),
+    taxRate: amount.max(100).default(0),
   })
   .strict()
   .refine((v) => v.maximumQuantity >= v.minimumQuantity, {
@@ -83,6 +84,15 @@ export const availabilitySchema = z
   });
 export const policiesSchema = z
   .object({
+    bookingRefundPolicy: z
+      .object({
+        refundPercent: amount.max(100),
+        cancellationFeePercent: amount.max(100),
+        minimumNoticeHours: z.number().int().min(0).max(8760),
+      })
+      .strict()
+      .nullable()
+      .optional(),
     cancellation: text(),
     refund: text(),
     advanceRequired: z.boolean().default(false),
@@ -154,7 +164,15 @@ export const listSchema = z
     category: z.coerce.number().int().nonnegative().default(0),
     subcategory: z.coerce.number().int().nonnegative().default(0),
     approval: z
-      .enum(["", "Draft", "Pending", "Approved", "Rejected", "Suspended"])
+      .enum([
+        "",
+        "Draft",
+        "Pending",
+        "UnderReview",
+        "Approved",
+        "Rejected",
+        "Suspended",
+      ])
       .default(""),
     active: z.enum(["", "true", "false"]).default(""),
     minPrice: z.coerce.number().nonnegative().default(0),
@@ -213,11 +231,17 @@ export function calculatePrice(
   const subtotal =
     Math.round(base * 100) +
     Math.round(Math.round(p.unitPrice * 100) * quantity);
-  const finalPrice =
+  const subtotalAfterDiscount =
     (subtotal -
       Math.round((subtotal * Math.round(p.discount * 100)) / 10000) +
       Math.round(p.additionalCharges * 100)) /
     100;
+  const tax =
+    Math.round(
+      (Math.round(subtotalAfterDiscount * 100) * Math.round(p.taxRate * 100)) /
+        10000,
+    ) / 100;
+  const finalPrice = Math.round((subtotalAfterDiscount + tax) * 100) / 100;
   if (finalPrice > 100000000)
     throw Object.assign(
       new Error("Calculated price exceeds the maximum supported amount."),

@@ -131,7 +131,7 @@ export const resources = {
       joins:
         "JOIN dbo.Vendors v ON v.VendorId=t.VendorId JOIN dbo.Categories c ON c.CategoryId=t.CategoryId",
       statusColumn: "ApprovalStatus",
-      statuses: ["Draft", "Pending", "Approved", "Rejected", "Suspended"],
+      statuses: ["Draft", "Pending", "UnderReview", "Approved", "Rejected", "Suspended"],
       actions: ["Approved", "Rejected", "Suspended"],
     },
   ),

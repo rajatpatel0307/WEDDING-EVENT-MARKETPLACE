@@ -253,7 +253,7 @@ export default function ServiceEditor() {
         Number(p.specialPrice ?? p.basePrice) +
         Number(p.unitPrice) * Number(p.minimumQuantity);
     return (
-      subtotal * (1 - Number(p.discount) / 100) + Number(p.additionalCharges)
+      (subtotal * (1 - Number(p.discount) / 100) + Number(p.additionalCharges)) * (1 + Number(p.taxRate || 0) / 100)
     );
   };
 
@@ -550,13 +550,14 @@ export default function ServiceEditor() {
                       ["minimumQuantity", "Minimum Quantity"],
                       ["maximumQuantity", "Maximum Quantity"],
                       ["discount", "Discount (%)"],
+                      ["taxRate", "Tax (%)"],
                       ["specialPrice", "Special Price (optional)"],
                       ["weekendPrice", "Weekend Price (optional)"],
                       ["seasonalPrice", "Seasonal Price (optional)"],
                       ["additionalCharges", "Additional Charges"],
                     ].map(([key, label]) =>
                       field("pricing", key, label, "number", {
-                        max: key === "discount" ? 100 : 100000000,
+                        max: ["discount", "taxRate"].includes(key) ? 100 : 100000000,
                       }),
                     )}
                     <Field label="Pricing Unit">

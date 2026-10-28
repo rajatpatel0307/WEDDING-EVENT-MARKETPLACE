@@ -1,3 +1,4 @@
+import { approvalHistory } from "../admin/service-approval.service.js";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireRole } from "../../middleware/auth.middleware.js";
@@ -134,7 +135,7 @@ export async function list(input, ctx) {
     p,
   );
   const [stats] = await repo.select(
-    `SELECT COUNT_BIG(*) AS totalServices,SUM(CASE WHEN s.IsActive=1 AND s.ApprovalStatus='Approved' THEN 1 ELSE 0 END) AS activeServices,SUM(CASE WHEN s.ApprovalStatus='Draft' THEN 1 ELSE 0 END) AS draftServices,SUM(CASE WHEN s.ApprovalStatus='Pending' THEN 1 ELSE 0 END) AS pendingApproval,SUM(CASE WHEN s.ApprovalStatus='Approved' THEN 1 ELSE 0 END) AS approvedServices,SUM(CASE WHEN s.ApprovalStatus='Rejected' THEN 1 ELSE 0 END) AS rejectedServices,(SELECT COUNT(DISTINCT bi.BookingId) FROM dbo.BookingItems bi JOIN dbo.Services bs ON bs.ServiceId=bi.ServiceId WHERE bs.VendorId=:id) AS totalBookings FROM dbo.Services s OUTER APPLY(SELECT COUNT(DISTINCT bi.BookingId) AS bookings FROM dbo.BookingItems bi WHERE bi.ServiceId=s.ServiceId) b WHERE s.VendorId=:id`,
+    `SELECT COUNT_BIG(*) AS totalServices,SUM(CASE WHEN s.IsActive=1 AND s.ApprovalStatus='Approved' THEN 1 ELSE 0 END) AS activeServices,SUM(CASE WHEN s.ApprovalStatus='Draft' THEN 1 ELSE 0 END) AS draftServices,SUM(CASE WHEN s.ApprovalStatus IN ('Pending','UnderReview') THEN 1 ELSE 0 END) AS pendingApproval,SUM(CASE WHEN s.ApprovalStatus='Approved' THEN 1 ELSE 0 END) AS approvedServices,SUM(CASE WHEN s.ApprovalStatus='Rejected' THEN 1 ELSE 0 END) AS rejectedServices,(SELECT COUNT(DISTINCT bi.BookingId) FROM dbo.BookingItems bi JOIN dbo.Services bs ON bs.ServiceId=bi.ServiceId WHERE bs.VendorId=:id) AS totalBookings FROM dbo.Services s OUTER APPLY(SELECT COUNT(DISTINCT bi.BookingId) AS bookings FROM dbo.BookingItems bi WHERE bi.ServiceId=s.ServiceId) b WHERE s.VendorId=:id`,
     { id },
   );
   const [rating] = await repo.select(
@@ -197,6 +198,11 @@ export async function details(serviceId, ctx) {
     adminNote: row.AdminNote,
     rejectedAt: row.RejectedAt,
     approvalCycle: row.ApprovalCycle,
+    approvalHistory: await approvalHistory(
+      serviceId,
+      ctx,
+      serviceScope(ctx).id,
+    ),
     actions: actionsFor(
       { ...row, hasHistory: history?.hasHistory },
       serviceScope(ctx).approved,
@@ -373,12 +379,17 @@ export async function submit(serviceId, input, ctx) {
         RejectionReason: null,
         AdminNote: null,
         RejectedAt: null,
+        RejectedBy: null,
+        ApprovedAt: null,
+        ApprovedBy: null,
       },
       tx,
     );
     await audit(
       ctx,
-      "SERVICE_SUBMITTED",
+      row.ApprovalStatus === "Rejected"
+        ? "SERVICE_RESUBMITTED"
+        : "SERVICE_SUBMITTED",
       "Services",
       serviceId,
       { status: row.ApprovalStatus },

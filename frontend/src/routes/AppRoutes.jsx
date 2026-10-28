@@ -15,6 +15,24 @@ import {
   AccountLayout,
   VendorStatusPage,
 } from "../modules/auth/pages/AccountPages";
+const BookingsManagementPage = lazy(
+  () => import("../modules/admin/pages/BookingsManagementPage"),
+);
+const BookingDetailsPage = lazy(
+  () => import("../modules/admin/pages/BookingDetailsPage"),
+);
+const ServicesManagementPage = lazy(
+  () => import("../modules/admin/pages/ServicesManagementPage"),
+);
+const ServiceManagementDetails = lazy(
+  () => import("../modules/admin/pages/ServiceManagementDetails"),
+);
+const AdminServiceEditor = lazy(
+  () => import("../modules/admin/pages/AdminServiceEditor"),
+);
+const ServiceApprovalPage = lazy(
+  () => import("../modules/admin/pages/ServiceApprovalPage"),
+);
 const CustomerLayout = lazy(() => import("../modules/customer/CustomerLayout"));
 const CustomerDashboardPage = lazy(
   () => import("../modules/customer/pages/CustomerDashboard"),
@@ -138,11 +156,19 @@ function PublicPage({ children }) {
 }
 function Legal({ privacy = false }) {
   return (
-    <main id="main-content" className="legal-page max-w-[780px] [margin:60px_auto] [padding:0_25px_60px] [&_>_.eyebrow]:mt-[30px] [&_h1]:text-[42px] [&_h1]:[margin:15px_0_25px] [&_h2]:text-[27px] [&_h2]:[margin:30px_0_12px] [&_p]:text-[14px] [&_p]:leading-[1.9] max-[480.001px]:mt-[25px]">
-      <Link className="back-link inline-flex gap-[8px] items-center [color:#8d6a72] text-[12px] mt-[25px]" to="/auth/signup">
+    <main
+      id="main-content"
+      className="legal-page max-w-[780px] [margin:60px_auto] [padding:0_25px_60px] [&_>_.eyebrow]:mt-[30px] [&_h1]:text-[42px] [&_h1]:[margin:15px_0_25px] [&_h2]:text-[27px] [&_h2]:[margin:30px_0_12px] [&_p]:text-[14px] [&_p]:leading-[1.9] max-[480.001px]:mt-[25px]"
+    >
+      <Link
+        className="back-link inline-flex gap-[8px] items-center [color:#8d6a72] text-[12px] mt-[25px]"
+        to="/auth/signup"
+      >
         ← Back to registration
       </Link>
-      <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full">MARRYNEST</span>
+      <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full">
+        MARRYNEST
+      </span>
       <h1>{privacy ? "Privacy Policy" : "Terms & Conditions"}</h1>
       <div className="info-box [border:1px_solid_#eaddd2] [background:#fcf8f2] rounded-[7px] [padding:15px] text-[12px] [color:#96785c] [margin:18px_0] [&_p]:mt-[6px]">
         Policy preview. The marketplace operator must review and publish its
@@ -216,14 +242,19 @@ function AccountFeaturePage() {
   }[section];
   return (
     <AccountLayout>
-      <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full">YOUR MARRYNEST ACCOUNT</span>
+      <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full">
+        YOUR MARRYNEST ACCOUNT
+      </span>
       <h1>{name || "Page not found"}</h1>
       <p className="dashboard-intro mt-[12px] text-[14px]">
         {name
           ? "This workspace is being prepared. Your account is ready; live marketplace tools will appear here as they become available."
           : "This page is not available."}
       </p>
-      <Link className="text-link [color:#8c414e] font-medium inline-flex items-center gap-[7px] [&:hover]:underline" to="/auth/change-password">
+      <Link
+        className="text-link [color:#8c414e] font-medium inline-flex items-center gap-[7px] [&:hover]:underline"
+        to="/auth/change-password"
+      >
         Manage account security
       </Link>
     </AccountLayout>
@@ -341,6 +372,26 @@ export default function AppRoutes() {
             <Route path="events" element={<CustomerEvents />} />
             <Route path="events/:id" element={<CustomerEventDetails />} />
             <Route path="discover" element={<CustomerDiscovery />} />
+            <Route
+              path="bookings"
+              element={
+                <Suspense
+                  fallback={<div role="status">Loading bookings...</div>}
+                >
+                  <BookingsManagementPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="bookings/:bookingId"
+              element={
+                <Suspense
+                  fallback={<div role="status">Loading booking...</div>}
+                >
+                  <BookingDetailsPage />
+                </Suspense>
+              }
+            />
             <Route
               path="services"
               element={<Navigate to="/customer/discover" replace />}
@@ -568,6 +619,84 @@ export default function AppRoutes() {
               }
             />
             <Route
+              path="services"
+              element={
+                <Suspense
+                  fallback={<div role="status">Loading services...</div>}
+                >
+                  <ServicesManagementPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="services/new"
+              element={
+                <Suspense
+                  fallback={<div role="status">Loading service editor...</div>}
+                >
+                  <AdminServiceEditor />
+                </Suspense>
+              }
+            />
+            <Route
+              path="services/:serviceId/edit"
+              element={
+                <Suspense
+                  fallback={<div role="status">Loading service editor...</div>}
+                >
+                  <AdminServiceEditor />
+                </Suspense>
+              }
+            />
+            <Route
+              path="services/:serviceId"
+              element={
+                <Suspense
+                  fallback={<div role="status">Loading service...</div>}
+                >
+                  <ServiceManagementDetails />
+                </Suspense>
+              }
+            />
+            <Route
+              path="service-items"
+              element={
+                <Suspense fallback={<div role="status">Loading items...</div>}>
+                  <ServicesManagementPage kind="items" />
+                </Suspense>
+              }
+            />
+            <Route
+              path="service-packages"
+              element={
+                <Suspense
+                  fallback={<div role="status">Loading packages...</div>}
+                >
+                  <ServicesManagementPage kind="packages" />
+                </Suspense>
+              }
+            />
+            <Route
+              path="services/pending"
+              element={
+                <Suspense
+                  fallback={<div role="status">Loading service queue...</div>}
+                >
+                  <ServiceApprovalPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="services/:serviceId/review"
+              element={
+                <Suspense
+                  fallback={<div role="status">Loading service review...</div>}
+                >
+                  <ServiceApprovalPage review />
+                </Suspense>
+              }
+            />
+            <Route
               path="applications"
               element={<Navigate to="/admin/vendors/pending" replace />}
             />
@@ -640,7 +769,10 @@ export default function AppRoutes() {
       <Route
         path="*"
         element={
-          <main id="main-content" className="legal-page max-w-[780px] [margin:60px_auto] [padding:0_25px_60px] [&_>_.eyebrow]:mt-[30px] [&_h1]:text-[42px] [&_h1]:[margin:15px_0_25px] [&_h2]:text-[27px] [&_h2]:[margin:30px_0_12px] [&_p]:text-[14px] [&_p]:leading-[1.9] max-[480.001px]:mt-[25px]">
+          <main
+            id="main-content"
+            className="legal-page max-w-[780px] [margin:60px_auto] [padding:0_25px_60px] [&_>_.eyebrow]:mt-[30px] [&_h1]:text-[42px] [&_h1]:[margin:15px_0_25px] [&_h2]:text-[27px] [&_h2]:[margin:30px_0_12px] [&_p]:text-[14px] [&_p]:leading-[1.9] max-[480.001px]:mt-[25px]"
+          >
             <h1>This page isn't here.</h1>
             <Link to="/auth/login">Return to sign in</Link>
           </main>

@@ -1,3 +1,4 @@
+import { milestone as bookingMilestone } from "../admin/booking-finance.js";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
@@ -46,6 +47,13 @@ export async function bookingDecision(recordId, input, ctx) {
       old.BookingId,
       {
         BookingStatus: next,
+        ...(next === "Rejected"
+          ? {
+              CancelledAt: new Date(),
+              CancelledBy: user.id,
+              CancellationReason: body.note,
+            }
+          : {}),
         VendorNotes: body.note || old.VendorNotes,
         UpdatedAt: new Date(),
       },
@@ -71,12 +79,11 @@ export async function bookingDecision(recordId, input, ctx) {
       { status: next, note: body.note },
       tx,
     );
-    await notifyCustomer(
-      old.CustomerId,
+    await bookingMilestone(
+      old,
+      `status:${next}`,
       `Booking ${next.toLowerCase()}`,
       `${old.BookingNumber} has been ${next.toLowerCase()}.${body.note ? ` ${body.note}` : ""}`,
-      "Booking",
-      old.BookingId,
       tx,
     );
     return {

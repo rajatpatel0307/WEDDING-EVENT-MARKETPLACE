@@ -1,3 +1,6 @@
+import { up as adminBookingsUp } from "../migrations/013-admin-bookings.js";
+import { up as adminServicesUp } from "../migrations/012-admin-services.js";
+import { up as serviceApprovalUp } from "../migrations/011-service-approval.js";
 import { up as serviceManagementUp } from "../migrations/010-service-management.js";
 import { up as customerWorkspaceUp } from "../migrations/009-customer-workspace.js";
 import { up as workspaceUp } from "../migrations/008-vendor-workspace.js";
@@ -163,6 +166,57 @@ try {
       await serviceManagementUp(sequelize.getQueryInterface(), transaction);
       await sequelize.query(
         "INSERT INTO dbo.AuthMigrations(Name) VALUES('010-service-management')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='011-service-approval'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await serviceApprovalUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES('011-service-approval')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='012-admin-services'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await adminServicesUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES('012-admin-services')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='013-admin-bookings'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await adminBookingsUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES('013-admin-bookings')",
         { transaction },
       );
     }

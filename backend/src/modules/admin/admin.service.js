@@ -1,3 +1,5 @@
+import { changeStatus as changeBookingStatus } from "./bookings-management.service.js";
+import { decide as decideService } from "./service-approval.service.js";
 import { decideVendor } from "./vendor-verification.service.js";
 import { z } from "zod";
 import { sequelize } from "../../config/database.js";
@@ -32,16 +34,6 @@ export async function reviewVendor(
     withTransaction,
   );
 }
-const transitions = {
-  Pending: ["Confirmed", "Cancelled"],
-  Accepted: ["Confirmed", "Cancelled"],
-  PaymentPending: ["Cancelled"],
-  Confirmed: ["Completed", "Cancelled", "Disputed"],
-  InProgress: ["Completed", "Disputed"],
-  Completed: ["Disputed"],
-  Disputed: [],
-  Cancelled: [],
-};
 export async function action(name, id, input, ctx) {
   requireRole(ctx, "ADMIN");
   const r = getResource(name);
@@ -50,6 +42,38 @@ export async function action(name, id, input, ctx) {
   if (!r.actions?.includes(body.action)) error("This action is not supported.");
   if (["vendors", "applications"].includes(name))
     error("Use the vendor review endpoint.");
+  if (name === "services")
+    return decideService(
+      id,
+      { Approved: "approve", Rejected: "reject", Suspended: "suspend" }[
+        body.action
+      ],
+      {
+        expectedStatus: body.expectedStatus,
+        reason: body.note,
+        notes: body.note,
+      },
+      ctx,
+    );
+  if (name === "bookings") {
+    const current = await repo.select(
+      "SELECT UpdatedAt,BookingStatus FROM dbo.Booking WHERE BookingId=:id",
+      { id },
+    );
+    if (!current.length) error("Booking not found.", 404);
+    if (current[0].BookingStatus !== body.expectedStatus)
+      error("Booking changed. Refresh before continuing.", 409);
+    return changeBookingStatus(
+      id,
+      body.action,
+      {
+        expectedUpdatedAt: new Date(current[0].UpdatedAt).toISOString(),
+        reason: body.note,
+        notes: body.note,
+      },
+      ctx,
+    );
+  }
   return repo.transaction(async (tx) => {
     const old = await repo.lockRecord(r, id, tx);
     const previous =
@@ -67,23 +91,6 @@ export async function action(name, id, input, ctx) {
     if (previous !== body.expectedStatus)
       error("This record changed. Refresh before continuing.", 409);
     const values = {};
-    if (name === "services") {
-      const permitted = {
-        Pending: ["Approved", "Rejected", "Suspended"],
-        Approved: ["Suspended"],
-        Suspended: ["Approved", "Rejected"],
-      };
-      if (!permitted[previous]?.includes(body.action))
-        error("This service review transition is not allowed.", 409);
-      if (body.action === "Rejected" && !body.note.trim())
-        error("A rejection reason is required.");
-      Object.assign(values, {
-        IsActive: 0,
-        RejectionReason: body.action === "Rejected" ? body.note : null,
-        AdminNote: body.note || null,
-        RejectedAt: body.action === "Rejected" ? new Date() : null,
-      });
-    }
     if (name === "customers") {
       const [admin] = await repo.select(
         "SELECT COUNT(*) AS total FROM dbo.UserRoles ur JOIN dbo.Roles r ON r.RoleId=ur.RoleId WHERE ur.UserId=:id AND r.RoleCode='ADMIN'",
@@ -99,29 +106,6 @@ export async function action(name, id, input, ctx) {
           { replacements: { id }, transaction: tx },
         );
     } else {
-      if (name === "bookings") {
-        if (!transitions[previous]?.includes(body.action))
-          error("This booking status transition is not allowed.");
-        if (
-          body.action === "Confirmed" &&
-          old.PaymentStatus !== "Paid" &&
-          Number(old.PaidAmount) < Number(old.AdvanceAmount)
-        )
-          error("Required advance payment has not been received.");
-        await sequelize.query(
-          "INSERT INTO dbo.BookingStatusHistory(BookingId,OldStatus,NewStatus,ChangedBy,Remarks) VALUES(:id,:old,:next,:admin,:note)",
-          {
-            replacements: {
-              id,
-              old: previous,
-              next: body.action,
-              admin: ctx.auth.user.id,
-              note: body.note.slice(0, 1000),
-            },
-            transaction: tx,
-          },
-        );
-      }
       values[r.statusColumn] = r.statusValues
         ? r.statusValues[body.action]
         : body.action;

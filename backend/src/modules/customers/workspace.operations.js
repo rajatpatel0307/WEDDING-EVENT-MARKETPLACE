@@ -1,3 +1,7 @@
+import {
+  capturePolicy,
+  milestone as bookingMilestone,
+} from "../admin/booking-finance.js";
 import { randomUUID } from "node:crypto";
 import { recordServiceMetric } from "../vendors/service-metrics.js";
 import { calculatePrice } from "../vendors/service-management.validation.js";
@@ -152,12 +156,17 @@ async function createBooking(
     },
     tx,
   );
-  await notifyBusiness(
-    vendorId,
-    "New booking request",
-    `${number} is ready for your review.`,
-    "Booking",
-    bookingId,
+  const notificationBooking = {
+    BookingId: bookingId,
+    CustomerId: id,
+    VendorId: vendorId,
+  };
+  await capturePolicy(notificationBooking, tx);
+  await bookingMilestone(
+    notificationBooking,
+    "created",
+    "Booking created",
+    `${number} has been created and is awaiting vendor acceptance.`,
     tx,
   );
   await audit(

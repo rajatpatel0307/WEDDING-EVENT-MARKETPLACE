@@ -1,3 +1,10 @@
+import {
+  milestone,
+  history as bookingHistory,
+  financialRows,
+  financialSummary,
+} from "../admin/booking-finance.js";
+import { reconcileRefund } from "../admin/booking-refunds.service.js";
 import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
@@ -206,6 +213,42 @@ export async function settle(payment) {
       auth: { user: { id: order.CustomerId } },
       req: { ip: "payment-provider" },
     };
+    await insert(
+      "PaymentTransactions",
+      "TransactionId",
+      {
+        PaymentId: p.id,
+        TransactionType: "Capture",
+        Amount: amount,
+        TransactionStatus: "Success",
+        GatewayTransactionId: payment.id,
+      },
+      tx,
+    );
+    await bookingHistory(
+      booking,
+      "PaymentReceived",
+      ctx,
+      "Captured payment verified by the server.",
+      `INR ${amount}`,
+      tx,
+    );
+    const ledger = await financialRows(booking.BookingId, tx, true),
+      summary = financialSummary(booking, ledger);
+    if (summary.refunded > 0 || summary.refundPending > 0)
+      await repo.update(
+        { table: "Booking", id: "BookingId" },
+        booking.BookingId,
+        {
+          PaymentStatus:
+            summary.refundPending > 0
+              ? "RefundPending"
+              : summary.refunded >= summary.paid
+                ? "Refunded"
+                : "PartiallyRefunded",
+        },
+        tx,
+      );
     await audit(
       ctx,
       "PAYMENT_CONFIRMED",
@@ -215,22 +258,21 @@ export async function settle(payment) {
       { amount, payment: payment.id, reconciliation },
       tx,
     );
-    await notify(
-      order.CustomerId,
-      "Payment received",
-      `${booking.BookingNumber}: INR ${amount} received.${reconciliation ? " Support will review your booking balance." : ""}`,
-      "Booking",
-      booking.BookingId,
+    await milestone(
+      booking,
+      `payment:${payment.id}`,
+      "Payment successful",
+      `${booking.BookingNumber}: INR ${amount} received.${reconciliation ? " Support will review the payment balance." : ""}`,
       tx,
     );
-    await notifyBusiness(
-      booking.VendorId,
-      "Booking payment received",
-      `${booking.BookingNumber}: INR ${amount} received.`,
-      "Booking",
-      booking.BookingId,
-      tx,
-    );
+    if (next !== booking.BookingStatus)
+      await milestone(
+        booking,
+        `status:${next}`,
+        "Booking confirmed",
+        `${booking.BookingNumber} is confirmed.`,
+        tx,
+      );
     return { message: "Payment verified and confirmed." };
   });
 }
@@ -262,6 +304,98 @@ export async function verifyPayment(input, ctx) {
     fail("Payment does not match your order.", 409);
   return settle(payment);
 }
+export async function recordFailedPayment(payment) {
+  if (!payment?.order_id || !payment.id || payment.status !== "failed") return;
+  return repo.transaction(async (tx) => {
+    const [order] = await repo.select(
+      "SELECT * FROM dbo.CustomerPaymentOrders WITH(UPDLOCK,HOLDLOCK) WHERE GatewayOrderId=:id",
+      { id: payment.order_id },
+      tx,
+    );
+    if (
+      !order ||
+      Number(order.AmountMinor) !== payment.amount ||
+      order.Currency !== payment.currency
+    )
+      return;
+    const [booking] = await repo.select(
+      "SELECT * FROM dbo.Booking WITH(UPDLOCK,HOLDLOCK) WHERE BookingId=:id",
+      { id: order.BookingId },
+      tx,
+    );
+    const [prior] = await repo.select(
+      "SELECT PaymentId FROM dbo.Payments WHERE GatewayName='Razorpay' AND GatewayTransactionId=:id",
+      { id: payment.id },
+      tx,
+    );
+    if (prior) return;
+    const p = await insert(
+      "Payments",
+      "PaymentId",
+      {
+        BookingId: booking.BookingId,
+        PaymentReference: payment.id,
+        GatewayName: "Razorpay",
+        GatewayTransactionId: payment.id,
+        PaymentMethod: payment.method || "Online",
+        Amount: payment.amount / 100,
+        Currency: payment.currency,
+        PaymentStatus: "Failed",
+      },
+      tx,
+    );
+    await insert(
+      "PaymentTransactions",
+      "TransactionId",
+      {
+        PaymentId: p.id,
+        TransactionType: "PaymentFailed",
+        Amount: payment.amount / 100,
+        TransactionStatus: "Failed",
+        GatewayTransactionId: payment.id,
+      },
+      tx,
+    );
+    if (
+      !Number(booking.PaidAmount) &&
+      !["RefundPending", "Refunded"].includes(booking.PaymentStatus)
+    )
+      await repo.update(
+        { table: "Booking", id: "BookingId" },
+        booking.BookingId,
+        { PaymentStatus: "Failed", UpdatedAt: new Date() },
+        tx,
+      );
+    const ctx = {
+      auth: { user: { id: booking.CustomerId } },
+      req: { ip: "payment-provider" },
+    };
+    await bookingHistory(
+      booking,
+      "PaymentFailed",
+      ctx,
+      "The payment provider reported a failed attempt.",
+      "",
+      tx,
+    );
+    await audit(
+      ctx,
+      "PAYMENT_FAILED",
+      "Booking",
+      booking.BookingId,
+      null,
+      { payment: payment.id, amount: payment.amount / 100 },
+      tx,
+    );
+    await milestone(
+      booking,
+      `payment-failed:${payment.id}`,
+      "Payment failed",
+      `${booking.BookingNumber}: the payment attempt failed.`,
+      tx,
+    );
+  });
+}
 export async function webhook(req, res) {
   try {
     if (!process.env.RAZORPAY_WEBHOOK_SECRET)
@@ -281,6 +415,14 @@ export async function webhook(req, res) {
     const event = JSON.parse(req.body.toString("utf8"));
     if (event.event === "payment.captured")
       await settle(event.payload.payment.entity);
+    if (event.event === "payment.failed")
+      await recordFailedPayment(event.payload?.payment?.entity);
+    if (
+      ["refund.created", "refund.processed", "refund.failed"].includes(
+        event.event,
+      )
+    )
+      await reconcileRefund(event.payload?.refund?.entity);
     return res.json({ success: true });
   } catch (e) {
     return res.status(e.status || 500).json({

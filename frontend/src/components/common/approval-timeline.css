@@ -1,0 +1,11 @@
+.sa-timeline {
+  padding-left: 22px;
+}
+.sa-timeline li {
+  padding: 4px 0 20px 12px;
+  border-left: 2px solid #d7e6db;
+}
+.sa-timeline p {
+  margin: 7px 0;
+  color: #64716a;
+}

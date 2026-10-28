@@ -49,6 +49,7 @@ const approvalTabs = [
   ["", "All Services"],
   ["Draft", "Drafts"],
   ["Pending", "Pending Approval"],
+  ["UnderReview", "Admin Review"],
   ["Approved", "Approved"],
   ["Rejected", "Rejected"],
   ["Suspended", "Suspended"],
@@ -75,16 +76,19 @@ export default function ServiceList() {
   const state = useVendorData(path, version);
   const metadata = useVendorData("/services/metadata");
 
-  const change = useCallback((key, value) => {
-    setParams((p) => {
-      const n = new URLSearchParams(p);
-      if (value) n.set(key, value);
-      else n.delete(key);
-      if (key !== "page") n.set("page", "1");
-      if (key === "category") n.delete("subcategory");
-      return n;
-    });
-  }, [setParams]);
+  const change = useCallback(
+    (key, value) => {
+      setParams((p) => {
+        const n = new URLSearchParams(p);
+        if (value) n.set(key, value);
+        else n.delete(key);
+        if (key !== "page") n.set("page", "1");
+        if (key === "category") n.delete("subcategory");
+        return n;
+      });
+    },
+    [setParams],
+  );
 
   useEffect(() => {
     const currentQ = params.get("q") || "";
@@ -141,8 +145,8 @@ export default function ServiceList() {
         <div className="sm-warning flex items-center gap-2">
           <Sparkles size={16} className="text-amber-500 shrink-0" />
           <span>
-            You can prepare drafts now. Your business must be approved and active
-            before you can submit a service for public listing.
+            You can prepare drafts now. Your business must be approved and
+            active before you can submit a service for public listing.
           </span>
         </div>
       )}
@@ -159,7 +163,10 @@ export default function ServiceList() {
               : Number(rawValue || 0).toLocaleString("en-IN");
 
           return (
-            <div className="sm-stat transition-all duration-200 hover:-translate-y-0.5" key={key}>
+            <div
+              className="sm-stat transition-all duration-200 hover:-translate-y-0.5"
+              key={key}
+            >
               <span className={`sm-stat-icon tone-${i % 4}`}>
                 <Icon size={19} />
               </span>
@@ -180,7 +187,10 @@ export default function ServiceList() {
             </h2>
             <p>Thoughtfully created. Effortlessly managed.</p>
           </div>
-          <ArrowUpRight size={22} className="text-muted-foreground opacity-70" />
+          <ArrowUpRight
+            size={22}
+            className="text-muted-foreground opacity-70"
+          />
         </div>
 
         {/* Improved Tab Styling */}
@@ -189,7 +199,9 @@ export default function ServiceList() {
             <button
               key={value}
               type="button"
-              className={(params.get("approval") || "") === value ? "selected" : ""}
+              className={
+                (params.get("approval") || "") === value ? "selected" : ""
+              }
               onClick={() => change("approval", value)}
             >
               {label}
@@ -216,7 +228,9 @@ export default function ServiceList() {
           >
             <SlidersHorizontal size={16} />
             Filters
-            {params.size > 0 && <span className="w-2 h-2 rounded-full bg-primary inline-block ml-1" />}
+            {params.size > 0 && (
+              <span className="w-2 h-2 rounded-full bg-primary inline-block ml-1" />
+            )}
           </button>
           <select
             aria-label="Sort services"
@@ -237,14 +251,14 @@ export default function ServiceList() {
             {select(
               "category",
               "Category",
-              (metadata.data?.categories || []).map((c) => [c.id, c.name])
+              (metadata.data?.categories || []).map((c) => [c.id, c.name]),
             )}
             {select(
               "subcategory",
               "Subcategory",
               (metadata.data?.subcategories || [])
                 .filter((s) => !category || s.categoryId === category)
-                .map((s) => [s.id, s.name])
+                .map((s) => [s.id, s.name]),
             )}
             {select("active", "Active status", [
               ["true", "Active"],
@@ -253,6 +267,7 @@ export default function ServiceList() {
             {select("approval", "Approval status", [
               ["Draft", "Draft"],
               ["Pending", "Pending Approval"],
+              ["UnderReview", "Admin Review"],
               ["Approved", "Approved"],
               ["Rejected", "Rejected"],
               ["Suspended", "Suspended"],
@@ -326,7 +341,10 @@ export default function ServiceList() {
                 </thead>
                 <tbody>
                   {data.rows.map((s) => (
-                    <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                    <tr
+                      key={s.id}
+                      className="hover:bg-muted/30 transition-colors"
+                    >
                       <td>
                         <Link
                           className="sm-service-cell group"
@@ -339,7 +357,9 @@ export default function ServiceList() {
                             className="object-cover rounded-md group-hover:scale-105 transition-transform"
                           />
                           <div>
-                            <strong className="group-hover:text-primary transition-colors">{s.name}</strong>
+                            <strong className="group-hover:text-primary transition-colors">
+                              {s.name}
+                            </strong>
                             <small title={s.id}>
                               #{s.id.slice(0, 8).toUpperCase()}
                             </small>
@@ -354,7 +374,13 @@ export default function ServiceList() {
                         {money(s.price)}
                         <small>Starting price</small>
                       </td>
-                      <td>{s.location || <span className="text-muted-foreground/60 italic">Not set</span>}</td>
+                      <td>
+                        {s.location || (
+                          <span className="text-muted-foreground/60 italic">
+                            Not set
+                          </span>
+                        )}
+                      </td>
                       <td>
                         <Status
                           status={
@@ -369,7 +395,9 @@ export default function ServiceList() {
                             className={`sm-dot sm-dot-${s.status.toLowerCase()}`}
                           />
                           <span className="text-sm font-medium">
-                            {s.status === "Pending" ? "Pending Approval" : s.status}
+                            {s.status === "Pending"
+                              ? "Pending Approval"
+                              : s.status}
                           </span>
                         </div>
                       </td>
@@ -380,7 +408,9 @@ export default function ServiceList() {
                           {s.rating ? Number(s.rating).toFixed(1) : "New"}
                         </span>
                       </td>
-                      <td className="text-muted-foreground">{date(s.updatedAt)}</td>
+                      <td className="text-muted-foreground">
+                        {date(s.updatedAt)}
+                      </td>
                       <td>
                         <ServiceActions
                           service={s}
@@ -399,7 +429,10 @@ export default function ServiceList() {
             {/* Enhanced Mobile Cards */}
             <div className="sm-mobile-cards">
               {data.rows.map((s) => (
-                <article key={s.id} className="p-4 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow">
+                <article
+                  key={s.id}
+                  className="p-4 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow"
+                >
                   <div className="sm-mobile-service flex items-start gap-3">
                     <img
                       loading="lazy"
@@ -409,7 +442,9 @@ export default function ServiceList() {
                     />
                     <div className="flex-1 min-w-0">
                       <Link to={`/vendor/services/${s.id}`}>
-                        <h3 className="font-semibold truncate hover:text-primary">{s.name}</h3>
+                        <h3 className="font-semibold truncate hover:text-primary">
+                          {s.name}
+                        </h3>
                       </Link>
                       <p className="text-sm text-muted-foreground truncate">
                         {s.category} {s.subcategory ? `· ${s.subcategory}` : ""}
@@ -421,8 +456,12 @@ export default function ServiceList() {
                   </div>
                   <div className="sm-mobile-meta mt-3 pt-3 border-t flex flex-col gap-1.5 text-sm">
                     <div className="flex items-center justify-between">
-                      <strong className="text-base font-bold">{money(s.price)}</strong>
-                      <span className="text-xs text-muted-foreground">{s.location || "Location not set"}</span>
+                      <strong className="text-base font-bold">
+                        {money(s.price)}
+                      </strong>
+                      <span className="text-xs text-muted-foreground">
+                        {s.location || "Location not set"}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{s.bookings} bookings</span>
@@ -466,9 +505,9 @@ export default function ServiceList() {
           <span>
             {data?.total
               ? `${(page - 1) * pageSize + 1}–${Math.min(
-                page * pageSize,
-                data.total
-              )} of ${data.total} services`
+                  page * pageSize,
+                  data.total,
+                )} of ${data.total} services`
               : "0 services"}
           </span>
           <label>
@@ -504,8 +543,8 @@ export default function ServiceList() {
       </section>
 
       <p className="sm-footnote flex items-center gap-1.5 text-muted-foreground text-xs mt-4">
-        <ShieldCheck size={14} className="text-primary" /> Your listings go live only after approval by
-        the MarryNest team.
+        <ShieldCheck size={14} className="text-primary" /> Your listings go live
+        only after approval by the MarryNest team.
       </p>
     </div>
   );

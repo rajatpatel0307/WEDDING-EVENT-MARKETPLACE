@@ -1,3 +1,4 @@
+import { startBookingJobs } from "./src/modules/admin/booking-jobs.js";
 import { validateEnvironment } from "./src/config/environment.js";
 import { sequelize } from "./src/config/database.js";
 import { createApp } from "./src/app.js";
@@ -43,11 +44,23 @@ try {
     throw new Error(
       "Customer workspace migration missing. Run npm run db:migrate.",
     );
+  const [bookingMigration] = await sequelize.query(
+    "SELECT Name FROM dbo.AuthMigrations WHERE Name='013-admin-bookings'",
+  );
+  if (!bookingMigration.length)
+    throw new Error(
+      "Admin bookings migration is missing. Run npm run db:migrate before starting the API.",
+    );
   const { httpServer, apollo } = await createApp();
   httpServer.listen(Number(process.env.PORT || 5000), () =>
     console.log("Wedding marketplace API started."),
   );
+  const stopJobs =
+    process.env.BOOKING_JOBS_ENABLED === "false"
+      ? async () => {}
+      : startBookingJobs();
   const stop = async () => {
+    await stopJobs();
     await apollo.stop();
     await sequelize.close();
   };

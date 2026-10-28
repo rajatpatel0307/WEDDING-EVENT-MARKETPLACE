@@ -214,6 +214,14 @@ export default function AdminTable({
       return;
     }
     setFormError("");
+    if (resource === "services") {
+      navigate(`/admin/services/${row.id}/review`);
+      return;
+    }
+    if (resource === "bookings") {
+      navigate(`/admin/bookings/${row.id}`);
+      return;
+    }
     setDialog({ row, action });
   }
   async function submit(e) {

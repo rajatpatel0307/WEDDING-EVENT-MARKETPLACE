@@ -1,3 +1,9 @@
+import { up as approvalUp } from "../migrations/011-service-approval.js";
+import {
+  review as reviewService,
+  pending as pendingServices,
+  decide as decideService,
+} from "../src/modules/admin/service-approval.service.js";
 // Real MSSQL/REST integration. Migration, fixtures and all changes roll back together.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -28,6 +34,7 @@ try {
     sequelize.transaction = async (fn) => fn(tx);
     try {
       await up(sequelize.getQueryInterface(), tx);
+      await approvalUp(sequelize.getQueryInterface(), tx);
       const owner = randomUUID(),
         otherOwner = randomUUID(),
         admin = randomUUID(),
@@ -99,14 +106,14 @@ try {
         );
         return result.data ?? result;
       }
+      await query(
+        "INSERT INTO dbo.VendorCategories(VendorId,CategoryId) SELECT :vendor,CategoryId FROM dbo.Categories WHERE IsActive=1",
+        { vendor },
+      );
       const metadata = await request("/services/metadata");
       assert.equal(Object.keys(metadata.templates).length, 17);
       const ids = [];
       for (const category of metadata.categories) {
-        await query(
-          "INSERT INTO dbo.VendorCategories(VendorId,CategoryId) VALUES(:vendor,:category)",
-          { vendor, category: category.id },
-        );
         const attributes = Object.fromEntries(
           metadata.templates[category.name].map((f) => [
             f.key,
@@ -247,12 +254,21 @@ try {
         req: { ip: "127.0.0.1" },
         auth: { user: await loadUser(admin) },
       };
+      const queue = await pendingServices({}, adminCtx);
+      assert.ok(
+        queue.rows.some((row) => row.id.toLowerCase() === id.toLowerCase()),
+      );
+      await decideService(id, "start-review", {}, adminCtx);
+      const reviewed = await reviewService(id, adminCtx);
+      assert.equal(reviewed.ApprovalStatus, "UnderReview");
+      assert.equal(reviewed.images.length, 2);
+      assert.equal(reviewed.packages.length, 1);
       await adminAction(
         "services",
         id,
         {
           action: "Rejected",
-          expectedStatus: "Pending",
+          expectedStatus: "UnderReview",
           note: "Please improve your description.",
         },
         adminCtx,
@@ -274,7 +290,33 @@ try {
         adminCtx,
       );
       detail = await request(`/services/${id}`);
-      assert.equal(detail.active, false);
+      assert.equal(detail.active, true);
+      const approvedReview = await reviewService(id, adminCtx);
+      assert.equal(
+        approvedReview.ApprovedBy.toLowerCase(),
+        admin.toLowerCase(),
+      );
+      assert.ok(approvedReview.ApprovedAt);
+      assert.ok(
+        detail.approvalHistory.some((h) => h.action === "SERVICE_REJECT"),
+      );
+      assert.ok(
+        detail.approvalHistory.some(
+          (h) => h.action === "VENDOR_SERVICE_RESUBMITTED",
+        ),
+      );
+      assert.ok(
+        detail.approvalHistory.some((h) => h.action === "SERVICE_APPROVE"),
+      );
+      const [[notifications]] = await query(
+        "SELECT COUNT(*) AS total FROM dbo.Notifications WHERE ReferenceType='Service' AND ReferenceId=:id",
+        { id },
+      );
+      assert.equal(notifications.total, 2);
+      await decideService(id, "deactivate", {}, adminCtx);
+      assert.equal((await reviewService(id, adminCtx)).IsActive, false);
+      await decideService(id, "activate", {}, adminCtx);
+      detail = await request(`/services/${id}`);
       await request(`/services/${id}/active`, "PATCH", {
         active: true,
         expectedUpdatedAt: detail.updatedAt,

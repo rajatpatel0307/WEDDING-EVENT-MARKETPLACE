@@ -1,3 +1,4 @@
+import ApprovalTimeline from "../../../components/common/ApprovalTimeline";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -302,6 +303,7 @@ export default function ServiceDetails() {
       </div>
       <div className="sm-tabs sm-detail-tabs">
         {[
+          "Approval History",
           "Overview",
           "Pricing",
           "Items",
@@ -324,6 +326,11 @@ export default function ServiceDetails() {
         ))}
       </div>
       <Panel title={tab}>
+        {tab === "Approval History" && (
+          <div className="sm-form-body">
+            <ApprovalTimeline rows={s.approvalHistory} />
+          </div>
+        )}
         {tab === "Overview" && (
           <div className="sm-form-body">
             <ServicePreview

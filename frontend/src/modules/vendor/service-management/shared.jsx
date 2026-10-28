@@ -62,6 +62,7 @@ export const blank = () => ({
     seasonalFrom: null,
     seasonalTo: null,
     additionalCharges: 0,
+    taxRate: 0,
   },
   items: [],
   location: {
@@ -131,7 +132,13 @@ export function editableDocument(data) {
 export function Status({ status, active }) {
   return (
     <div className="sm-status">
-      <Badge>{status === "Pending" ? "Pending Approval" : status}</Badge>
+      <Badge>
+        {status === "Pending"
+          ? "Pending Approval"
+          : status === "UnderReview"
+            ? "Admin Review"
+            : status}
+      </Badge>
       {status === "Approved" && <Badge>{active ? "Active" : "Inactive"}</Badge>}
     </div>
   );

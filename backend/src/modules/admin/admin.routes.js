@@ -1,3 +1,7 @@
+import * as bookingManagement from "./bookings-management.service.js";
+import { initiate as initiateBookingRefund } from "./booking-refunds.service.js";
+import * as serviceManagement from "./services-management.service.js";
+import * as serviceApproval from "./service-approval.service.js";
 import { Router, json } from "express";
 import { rateLimit } from "express-rate-limit";
 import { authenticate } from "../auth/token.service.js";
@@ -15,7 +19,6 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
       standardHeaders: "draft-8",
       legacyHeaders: false,
     }),
-    json({ limit: "64kb" }),
   );
   router.use(async (req, res, next) => {
     try {
@@ -24,13 +27,11 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
         (req.get("origin") !== process.env.FRONTEND_URL ||
           req.get("x-admin-request") !== "1")
       )
-        return res
-          .status(403)
-          .json({
-            success: false,
-            message: "Request origin is not allowed.",
-            data: null,
-          });
+        return res.status(403).json({
+          success: false,
+          message: "Request origin is not allowed.",
+          data: null,
+        });
       req.admin = { req, res, auth: await authenticateRequest(req) };
       requireRole(req.admin, "ADMIN");
       res.set("Cache-Control", "no-store");
@@ -39,6 +40,268 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
       next(error);
     }
   });
+  const standardJson = json({ limit: "64kb" }),
+    uploadJson = json({ limit: "8mb" });
+  router.use((req, res, next) =>
+    (req.path.endsWith("/images/upload") ? uploadJson : standardJson)(
+      req,
+      res,
+      next,
+    ),
+  );
+  router.get("/bookings", async (req, res) =>
+    res.json(await bookingManagement.list(req.query, req.admin)),
+  );
+  router.get("/bookings/statistics", async (req, res) =>
+    res.json(await bookingManagement.statistics(req.admin)),
+  );
+  router.get("/bookings/options", async (req, res) =>
+    res.json(await bookingManagement.options(req.query, req.admin)),
+  );
+  router.get("/bookings/:id", async (req, res) =>
+    res.json(await bookingManagement.detail(req.params.id, req.admin)),
+  );
+  router.get("/bookings/:id/items", async (req, res) =>
+    res.json(await bookingManagement.items(req.params.id, req.admin)),
+  );
+  router.get("/bookings/:id/status-history", async (req, res) =>
+    res.json(await bookingManagement.timeline(req.params.id, req.admin)),
+  );
+  router.get("/bookings/:id/payment", async (req, res) =>
+    res.json(await bookingManagement.payment(req.params.id, req.admin)),
+  );
+  router.get("/bookings/:id/payout", async (req, res) =>
+    res.json(await bookingManagement.payout(req.params.id, req.admin)),
+  );
+  router.post("/bookings/:id/cancel", async (req, res) =>
+    res.json(
+      await bookingManagement.changeStatus(
+        req.params.id,
+        "Cancelled",
+        req.body,
+        req.admin,
+      ),
+    ),
+  );
+  router.post("/bookings/:id/status", async (req, res) => {
+    const { status, ...input } = req.body;
+    res.json(
+      await bookingManagement.changeStatus(
+        req.params.id,
+        status,
+        input,
+        req.admin,
+      ),
+    );
+  });
+  router.post("/bookings/:id/policy-review", async (req, res) =>
+    res.json(
+      await bookingManagement.reviewPolicy(req.params.id, req.body, req.admin),
+    ),
+  );
+  router.post("/bookings/:id/refund", async (req, res) =>
+    res
+      .status(202)
+      .json(await initiateBookingRefund(req.params.id, req.body, req.admin)),
+  );
+  router.get("/services", async (req, res) =>
+    res.json(await serviceManagement.list(req.query, req.admin)),
+  );
+  router.get("/services/statistics", async (req, res) =>
+    res.json(await serviceManagement.statistics(req.admin)),
+  );
+  router.get("/services/metadata", async (req, res) =>
+    res.json(await serviceManagement.metadata(req.admin, req.query)),
+  );
+  router.get("/services/export", async (req, res) => {
+    const query = serviceManagement.querySchema.parse(req.query);
+    const columns = [
+      "id",
+      "name",
+      "vendorId",
+      "vendor",
+      "category",
+      "subcategory",
+      "price",
+      "location",
+      "status",
+      "active",
+      "bookings",
+      "rating",
+      "createdAt",
+      "updatedAt",
+    ];
+    let page = 1;
+    let result = await serviceManagement.list(
+      { ...query, page, pageSize: 100 },
+      req.admin,
+    );
+    res.set({
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": 'attachment; filename="services.csv"',
+    });
+    res.write("\uFEFF" + columns.join(",") + "\r\n");
+    while (!res.destroyed) {
+      for (const row of result.rows) {
+        if (res.destroyed) break;
+        if (
+          !res.write(
+            columns.map((c) => serviceManagement.csvCell(row[c])).join(",") +
+              "\r\n",
+          )
+        )
+          await new Promise((resolve) => {
+            const done = () => {
+              res.off("drain", done);
+              res.off("close", done);
+              resolve();
+            };
+            res.once("drain", done);
+            res.once("close", done);
+          });
+      }
+      if (page * 100 >= result.total || res.destroyed) break;
+      result = await serviceManagement.list(
+        { ...query, page: ++page, pageSize: 100 },
+        req.admin,
+      );
+    }
+    res.end();
+  });
+  for (const kind of ["items", "packages"])
+    router.get(`/service-${kind}`, async (req, res) =>
+      res.json(
+        await serviceManagement.childrenIndex(kind, req.query, req.admin),
+      ),
+    );
+  router.post("/services", async (req, res) =>
+    res
+      .status(201)
+      .json(await serviceManagement.save(null, req.body, req.admin)),
+  );
+  router.get("/services/:id/performance", async (req, res) =>
+    res.json(await serviceManagement.performance(req.params.id, req.admin)),
+  );
+  router.get("/services/:id/records/:kind", async (req, res) =>
+    res.json(
+      await serviceManagement.records(
+        req.params.id,
+        req.params.kind,
+        req.query,
+        req.admin,
+      ),
+    ),
+  );
+  router.post("/services/:id/submit", async (req, res) =>
+    res.json(
+      await serviceManagement.submit(req.params.id, req.body, req.admin),
+    ),
+  );
+  router.post("/services/:id/duplicate", async (req, res) =>
+    res
+      .status(201)
+      .json(
+        await serviceManagement.duplicate(req.params.id, req.body, req.admin),
+      ),
+  );
+  router.put("/services/:id", async (req, res) =>
+    res.json(await serviceManagement.save(req.params.id, req.body, req.admin)),
+  );
+  router.delete("/services/:id", async (req, res) =>
+    res.json(
+      await serviceManagement.remove(req.params.id, req.body, req.admin),
+    ),
+  );
+  router.post("/services/:id/items", async (req, res) =>
+    res.json(
+      await serviceManagement.itemMutation(
+        req.params.id,
+        null,
+        req.body,
+        req.admin,
+      ),
+    ),
+  );
+  router.put("/services/:id/items/:itemId", async (req, res) =>
+    res.json(
+      await serviceManagement.itemMutation(
+        req.params.id,
+        req.params.itemId,
+        req.body,
+        req.admin,
+      ),
+    ),
+  );
+  router.delete("/services/:id/items/:itemId", async (req, res) =>
+    res.json(
+      await serviceManagement.itemMutation(
+        req.params.id,
+        req.params.itemId,
+        req.body,
+        req.admin,
+        true,
+      ),
+    ),
+  );
+  router.put("/services/:id/packages/:packageId", async (req, res) =>
+    res.json(
+      await serviceManagement.packageMutation(
+        req.params.id,
+        req.params.packageId,
+        req.body,
+        req.admin,
+      ),
+    ),
+  );
+  router.post("/services/:id/images/upload", async (req, res) =>
+    res.json(
+      await serviceManagement.uploadImage(req.params.id, req.body, req.admin),
+    ),
+  );
+  router.post("/services/:id/images/:imageId", async (req, res) =>
+    res.json(
+      await serviceManagement.imageMutation(
+        req.params.id,
+        req.params.imageId,
+        req.body,
+        req.admin,
+      ),
+    ),
+  );
+  router.get("/services/pending", async (req, res) =>
+    res.json(await serviceApproval.pending(req.query, req.admin)),
+  );
+  router.get("/services/pending-count", async (req, res) => {
+    const result = await serviceApproval.pending({ pageSize: 1 }, req.admin);
+    res.json({ pendingCount: result.total });
+  });
+  router.get("/services/:id", async (req, res) =>
+    res.json(await serviceManagement.details(req.params.id, req.admin)),
+  );
+  router.get("/services/:id/review", async (req, res) =>
+    res.json(await serviceApproval.review(req.params.id, req.admin)),
+  );
+  router.get("/services/:id/approval-history", async (req, res) =>
+    res.json(await serviceApproval.approvalHistory(req.params.id, req.admin)),
+  );
+  for (const action of [
+    "approve",
+    "reject",
+    "start-review",
+    "suspend",
+    "activate",
+    "deactivate",
+  ])
+    router.post(`/services/:id/${action}`, async (req, res) =>
+      res.json(
+        await serviceApproval.decide(
+          req.params.id,
+          action,
+          req.body,
+          req.admin,
+        ),
+      ),
+    );
   router.get("/dashboard", controller.overview);
   router.get("/customers/:id/details", async (req, res) =>
     res.json(await customers.customerDetails(req.params.id, req.admin)),
@@ -146,7 +409,7 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
     if (res.headersSent) return next(error);
     const code = error.extensions?.code;
     const status =
-      error.name === "ZodError"
+      error.name === "ZodError" || code === "UPLOAD_FAILED"
         ? 400
         : code === "UNAUTHENTICATED"
           ? 401
