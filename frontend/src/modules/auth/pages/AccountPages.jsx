@@ -96,6 +96,9 @@ export function VendorStatusPage() {
           </div>
         )}
         <div className="status-actions">
+          <Link className="text-link" to="/vendor/services">
+            Prepare service drafts <ArrowRight size={15} />
+          </Link>
           <button className="primary-button" onClick={check} disabled={busy}>
             <RefreshCw size={16} className={busy ? "spin" : ""} />{" "}
             {busy ? "Checking…" : "Check status"}

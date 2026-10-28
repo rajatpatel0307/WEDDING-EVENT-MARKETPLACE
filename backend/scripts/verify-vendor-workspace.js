@@ -1,4 +1,6 @@
 import { chat } from "../src/modules/vendors/workspace.messaging.js";
+import { up as serviceManagementUp } from "../migrations/010-service-management.js";
+import { serviceSchema } from "../src/modules/vendors/service-management.validation.js";
 // Real REST/database verification. Every fixture and mutation is rolled back.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -29,6 +31,7 @@ try {
     sequelize.transaction = async (fn) => fn(tx);
     let server;
     try {
+      await serviceManagementUp(sequelize.getQueryInterface(), tx);
       const ids = Object.fromEntries(
         [
           "owner",
@@ -219,20 +222,27 @@ try {
                   : "Fixture details",
           ]),
         );
-        const body = {
+        await query(
+          "INSERT INTO dbo.VendorCategories(VendorId,CategoryId) VALUES(:vendor,:category)",
+          { category: category.id },
+        );
+        const body = serviceSchema.parse({
           name: `${name} fixture`,
           categoryId: category.id,
           description: "A service for integration verification.",
-          price: 1000,
-          pricingType: "Fixed",
+          pricing: { basePrice: 1000 },
+          location: {},
+          availability: {},
+          policies: {},
+          seo: { slug: randomUUID() },
           attributes,
-        };
+        });
         const result = await ok("/services", "POST", body);
         serviceIds.push(result.id);
         if (!baseService) baseService = body;
         const detail = await ok(`/services/${result.id}`);
         assert.deepEqual(detail.attributes, attributes);
-        assert.equal(detail.status, "Pending");
+        assert.equal(detail.status, "Draft");
       }
       const service = serviceIds[0];
       await query(
@@ -294,7 +304,7 @@ try {
       assert.equal((await ok(`/items/${item.id}`)).name, "Stage");
       const duplicate = await ok(`/services/${service}/duplicate`, "POST", {}),
         copied = await ok(`/services/${duplicate.id}`);
-      assert.equal(copied.status, "Pending");
+      assert.equal(copied.status, "Draft");
       assert.equal(!!copied.active, false);
       const pack = {
         serviceId: service,
@@ -480,7 +490,7 @@ try {
         409,
       );
       await query(
-        "UPDATE dbo.Services SET ApprovalStatus='Approved' WHERE ServiceId=:service",
+        "UPDATE dbo.Services SET ApprovalStatus='Approved',IsActive=1 WHERE ServiceId=:service",
         { service },
       );
       await ok(`/quotations/${createdQuote.id}/action`, "POST", {

@@ -67,6 +67,23 @@ export async function action(name, id, input, ctx) {
     if (previous !== body.expectedStatus)
       error("This record changed. Refresh before continuing.", 409);
     const values = {};
+    if (name === "services") {
+      const permitted = {
+        Pending: ["Approved", "Rejected", "Suspended"],
+        Approved: ["Suspended"],
+        Suspended: ["Approved", "Rejected"],
+      };
+      if (!permitted[previous]?.includes(body.action))
+        error("This service review transition is not allowed.", 409);
+      if (body.action === "Rejected" && !body.note.trim())
+        error("A rejection reason is required.");
+      Object.assign(values, {
+        IsActive: 0,
+        RejectionReason: body.action === "Rejected" ? body.note : null,
+        AdminNote: body.note || null,
+        RejectedAt: body.action === "Rejected" ? new Date() : null,
+      });
+    }
     if (name === "customers") {
       const [admin] = await repo.select(
         "SELECT COUNT(*) AS total FROM dbo.UserRoles ur JOIN dbo.Roles r ON r.RoleId=ur.RoleId WHERE ur.UserId=:id AND r.RoleCode='ADMIN'",

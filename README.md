@@ -6,6 +6,8 @@ The customer planning workspace is at `/customer/dashboard`. See [Customer works
 
 The approved vendor workspace is at `/vendor/dashboard`. See [Vendor workspace setup and API](backend/docs/vendor-workspace.md) for migrations, the 17 category forms, management routes, ownership rules and verification commands.
 
+The vendor service studio is at `/vendor/services`. See [Service management setup and API](backend/docs/service-management.md) for the ten-step editor, draft and approval lifecycle, media, pricing, packages, calendar, performance, migration `010-service-management`, and rollback-only MSSQL verification.
+
 Cloudinary handles new signup documents and profile photos. See [Cloudinary setup](backend/docs/cloudinary.md) for required credentials and the profile photo database migration.
 
 The role-based authentication implementation, environment setup, database mapping, migration commands, secure administrator provisioning and verification limitations are documented in [Authentication setup](backend/docs/authentication.md).

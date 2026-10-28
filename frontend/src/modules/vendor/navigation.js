@@ -44,8 +44,12 @@ export const vendorNavigation = [
   {
     label: "SERVICES",
     items: [
-      ["services", "My Services", BriefcaseBusiness],
-      ["services/new", "Add Service", PlusCircle],
+      ["services", "All Services", BriefcaseBusiness],
+      ["services/add", "Add Service", PlusCircle],
+      ["services?approval=Draft", "Draft Services", Files],
+      ["services?approval=Pending", "Pending Approval", Clock3],
+      ["services?approval=Approved", "Approved Services", ShieldCheck],
+      ["services?approval=Rejected", "Rejected Services", XCircle],
       ["packages", "Service Packages", Package],
       ["items", "Service Items", ListChecks],
     ],
@@ -80,6 +84,7 @@ export const vendorNavigation = [
     ],
   },
   { label: "CUSTOMERS", items: [["customers", "Customers", Users]] },
+  { label: "ACCOUNT", items: [["settings", "Settings", ContactRound]] },
   {
     label: "PAYMENTS",
     items: [

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { recordServiceMetric } from "../vendors/service-metrics.js";
 import {
   scope,
   repo,
@@ -88,7 +89,7 @@ export async function discover(input, ctx) {
     ),
   };
 }
-export async function serviceDetails(id, ctx) {
+export async function serviceDetails(id, ctx, track = true) {
   scope(ctx);
   z.guid().parse(id);
   const [service] = await repo.select(
@@ -96,6 +97,7 @@ export async function serviceDetails(id, ctx) {
     { id },
   );
   if (!service) fail("This service is no longer available.", 404);
+  if (track) await recordServiceMetric(id, "Views");
   return {
     service,
     packages: await repo.select(
@@ -143,14 +145,14 @@ export async function saveWishlist(input, ctx) {
     Vendor: "VendorId",
   }[b.type];
   if (b.type === "Vendor") await vendorDetails(b.id, ctx);
-  else if (b.type === "Service") await serviceDetails(b.id, ctx);
+  else if (b.type === "Service") await serviceDetails(b.id, ctx, false);
   else {
     const [p] = await repo.select(
       "SELECT ServiceId FROM dbo.ServicePackages WHERE PackageId=:id AND IsActive=1",
       { id: b.id },
     );
     if (!p) fail("Package unavailable.", 404);
-    await serviceDetails(p.ServiceId, ctx);
+    await serviceDetails(p.ServiceId, ctx, false);
   }
   return repo.transaction(async (tx) => {
     const [old] = await repo.select(

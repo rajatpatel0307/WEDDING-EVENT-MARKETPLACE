@@ -1,4 +1,8 @@
-import { BrowserRouter, useLocation } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  useLocation,
+} from "react-router-dom";
 import { ApolloProvider } from "@apollo/client/react";
 import { client } from "./services/apollo";
 import { AuthProvider } from "./context/AuthContext";
@@ -7,14 +11,20 @@ import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
 import "./components/layout/marketplace.css";
 import "./modules/public/public.css";
+const router = createBrowserRouter([
+  {
+    path: "*",
+    element: (
+      <AuthProvider>
+        <ApplicationContent />
+      </AuthProvider>
+    ),
+  },
+]);
 export default function App() {
   return (
     <ApolloProvider client={client}>
-      <BrowserRouter>
-        <AuthProvider>
-          <ApplicationContent />
-        </AuthProvider>
-      </BrowserRouter>
+      <RouterProvider router={router} />
     </ApolloProvider>
   );
 }

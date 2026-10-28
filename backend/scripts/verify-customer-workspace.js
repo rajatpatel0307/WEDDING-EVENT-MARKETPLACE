@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { randomUUID, createHmac } from "node:crypto";
 import express from "express";
 import { sequelize } from "../src/config/database.js";
+import { up as serviceManagementUp } from "../migrations/010-service-management.js";
 import { createCustomerRouter } from "../src/modules/customers/workspace.routes.js";
 import { createVendorRouter } from "../src/modules/vendors/workspace.routes.js";
 import {
@@ -32,6 +33,7 @@ try {
     };
     sequelize.transaction = async (fn) => fn(tx);
     try {
+      await serviceManagementUp(sequelize.getQueryInterface(), tx);
       const owner = randomUUID(),
         customer = randomUUID(),
         other = randomUUID(),

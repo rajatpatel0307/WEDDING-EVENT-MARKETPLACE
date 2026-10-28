@@ -1,0 +1,470 @@
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import {
+  MapPin,
+  Star,
+  ArrowLeft,
+  Eye,
+  CalendarCheck,
+  IndianRupee,
+  MessageCircle,
+  FileText,
+  TrendingUp,
+} from "lucide-react";
+import {
+  Heading,
+  Panel,
+  Loading,
+  ErrorView,
+  Empty,
+  useVendorData,
+} from "../components/WorkspaceUI";
+import { date, money } from "../services/workspace.api";
+import { Notice, ServiceActions, Status } from "./shared";
+import MediaManager from "./MediaManager";
+export function ServicePreview({ service: s, category, vendorName }) {
+  return (
+    <div className="sm-preview">
+      <div className="sm-preview-images">
+        {s.images?.length ? (
+          s.images
+            .slice(0, 4)
+            .map((image, i) => (
+              <img
+                key={image.id || i}
+                src={image.url}
+                alt={`${s.name} ${i + 1}`}
+                loading="lazy"
+              />
+            ))
+        ) : (
+          <div className="sm-preview-placeholder">
+            Your service images will appear here
+          </div>
+        )}
+      </div>
+      <span className="sm-category-label">{category || "Service"}</span>
+      <h2>{s.name || "Your service name"}</h2>
+      <p>
+        {vendorName && `By ${vendorName} · `}
+        {s.location?.city || "Location not set"}
+        {s.location?.state && `, ${s.location.state}`}
+      </p>
+      <p className="sm-lead">{s.shortDescription}</p>
+      <div className="sm-price-preview">
+        <span>STARTING FROM</span>
+        <strong>{money(s.price)}</strong>
+        <span>{s.pricing?.unit}</span>
+      </div>
+      <h3>About this service</h3>
+      <p className="sm-whitespace">
+        {s.description || "Add a detailed description."}
+      </p>
+      <h3>Included items</h3>
+      {s.items?.length ? (
+        <ul>
+          {s.items.map((i, n) => (
+            <li key={i.id || n}>
+              {i.name} · {i.quantity} {i.unit}{" "}
+              {i.included ? "(Included)" : `(Optional · ${money(i.price)})`}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No items added.</p>
+      )}
+      <h3>Availability</h3>
+      <p>
+        {(s.availability?.days || [])
+          .map(
+            (d) =>
+              [
+                "Sunday",
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+              ][d],
+          )
+          .join(", ")}{" "}
+        · {s.availability?.start}–{s.availability?.end}
+      </p>
+      <p>
+        Book up to {s.availability?.advanceDays} days ahead ·{" "}
+        {s.availability?.noticeHours} hours’ notice
+      </p>
+      <h3>Location</h3>
+      <p>
+        {[
+          s.location?.address,
+          s.location?.city,
+          s.location?.state,
+          s.location?.country,
+          s.location?.zip,
+        ]
+          .filter(Boolean)
+          .join(", ")}{" "}
+        · {s.location?.mode}
+      </p>
+      <h3>Policies</h3>
+      {[
+        ["cancellation", "Cancellation"],
+        ["refund", "Refunds"],
+        ["rescheduling", "Rescheduling"],
+        ["terms", "Terms"],
+      ].map(([k, l]) => (
+        <div key={k}>
+          <strong>{l}</strong>
+          <p className="sm-whitespace">{s.policies?.[k] || "Not specified"}</p>
+        </div>
+      ))}
+      <p>
+        Advance payment:{" "}
+        {s.policies?.advanceRequired
+          ? `${s.policies.advancePercentage}%`
+          : "Not required"}{" "}
+        · Travel: {money(s.policies?.travelCharges)} · Setup:{" "}
+        {s.policies?.setupTime || 0} min · Duration: {s.policies?.duration || 0}{" "}
+        min
+      </p>
+      <p>{s.policies?.additionalCharges}</p>
+      <h3>Customer reviews</h3>
+      <p>Verified customer ratings will appear after completed bookings.</p>
+    </div>
+  );
+}
+function Chart({ title, rows, metric }) {
+  const values = rows.map((r) => Number(r[metric] || 0)),
+    max = Math.max(1, ...values),
+    w = 500,
+    h = 125;
+  const points = values
+    .map(
+      (v, i) =>
+        `${values.length === 1 ? w / 2 : 10 + (i * (w - 20)) / (values.length - 1)},${h - 10 - (v / max) * (h - 25)}`,
+    )
+    .join(" ");
+  return (
+    <section className="sm-chart">
+      <h3>{title}</h3>
+      {rows.length ? (
+        <>
+          <svg
+            viewBox={`0 0 ${w} ${h}`}
+            role="img"
+            aria-label={`${title}, last 90 days. Total ${values.reduce((a, b) => a + b, 0)}`}
+          >
+            <line x1="0" y1={h - 10} x2={w} y2={h - 10} stroke="#e2e9e2" />
+            <polyline
+              points={points}
+              fill="none"
+              stroke="#39775c"
+              strokeWidth="3"
+            />
+            {values.length === 1 && (
+              <circle
+                cx={w / 2}
+                cy={h - 10 - (values[0] / max) * (h - 25)}
+                r="4"
+                fill="#39775c"
+              />
+            )}
+          </svg>
+          <div className="sm-chart-labels">
+            <span>{date(rows[0].date)}</span>
+            <span>{date(rows.at(-1).date)}</span>
+          </div>
+        </>
+      ) : (
+        <p>No recorded activity in the last 90 days.</p>
+      )}
+    </section>
+  );
+}
+function Performance({ id }) {
+  const state = useVendorData(`/services/${id}/performance`);
+  if (state.loading) return <Loading />;
+  if (state.error) return <ErrorView error={state.error} retry={state.retry} />;
+  const d = state.data;
+  return (
+    <>
+      <div className="sm-stats">
+        {[
+          ["views", "Total Views", Eye],
+          ["enquiries", "Total Enquiries", MessageCircle],
+          ["quotations", "Total Quotations", FileText],
+          ["bookings", "Total Bookings", CalendarCheck],
+          ["conversionRate", "Conversion Rate", TrendingUp],
+          ["revenue", "Revenue", IndianRupee],
+          ["averageRating", "Average Rating", Star],
+          ["reviewCount", "Review Count", Star],
+        ].map(([key, label, Icon]) => (
+          <div className="sm-stat" key={key}>
+            <Icon size={20} />
+            <div>
+              <span>{label}</span>
+              <strong>
+                {key === "revenue"
+                  ? money(d[key])
+                  : key === "conversionRate"
+                    ? `${d[key]}%`
+                    : (d[key] ?? "—")}
+              </strong>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="sm-muted">
+        Conversion = bookings ÷ recorded views. Revenue is the completed booking
+        line value. Charts show the last 90 days.
+      </p>
+      <div className="sm-chart-grid">
+        <Chart title="Views" rows={d.metrics} metric="views" />
+        <Chart title="Enquiries" rows={d.metrics} metric="enquiries" />
+        <Chart title="Bookings" rows={d.series} metric="bookings" />
+        <Chart title="Revenue" rows={d.series} metric="revenue" />
+      </div>
+    </>
+  );
+}
+function History({ id, kind }) {
+  const state = useVendorData(`/services/${id}/${kind}`);
+  if (state.loading) return <Loading />;
+  if (state.error) return <ErrorView error={state.error} retry={state.retry} />;
+  return state.data?.rows?.length ? (
+    <>
+      <div className="sm-history">
+        {state.data.rows.map((r, i) => (
+          <article key={r.id || i}>
+            <strong>{r.name || `★ ${r.rating}`}</strong>
+            <p>{r.status || r.comment}</p>
+            <small>{date(r.createdAt)}</small>
+          </article>
+        ))}
+      </div>
+      <p>Showing the latest 50 records.</p>
+    </>
+  ) : (
+    <Empty
+      title={`No ${kind} yet`}
+      text="Records will appear as customers interact with this service."
+    />
+  );
+}
+export default function ServiceDetails() {
+  const { id } = useParams(),
+    [version, setVersion] = useState(0),
+    [tab, setTab] = useState("Overview"),
+    [notice, setNotice] = useState("");
+  const state = useVendorData(`/services/${id}`, version),
+    metadata = useVendorData("/services/metadata");
+  if (state.loading) return <Loading />;
+  if (state.error) return <ErrorView error={state.error} retry={state.retry} />;
+  const s = state.data;
+  return (
+    <div className="sm-page">
+      <Link className="sm-back" to="/vendor/services">
+        <ArrowLeft size={15} />
+        All services
+      </Link>
+      <Heading
+        title={s.name}
+        eyebrow="SERVICE MANAGEMENT"
+        description={`${metadata.data?.categories.find((c) => c.id === s.categoryId)?.name || "Service"} · Updated ${date(s.updatedAt)}`}
+      >
+        <Status status={s.status} active={s.active} />
+      </Heading>
+      <Notice message={notice} />
+      {s.status === "Rejected" && (
+        <div className="sm-rejected">
+          <h2>Service Rejected</h2>
+          <strong>Rejection Reason</strong>
+          <p>{s.rejectionReason || "Contact support for the review reason."}</p>
+          <strong>Admin Note</strong>
+          <p>{s.adminNote || "—"}</p>
+          <small>Rejected {date(s.rejectedAt)}</small>
+          <Link to={`/vendor/services/${id}/edit`} className="vw-button">
+            Edit & Resubmit
+          </Link>
+        </div>
+      )}
+      <div className="sm-detail-actions">
+        <ServiceActions
+          service={s}
+          full
+          onChange={(r) => {
+            setNotice(r.message);
+            setVersion((v) => v + 1);
+          }}
+        />
+      </div>
+      <div className="sm-tabs sm-detail-tabs">
+        {[
+          "Overview",
+          "Pricing",
+          "Items",
+          "Packages",
+          "Images",
+          "Location",
+          "Availability",
+          "Policies",
+          "Bookings",
+          "Reviews",
+          "Performance",
+        ].map((t) => (
+          <button
+            key={t}
+            className={tab === t ? "selected" : ""}
+            onClick={() => setTab(t)}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+      <Panel title={tab}>
+        {tab === "Overview" && (
+          <div className="sm-form-body">
+            <ServicePreview
+              service={s}
+              category={
+                metadata.data?.categories.find((c) => c.id === s.categoryId)
+                  ?.name
+              }
+              vendorName={metadata.data?.vendorName}
+            />
+            <h3>Category-specific details</h3>
+            <dl className="sm-definition">
+              {Object.entries(s.attributes).map(([k, v]) => (
+                <div key={k}>
+                  <dt>
+                    {metadata.data?.templates[
+                      metadata.data.categories.find(
+                        (c) => c.id === s.categoryId,
+                      )?.name
+                    ]?.find((f) => f.key === k)?.label || k}
+                  </dt>
+                  <dd>{typeof v === "boolean" ? (v ? "Yes" : "No") : v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
+        {tab === "Pricing" && (
+          <div className="sm-form-body">
+            <dl className="sm-definition">
+              {Object.entries(s.pricing || {}).map(([k, v]) => (
+                <div key={k}>
+                  <dt>{k.replace(/([A-Z])/g, " $1")}</dt>
+                  <dd>{v ?? "Not set"}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="sm-price-preview">
+              <span>SERVER-CALCULATED STARTING PRICE</span>
+              <strong>{money(s.price)}</strong>
+            </div>
+          </div>
+        )}
+        {tab === "Items" && (
+          <div className="sm-form-body">
+            {s.items.length ? (
+              <div className="sm-history">
+                {s.items.map((i) => (
+                  <article key={i.id}>
+                    <strong>{i.name}</strong>
+                    <p>{i.description}</p>
+                    <span>
+                      {i.quantity} {i.unit} · {money(i.price)} ·{" "}
+                      {i.included ? "Included" : "Optional"}
+                    </span>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <Empty title="No items added" />
+            )}
+            {s.actions.edit && (
+              <Link
+                className="vw-button"
+                to={`/vendor/services/${id}/edit?step=3`}
+              >
+                Manage Items
+              </Link>
+            )}
+          </div>
+        )}
+        {tab === "Images" && (
+          <div className="sm-form-body">
+            <MediaManager
+              id={id}
+              disabled={!s.actions.edit}
+              onChanged={() => setVersion((v) => v + 1)}
+            />
+          </div>
+        )}
+        {tab === "Packages" && (
+          <div className="sm-form-body">
+            <p>
+              Create flexible packages for different celebrations and budgets.
+            </p>
+            <Link
+              className="vw-button vw-primary"
+              to={`/vendor/services/${id}/packages`}
+            >
+              Manage Packages
+            </Link>
+          </div>
+        )}
+        {tab === "Availability" && (
+          <div className="sm-form-body">
+            <p>
+              Manage working days, custom timings, holidays and blocked dates.
+            </p>
+            <Link
+              className="vw-button"
+              to={`/vendor/services/${id}/availability`}
+            >
+              Open service calendar
+            </Link>
+          </div>
+        )}
+        {tab === "Location" && (
+          <div className="sm-form-body">
+            <MapPin />
+            <p>
+              {Object.values(s.location || {})
+                .filter((v) => v !== null)
+                .join(" · ")}
+            </p>
+          </div>
+        )}
+        {tab === "Policies" && (
+          <dl className="sm-definition sm-form-body">
+            {Object.entries(s.policies || {}).map(([k, v]) => (
+              <div key={k}>
+                <dt>{k.replace(/([A-Z])/g, " $1")}</dt>
+                <dd className="sm-whitespace">
+                  {typeof v === "boolean"
+                    ? v
+                      ? "Yes"
+                      : "No"
+                    : v || "Not specified"}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        {["Bookings", "Reviews"].includes(tab) && (
+          <History id={id} kind={tab.toLowerCase()} />
+        )}
+        {tab === "Performance" && (
+          <div className="sm-form-body">
+            <Performance id={id} />
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}

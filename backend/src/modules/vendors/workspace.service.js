@@ -525,6 +525,26 @@ export async function setActive(kind, recordId, input, ctx) {
   return repo.transaction(async (tx) => {
     const old = await owned(kind, recordId, id, tx);
     assertVersion(old, body.expectedUpdatedAt);
+    if (kind === "services" && body.active && old.ApprovalStatus !== "Approved")
+      fail("Service approval is required to activate.", 409);
+    if (kind === "packages") {
+      const parent = await owned("services", old.ServiceId, id, tx);
+      if (["Pending", "Suspended"].includes(parent.ApprovalStatus))
+        fail("Packages cannot change during review or suspension.", 409);
+      await repo.update(
+        { table: "Services", id: "ServiceId" },
+        parent.ServiceId,
+        {
+          ApprovalStatus:
+            parent.ApprovalStatus === "Approved"
+              ? "Draft"
+              : parent.ApprovalStatus,
+          IsActive: 0,
+          UpdatedAt: new Date(),
+        },
+        tx,
+      );
+    }
     const r = targets[kind];
     await repo.update(
       { table: r.table, id: r.pk },
@@ -563,7 +583,28 @@ export async function saveSimple(kind, recordId, input, ctx) {
   return repo.transaction(async (tx) => {
     const old = recordId ? await owned(kind, recordId, id, tx) : null;
     if (old) assertVersion(old, body.expectedUpdatedAt);
-    if (body.serviceId) await owned("services", body.serviceId, id, tx);
+    if (body.serviceId) {
+      const parent = await owned("services", body.serviceId, id, tx);
+      if (kind === "items") {
+        if (old && old.ServiceId !== body.serviceId)
+          fail("Items cannot be moved to another service.", 409);
+        if (["Pending", "Suspended"].includes(parent.ApprovalStatus))
+          fail("Items cannot change during review or suspension.", 409);
+        await repo.update(
+          { table: "Services", id: "ServiceId" },
+          parent.ServiceId,
+          {
+            ApprovalStatus:
+              parent.ApprovalStatus === "Approved"
+                ? "Draft"
+                : parent.ApprovalStatus,
+            IsActive: 0,
+            UpdatedAt: new Date(),
+          },
+          tx,
+        );
+      }
+    }
     const r = targets[kind];
     let values;
     if (kind === "locations") {

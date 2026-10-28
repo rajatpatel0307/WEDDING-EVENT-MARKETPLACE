@@ -146,6 +146,7 @@ export function Modal({ title, close, busy, children, wide = false }) {
       <header>
         <h2 id={label}>{title}</h2>
         <button
+          type="button"
           className="vw-icon"
           onClick={close}
           disabled={busy}

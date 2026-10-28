@@ -1,4 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { recordServiceMetric } from "../vendors/service-metrics.js";
+import { calculatePrice } from "../vendors/service-management.validation.js";
+import { assertServiceSchedule } from "../vendors/service-schedule.js";
 import { z } from "zod";
 import {
   scope,
@@ -14,7 +17,7 @@ export async function availableService(serviceId, packageId, tx) {
   z.guid().parse(serviceId);
   if (packageId) z.guid().parse(packageId);
   const [s] = await repo.select(
-    `SELECT s.*,v.BusinessName FROM dbo.Services s JOIN dbo.Vendors v ON v.VendorId=s.VendorId JOIN dbo.Users u ON u.UserId=v.UserId WHERE s.ServiceId=:serviceId AND s.IsActive=1 AND s.ApprovalStatus='Approved' AND ${eligibleVendor}`,
+    `SELECT s.*,v.BusinessName FROM dbo.Services s ${tx ? "WITH(UPDLOCK,HOLDLOCK)" : ""} JOIN dbo.Vendors v ON v.VendorId=s.VendorId JOIN dbo.Users u ON u.UserId=v.UserId WHERE s.ServiceId=:serviceId AND s.IsActive=1 AND s.ApprovalStatus='Approved' AND ${eligibleVendor}`,
     { serviceId },
     tx,
   );
@@ -47,6 +50,24 @@ async function checkDate(vendorId, event, services, tx) {
     tx,
   );
   if (blocked) fail("This service is unavailable on your event date.", 409);
+  for (const serviceId of new Set(services)) {
+    const [service] = await repo.select(
+      "SELECT DetailsJson FROM dbo.Services WITH(UPDLOCK,HOLDLOCK) WHERE ServiceId=:serviceId AND VendorId=:vendorId",
+      { serviceId, vendorId },
+      tx,
+    );
+    const [override] = await repo.select(
+      "SELECT TOP(1) StartTime,EndTime FROM dbo.VendorAvailability WHERE VendorId=:vendorId AND AvailableDate=:day AND Status='Available' AND (ServiceId IS NULL OR ServiceId=:serviceId) ORDER BY CASE WHEN ServiceId IS NULL THEN 1 ELSE 0 END,AvailabilityId DESC",
+      { vendorId, serviceId, day: event.EventDate },
+      tx,
+    );
+    assertServiceSchedule(
+      service?.DetailsJson ? JSON.parse(service.DetailsJson) : null,
+      event.EventDate,
+      event.StartTime,
+      override,
+    );
+  }
 }
 async function createBooking(
   event,
@@ -169,7 +190,17 @@ export async function book(input, ctx) {
       { s, pack } = await availableService(b.serviceId, b.packageId, tx);
     if (!pack && s.PricingType === "CustomQuote")
       fail("Request a quotation for this service.");
-    const price = Number(pack ? pack.FinalPrice : s.BasePrice);
+    const document = s.DetailsJson ? JSON.parse(s.DetailsJson) : null;
+    const flexible = !pack && !!document?.pricing;
+    const price = flexible
+      ? calculatePrice(
+          document.pricing,
+          b.quantity,
+          event.EventDate instanceof Date
+            ? event.EventDate.toISOString().slice(0, 10)
+            : String(event.EventDate).slice(0, 10),
+        )
+      : Number(pack ? pack.FinalPrice : s.BasePrice);
     if (!Number.isFinite(price) || price <= 0)
       fail("Request a quotation to confirm the price.");
     const guests = Number(event.GuestCount);
@@ -193,8 +224,10 @@ export async function book(input, ctx) {
         {
           ServiceId: s.ServiceId,
           PackageId: pack?.PackageId,
-          ItemName: pack?.PackageName || s.ServiceName,
-          Quantity: b.quantity,
+          ItemName: flexible
+            ? `${s.ServiceName.slice(0, 160)} (${b.quantity} ${document.pricing.unit})`
+            : pack?.PackageName || s.ServiceName,
+          Quantity: flexible ? 1 : b.quantity,
           UnitPrice: price,
         },
       ],
@@ -240,6 +273,7 @@ export async function requestQuote(input, ctx) {
       },
       tx,
     );
+    await recordServiceMetric(b.serviceId, "Enquiries", tx);
     await notifyBusiness(
       s.VendorId,
       "Quotation requested",

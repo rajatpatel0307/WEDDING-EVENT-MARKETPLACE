@@ -1,3 +1,4 @@
+import { up as serviceManagementUp } from "../migrations/010-service-management.js";
 import { up as customerWorkspaceUp } from "../migrations/009-customer-workspace.js";
 import { up as workspaceUp } from "../migrations/008-vendor-workspace.js";
 import { up as verificationUp } from "../migrations/007-vendor-verification.js";
@@ -145,6 +146,23 @@ try {
       await customerWorkspaceUp(sequelize.getQueryInterface(), transaction);
       await sequelize.query(
         "INSERT INTO dbo.AuthMigrations(Name) VALUES('009-customer-workspace')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='010-service-management'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await serviceManagementUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES('010-service-management')",
         { transaction },
       );
     }

@@ -72,10 +72,20 @@ const VendorMessagesPage = lazy(
 const VendorEarningsPage = lazy(
   () => import("../modules/vendor/pages/VendorEarningsPage"),
 );
-const ServiceForm = lazy(() =>
-  import("../modules/vendor/components/WorkspaceForms").then((m) => ({
-    default: m.ServiceForm,
-  })),
+const ServiceForm = lazy(
+  () => import("../modules/vendor/service-management/ServiceEditor"),
+);
+const VendorServiceList = lazy(
+  () => import("../modules/vendor/service-management/ServiceList"),
+);
+const VendorServiceDetails = lazy(
+  () => import("../modules/vendor/service-management/ServiceDetails"),
+);
+const VendorServicePackages = lazy(
+  () => import("../modules/vendor/service-management/ServicePackages"),
+);
+const VendorServiceAvailability = lazy(
+  () => import("../modules/vendor/service-management/ServiceAvailability"),
 );
 const PackageForm = lazy(() =>
   import("../modules/vendor/components/WorkspaceForms").then((m) => ({
@@ -396,6 +406,7 @@ export default function AppRoutes() {
                 element={<VendorDashboardPage analyticsOnly />}
               />
               <Route path="business/profile" element={<VendorBusinessPage />} />
+              <Route path="settings" element={<VendorBusinessPage />} />
               <Route
                 path="business/details"
                 element={<VendorBusinessPage mode="details" />}
@@ -405,8 +416,18 @@ export default function AppRoutes() {
                 element={<VendorBusinessPage mode="verification" />}
               />
               <Route path="services/new" element={<ServiceForm />} />
+              <Route path="services/add" element={<ServiceForm />} />
+              <Route path="services" element={<VendorServiceList />} />
               <Route path="services/:id/edit" element={<ServiceForm />} />
-              <Route path="services/:id" element={<ServiceForm readOnly />} />
+              <Route path="services/:id" element={<VendorServiceDetails />} />
+              <Route
+                path="services/:id/packages"
+                element={<VendorServicePackages />}
+              />
+              <Route
+                path="services/:id/availability"
+                element={<VendorServiceAvailability />}
+              />
               <Route path="packages/new" element={<PackageForm />} />
               <Route path="packages/:id/edit" element={<PackageForm />} />
               <Route
@@ -431,7 +452,6 @@ export default function AppRoutes() {
               <Route path="messages" element={<VendorMessagesPage />} />
               <Route path="earnings" element={<VendorEarningsPage />} />
               {[
-                "services",
                 "packages",
                 "items",
                 "locations",

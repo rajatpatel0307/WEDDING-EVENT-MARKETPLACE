@@ -21,6 +21,13 @@ export default function VendorLayout() {
     [mobile, setMobile] = useState(false),
     [query, setQuery] = useState("");
   const current = location.pathname.replace(/^\/vendor\/?/, "") || "dashboard";
+  const navigationKey =
+    current === "services"
+      ? current +
+        (new URLSearchParams(location.search).get("approval")
+          ? `?approval=${new URLSearchParams(location.search).get("approval")}`
+          : "")
+      : current;
   useEffect(() => {
     const changed = () => reload().catch(() => {});
     window.addEventListener("vendor:access-changed", changed);
@@ -85,8 +92,8 @@ export default function VendorLayout() {
                   key={path}
                   title={collapsed ? label : undefined}
                   to={`/vendor/${path}`}
-                  className={current === path ? "active" : ""}
-                  aria-current={current === path ? "page" : undefined}
+                  className={navigationKey === path ? "active" : ""}
+                  aria-current={navigationKey === path ? "page" : undefined}
                   onClick={() => setMobile(false)}
                 >
                   <Icon size={17} strokeWidth={1.65} />

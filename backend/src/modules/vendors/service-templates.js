@@ -278,3 +278,182 @@ export const serviceTemplates = {
     text("specifications", "Technical specifications"),
   ],
 };
+
+// Extend the existing stable keys so previously saved category attributes remain valid.
+const additionalFields = {
+  "Venue & Location": [
+    "Stage?",
+    "Mandap?",
+    "Bridal Room?",
+    "Groom Room?",
+    "Decoration Allowed?",
+    "Outside Catering Allowed?",
+    "Alcohol Allowed?",
+    "Address",
+    "City",
+    "State",
+    "ZIP Code",
+  ],
+  "Catering & Food": [
+    "Cuisine Type",
+    "Vegetarian?",
+    "Non Vegetarian?",
+    "Jain?",
+    "Starter",
+    "Main Course",
+    "Service Staff#",
+    "Kitchen Staff#",
+  ],
+  "Tent & Infrastructure": [
+    "Size",
+    "Material",
+    "Chairs#",
+    "Tables#",
+    "Carpet?",
+    "Fans#",
+    "Cooling?",
+    "Generator?",
+    "Temporary Structures",
+  ],
+  Decoration: [
+    "Stage Decoration?",
+    "Mandap Decoration?",
+    "Entrance Decoration?",
+    "Floral Decoration?",
+    "Table Decoration?",
+    "Ceiling Decoration?",
+    "Lighting Included?",
+    "Material",
+    "Setup Duration#",
+  ],
+  Lighting: [
+    "Number of Lights#",
+    "Stage Lighting?",
+    "Decorative Lighting?",
+    "LED?",
+    "Moving Head?",
+    "Laser?",
+    "Outdoor Lighting?",
+    "Power Requirement",
+  ],
+  "DJ & Entertainment": [
+    "DJ Type",
+    "Artist Type",
+    "Performance Duration#",
+    "Speakers#",
+    "Subwoofers#",
+    "Microphones#",
+    "DJ Console?",
+    "Special Effects",
+  ],
+  "Photography & Videography": [
+    "Videography?",
+    "Traditional Video?",
+    "Edited Photos#",
+    "Same Day Edit?",
+  ],
+  "Makeup & Beauty": [
+    "Bridal Makeup?",
+    "Groom Makeup?",
+    "Party Makeup?",
+    "Hair Styling?",
+    "Saree Draping?",
+    "Travel Charges#",
+  ],
+  Mehndi: [
+    "Mehndi Type",
+    "Guest Mehndi?",
+    "Design Style",
+    "Cone Count#",
+    "Travel Availability?",
+  ],
+  "Wedding Clothing": [
+    "Men Women",
+    "Bridal Groom",
+    "Designer",
+    "Customization?",
+    "Delivery?",
+  ],
+  "Jewellery & Accessories": [
+    "Gold?",
+    "Silver?",
+    "Diamond?",
+    "Artificial?",
+    "Necklace?",
+    "Earrings?",
+    "Bangles?",
+    "Maang Tikka?",
+    "Rings?",
+  ],
+  Transportation: [
+    "Vehicle Model",
+    "Fuel Included?",
+    "Pickup Location",
+    "Drop Location",
+    "Per Hour Price#",
+    "Per KM Price#",
+  ],
+  "Religious & Ceremony Services": [
+    "Priest Pandit",
+    "Ritual Type",
+    "Required Materials",
+    "Religious Requirements",
+  ],
+  "Traditional Wedding Services": [
+    "Service Type",
+    "Artist Type",
+    "Performance Type",
+    "Travel Availability?",
+  ],
+  "Flowers & Florist": [
+    "Decoration Type",
+    "Stage Flowers?",
+    "Mandap Flowers?",
+    "Entrance Flowers?",
+    "Table Flowers?",
+    "Custom Design?",
+  ],
+  "Event Support": [
+    "Security#",
+    "Cleaning#",
+    "Valet#",
+    "Event Staff#",
+    "Waiters#",
+    "Ushers#",
+    "Setup Staff#",
+    "Coordinator?",
+    "Generator?",
+    "Backup Staff#",
+  ],
+  Technology: [
+    "LED Wall?",
+    "Projector?",
+    "Sound System?",
+    "Live Streaming?",
+    "WiFi?",
+    "QR Check In?",
+    "Digital Invitations?",
+    "Event Website?",
+    "Photography Booth?",
+    "Digital Display?",
+  ],
+};
+for (const [category, labels] of Object.entries(additionalFields))
+  for (const label of labels) {
+    const clean = label.replace(/[?#]$/, "");
+    const key =
+      clean[0].toLowerCase() +
+      clean.slice(1).replace(/\s+(.)/g, (_, c) => c.toUpperCase());
+    if (!serviceTemplates[category].some((f) => f.key === key))
+      serviceTemplates[category].push(
+        field(
+          key,
+          clean,
+          label.endsWith("?")
+            ? "boolean"
+            : label.endsWith("#")
+              ? "number"
+              : "text",
+        ),
+      );
+  }

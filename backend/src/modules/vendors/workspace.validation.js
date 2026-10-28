@@ -65,7 +65,9 @@ export const serviceInput = z
     { message: "Minimum guests must not exceed maximum guests." },
   );
 export function validateAttributes(category, input) {
-  const template = serviceTemplates[category];
+  const template = Object.hasOwn(serviceTemplates, category)
+    ? serviceTemplates[category]
+    : null;
   if (!template)
     throw Object.assign(
       new Error("Choose one of the 17 supported service categories."),
