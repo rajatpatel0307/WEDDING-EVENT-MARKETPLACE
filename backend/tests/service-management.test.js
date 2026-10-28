@@ -8,6 +8,7 @@ import {
   calculatePrice,
   listSchema,
   actionsFor,
+  validateServiceSubmission,
 } from "../src/modules/vendors/service-management.validation.js";
 import * as services from "../src/modules/vendors/service-management.service.js";
 import {
@@ -137,6 +138,24 @@ test("strict service validation rejects owner, approval, price and nested attrib
   assert.throws(() => listSchema.parse({ pageSize: 10001 }));
   assert.throws(() => listSchema.parse({ minPrice: 100, maxPrice: 50 }));
 });
+test("service submission validates required listing content and image presence", () => {
+  const valid = document();
+  assert.doesNotThrow(() => validateServiceSubmission(valid, 1));
+  for (const patch of [
+    { description: "Too short" },
+    { shortDescription: "" },
+    { location: { ...valid.location, city: "" } },
+    { policies: { ...valid.policies, cancellation: "" } },
+  ])
+    assert.throws(
+      () => validateServiceSubmission({ ...valid, ...patch }, 1),
+      { status: 400 },
+    );
+  assert.throws(() => validateServiceSubmission(valid, 0), {
+    status: 400,
+    message: "Add at least one service image before submitting.",
+  });
+});
 test("action availability matches review state and vendor eligibility", () => {
   for (const status of ["Pending", "Suspended"])
     assert.deepEqual(actionsFor({ status }), {
@@ -243,6 +262,20 @@ test("submission checks media and live vendor approval and increments review cyc
       c.arguments[0].includes("Vendors WITH(UPDLOCK,HOLDLOCK)"),
     ),
   );
+});
+test("service metadata only offers categories assigned to the authenticated vendor", async (t) => {
+  const query = setup(t, null, (sql) =>
+    sql.includes("FROM dbo.Categories c JOIN dbo.VendorCategories")
+      ? [{ id: 1, name: "Venue & Location" }]
+      : [],
+  );
+  const result = await services.metadata(ctx);
+  const categoryQuery = query.mock.calls.find((call) =>
+    call.arguments[0].includes("FROM dbo.Categories c JOIN dbo.VendorCategories"),
+  );
+  assert.deepEqual(result.categories, [{ id: 1, name: "Venue & Location" }]);
+  assert.match(categoryQuery.arguments[0], /vc\.VendorId=:id/);
+  assert.equal(categoryQuery.arguments[1].replacements.id, vendorId);
 });
 test("activation rejects every unapproved service status and stale versions", async (t) => {
   const row = record();

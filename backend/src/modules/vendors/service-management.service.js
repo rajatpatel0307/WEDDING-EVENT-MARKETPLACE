@@ -12,6 +12,7 @@ import {
   listSchema,
   calculatePrice,
   actionsFor,
+  validateServiceSubmission,
 } from "./service-management.validation.js";
 import { uploadAsset } from "../media/cloudinary.service.js";
 
@@ -61,7 +62,8 @@ export async function metadata(ctx) {
   const { approved, user } = serviceScope(ctx);
   const categories = (
     await repo.select(
-      "SELECT CategoryId AS id,CategoryName AS name FROM dbo.Categories WHERE IsActive=1 ORDER BY SortOrder,CategoryId",
+      "SELECT c.CategoryId AS id,c.CategoryName AS name FROM dbo.Categories c JOIN dbo.VendorCategories vc ON vc.CategoryId=c.CategoryId AND vc.VendorId=:id WHERE c.IsActive=1 ORDER BY c.SortOrder,c.CategoryId",
+      { id: user.vendor.id },
     )
   ).filter((c) => Object.hasOwn(serviceTemplates, c.name));
   const subcategories = await repo.select(
@@ -347,21 +349,12 @@ export async function submit(serviceId, input, ctx) {
       attributes: parse(row.AttributesJson),
       items: [],
     });
-    if (
-      document.description.length < 20 ||
-      !document.location.city ||
-      !document.shortDescription ||
-      !document.policies.cancellation
-    )
-      fail(
-        "Complete the description, short description, city and cancellation policy before submitting.",
-      );
     const [media] = await repo.select(
       "SELECT TOP(1) MediaId FROM dbo.Media WHERE EntityType='Service' AND EntityId=:serviceId AND MediaType='Image'",
       { serviceId },
       tx,
     );
-    if (!media) fail("Add at least one service image before submitting.");
+    validateServiceSubmission(document, media ? 1 : 0);
     // Lock vendor too: approval withdrawal cannot race with submission.
     const [vendor] = await repo.select(
       "SELECT VerificationStatus,IsActive FROM dbo.Vendors WITH(UPDLOCK,HOLDLOCK) WHERE VendorId=:id",

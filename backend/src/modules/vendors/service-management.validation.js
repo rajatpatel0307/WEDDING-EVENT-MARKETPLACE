@@ -127,6 +127,25 @@ export const serviceSchema = z
     expectedUpdatedAt: z.iso.datetime().optional(),
   })
   .strict();
+export function validateServiceSubmission(document, imageCount) {
+  if (
+    document.description.length < 20 ||
+    !document.location.city ||
+    !document.shortDescription ||
+    !document.policies.cancellation
+  )
+    throw Object.assign(
+      new Error(
+        "Complete the description, short description, city and cancellation policy before submitting.",
+      ),
+      { status: 400 },
+    );
+  if (imageCount < 1)
+    throw Object.assign(
+      new Error("Add at least one service image before submitting."),
+      { status: 400 },
+    );
+}
 export const listSchema = z
   .object({
     page: z.coerce.number().int().min(1).max(100000).default(1),
