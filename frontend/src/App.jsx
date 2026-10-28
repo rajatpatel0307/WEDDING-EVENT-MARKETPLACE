@@ -19,7 +19,15 @@ export default function App() {
   );
 }
 function ApplicationContent() {
-  const admin = useLocation().pathname.startsWith("/admin");
+  const pathname = useLocation().pathname;
+  const admin =
+    pathname.startsWith("/admin") ||
+    pathname === "/customer" ||
+    pathname.startsWith("/customer/") ||
+    ((pathname === "/vendor" || pathname.startsWith("/vendor/")) &&
+      !["profile", "pending", "rejected", "suspended", "inactive"].includes(
+        pathname.split("/")[2],
+      ));
   return (
     <>
       {!admin && <Navbar />}

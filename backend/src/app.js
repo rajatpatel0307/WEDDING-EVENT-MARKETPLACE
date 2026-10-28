@@ -1,3 +1,5 @@
+import customerRoutes from "./modules/customers/workspace.routes.js";
+import { webhook } from "./modules/customers/workspace.payments.js";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -33,6 +35,12 @@ export async function createApp() {
   );
   app.use("/api/admin", adminRoutes);
   app.use("/api/vendor", vendorRoutes);
+  app.post(
+    "/api/payments/razorpay/webhook",
+    express.raw({ type: "application/json", limit: "1mb" }),
+    webhook,
+  );
+  app.use("/api/customer", customerRoutes);
   const apollo = new ApolloServer({
     typeDefs,
     resolvers,

@@ -83,7 +83,7 @@ export async function customerDetails(id, ctx) {
 }
 
 // Fixed projections and ownership predicates; no request-controlled SQL identifiers.
-const collections = {
+export const customerReadCollections = {
   events: {
     from: "dbo.Events t",
     where: "t.CustomerId=:id",
@@ -151,13 +151,13 @@ export const customerPageQuery = z.object({
 });
 export async function customerRecords(id, section, input, ctx) {
   requireRole(ctx, "ADMIN");
-  if (!Object.hasOwn(collections, section))
+  if (!Object.hasOwn(customerReadCollections, section))
     throw Object.assign(new Error("Customer section not found."), {
       status: 404,
     });
   const query = customerPageQuery.parse(input);
   await findCustomer(id);
-  const c = collections[section];
+  const c = customerReadCollections[section];
   const params = {
     id,
     offset: (query.page - 1) * query.pageSize,

@@ -30,7 +30,7 @@ export const documentReviewInput = z
   });
 
 async function findVendor(id, tx, lock = false) {
-  z.uuid().parse(id);
+  z.guid().parse(id);
   const [vendor] = await repo.select(
     `SELECT v.VendorId AS id,v.UserId AS ownerId,v.BusinessName AS businessName,v.BusinessDescription AS description,v.ContactEmail AS businessEmail,v.ContactPhone AS businessPhone,COALESCE(v.ContactEmail,u.Email) AS email,COALESCE(v.ContactPhone,u.PhoneNumber) AS phone,v.LogoUrl AS logoUrl,v.CoverImageUrl AS coverUrl,v.GSTNumber AS gst,v.PANNumber AS pan,v.VerifiedAt AS verifiedAt,v.VerificationCycle AS cycle,v.VerificationStatus AS status,v.VerificationRemarks AS remarks,v.IsActive AS active,v.CreatedAt AS createdAt,v.UpdatedAt AS updatedAt,CONCAT(u.FirstName,' ',u.LastName) AS owner,u.Email AS ownerEmail,u.PhoneNumber AS ownerPhone,u.IsActive AS ownerActive,u.IsBlocked AS ownerBlocked,u.IsEmailVerified AS emailVerified FROM dbo.Vendors v ${lock ? "WITH(UPDLOCK,HOLDLOCK)" : ""} JOIN dbo.Users u ON u.UserId=v.UserId WHERE v.VendorId=:id`,
     { id },
@@ -42,6 +42,9 @@ async function findVendor(id, tx, lock = false) {
 
 export async function vendorDetails(id, ctx) {
   requireRole(ctx, "ADMIN");
+  return loadVendorDetails(id);
+}
+export async function loadVendorDetails(id) {
   const vendor = await findVendor(id);
   const categories = await repo.select(
     "SELECT c.CategoryId AS id,c.CategoryName AS name,vc.IsPrimary AS isPrimary FROM dbo.VendorCategories vc JOIN dbo.Categories c ON c.CategoryId=vc.CategoryId WHERE vc.VendorId=:id ORDER BY vc.IsPrimary DESC,c.CategoryName",
@@ -230,6 +233,9 @@ export function redactAudit(value) {
 }
 export async function vendorRecords(id, section, input, ctx) {
   requireRole(ctx, "ADMIN");
+  return loadVendorRecords(id, section, input);
+}
+export async function loadVendorRecords(id, section, input) {
   if (!Object.hasOwn(collections, section))
     error("Vendor section not found.", 404);
   const query = vendorPageQuery.parse(input);
@@ -309,8 +315,8 @@ export async function setVendorActive(id, input, ctx) {
   });
 }
 async function findDocument(id, documentId, tx, lock = false) {
-  z.uuid().parse(id);
-  z.uuid().parse(documentId);
+  z.guid().parse(id);
+  z.guid().parse(documentId);
   const [doc] = await repo.select(
     `SELECT VendorDocumentId AS id,DocumentUrl AS [key],DocumentType AS type,VerificationStatus AS status,RejectionReason AS reason FROM dbo.VendorDocuments ${lock ? "WITH(UPDLOCK,HOLDLOCK)" : ""} WHERE VendorId=:id AND VendorDocumentId=:documentId`,
     { id, documentId },
@@ -364,3 +370,5 @@ export async function vendorDocumentFile(id, documentId, ctx) {
   );
   return file;
 }
+
+export { collections as vendorReadCollections };

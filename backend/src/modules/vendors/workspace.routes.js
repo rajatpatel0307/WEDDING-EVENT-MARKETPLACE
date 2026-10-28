@@ -1,22 +1,180 @@
-import { Router } from "express";
+import { Router, json } from "express";
+import { rateLimit } from "express-rate-limit";
 import { authenticate } from "../auth/token.service.js";
 import { requireApprovedVendor } from "../../middleware/auth.middleware.js";
+import * as workspace from "./workspace.service.js";
+import * as operations from "./workspace.operations.js";
+import * as messaging from "./workspace.messaging.js";
+import { dashboard } from "./workspace.analytics.js";
 
 // Every endpoint added to /api/vendor inherits the same live approval check.
 export function createVendorRouter({
   authenticateRequest = authenticate,
 } = {}) {
   const router = Router();
+  router.use(
+    rateLimit({
+      windowMs: 60000,
+      limit: 180,
+      standardHeaders: "draft-8",
+      legacyHeaders: false,
+    }),
+  );
   router.use(async (req, res, next) => {
     try {
       req.vendorContext = { req, res, auth: await authenticateRequest(req) };
       req.vendorUser = requireApprovedVendor(req.vendorContext);
+      if (
+        !["GET", "HEAD"].includes(req.method) &&
+        (req.get("origin") !== process.env.FRONTEND_URL ||
+          req.get("x-vendor-request") !== "1")
+      )
+        return res
+          .status(403)
+          .json({
+            success: false,
+            message: "Request origin is not allowed.",
+            data: null,
+          });
       res.set("Cache-Control", "no-store");
       next();
     } catch (error) {
       next(error);
     }
   });
+  router.use(json({ limit: "8mb" }));
+  const get = (path, fn) =>
+    router.get(path, async (req, res) =>
+      res.json({ success: true, data: await fn(req) }),
+    );
+  const mutation = (method, path, fn) =>
+    router[method](path, async (req, res) => {
+      const result = await fn(req);
+      res.json({ success: true, ...result });
+    });
+  const sendFile = async (res, file) => {
+    res.set({
+      "Content-Type": file.mimeType,
+      "Content-Disposition": `attachment; filename="${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}"`,
+    });
+    res.send(Buffer.from(file.base64, "base64"));
+  };
+  get("/dashboard", (req) => dashboard(req.query, req.vendorContext));
+  get("/catalog", (req) => workspace.catalog(req.vendorContext));
+  get("/business", (req) => workspace.business(req.vendorContext));
+  mutation("put", "/business", (req) =>
+    workspace.saveBusiness(req.body, req.vendorContext),
+  );
+  get("/records/:section", (req) =>
+    workspace.records(req.params.section, req.query, req.vendorContext),
+  );
+  mutation("post", "/images", (req) =>
+    workspace.imageUpload(req.body, req.vendorContext),
+  );
+  get("/services/:id", (req) =>
+    workspace.serviceDetails(req.params.id, req.vendorContext),
+  );
+  mutation("post", "/services", (req) =>
+    workspace.saveService(null, req.body, req.vendorContext),
+  );
+  mutation("put", "/services/:id", (req) =>
+    workspace.saveService(req.params.id, req.body, req.vendorContext),
+  );
+  mutation("post", "/services/:id/duplicate", (req) =>
+    workspace.duplicateService(req.params.id, req.vendorContext),
+  );
+  get("/packages/:id", (req) =>
+    workspace.packageDetails(req.params.id, req.vendorContext),
+  );
+  mutation("post", "/packages", (req) =>
+    workspace.savePackage(null, req.body, req.vendorContext),
+  );
+  mutation("put", "/packages/:id", (req) =>
+    workspace.savePackage(req.params.id, req.body, req.vendorContext),
+  );
+  mutation("patch", "/:kind/:id/active", (req) =>
+    workspace.setActive(
+      req.params.kind,
+      req.params.id,
+      req.body,
+      req.vendorContext,
+    ),
+  );
+  for (const kind of ["locations", "offers", "coupons", "items"]) {
+    get(`/${kind}/:id`, (req) =>
+      workspace.simpleDetails(kind, req.params.id, req.vendorContext),
+    );
+    mutation("post", `/${kind}`, (req) =>
+      workspace.saveSimple(kind, null, req.body, req.vendorContext),
+    );
+    mutation("put", `/${kind}/:id`, (req) =>
+      workspace.saveSimple(kind, req.params.id, req.body, req.vendorContext),
+    );
+  }
+  mutation("post", "/documents", (req) =>
+    workspace.documentUpload(req.body, req.vendorContext),
+  );
+  router.get("/documents/:id/file", async (req, res) =>
+    sendFile(
+      res,
+      await workspace.documentFile(req.params.id, req.vendorContext),
+    ),
+  );
+  mutation("patch", "/notifications/:id/read", (req) =>
+    workspace.readNotification(req.params.id, req.vendorContext),
+  );
+  mutation("post", "/bookings/:id/decision", (req) =>
+    operations.bookingDecision(req.params.id, req.body, req.vendorContext),
+  );
+  get("/quotation-options", (req) =>
+    operations.quotationOptions(req.vendorContext),
+  );
+  get("/quotations/:id", (req) =>
+    operations.quoteDetails(req.params.id, req.vendorContext),
+  );
+  mutation("post", "/quotations", (req) =>
+    operations.saveQuote(null, req.body, req.vendorContext),
+  );
+  mutation("put", "/quotations/:id", (req) =>
+    operations.saveQuote(req.params.id, req.body, req.vendorContext),
+  );
+  mutation("post", "/quotations/:id/action", (req) =>
+    operations.quoteAction(req.params.id, req.body, req.vendorContext),
+  );
+  get("/calendar", (req) =>
+    operations.calendar(req.query.month, req.vendorContext),
+  );
+  mutation("put", "/availability", (req) =>
+    operations.setAvailability(req.body, req.vendorContext),
+  );
+  get("/conversations", (req) => messaging.conversations(req.vendorContext));
+  mutation("post", "/conversations", (req) =>
+    messaging.startConversation(req.body, req.vendorContext),
+  );
+  get("/conversations/:id/messages", (req) =>
+    messaging.chat(req.params.id, req.query, req.vendorContext),
+  );
+  mutation("post", "/conversations/:id/messages", (req) =>
+    messaging.sendMessage(req.params.id, req.body, req.vendorContext),
+  );
+  mutation("patch", "/conversations/:id/read", (req) =>
+    messaging.readChat(req.params.id, req.vendorContext),
+  );
+  mutation("post", "/conversations/:id/attachments", (req) =>
+    messaging.attachmentUpload(req.params.id, req.body, req.vendorContext),
+  );
+  router.get(
+    "/conversations/:id/messages/:message/attachment",
+    async (req, res) =>
+      sendFile(
+        res,
+        await messaging.attachmentFile(
+          req.params.id,
+          req.params.message,
+          req.vendorContext,
+        ),
+      ),
+  );
   router.get("/workspace", (req, res) =>
     res.json({
       success: true,
@@ -32,17 +190,32 @@ export function createVendorRouter({
     if (res.headersSent) return next(error);
     const code = error.extensions?.code;
     const status =
-      code === "UNAUTHENTICATED" ? 401 : code === "FORBIDDEN" ? 403 : 500;
-    res
-      .status(status)
-      .json({
-        success: false,
-        message:
-          status === 500
-            ? "Vendor workspace is temporarily unavailable."
-            : error.message,
-        data: null,
-      });
+      code === "UNAUTHENTICATED"
+        ? 401
+        : code === "FORBIDDEN"
+          ? 403
+          : error.name === "ZodError" || code === "UPLOAD_FAILED"
+            ? 400
+            : error.name === "SequelizeUniqueConstraintError"
+              ? 409
+              : error.status || 500;
+    res.status(status).json({
+      success: false,
+      message:
+        status === 500
+          ? "Vendor workspace is temporarily unavailable."
+          : error.name === "ZodError"
+            ? error.issues
+                .map(
+                  (issue) =>
+                    `${issue.path.join(".") || "Input"}: ${issue.message}`,
+                )
+                .join(" ")
+            : error.name === "SequelizeUniqueConstraintError"
+              ? "A record with these details already exists."
+              : error.message,
+      data: null,
+    });
   });
   return router;
 }

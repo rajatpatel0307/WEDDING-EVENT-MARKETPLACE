@@ -1,18 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { client, ME, mutate } from "../services/apollo";
 const AuthContext = createContext(null);
-export function destination(user) {
-  if (user?.role === "Admin") return "/admin/dashboard";
-  if (
-    user?.role === "Vendor" &&
-    user.vendor?.verificationStatus === "Approved" &&
-    !user.vendor.active
-  )
-    return "/vendor/inactive";
-  if (user?.role === "Vendor")
-    return `/vendor/${{ Approved: "dashboard", Rejected: "rejected", Suspended: "suspended" }[user.vendor?.verificationStatus] || "pending"}`;
-  return "/customer/dashboard";
-}
+export { destination } from "../routes/authNavigation";
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null),
     [loading, setLoading] = useState(true),

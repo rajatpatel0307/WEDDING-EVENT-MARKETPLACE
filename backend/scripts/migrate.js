@@ -1,3 +1,5 @@
+import { up as customerWorkspaceUp } from "../migrations/009-customer-workspace.js";
+import { up as workspaceUp } from "../migrations/008-vendor-workspace.js";
 import { up as verificationUp } from "../migrations/007-vendor-verification.js";
 import { up as profileUp } from "../migrations/005-profile-photo.js";
 import { up as customerDetailsUp } from "../migrations/006-customer-details.js";
@@ -109,6 +111,40 @@ try {
       await verificationUp(sequelize.getQueryInterface(), transaction);
       await sequelize.query(
         "INSERT INTO dbo.AuthMigrations(Name) VALUES ('007-vendor-verification')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @result int; EXEC @result=sp_getapplock @Resource='MarryNestAdminMigration', @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @result < 0 THROW 51000, 'Migration lock unavailable', 1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='008-vendor-workspace'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await workspaceUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES ('008-vendor-workspace')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='009-customer-workspace'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await customerWorkspaceUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES('009-customer-workspace')",
         { transaction },
       );
     }

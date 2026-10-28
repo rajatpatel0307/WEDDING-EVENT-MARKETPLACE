@@ -29,6 +29,20 @@ try {
     throw new Error(
       "Vendor verification migration is missing. Run npm run db:migrate before starting the API.",
     );
+  const [workspaceMigration] = await sequelize.query(
+    "SELECT Name FROM dbo.AuthMigrations WHERE Name='008-vendor-workspace'",
+  );
+  if (!workspaceMigration.length)
+    throw new Error(
+      "Vendor workspace migration is missing. Run npm run db:migrate before starting the API.",
+    );
+  const [customerMigration] = await sequelize.query(
+    "SELECT Name FROM dbo.AuthMigrations WHERE Name='009-customer-workspace'",
+  );
+  if (!customerMigration.length)
+    throw new Error(
+      "Customer workspace migration missing. Run npm run db:migrate.",
+    );
   const { httpServer, apollo } = await createApp();
   httpServer.listen(Number(process.env.PORT || 5000), () =>
     console.log("Wedding marketplace API started."),

@@ -15,6 +15,78 @@ import {
   AccountLayout,
   VendorStatusPage,
 } from "../modules/auth/pages/AccountPages";
+const CustomerLayout = lazy(() => import("../modules/customer/CustomerLayout"));
+const CustomerDashboardPage = lazy(
+  () => import("../modules/customer/pages/CustomerDashboard"),
+);
+const CustomerDiscovery = lazy(
+  () => import("../modules/customer/pages/CustomerDiscovery"),
+);
+const CustomerServiceDetails = lazy(() =>
+  import("../modules/customer/pages/CustomerDiscovery").then((m) => ({
+    default: m.CustomerServiceDetails,
+  })),
+);
+const CustomerEvents = lazy(
+  () => import("../modules/customer/pages/CustomerEvents"),
+);
+const CustomerEventDetails = lazy(() =>
+  import("../modules/customer/pages/CustomerEvents").then((m) => ({
+    default: m.CustomerEventDetails,
+  })),
+);
+const CustomerRecords = lazy(
+  () => import("../modules/customer/pages/CustomerRecords"),
+);
+const CustomerRecordDetails = lazy(() =>
+  import("../modules/customer/pages/CustomerRecords").then((m) => ({
+    default: m.CustomerRecordDetails,
+  })),
+);
+const CustomerProfile = lazy(() =>
+  import("../modules/customer/pages/CustomerRecords").then((m) => ({
+    default: m.CustomerProfile,
+  })),
+);
+const CustomerMessages = lazy(
+  () => import("../modules/customer/pages/CustomerMessagesPage"),
+);
+const VendorLayout = lazy(
+  () => import("../modules/vendor/layouts/VendorLayout"),
+);
+const VendorDashboardPage = lazy(
+  () => import("../modules/vendor/pages/VendorDashboard"),
+);
+const VendorResourcesPage = lazy(
+  () => import("../modules/vendor/pages/VendorResourcesPage"),
+);
+const VendorBusinessPage = lazy(
+  () => import("../modules/vendor/pages/VendorBusinessPage"),
+);
+const VendorCalendarPage = lazy(
+  () => import("../modules/vendor/pages/VendorCalendarPage"),
+);
+const VendorMessagesPage = lazy(
+  () => import("../modules/vendor/pages/VendorMessagesPage"),
+);
+const VendorEarningsPage = lazy(
+  () => import("../modules/vendor/pages/VendorEarningsPage"),
+);
+const ServiceForm = lazy(() =>
+  import("../modules/vendor/components/WorkspaceForms").then((m) => ({
+    default: m.ServiceForm,
+  })),
+);
+const PackageForm = lazy(() =>
+  import("../modules/vendor/components/WorkspaceForms").then((m) => ({
+    default: m.PackageForm,
+  })),
+);
+const QuotationForm = lazy(() =>
+  import("../modules/vendor/components/WorkspaceForms").then((m) => ({
+    default: m.QuotationForm,
+  })),
+);
 const AdminLayout = lazy(() => import("../modules/admin/AdminLayout"));
 const AdminDashboard = lazy(
   () => import("../modules/admin/pages/AdminDashboard"),
@@ -238,9 +310,63 @@ export default function AppRoutes() {
           element={<ResetPasswordPage change />}
         />
         <Route element={<RoleRoute role="Customer" />}>
-          <Route path="/customer/profile" element={<ProfilePage />} />
-          <Route path="/customer/dashboard" element={<Dashboard />} />
-          <Route path="/customer/:section" element={<AccountFeaturePage />} />
+          <Route
+            path="/customer"
+            element={
+              <Suspense
+                fallback={
+                  <div role="status" className="p-8">
+                    Loading your planning space...
+                  </div>
+                }
+              >
+                <CustomerLayout />
+              </Suspense>
+            }
+          >
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<CustomerDashboardPage />} />
+            <Route path="profile" element={<CustomerProfile />} />
+            <Route path="settings" element={<CustomerProfile settings />} />
+            <Route path="events" element={<CustomerEvents />} />
+            <Route path="events/:id" element={<CustomerEventDetails />} />
+            <Route path="discover" element={<CustomerDiscovery />} />
+            <Route
+              path="services"
+              element={<Navigate to="/customer/discover" replace />}
+            />
+            <Route path="services/:id" element={<CustomerServiceDetails />} />
+            <Route
+              path="vendors/:id"
+              element={<CustomerServiceDetails vendor />}
+            />
+            <Route path="bookings/:id" element={<CustomerRecordDetails />} />
+            <Route
+              path="quotations/:id"
+              element={<CustomerRecordDetails quote />}
+            />
+            <Route path="messages" element={<CustomerMessages />} />
+            {[
+              "bookings",
+              "quotations",
+              "requests",
+              "wishlist",
+              "payments",
+              "reviews",
+              "addresses",
+              "notifications",
+            ].map((section) => (
+              <Route
+                key={section}
+                path={section}
+                element={<CustomerRecords section={section} />}
+              />
+            ))}
+            <Route
+              path="*"
+              element={<Navigate to="/customer/dashboard" replace />}
+            />
+          </Route>
         </Route>
         <Route element={<RoleRoute role="Vendor" />}>
           <Route path="/vendor/profile" element={<ProfilePage />} />
@@ -249,8 +375,143 @@ export default function AppRoutes() {
           <Route path="/vendor/rejected" element={<VendorStatusPage />} />
           <Route path="/vendor/suspended" element={<VendorStatusPage />} />
           <Route element={<VendorApprovalRoute />}>
-            <Route path="/vendor/dashboard" element={<Dashboard />} />
-            <Route path="/vendor/:section" element={<AccountFeaturePage />} />
+            <Route
+              path="/vendor"
+              element={
+                <Suspense
+                  fallback={
+                    <div role="status" className="p-8">
+                      Loading vendor workspace...
+                    </div>
+                  }
+                >
+                  <VendorLayout />
+                </Suspense>
+              }
+            >
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<VendorDashboardPage />} />
+              <Route
+                path="analytics"
+                element={<VendorDashboardPage analyticsOnly />}
+              />
+              <Route path="business/profile" element={<VendorBusinessPage />} />
+              <Route
+                path="business/details"
+                element={<VendorBusinessPage mode="details" />}
+              />
+              <Route
+                path="verification"
+                element={<VendorBusinessPage mode="verification" />}
+              />
+              <Route path="services/new" element={<ServiceForm />} />
+              <Route path="services/:id/edit" element={<ServiceForm />} />
+              <Route path="services/:id" element={<ServiceForm readOnly />} />
+              <Route path="packages/new" element={<PackageForm />} />
+              <Route path="packages/:id/edit" element={<PackageForm />} />
+              <Route
+                path="requests"
+                element={<VendorResourcesPage section="requests" />}
+              />
+              <Route path="quotations/new" element={<QuotationForm />} />
+              <Route path="quotations/:id/edit" element={<QuotationForm />} />
+              <Route path="calendar" element={<VendorCalendarPage />} />
+              <Route
+                path="availability"
+                element={<Navigate to="/vendor/calendar" replace />}
+              />
+              <Route
+                path="availability/blocked"
+                element={<VendorCalendarPage filter="blocked" />}
+              />
+              <Route
+                path="availability/available"
+                element={<VendorCalendarPage filter="available" />}
+              />
+              <Route path="messages" element={<VendorMessagesPage />} />
+              <Route path="earnings" element={<VendorEarningsPage />} />
+              {[
+                "services",
+                "packages",
+                "items",
+                "locations",
+                "documents",
+                "customers",
+                "payouts",
+                "transactions",
+                "reviews",
+                "offers",
+                "coupons",
+                "notifications",
+              ].map((section) => (
+                <Route
+                  key={section}
+                  path={section}
+                  element={
+                    <VendorResourcesPage
+                      key={section}
+                      section={section}
+                      title={
+                        section === "services"
+                          ? "My services"
+                          : section === "items"
+                            ? "Service items"
+                            : section === "packages"
+                              ? "Service packages"
+                              : undefined
+                      }
+                    />
+                  }
+                />
+              ))}
+              <Route
+                path="bookings"
+                element={<Navigate to="/vendor/bookings/requests" replace />}
+              />
+              {["requests", "upcoming", "active", "completed", "cancelled"].map(
+                (filter) => (
+                  <Route
+                    key={filter}
+                    path={`bookings/${filter}`}
+                    element={
+                      <VendorResourcesPage
+                        key={`bookings-${filter}`}
+                        section="bookings"
+                        filter={filter}
+                        title={`${filter === "requests" ? "Booking requests" : filter[0].toUpperCase() + filter.slice(1) + " bookings"}`}
+                      />
+                    }
+                  />
+                ),
+              )}
+              <Route
+                path="quotations"
+                element={<Navigate to="/vendor/quotations/sent" replace />}
+              />
+              {["drafts", "sent", "accepted", "rejected"].map((filter) => (
+                <Route
+                  key={filter}
+                  path={`quotations/${filter}`}
+                  element={
+                    <VendorResourcesPage
+                      key={`quotes-${filter}`}
+                      section="quotations"
+                      filter={filter}
+                      title={`${filter[0].toUpperCase() + filter.slice(1)} quotations`}
+                    />
+                  }
+                />
+              ))}
+              <Route
+                path="*"
+                element={
+                  <div className="vw-empty">
+                    <h1>Page not found</h1>
+                    <Link to="/vendor/dashboard">Return to dashboard</Link>
+                  </div>
+                }
+              />
+            </Route>
           </Route>
         </Route>
         <Route element={<RoleRoute role="Admin" />}>

@@ -12,7 +12,7 @@ export const validId = (r, id) =>
   r.id.endsWith("Id") &&
   ["CategoryId", "SubCategoryId", "AuditLogId", "WishlistId"].includes(r.id)
     ? z.coerce.number().int().positive().parse(id)
-    : z.uuid().parse(id);
+    : z.guid().parse(id);
 export async function reviewVendor(
   id,
   input,
