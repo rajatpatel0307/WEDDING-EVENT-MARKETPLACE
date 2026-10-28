@@ -138,13 +138,13 @@ function PublicPage({ children }) {
 }
 function Legal({ privacy = false }) {
   return (
-    <main id="main-content" className="legal-page">
-      <Link className="back-link" to="/auth/signup">
+    <main id="main-content" className="legal-page max-w-[780px] [margin:60px_auto] [padding:0_25px_60px] [&_>_.eyebrow]:mt-[30px] [&_h1]:text-[42px] [&_h1]:[margin:15px_0_25px] [&_h2]:text-[27px] [&_h2]:[margin:30px_0_12px] [&_p]:text-[14px] [&_p]:leading-[1.9] max-[480.001px]:mt-[25px]">
+      <Link className="back-link inline-flex gap-[8px] items-center [color:#8d6a72] text-[12px] mt-[25px]" to="/auth/signup">
         ← Back to registration
       </Link>
-      <span className="eyebrow">MARRYNEST</span>
+      <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full">MARRYNEST</span>
       <h1>{privacy ? "Privacy Policy" : "Terms & Conditions"}</h1>
-      <div className="info-box">
+      <div className="info-box [border:1px_solid_#eaddd2] [background:#fcf8f2] rounded-[7px] [padding:15px] text-[12px] [color:#96785c] [margin:18px_0] [&_p]:mt-[6px]">
         Policy preview. The marketplace operator must review and publish its
         approved legal policies before accepting public registrations.
       </div>
@@ -216,14 +216,14 @@ function AccountFeaturePage() {
   }[section];
   return (
     <AccountLayout>
-      <span className="eyebrow">YOUR MARRYNEST ACCOUNT</span>
+      <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full">YOUR MARRYNEST ACCOUNT</span>
       <h1>{name || "Page not found"}</h1>
-      <p className="dashboard-intro">
+      <p className="dashboard-intro mt-[12px] text-[14px]">
         {name
           ? "This workspace is being prepared. Your account is ready; live marketplace tools will appear here as they become available."
           : "This page is not available."}
       </p>
-      <Link className="text-link" to="/auth/change-password">
+      <Link className="text-link [color:#8c414e] font-medium inline-flex items-center gap-[7px] [&:hover]:underline" to="/auth/change-password">
         Manage account security
       </Link>
     </AccountLayout>
@@ -640,7 +640,7 @@ export default function AppRoutes() {
       <Route
         path="*"
         element={
-          <main id="main-content" className="legal-page">
+          <main id="main-content" className="legal-page max-w-[780px] [margin:60px_auto] [padding:0_25px_60px] [&_>_.eyebrow]:mt-[30px] [&_h1]:text-[42px] [&_h1]:[margin:15px_0_25px] [&_h2]:text-[27px] [&_h2]:[margin:30px_0_12px] [&_p]:text-[14px] [&_p]:leading-[1.9] max-[480.001px]:mt-[25px]">
             <h1>This page isn't here.</h1>
             <Link to="/auth/login">Return to sign in</Link>
           </main>

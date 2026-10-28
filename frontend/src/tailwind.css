@@ -1,0 +1,16 @@
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+/* Keep utilities unlayered to preserve precedence with existing feature styles. */
+@import "tailwindcss/utilities.css";
+
+@theme {
+  --color-rose-brand: #8c414e;
+  --color-cream: #faf8f5;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --animate-appear: appear 0.4s ease;
+
+  @keyframes appear {
+    from { opacity: 0; transform: translateY(7px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}

@@ -101,7 +101,7 @@ export function AuthProvider({ children }) {
     >
       {children}
       {notice && (
-        <div className="toast" role="status">
+        <div className="toast fixed bottom-[24px] left-[50%] [transform:translateX(-50%)] [background:#473c3f] text-white [padding:15px_20px] rounded-[8px] [box-shadow:0_6px_25px_#0002] z-[100] flex items-center gap-[20px] text-[12px] max-w-[calc(100%_-_32px)] w-[max-content] [&_button]:border-0 [&_button]:bg-transparent [&_button]:[color:#dbc7cc] [&_button]:text-[20px]" role="status">
           {notice}
           <button
             onClick={() => setNotice("")}

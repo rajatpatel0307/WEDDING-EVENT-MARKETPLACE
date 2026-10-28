@@ -28,11 +28,11 @@ export default function ForgotPasswordPage() {
   }
   return (
     <AuthLayout>
-      <div className="form-icon">
+      <div className="form-icon w-[48px] h-[48px] [border:1px_solid_#eaded9] rounded-[13px] grid place-items-center [color:#9a5f65] [background:#fcf8f6] mb-[23px] max-[480.001px]:mb-[20px]">
         <KeyRound size={22} />
       </div>
       <h2>Forgot Password?</h2>
-      <p className="form-intro">
+      <p className="form-intro text-[12px] leading-[1.8] [margin:14px_0_28px] max-[480.001px]:mb-[25px]">
         Enter your registered email or phone number and we'll send you a
         verification code.
       </p>
@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
         />
         <Submit busy={busy}>Send OTP</Submit>
       </form>
-      <Link className="back-link" to="/auth/login">
+      <Link className="back-link inline-flex gap-[8px] items-center [color:#8d6a72] text-[12px] mt-[25px]" to="/auth/login">
         <ArrowLeft size={15} /> Back to sign in
       </Link>
     </AuthLayout>

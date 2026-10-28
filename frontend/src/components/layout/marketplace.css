@@ -1,4 +1,4 @@
-@reference "../../index.css";
+@reference "../../tailwind.css";
 .mn-header {
   @apply sticky top-0;
   position: sticky;

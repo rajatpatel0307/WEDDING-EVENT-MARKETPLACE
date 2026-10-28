@@ -82,17 +82,17 @@ export default function OtpPage({ reset = false }) {
   }
   return (
     <AuthLayout>
-      <div className="form-icon">
+      <div className="form-icon w-[48px] h-[48px] [border:1px_solid_#eaded9] rounded-[13px] grid place-items-center [color:#9a5f65] [background:#fcf8f6] mb-[23px] max-[480.001px]:mb-[20px]">
         <MailCheck size={24} />
       </div>
-      <span className="eyebrow form-eyebrow">ONE SMALL STEP</span>
+      <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full form-eyebrow [&.form-eyebrow]:text-[9px] [&.form-eyebrow]:tracking-[2px] [&.form-eyebrow]:mb-[12px]">ONE SMALL STEP</span>
       <h2>{reset ? "Verify OTP" : "Check your inbox."}</h2>
-      <p className="form-intro">
+      <p className="form-intro text-[12px] leading-[1.8] [margin:14px_0_28px] max-[480.001px]:mb-[25px]">
         Enter the six-digit code sent to your registered email. Your code
         expires in 10 minutes.
       </p>
       {!reset && sessionStorage.getItem("verifyRole") === "Vendor" && (
-        <ol className="progress-steps" aria-label="Registration progress">
+        <ol className="progress-steps flex list-none p-0 [margin:10px_0_30px] justify-between relative [&::before]:[content:''] [&::before]:absolute [&::before]:top-[12px] [&::before]:left-[20px] [&::before]:right-[20px] [&::before]:h-[1px] [&::before]:[background:#eadddf] [&_li]:relative [&_li]:flex [&_li]:flex-col [&_li]:items-center [&_li]:gap-[7px] [&_li]:text-[9px] [&_li]:[color:#ac9da2] [&_li_>_span]:bg-white [&_li_>_span]:[border:1px_solid_#e5d8dc] [&_li_>_span]:rounded-full [&_li_>_span]:w-[24px] [&_li_>_span]:h-[24px] [&_li_>_span]:grid [&_li_>_span]:place-items-center [&_li.current]:[color:#8c414e] [&_li.current_>_span]:[background:#8c414e] [&_li.current_>_span]:text-white [&_li.current_>_span]:[border-color:#8c414e] [&_li.current_>_span]:[box-shadow:0_0_0_4px_#8c414e10] [&_li.complete_>_span]:[background:#f3e9eb] [&_li.complete_>_span]:[color:#8c414e] [&_li.complete_>_span]:[border-color:#dec1c9] max-[480.001px]:mt-[15px] max-[480.001px]:[&_small]:text-[8px] max-[480.001px]:[&_li]:gap-[6px]" aria-label="Registration progress">
           {[
             "Account",
             "Business",
@@ -122,9 +122,9 @@ export default function OtpPage({ reset = false }) {
           onChange={(e) => setIdentifier(e.target.value)}
           required
         />
-        <fieldset className="otp-fieldset">
+        <fieldset className="otp-fieldset border-0 p-0 [margin:25px_0] [&_legend]:text-[11px] [&_legend]:[color:#76656c] [&_legend]:mb-[10px]">
           <legend>Verification code</legend>
-          <div className="otp-inputs">
+          <div className="otp-inputs flex gap-[9px] [&_input]:w-[calc((100%_-_45px)_/_6)] [&_input]:h-[55px] [&_input]:min-w-0 [&_input]:rounded-[7px] [&_input]:[border:1px_solid_#dfd0d6] [&_input]:text-center [&_input]:text-[23px] [&_input]:[color:#8c414e] [&_input]:[background:#fffcfd] max-[480.001px]:gap-[6px] max-[480.001px]:[&_input]:w-[calc((100%_-_30px)_/_6)] max-[480.001px]:[&_input]:h-[49px]">
             {digits.map((digit, i) => (
               <input
                 key={i}
@@ -156,7 +156,7 @@ export default function OtpPage({ reset = false }) {
           Verify code
         </Submit>
       </form>
-      <p className="resend-line">
+      <p className="resend-line text-center text-[11px] mt-[23px] [&_button]:border-0 [&_button]:bg-transparent [&_button]:[color:#8c414e] [&_button]:text-[11px] [&_button]:font-medium [&_button]:[padding:5px]">
         Didn't receive a code?{" "}
         <button
           disabled={seconds > 0 || resending || !identifier}
@@ -170,7 +170,7 @@ export default function OtpPage({ reset = false }) {
         </button>
       </p>
       <Link
-        className="back-link"
+        className="back-link inline-flex gap-[8px] items-center [color:#8d6a72] text-[12px] mt-[25px]"
         to={reset ? "/auth/forgot-password" : "/auth/login"}
       >
         <ArrowLeft size={15} />{" "}
