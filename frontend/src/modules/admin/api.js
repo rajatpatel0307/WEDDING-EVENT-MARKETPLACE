@@ -49,7 +49,7 @@ export const money = (value, compact = false) =>
     style: "currency",
     currency: "INR",
     notation: compact ? "compact" : "standard",
-    maximumFractionDigits: compact ? 1 : 0,
+    maximumFractionDigits: compact ? 1 : 2,
   }).format(Number(value || 0));
 export const number = (value) => Number(value || 0).toLocaleString("en-IN");
 export const date = (value) =>

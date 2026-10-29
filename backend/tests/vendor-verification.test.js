@@ -114,8 +114,10 @@ test("approval activates and timestamps a vendor, and writes both review milesto
   assert.match(update.arguments[0], /VerifiedAt/);
   assert.match(update.arguments[0], /VerifiedBy/);
   assert.equal(
-    query.mock.calls.filter((c) =>
-      c.arguments[0].startsWith("INSERT INTO dbo.Notifications"),
+    query.mock.calls.filter(
+      (c) =>
+        c.arguments[0].startsWith("INSERT INTO dbo.Notifications") &&
+        !c.arguments[0].includes("AdminEvent"),
     ).length,
     1,
   );
@@ -133,8 +135,10 @@ test("rejection preserves records, revokes sessions, and sends the reason and no
     ctx,
   );
   assert.equal(result.data.isActive, false);
-  const notification = query.mock.calls.find((c) =>
-    c.arguments[0].startsWith("INSERT INTO dbo.Notifications"),
+  const notification = query.mock.calls.find(
+    (c) =>
+      c.arguments[0].startsWith("INSERT INTO dbo.Notifications") &&
+      !c.arguments[0].includes("AdminEvent"),
   );
   assert.match(
     notification.arguments[1].replacements.message,
@@ -153,8 +157,10 @@ test("long rejection notes fit the notification column while history retains the
   const { query } = setup(t);
   const notes = "N".repeat(2000);
   await decideVendor(id, "Rejected", { reason: "R".repeat(1000), notes }, ctx);
-  const notification = query.mock.calls.find((c) =>
-    c.arguments[0].startsWith("INSERT INTO dbo.Notifications"),
+  const notification = query.mock.calls.find(
+    (c) =>
+      c.arguments[0].startsWith("INSERT INTO dbo.Notifications") &&
+      !c.arguments[0].includes("AdminEvent"),
   );
   assert.equal(notification.arguments[1].replacements.message.length, 2000);
   const history = query.mock.calls

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireRole } from "../../middleware/auth.middleware.js";
 import { repo, owned, fail, audit, assertVersion } from "./workspace.common.js";
-import { serviceTemplates } from "./service-templates.js";
+import { templateFor, templatesFor } from "./service-templates.js";
 import {
   validateAttributes,
   availabilityInput,
@@ -12,10 +12,12 @@ import {
   serviceSchema,
   listSchema,
   calculatePrice,
+  pricingTypeFor,
   actionsFor,
   validateServiceSubmission,
 } from "./service-management.validation.js";
 import { uploadAsset } from "../media/cloudinary.service.js";
+import { csvCell } from "../../utils/csv.js";
 
 export function serviceScope(ctx) {
   const user = requireRole(ctx, "VENDOR");
@@ -61,19 +63,21 @@ async function reapprove(row, ctx, tx) {
 }
 export async function metadata(ctx) {
   const { approved, user } = serviceScope(ctx);
-  const categories = (
-    await repo.select(
-      "SELECT c.CategoryId AS id,c.CategoryName AS name FROM dbo.Categories c JOIN dbo.VendorCategories vc ON vc.CategoryId=c.CategoryId AND vc.VendorId=:id WHERE c.IsActive=1 ORDER BY c.SortOrder,c.CategoryId",
-      { id: user.vendor.id },
-    )
-  ).filter((c) => Object.hasOwn(serviceTemplates, c.name));
+  const categories = await repo.select(
+    "SELECT c.CategoryId AS id,c.CategoryName AS name,c.CategoryCode AS code FROM dbo.Categories c JOIN dbo.VendorCategories vc ON vc.CategoryId=c.CategoryId AND vc.VendorId=:id WHERE c.IsActive=1 ORDER BY c.SortOrder,c.CategoryId",
+    { id: user.vendor.id },
+  );
   const subcategories = await repo.select(
     "SELECT SubCategoryId AS id,CategoryId AS categoryId,SubCategoryName AS name FROM dbo.SubCategories WHERE IsActive=1 ORDER BY SortOrder,SubCategoryId",
   );
   return {
     categories,
     subcategories,
-    templates: serviceTemplates,
+    locations: await repo.select(
+      "SELECT VendorLocationId AS id,AddressLine1 AS address,City AS city,State AS state,Country AS country,PostalCode AS zip,Latitude AS latitude,Longitude AS longitude FROM dbo.VendorLocations WHERE VendorId=:id AND IsActive=1 ORDER BY IsPrimary DESC,CreatedAt DESC,VendorLocationId",
+      { id: user.vendor.id },
+    ),
+    templates: templatesFor(categories),
     canSubmit: approved,
     vendorName: user.vendor.businessName,
   };
@@ -81,7 +85,7 @@ export async function metadata(ctx) {
 const joins = `FROM dbo.Services s JOIN dbo.Categories c ON c.CategoryId=s.CategoryId LEFT JOIN dbo.SubCategories sc ON sc.SubCategoryId=s.SubCategoryId
  OUTER APPLY(SELECT COUNT(DISTINCT bi.BookingId) AS bookings FROM dbo.BookingItems bi WHERE bi.ServiceId=s.ServiceId) b
  OUTER APPLY(SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS rating,COUNT_BIG(*) AS reviewCount FROM dbo.Reviews r WHERE r.IsPublished=1 AND EXISTS(SELECT 1 FROM dbo.BookingItems bi WHERE bi.BookingId=r.BookingId AND bi.ServiceId=s.ServiceId)) r`;
-export async function list(input, ctx) {
+export async function list(input, ctx, exporting = false) {
   const { id, approved } = serviceScope(ctx),
     q = listSchema.parse(input);
   const p = {
@@ -130,12 +134,19 @@ export async function list(input, ctx) {
     `SELECT COUNT_BIG(*) AS total ${source}`,
     p,
   );
+  if (exporting) {
+    if (Number(count.total) > 10000)
+      fail("Export supports up to 10,000 services. Narrow your filters first.");
+    p.offset = 0;
+    p.size = 10000;
+  }
   const rows = await repo.select(
     `SELECT s.ServiceId AS id,s.ServiceName AS name,s.CategoryId AS categoryId,c.CategoryName AS category,sc.SubCategoryName AS subcategory,s.BasePrice AS price,s.ApprovalStatus AS status,s.IsActive AS active,s.UpdatedAt AS updatedAt,JSON_VALUE(s.DetailsJson,'$.location.city') AS location,b.bookings,r.rating,CASE WHEN EXISTS(SELECT 1 FROM dbo.QuotationItems qi WHERE qi.ServiceId=s.ServiceId) OR EXISTS(SELECT 1 FROM dbo.QuotationRequests qr WHERE qr.ServiceId=s.ServiceId) OR EXISTS(SELECT 1 FROM dbo.Offers o WHERE o.ServiceId=s.ServiceId) THEN 1 ELSE 0 END AS hasHistory,(SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityType='Service' AND EntityId=s.ServiceId AND MediaType='Image' ORDER BY IsPrimary DESC,SortOrder,MediaId) AS image ${source} ORDER BY ${sort},s.ServiceId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
     p,
   );
+  if (exporting) return rows;
   const [stats] = await repo.select(
-    `SELECT COUNT_BIG(*) AS totalServices,SUM(CASE WHEN s.IsActive=1 AND s.ApprovalStatus='Approved' THEN 1 ELSE 0 END) AS activeServices,SUM(CASE WHEN s.ApprovalStatus='Draft' THEN 1 ELSE 0 END) AS draftServices,SUM(CASE WHEN s.ApprovalStatus IN ('Pending','UnderReview') THEN 1 ELSE 0 END) AS pendingApproval,SUM(CASE WHEN s.ApprovalStatus='Approved' THEN 1 ELSE 0 END) AS approvedServices,SUM(CASE WHEN s.ApprovalStatus='Rejected' THEN 1 ELSE 0 END) AS rejectedServices,(SELECT COUNT(DISTINCT bi.BookingId) FROM dbo.BookingItems bi JOIN dbo.Services bs ON bs.ServiceId=bi.ServiceId WHERE bs.VendorId=:id) AS totalBookings FROM dbo.Services s OUTER APPLY(SELECT COUNT(DISTINCT bi.BookingId) AS bookings FROM dbo.BookingItems bi WHERE bi.ServiceId=s.ServiceId) b WHERE s.VendorId=:id`,
+    `SELECT COUNT_BIG(*) AS totalServices,SUM(CASE WHEN s.IsActive=1 AND s.ApprovalStatus='Approved' THEN 1 ELSE 0 END) AS activeServices,SUM(CASE WHEN s.ApprovalStatus='Draft' THEN 1 ELSE 0 END) AS draftServices,SUM(CASE WHEN s.ApprovalStatus IN ('Pending','UnderReview') THEN 1 ELSE 0 END) AS pendingApproval,SUM(CASE WHEN s.ApprovalStatus='Approved' THEN 1 ELSE 0 END) AS approvedServices,SUM(CASE WHEN s.ApprovalStatus='Rejected' THEN 1 ELSE 0 END) AS rejectedServices,SUM(CASE WHEN s.ApprovalStatus='Suspended' THEN 1 ELSE 0 END) AS suspendedServices,(SELECT COUNT(DISTINCT bi.BookingId) FROM dbo.BookingItems bi JOIN dbo.Services bs ON bs.ServiceId=bi.ServiceId WHERE bs.VendorId=:id) AS totalBookings FROM dbo.Services s OUTER APPLY(SELECT COUNT(DISTINCT bi.BookingId) AS bookings FROM dbo.BookingItems bi WHERE bi.ServiceId=s.ServiceId) b WHERE s.VendorId=:id`,
     { id },
   );
   const [rating] = await repo.select(
@@ -167,19 +178,25 @@ export async function details(serviceId, ctx) {
   );
   return {
     ...parse(row.DetailsJson),
-    pricing: parse(row.DetailsJson).pricing || {
-      basePrice: Number(row.BasePrice || 0),
-      unitPrice: 0,
-      minimumQuantity: 1,
-      maximumQuantity: 1,
-      unit:
-        {
-          PerPerson: "Per Person",
-          PerHour: "Per Hour",
-          PerDay: "Per Day",
-          PerItem: "Per Item",
-          CustomQuote: "Custom",
-        }[row.PricingType] || "Per Event",
+    pricing: {
+      type: row.PricingType,
+      minimumPrice: row.MinimumPrice == null ? null : Number(row.MinimumPrice),
+      maximumPrice: row.MaximumPrice == null ? null : Number(row.MaximumPrice),
+      customQuote: !!row.IsCustomQuoteAvailable,
+      ...(parse(row.DetailsJson).pricing || {
+        basePrice: Number(row.BasePrice || 0),
+        unitPrice: 0,
+        minimumQuantity: 1,
+        maximumQuantity: 1,
+        unit:
+          {
+            PerPerson: "Per Person",
+            PerHour: "Per Hour",
+            PerDay: "Per Day",
+            PerItem: "Per Item",
+            CustomQuote: "Custom",
+          }[row.PricingType] || "Per Event",
+      }),
     },
     id: row.ServiceId,
     name: row.ServiceName,
@@ -189,6 +206,7 @@ export async function details(serviceId, ctx) {
     attributes: parse(row.AttributesJson),
     status: row.ApprovalStatus,
     active: !!row.IsActive,
+    createdAt: row.CreatedAt,
     updatedAt: row.UpdatedAt,
     slug: row.ServiceSlug,
     price: row.BasePrice,
@@ -241,12 +259,16 @@ export async function saveService(serviceId, input, ctx) {
       version(old, body.expectedUpdatedAt);
     }
     const [category] = await repo.select(
-      "SELECT CategoryName AS name FROM dbo.Categories WHERE CategoryId=:category AND IsActive=1",
+      "SELECT CategoryName AS name,CategoryCode AS code FROM dbo.Categories WHERE CategoryId=:category AND IsActive=1",
       { category: body.categoryId },
       tx,
     );
     if (!category) fail("Choose an active category.");
-    const attributes = validateAttributes(category.name, body.attributes);
+    const attributes = validateAttributes(
+      category.name,
+      body.attributes,
+      templateFor(category),
+    );
     const [assigned] = await repo.select(
       "SELECT CategoryId FROM dbo.VendorCategories WHERE VendorId=:id AND CategoryId=:category",
       { id, category: body.categoryId },
@@ -285,15 +307,22 @@ export async function saveService(serviceId, input, ctx) {
       AttributesJson: JSON.stringify(attributes),
       DetailsJson: JSON.stringify(document),
       BasePrice: price,
-      PricingType:
-        {
-          "Per Hour": "PerHour",
-          "Per Day": "PerDay",
-          "Per Item": "PerItem",
-          "Per Person": "PerPerson",
-          "Per Plate": "PerPerson",
-          Custom: "CustomQuote",
-        }[body.pricing.unit] || "Fixed",
+      MinimumPrice: body.pricing.minimumPrice,
+      MaximumPrice: body.pricing.maximumPrice,
+      IsCustomQuoteAvailable:
+        body.pricing.customQuote ||
+        pricingTypeFor(body.pricing) === "CustomQuote"
+          ? 1
+          : 0,
+      MinimumGuests:
+        attributes.minimumGuests ?? attributes.minimumCapacity ?? null,
+      MaximumGuests:
+        attributes.maximumGuests ??
+        attributes.maximumCapacity ??
+        attributes.capacity ??
+        null,
+      DurationMinutes: body.policies.duration || null,
+      PricingType: pricingTypeFor(body.pricing),
       ApprovalStatus: status,
       IsActive: 0,
       UpdatedAt: new Date(),
@@ -458,6 +487,12 @@ export async function duplicate(serviceId, ctx) {
         Description: row.Description,
         PricingType: row.PricingType,
         BasePrice: row.BasePrice,
+        MinimumPrice: row.MinimumPrice,
+        MaximumPrice: row.MaximumPrice,
+        IsCustomQuoteAvailable: row.IsCustomQuoteAvailable,
+        MinimumGuests: row.MinimumGuests,
+        MaximumGuests: row.MaximumGuests,
+        DurationMinutes: row.DurationMinutes,
         AttributesJson: row.AttributesJson,
         DetailsJson: JSON.stringify(doc),
         ApprovalStatus: "Draft",
@@ -602,6 +637,14 @@ export async function images(serviceId, input, ctx, removeId = null) {
   const initial = await lock(serviceId, ctx, undefined, false);
   editable(initial);
   version(initial, body.expectedUpdatedAt);
+  if (body.base64) {
+    const [count] = await repo.select(
+      "SELECT COUNT_BIG(*) AS total FROM dbo.Media WHERE EntityType='Service' AND EntityId=:serviceId AND MediaType='Image'",
+      { serviceId },
+    );
+    if (Number(count?.total || 0) >= 30)
+      fail("A service can contain up to 30 images.");
+  }
   const asset = body.base64 ? await uploadAsset(body.base64, true) : null;
   return repo.transaction(async (tx) => {
     const row = await lock(serviceId, ctx, tx);
@@ -804,7 +847,7 @@ export async function performance(serviceId, ctx) {
     { serviceId },
   );
   const [bookings] = await repo.select(
-    "SELECT COUNT(DISTINCT b.BookingId) AS bookings,COALESCE(SUM(CASE WHEN b.BookingStatus='Completed' THEN bi.LineTotal ELSE 0 END),0) AS revenue FROM dbo.BookingItems bi JOIN dbo.Booking b ON b.BookingId=bi.BookingId WHERE bi.ServiceId=:serviceId",
+    "SELECT COUNT(DISTINCT b.BookingId) AS bookings,COUNT(DISTINCT CASE WHEN b.BookingStatus='Completed' THEN b.BookingId END) AS completedBookings,COALESCE(SUM(CASE WHEN b.BookingStatus='Completed' THEN bi.LineTotal ELSE 0 END),0) AS revenue FROM dbo.BookingItems bi JOIN dbo.Booking b ON b.BookingId=bi.BookingId WHERE bi.ServiceId=:serviceId",
     { serviceId },
   );
   const [quotes] = await repo.select(
@@ -872,4 +915,42 @@ export async function history(serviceId, kind, ctx) {
           { serviceId },
         );
   return { rows };
+}
+
+export async function exportServices(input, ctx) {
+  const rows = await list(input, ctx, true);
+  const columns = [
+    ["id", "Service ID"],
+    ["name", "Service Name"],
+    ["category", "Category"],
+    ["subcategory", "Subcategory"],
+    ["price", "Starting Price (INR)"],
+    ["location", "Location"],
+    ["status", "Approval Status"],
+    ["active", "Active"],
+    ["bookings", "Bookings"],
+    ["rating", "Rating"],
+    ["updatedAt", "Updated Date"],
+  ];
+  return (
+    "\ufeff" +
+    [
+      columns.map(([, label]) => csvCell(label)).join(","),
+      ...rows.map((row) =>
+        columns
+          .map(([key]) =>
+            csvCell(
+              key === "active"
+                ? row.active
+                  ? "Yes"
+                  : "No"
+                : row[key] instanceof Date
+                  ? row[key].toISOString()
+                  : row[key],
+            ),
+          )
+          .join(","),
+      ),
+    ].join("\r\n")
+  );
 }

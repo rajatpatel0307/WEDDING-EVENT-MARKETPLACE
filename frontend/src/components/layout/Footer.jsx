@@ -4,14 +4,14 @@ import { Link, useLocation } from "react-router-dom";
 import { ArrowUpRight, Heart, ShieldCheck, MapPin } from "lucide-react";
 import Logo from "../common/Logo";
 import Newsletter from "../common/Newsletter";
-import { serviceGroups, servicePath } from "./services";
+import { useServiceGroups, servicePath } from "./services";
 const legal = [
   ["Privacy Policy", "/privacy-policy"],
   ["Terms & Conditions", "/terms-and-conditions"],
   ["Cookie Policy", "/cookies"],
   ["Refund Policy", "/refunds"],
 ];
-const columns = [
+const footerColumns = (serviceGroups) => [
   [
     "Services",
     serviceGroups
@@ -25,10 +25,10 @@ const columns = [
   [
     "Wedding essentials",
     [
-      ["Wedding Clothing", servicePath("Wedding Clothing")],
-      ["Jewellery & Accessories", servicePath("Jewellery & Accessories")],
-      ["Mehndi", servicePath("Mehndi")],
-      ...serviceGroups[3].items.map(([name]) => [name, servicePath(name)]),
+      ...serviceGroups
+        .flatMap((group) => group.items)
+        .slice(9)
+        .map(([name]) => [name, servicePath(name)]),
     ],
   ],
   [
@@ -91,6 +91,7 @@ function FooterColumn({ title, items }) {
   );
 }
 export default function Footer() {
+  const columns = footerColumns(useServiceGroups());
   const { pathname } = useLocation();
   return (
     <footer className="mn-footer">

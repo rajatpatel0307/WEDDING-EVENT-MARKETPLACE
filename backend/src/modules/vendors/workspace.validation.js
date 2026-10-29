@@ -64,10 +64,12 @@ export const serviceInput = z
       v.minimumGuests <= v.maximumGuests,
     { message: "Minimum guests must not exceed maximum guests." },
   );
-export function validateAttributes(category, input) {
-  const template = Object.hasOwn(serviceTemplates, category)
-    ? serviceTemplates[category]
-    : null;
+export function validateAttributes(category, input, databaseTemplate) {
+  const template =
+    databaseTemplate ??
+    (Object.hasOwn(serviceTemplates, category)
+      ? serviceTemplates[category]
+      : null);
   if (!template)
     throw Object.assign(
       new Error("Choose one of the 17 supported service categories."),
@@ -76,20 +78,43 @@ export function validateAttributes(category, input) {
   const shape = Object.fromEntries(
     template.map((f) => [
       f.key,
-      (f.type === "number"
-        ? z.number().finite().nonnegative().max(1000000)
-        : f.type === "boolean"
-          ? z.boolean()
-          : f.type === "select"
-            ? z.enum(f.options)
-            : z
-                .string()
-                .trim()
-                .max(f.type === "textarea" ? 3000 : 300)
+      (f.key === "perPlate"
+        ? amount
+        : f.type === "number"
+          ? z.number().finite().nonnegative().max(1000000)
+          : f.type === "boolean"
+            ? z.boolean()
+            : f.type === "select"
+              ? z.enum(f.options)
+              : z
+                  .string()
+                  .trim()
+                  .max(f.type === "textarea" ? 3000 : 300)
       ).optional(),
     ]),
   );
   const data = z.object(shape).strict().parse(input);
+  for (const key of [
+    "minimumCapacity",
+    "maximumCapacity",
+    "minimumGuests",
+    "maximumGuests",
+    "capacity",
+  ])
+    if (data[key] != null && !Number.isInteger(data[key]))
+      throw Object.assign(
+        new Error("Guest and capacity counts must be whole numbers."),
+        { status: 400 },
+      );
+  if (
+    data.minimumCapacity != null &&
+    data.maximumCapacity != null &&
+    data.minimumCapacity > data.maximumCapacity
+  )
+    throw Object.assign(
+      new Error("Minimum capacity must not exceed maximum capacity."),
+      { status: 400 },
+    );
   if (
     data.minimumGuests != null &&
     data.maximumGuests != null &&

@@ -3,11 +3,12 @@ import { useAuth } from "../../context/AuthContext";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { ChevronDown, X, MapPin } from "lucide-react";
 import { navigationFor, profileFor, cities } from "./navigation";
-import { serviceGroups, servicePath } from "./services";
+import { useServiceGroups, servicePath } from "./services";
 import SearchBar from "./SearchBar";
 import Logo from "../common/Logo";
 import IconButton from "../common/IconButton";
 export default function MobileNavbar({ user, city, setCity, close }) {
+  const serviceGroups = useServiceGroups();
   const { logout, notify } = useAuth(),
     navigate = useNavigate();
   const [busy, setBusy] = useState(false);

@@ -41,7 +41,7 @@ export function validateService(data, { submit = false, imageCount = 0 } = {}) {
     !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(data.seo.slug.trim())
   )
     return {
-      step: 8,
+      step: 7,
       message: "Enter a URL slug using lowercase letters, numbers and hyphens.",
     };
   if (
@@ -49,9 +49,16 @@ export function validateService(data, { submit = false, imageCount = 0 } = {}) {
     data.seo.description.length > 500 ||
     data.seo.keywords.length > 500
   )
-    return { step: 8, message: "SEO fields exceed their allowed length." };
+    return { step: 7, message: "SEO fields exceed their allowed length." };
 
   const pricing = data.pricing;
+  if (pricing.type != null && !["Fixed", "PerPerson", "PerHour", "PerDay", "PerItem", "CustomQuote"].includes(pricing.type))
+    return { step: 2, message: "Choose a valid pricing type." };
+  for (const key of ["minimumPrice", "maximumPrice"])
+    if (pricing[key] != null && !amountIsValid(pricing[key]))
+      return { step: 2, message: "Price limits must be valid non-negative amounts." };
+  if (pricing.minimumPrice != null && pricing.maximumPrice != null && pricing.maximumPrice < pricing.minimumPrice)
+    return { step: 2, message: "Maximum price must be at least minimum price." };
   for (const key of ["basePrice", "unitPrice", "additionalCharges"])
     if (!amountIsValid(pricing[key]))
       return { step: 2, message: "Enter valid prices with no more than 2 decimal places." };
@@ -138,7 +145,9 @@ export function validateService(data, { submit = false, imageCount = 0 } = {}) {
     !amountIsValid(data.policies.advancePercentage, 100) ||
     !amountIsValid(data.policies.travelCharges) ||
     !numberIsValid(data.policies.setupTime) ||
-    !numberIsValid(data.policies.duration)
+    !numberIsValid(data.policies.duration) ||
+    !Number.isInteger(data.policies.duration) ||
+    !Number.isInteger(data.policies.setupTime)
   )
     return { step: 7, message: "Enter valid policy amounts and durations." };
   if (data.items.length > 100)

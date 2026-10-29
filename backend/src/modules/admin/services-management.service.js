@@ -7,10 +7,11 @@ import {
   serviceSchema,
   itemSchema,
   calculatePrice,
+  pricingTypeFor,
   pricingSchema,
 } from "../vendors/service-management.validation.js";
 import { amount, validateAttributes } from "../vendors/workspace.validation.js";
-import { serviceTemplates } from "../vendors/service-templates.js";
+import { templateFor, templatesFor } from "../vendors/service-templates.js";
 import { uploadAsset } from "../media/cloudinary.service.js";
 import { assertVersion } from "../vendors/workspace.common.js";
 import { dateBounds } from "./admin.validation.js";
@@ -192,7 +193,7 @@ export async function metadata(ctx, input = {}) {
     .parse(input);
   const [categories, subcategories, vendors] = await Promise.all([
     repo.select(
-      "SELECT CategoryId AS id,CategoryName AS name FROM dbo.Categories WHERE IsActive=1 ORDER BY SortOrder,CategoryId",
+      "SELECT CategoryId AS id,CategoryName AS name,CategoryCode AS code FROM dbo.Categories WHERE IsActive=1 ORDER BY SortOrder,CategoryId",
     ),
     repo.select(
       "SELECT SubCategoryId AS id,CategoryId AS categoryId,SubCategoryName AS name FROM dbo.SubCategories WHERE IsActive=1 ORDER BY SortOrder,SubCategoryId",
@@ -202,7 +203,12 @@ export async function metadata(ctx, input = {}) {
       { q: like(q.q), ...(q.vendorId ? { vendorId: q.vendorId } : {}) },
     ),
   ]);
-  return { categories, subcategories, vendors, templates: serviceTemplates };
+  return {
+    categories,
+    subcategories,
+    vendors,
+    templates: templatesFor(categories),
+  };
 }
 export function priceCalculation(input) {
   const p = pricingSchema.parse(input),
@@ -311,7 +317,7 @@ export async function save(id, input, ctx) {
     );
     if (!vendor) fail("Vendor not found.", 404);
     const [category] = await repo.select(
-      "SELECT CategoryName AS name FROM dbo.Categories WHERE CategoryId=:id AND IsActive=1",
+      "SELECT CategoryName AS name,CategoryCode AS code FROM dbo.Categories WHERE CategoryId=:id AND IsActive=1",
       { id: body.categoryId },
       tx,
     );
@@ -324,7 +330,11 @@ export async function save(id, input, ctx) {
       );
       if (!sub) fail("Subcategory does not belong to the category.");
     }
-    const attributes = validateAttributes(category.name, body.attributes),
+    const attributes = validateAttributes(
+        category.name,
+        body.attributes,
+        templateFor(category),
+      ),
       next = id || randomUUID();
     const [duplicate] = await repo.select(
       "SELECT ServiceId FROM dbo.Services WITH(UPDLOCK,HOLDLOCK) WHERE ServiceSlug=:slug AND ServiceId<>:id",
@@ -343,15 +353,22 @@ export async function save(id, input, ctx) {
       AttributesJson: JSON.stringify(attributes),
       DetailsJson: JSON.stringify(document),
       BasePrice: calculatePrice(body.pricing),
-      PricingType:
-        {
-          "Per Person": "PerPerson",
-          "Per Plate": "PerPerson",
-          "Per Hour": "PerHour",
-          "Per Day": "PerDay",
-          "Per Item": "PerItem",
-          Custom: "CustomQuote",
-        }[body.pricing.unit] || "Fixed",
+      PricingType: pricingTypeFor(body.pricing),
+      MinimumPrice: body.pricing.minimumPrice,
+      MaximumPrice: body.pricing.maximumPrice,
+      IsCustomQuoteAvailable:
+        body.pricing.customQuote ||
+        pricingTypeFor(body.pricing) === "CustomQuote"
+          ? 1
+          : 0,
+      MinimumGuests:
+        attributes.minimumGuests ?? attributes.minimumCapacity ?? null,
+      MaximumGuests:
+        attributes.maximumGuests ??
+        attributes.maximumCapacity ??
+        attributes.capacity ??
+        null,
+      DurationMinutes: body.policies.duration || null,
       ApprovalStatus: old?.ApprovalStatus === "Rejected" ? "Rejected" : "Draft",
       IsActive: 0,
       ApprovedAt: null,
@@ -476,6 +493,12 @@ export async function duplicate(id, input, ctx) {
         ServiceSlug: slug,
         Description: row.Description,
         BasePrice: row.BasePrice,
+        MinimumPrice: row.MinimumPrice,
+        MaximumPrice: row.MaximumPrice,
+        MinimumGuests: row.MinimumGuests,
+        MaximumGuests: row.MaximumGuests,
+        DurationMinutes: row.DurationMinutes,
+        IsCustomQuoteAvailable: row.IsCustomQuoteAvailable,
         PricingType: row.PricingType,
         AttributesJson: row.AttributesJson,
         DetailsJson: JSON.stringify(doc),
@@ -967,7 +990,4 @@ export async function childrenIndex(kind, input, ctx) {
   );
   return { rows, total: Number(count.total), ...q };
 }
-export function csvCell(value) {
-  const s = String(value ?? "");
-  return `"${(/^[\s]*[=+\-@\t\r]/.test(s) ? "'" + s : s).replaceAll('"', '""')}"`;
-}
+export { csvCell } from "../../utils/csv.js";

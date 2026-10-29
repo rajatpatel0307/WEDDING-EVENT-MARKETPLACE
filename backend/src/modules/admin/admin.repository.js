@@ -1,3 +1,4 @@
+import { notifyAdmins } from "../notifications/admin-events.js";
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../../config/database.js";
 import { getResource } from "./admin.resources.js";
@@ -27,10 +28,13 @@ export async function list(name, query) {
     ...bounds,
     status: query.status,
     q: `%${query.q.replace(/[\[\]%_]/g, (c) => `[${c}]`)}%`,
+    category: query.category,
+    location: `%${query.location.replace(/[\[\]%_]/g, (c) => `[${c}]`)}%`,
+    gateway: query.gateway,
     offset: (query.page - 1) * query.pageSize,
     size: query.pageSize,
   };
-  const search = Object.values(r.fields)
+  const search = [...Object.values(r.fields), `t.[${r.id}]`]
     .map((v) => `CONVERT(nvarchar(max),${v}) LIKE :q`)
     .join(" OR ");
   const where = [
@@ -39,6 +43,19 @@ export async function list(name, query) {
     query.status && r.fields.status ? `${r.fields.status}=:status` : "1=1",
     bounds.from ? "t.CreatedAt>=:from" : "1=1",
     bounds.to ? "t.CreatedAt< :to" : "1=1",
+    query.category && ["vendors", "applications"].includes(name)
+      ? "EXISTS(SELECT 1 FROM dbo.VendorCategories vc WHERE vc.VendorId=t.VendorId AND vc.CategoryId=:category)"
+      : "1=1",
+    query.category && name === "sub-categories"
+      ? "t.CategoryId=:category"
+      : "1=1",
+    query.category && name === "commission"
+      ? "EXISTS(SELECT 1 FROM dbo.BookingItems bi JOIN dbo.Services s ON s.ServiceId=bi.ServiceId WHERE bi.BookingId=t.BookingId AND s.CategoryId=:category)"
+      : "1=1",
+    query.location && ["vendors", "applications"].includes(name)
+      ? "EXISTS(SELECT 1 FROM dbo.VendorLocations l WHERE l.VendorId=t.VendorId AND (l.City LIKE :location OR l.State LIKE :location))"
+      : "1=1",
+    query.gateway && name === "payments" ? "t.GatewayName=:gateway" : "1=1",
   ].join(" AND ");
   const source = `FROM dbo.[${r.table}] t ${r.joins || ""} WHERE ${where}`;
   const [count] = await select(
@@ -54,11 +71,21 @@ export async function list(name, query) {
     replacements,
   );
   return {
+    gatewayOptions:
+      name === "payments"
+        ? (
+            await select(
+              "SELECT DISTINCT GatewayName AS name FROM dbo.Payments WHERE GatewayName IS NOT NULL ORDER BY GatewayName",
+            )
+          ).map((row) => row.name)
+        : [],
     rows,
     total: Number(count.total),
     page: query.page,
     pageSize: query.pageSize,
-    columns: Object.keys(columns).filter((k) => k !== "id"),
+    columns: Object.keys(columns).filter(
+      (k) => k !== "id" || ["customers", "vendors"].includes(name),
+    ),
     statuses: r.statuses || [],
     actions: r.actions || [],
     editable: r.editable ? Object.keys(r.editable) : [],
@@ -123,6 +150,7 @@ export async function auditAdmin(
       transaction: tx,
     },
   );
+  await notifyAdmins(action, entity, id, tx);
 }
 export async function notifyVendor(userId, vendorId, status, reason, tx) {
   const label =

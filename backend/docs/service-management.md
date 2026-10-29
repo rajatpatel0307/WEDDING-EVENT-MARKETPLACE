@@ -17,8 +17,8 @@ The implementation was tested against MSSQL using rollback-only fixtures. Persis
 | Route                               | Purpose                                                                                                              |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `/vendor/services`                  | Statistics, search, advanced filters, sorting and server pagination; desktop table/mobile cards                      |
-| `/vendor/services/add`              | Ten-step service editor; `/new` remains a compatibility alias                                                        |
-| `/vendor/services/:id/edit`         | Same editor, populated from stored records; `?step=0` through `?step=9` open a specific step                         |
+| `/vendor/services/add`              | Nine-step service editor; `/new` remains a compatibility alias                                                        |
+| `/vendor/services/:id/edit`         | Same editor, populated from stored records; `?step=0` through `?step=8` open a specific step                         |
 | `/vendor/services/:id`              | Overview, pricing, items, packages, media, location, schedule, policies, bookings, published reviews and performance |
 | `/vendor/services/:id/packages`     | Create, edit, duplicate, activate/deactivate and conditionally delete packages                                       |
 | `/vendor/services/:id/availability` | Service calendar, date ranges, holidays, custom timing, blocked dates and override removal                           |
@@ -91,4 +91,22 @@ npm test
 npm run build
 ```
 
-The service verifier temporarily runs migration 010 in a transaction, creates isolated fixture users/vendors/services for every category, exercises real REST and MSSQL operations, verifies direct booking pricing and then rolls back both schema changes and fixture data. It does not call Cloudinary or modify real business records. The existing vendor/customer verifiers also test migration 010 inside their rollback transactions.
+The service verifier temporarily runs migration 010 in a transaction, creates isolated fixture users/vendors/services for every category, exercises real REST and MSSQL operations, verifies direct booking pricing and then rolls back both schema changes and fixture data. Upload verification calls the real service API with a stub for the external Cloudinary transport; it does not send files to Cloudinary or modify real business records. The existing vendor/customer verifiers also test migration 010 inside their rollback transactions.
+
+## Vendor portal completion
+
+The dashboard includes suspended-service counts and a filtered CSV export at `GET /api/vendor/services/export`. Export applies the same server-side search, filters, sort and ownership predicate as the list, exports all matches regardless of the current page, and refuses more than 10,000 matches. CSV cells are quoted and neutralize spreadsheet formulas.
+
+The editor has nine steps; optional SEO fields live with policies. Pricing includes optional minimum/maximum prices and custom quotation availability. Zod validates price bounds, finite currency amounts, precision and ordering. These values use the existing Services.MinimumPrice, MaximumPrice and IsCustomQuoteAvailable columns; duration uses DurationMinutes. No additional migration is required. Duplication preserves these existing fields.
+
+`/vendor/packages/add` and the compatibility `/vendor/packages/new` route select an owned service (or accept `?serviceId=`), then open the same package manager used by the service page. `/vendor/packages/:id/edit` loads the owned package into that manager. Vendors awaiting business approval can prepare packages in their drafts. Package cards show guest ranges, duration and featured status, and offer a read-only view.
+
+Service details include an Information tab, creation timestamp and completed-booking totals from actual booking records. The final preview includes category details, pricing rules and saved packages. Image upload progress reports the number of completed image uploads.
+
+Basic Information also exposes service city and estimated duration, sharing the Location and Policies values. Saved active vendor addresses are loaded through authenticated service metadata and can populate Location. Venue forms support minimum and maximum capacity; capacity and catering guest limits are validated as whole numbers and persisted in the existing Services.MinimumGuests/MaximumGuests columns so public booking enforces them. Catering per-plate values use the currency validator. Duration and setup time use whole minutes.
+
+Pricing Type can be selected explicitly from the existing SQL-supported values or inferred from Pricing Unit for compatibility with existing drafts. Custom-quote services continue to require quotations before booking. Vendor and administrator edits use the same type mapping and native price/guest/duration columns.
+
+Preview includes the full image gallery, saved package contents and optional extras, and upcoming blocked/custom date overrides. Opening an existing calendar override retains its custom hours. The integration verifier checks saved-address ownership, guest-capacity booking rejection, upload ownership/stale-state/file checks before provider access, successful upload persistence, and package content previews. A provider stub is used only for the upload transport; SQL and REST behavior run against the configured MSSQL database.
+
+Validation for this update: backend and frontend unit tests, frontend production build, and `node scripts/verify-service-management.js` against the configured MSSQL database. The integration script rolls back all fixture records and schema changes and covers all 17 categories, editing, approval/rejection/resubmission, ownership, packages, filtered exports and copying price settings. Browser verification was unavailable because the browser connection failed during initialization. A live Cloudinary upload remains an environment smoke test.

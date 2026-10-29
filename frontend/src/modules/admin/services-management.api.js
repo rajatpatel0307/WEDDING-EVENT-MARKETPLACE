@@ -3,7 +3,8 @@ export { adminRequest, date, number, saveBlob } from "./api";
 import { adminRequest } from "./api";
 export function useAdminData(path, revision = 0) {
   const [state, setState] = useState({});
-  const key = `${path}:${revision}`;
+  const [attempt, setAttempt] = useState(0);
+  const key = `${path}:${revision}:${attempt}`;
   useEffect(() => {
     if (!path) return;
     const abort = new AbortController();
@@ -14,7 +15,10 @@ export function useAdminData(path, revision = 0) {
       });
     return () => abort.abort();
   }, [path, key]);
-  return state.key === key ? state : { loading: !!path };
+  return {
+    ...(state.key === key ? state : { loading: !!path }),
+    retry: () => setAttempt((value) => value + 1),
+  };
 }
 export function useDebounced(value, delay = 300) {
   const [result, setResult] = useState(value);

@@ -5,6 +5,8 @@ export default function RecordPicker({
   name,
   initialValue = "",
   initialLabel = "",
+  onChange,
+  required = true,
 }) {
   const [query, setQuery] = useState(""),
     [selected, setSelected] = useState(initialValue),
@@ -45,11 +47,20 @@ export default function RecordPicker({
       <select
         name={name}
         value={selected}
-        required
-        onChange={(e) => setSelected(e.target.value)}
+        required={required}
+        onChange={(e) => {
+          setSelected(e.target.value);
+          onChange?.(e.target.value);
+        }}
         aria-label={`Select ${resource}`}
       >
-        <option value="">{loading ? "Loading…" : "Select a record"}</option>
+        <option value="">
+          {loading
+            ? "Loading…"
+            : required
+              ? "Select a record"
+              : "All categories"}
+        </option>
         {initialValue &&
           !rows.some((r) => String(r.id) === String(initialValue)) && (
             <option value={initialValue}>

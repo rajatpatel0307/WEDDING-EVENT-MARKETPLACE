@@ -99,22 +99,20 @@ const VendorServiceList = lazy(
 const VendorServiceDetails = lazy(
   () => import("../modules/vendor/service-management/ServiceDetails"),
 );
+const VendorPackageRoute = lazy(() => import("../modules/vendor/service-management/PackageRoute"));
 const VendorServicePackages = lazy(
   () => import("../modules/vendor/service-management/ServicePackages"),
 );
 const VendorServiceAvailability = lazy(
   () => import("../modules/vendor/service-management/ServiceAvailability"),
 );
-const PackageForm = lazy(() =>
-  import("../modules/vendor/components/WorkspaceForms").then((m) => ({
-    default: m.PackageForm,
-  })),
-);
 const QuotationForm = lazy(() =>
   import("../modules/vendor/components/WorkspaceForms").then((m) => ({
     default: m.QuotationForm,
   })),
 );
+const AdminInbox = lazy(() => import("../modules/admin/pages/AdminInbox"));
+const FinancialDetails = lazy(() => import("../modules/admin/pages/FinancialDetails"));
 const AdminLayout = lazy(() => import("../modules/admin/AdminLayout"));
 const AdminDashboard = lazy(
   () => import("../modules/admin/pages/AdminDashboard"),
@@ -479,8 +477,9 @@ export default function AppRoutes() {
                 path="services/:id/availability"
                 element={<VendorServiceAvailability />}
               />
-              <Route path="packages/new" element={<PackageForm />} />
-              <Route path="packages/:id/edit" element={<PackageForm />} />
+              <Route path="packages/new" element={<VendorPackageRoute />} />
+              <Route path="packages/add" element={<VendorPackageRoute />} />
+              <Route path="packages/:id/edit" element={<VendorPackageRoute />} />
               <Route
                 path="requests"
                 element={<VendorResourcesPage section="requests" />}
@@ -601,6 +600,8 @@ export default function AppRoutes() {
             }
           >
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="finance/:kind/:id" element={<FinancialDetails />} />
+            <Route path="notifications" element={<AdminInbox />} />
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route
               path="dashboard"

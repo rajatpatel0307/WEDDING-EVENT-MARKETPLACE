@@ -1,7 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { sequelize } from "../src/config/database.js";
-import { serviceTemplates } from "../src/modules/vendors/service-templates.js";
+import {
+  serviceTemplates,
+  templateFor,
+  templatesFor,
+} from "../src/modules/vendors/service-templates.js";
+
 import {
   availabilityInput,
   packageInput,
@@ -93,6 +98,27 @@ test("service and package input cannot override owner, approval or computed pric
   };
   assert.throws(() => packageInput.parse({ ...pack, finalPrice: 1 }));
   assert.throws(() => packageInput.parse({ ...pack, discount: 101 }));
+});
+test("category capacity and catering currency reject invalid ranges, fractions and precision", () => {
+  assert.throws(() =>
+    validateAttributes("Venue & Location", {
+      minimumCapacity: 200,
+      maximumCapacity: 100,
+    }),
+  );
+  assert.throws(() =>
+    validateAttributes("Venue & Location", { minimumCapacity: 10.5 }),
+  );
+  assert.throws(() =>
+    validateAttributes("Catering & Food", { perPlate: 100.123 }),
+  );
+  assert.deepEqual(
+    validateAttributes("Venue & Location", {
+      minimumCapacity: 100,
+      maximumCapacity: 200,
+    }),
+    { minimumCapacity: 100, maximumCapacity: 200 },
+  );
 });
 test("vendor resource checks accept MSSQL sequential GUIDs and always bind ownership", async (t) => {
   const guid = "1D375B0C-89D2-F111-8F30-14133304FA5C";
@@ -257,4 +283,25 @@ test("chat attachments cannot be injected or reused from another purpose", async
     /Write a message/,
   );
   assert.equal(query.mock.callCount(), 0);
+});
+
+test("database category names can change without losing built-in service templates", () => {
+  const category = { name: "Renamed wedding venues", code: "AUTH_SERVICE_1" };
+  assert.equal(templateFor(category), serviceTemplates["Venue & Location"]);
+  assert.equal(
+    templatesFor([category])[category.name],
+    serviceTemplates["Venue & Location"],
+  );
+  const custom = { name: "New celebration service", code: "CUSTOM_SERVICE" };
+  assert.deepEqual(
+    validateAttributes(custom.name, {}, templateFor(custom)),
+    {},
+  );
+  assert.throws(() =>
+    validateAttributes(
+      custom.name,
+      { unauthorizedColumn: true },
+      templateFor(custom),
+    ),
+  );
 });

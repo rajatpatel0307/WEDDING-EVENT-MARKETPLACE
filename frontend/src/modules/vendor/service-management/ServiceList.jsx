@@ -13,6 +13,8 @@ import {
   SlidersHorizontal,
   ArrowUpRight,
   Sparkles,
+  Download,
+  ShieldBan,
 } from "lucide-react";
 import {
   Heading,
@@ -20,7 +22,12 @@ import {
   Empty,
   useVendorData,
 } from "../components/WorkspaceUI";
-import { money, date } from "../services/workspace.api";
+import {
+  money,
+  date,
+  vendorRequest,
+  download,
+} from "../services/workspace.api";
 import { AddButton, Status, ServiceActions, Notice } from "./shared";
 
 const statIcons = [
@@ -30,6 +37,7 @@ const statIcons = [
   Clock3,
   ShieldCheck,
   XCircle,
+  ShieldBan,
   CalendarCheck,
   Star,
 ];
@@ -41,6 +49,7 @@ const statsConfig = [
   ["pendingApproval", "Pending Approval"],
   ["approvedServices", "Approved Services"],
   ["rejectedServices", "Rejected Services"],
+  ["suspendedServices", "Suspended Services"],
   ["totalBookings", "Total Bookings"],
   ["averageRating", "Average Rating"],
 ];
@@ -71,6 +80,24 @@ export default function ServiceList() {
   const [filters, setFilters] = useState(false);
   const [version, setVersion] = useState(0);
   const [notice, setNotice] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+
+  const exportServices = async () => {
+    setExporting(true);
+    setExportError("");
+    try {
+      const blob = await vendorRequest(`/services/export?${params}`, {
+        download: true,
+      });
+      download(blob, "vendor-services.csv");
+      setNotice("Services exported using your current filters.");
+    } catch (error) {
+      setExportError(error.message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const path = useMemo(() => `/services?${params.toString()}`, [params]);
   const state = useVendorData(path, version);
@@ -133,13 +160,26 @@ export default function ServiceList() {
     <div className="sm-page animate-fade-in">
       <Heading
         title="My Services"
-        description="Create and manage all your wedding and event services with elite precision."
+        description="Manage your wedding and event services."
         eyebrow="SERVICE STUDIO"
       >
+        <button
+          className="vw-button"
+          disabled={exporting}
+          onClick={exportServices}
+        >
+          <Download size={16} />
+          {exporting ? "Exporting…" : "Export Services"}
+        </button>
         <AddButton />
       </Heading>
 
       <Notice message={notice} />
+      {exportError && (
+        <p className="sm-error" role="alert">
+          {exportError}
+        </p>
+      )}
 
       {data && !data.canSubmit && (
         <div className="sm-warning flex items-center gap-2">
@@ -156,11 +196,14 @@ export default function ServiceList() {
         {statsConfig.map(([key, label], i) => {
           const Icon = statIcons[i];
           const rawValue = data?.stats?.[key];
-          const formattedValue = loading
-            ? "—"
-            : key === "averageRating"
-              ? Number(rawValue || 0).toFixed(1)
-              : Number(rawValue || 0).toLocaleString("en-IN");
+          const formattedValue =
+            loading || error
+              ? "—"
+              : key === "averageRating"
+                ? rawValue == null
+                  ? "—"
+                  : Number(rawValue).toFixed(1)
+                : Number(rawValue || 0).toLocaleString("en-IN");
 
           return (
             <div
@@ -382,12 +425,11 @@ export default function ServiceList() {
                         )}
                       </td>
                       <td>
-                        <Status
-                          status={
-                            s.status === "Approved" ? "Approved" : s.status
-                          }
-                          active={s.active}
-                        />
+                        <span
+                          className={`vw-badge vw-badge-${s.active ? "active" : "inactive"}`}
+                        >
+                          {s.active ? "Active" : "Inactive"}
+                        </span>
                       </td>
                       <td>
                         <div className="flex items-center gap-2">

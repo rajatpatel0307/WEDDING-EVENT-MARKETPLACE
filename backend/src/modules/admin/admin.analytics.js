@@ -1,3 +1,4 @@
+import { requireRole } from "../../middleware/auth.middleware.js";
 import { z } from "zod";
 import { select } from "./admin.repository.js";
 import { dateBounds } from "./admin.validation.js";
@@ -8,7 +9,8 @@ const range = z
       v.from <= v.to && new Date(v.to) - new Date(v.from) <= 366 * 86400000,
     { message: "Choose a date range of up to one year." },
   );
-export async function dashboard(input) {
+export async function dashboard(input, ctx) {
+  requireRole(ctx, "ADMIN");
   const dates = range.parse(input),
     bounds = dateBounds(dates.from, dates.to),
     start = bounds.from,
@@ -33,6 +35,28 @@ export async function dashboard(input) {
       "1",
     ],
     ["vendors", "Vendors t", "1=1", "1"],
+    ["approvedVendors", "Vendors t", "t.VerificationStatus='Approved'", "1"],
+    ["totalServices", "Services t", "1=1", "1"],
+    [
+      "pendingServices",
+      "Services t",
+      "t.ApprovalStatus IN ('Pending','UnderReview')",
+      "1",
+    ],
+    ["pendingBookings", "Booking t", "t.BookingStatus='Pending'", "1"],
+    [
+      "pendingPayments",
+      "Payments t",
+      "t.PaymentStatus IN ('Pending','Processing') AND t.Currency='INR'",
+      "t.Amount",
+    ],
+    [
+      "pendingRefunds",
+      "Refunds t",
+      "t.RefundStatus IN ('Pending','Processing') AND EXISTS(SELECT 1 FROM dbo.Payments p WHERE p.PaymentId=t.PaymentId AND p.Currency='INR')",
+      "t.RefundAmount",
+    ],
+    ["commission", "PlatformCommission t", "1=1", "t.CommissionAmount"],
     [
       "approvals",
       "Vendors t",
@@ -85,7 +109,7 @@ export async function dashboard(input) {
     [
       "revenue",
       "Payments",
-      "PaidAt",
+      "COALESCE(PaidAt,CreatedAt)",
       "Amount",
       "PaymentStatus IN ('Success','Refunded') AND Currency='INR'",
     ],
@@ -114,6 +138,14 @@ export async function dashboard(input) {
     "SELECT BookingStatus AS name,COUNT(*) AS value FROM dbo.Booking WHERE CreatedAt>=:start AND CreatedAt< :end GROUP BY BookingStatus",
     params,
   );
+  const paymentStatus = await select(
+    "SELECT PaymentStatus AS name,COUNT(*) AS value FROM dbo.Payments WHERE CreatedAt>=:start AND CreatedAt< :end GROUP BY PaymentStatus",
+    params,
+  );
+  const serviceCategories = await select(
+    "SELECT c.CategoryName AS name,COUNT(*) AS value FROM dbo.Services s JOIN dbo.Categories c ON c.CategoryId=s.CategoryId WHERE s.CreatedAt>=:start AND s.CreatedAt< :end GROUP BY c.CategoryName",
+    params,
+  );
   const payouts = await select(
     "SELECT PayoutStatus AS name,COUNT(*) AS count,SUM(NetAmount) AS value FROM dbo.VendorPayouts WHERE CreatedAt>=:start AND CreatedAt< :end GROUP BY PayoutStatus",
     params,
@@ -134,6 +166,8 @@ export async function dashboard(input) {
     UNION ALL SELECT CONVERT(nvarchar(100),VendorId),'VENDOR_REGISTERED',BusinessName,CreatedAt FROM dbo.Vendors
     UNION ALL SELECT CONVERT(nvarchar(100),BookingId),'NEW_BOOKING',BookingNumber,CreatedAt FROM dbo.Booking
     UNION ALL SELECT CONVERT(nvarchar(100),PaymentId),'PAYMENT_RECEIVED',PaymentReference,COALESCE(PaidAt,CreatedAt) FROM dbo.Payments WHERE PaymentStatus IN ('Success','Refunded')
+    UNION ALL SELECT CONVERT(nvarchar(100),ServiceId),'SERVICE_AWAITING_APPROVAL',ServiceName,COALESCE(SubmittedAt,CreatedAt) FROM dbo.Services WHERE ApprovalStatus IN ('Pending','UnderReview')
+    UNION ALL SELECT CONVERT(nvarchar(100),PayoutId),'PAYOUT_REQUESTED',CONVERT(nvarchar(100),PayoutId),CreatedAt FROM dbo.VendorPayouts WHERE PayoutStatus IN ('Pending','Processing')
     UNION ALL SELECT CONVERT(nvarchar(100),RefundId),'REFUND_REQUESTED',RefundReference,CreatedAt FROM dbo.Refunds
     UNION ALL SELECT CONVERT(nvarchar(100),ReviewId),'REVIEW_SUBMITTED',COALESCE(ReviewTitle,'New review'),CreatedAt FROM dbo.Reviews
     UNION ALL SELECT CONVERT(nvarchar(100),QuotationId),'NEW_QUOTATION',QuotationNumber,CreatedAt FROM dbo.Quotations
@@ -146,6 +180,8 @@ export async function dashboard(input) {
     series,
     status,
     payouts,
+    paymentStatus,
+    serviceCategories,
     categories,
     activity,
     range: dates,

@@ -20,10 +20,141 @@ import {
   Empty,
   useVendorData,
 } from "../components/WorkspaceUI";
-import { date, money } from "../services/workspace.api";
+import { date, money, today } from "../services/workspace.api";
 import { Notice, ServiceActions, Status } from "./shared";
 import MediaManager from "./MediaManager";
-export function ServicePreview({ service: s, category, vendorName }) {
+function PricingDetails({ pricing = {} }) {
+  const labels = [
+    ["type", "Pricing type"],
+    ["basePrice", "Base price"],
+    ["unitPrice", "Unit price"],
+    ["minimumPrice", "Minimum price"],
+    ["maximumPrice", "Maximum price"],
+    ["unit", "Pricing unit"],
+    ["discount", "Discount"],
+    ["taxRate", "Tax"],
+    ["minimumQuantity", "Minimum quantity"],
+    ["maximumQuantity", "Maximum quantity"],
+    ["specialPrice", "Special price"],
+    ["weekendPrice", "Weekend price"],
+    ["seasonalPrice", "Seasonal price"],
+    ["seasonalFrom", "Season starts"],
+    ["seasonalTo", "Season ends"],
+    ["additionalCharges", "Additional charges"],
+    ["customQuote", "Custom quotation available"],
+  ];
+  const types = {
+    Fixed: "Fixed price",
+    PerPerson: "Per person",
+    PerHour: "Hourly",
+    PerDay: "Daily",
+    PerItem: "Per item",
+    CustomQuote: "Custom quote",
+  };
+  const format = (key, value) => {
+    if (value == null || value === "")
+      return key === "type" ? "Match pricing unit" : "Not specified";
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    if (key === "type") return types[value] || value;
+    if (/Price$/.test(key) || key === "additionalCharges") return money(value);
+    if (["discount", "taxRate"].includes(key)) return `${value}%`;
+    if (["seasonalFrom", "seasonalTo"].includes(key)) return date(value);
+    if (key === "unit")
+      return value === "Custom"
+        ? "Custom Quote"
+        : value === "Per KM"
+          ? "Per Kilometer"
+          : value;
+    return value;
+  };
+  return (
+    <dl className="sm-definition">
+      {labels.map(([key, label]) => (
+        <div key={key}>
+          <dt>{label}</dt>
+          <dd>{format(key, pricing[key])}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+function PackagePreview({ id }) {
+  const state = useVendorData(`/services/${id}/packages`);
+  if (state.loading) return <Loading />;
+  if (state.error) return <ErrorView error={state.error} retry={state.retry} />;
+  return state.data.length ? (
+    <div className="sm-package-grid">
+      {state.data.map((p) => (
+        <article className="sm-package" key={p.id}>
+          <h3>{p.name}</h3>
+          <p>{p.description}</p>
+          <strong>{money(p.finalPrice)}</strong>
+          {Number(p.discount) > 0 && (
+            <p>
+              <s>{money(p.price)}</s> · {p.discount}% discount
+            </p>
+          )}
+          <p>
+            {p.minimumGuests ?? "Any"}–{p.maximumGuests ?? "Any"} guests
+          </p>
+          <p>{p.active ? "Active" : "Inactive"}</p>
+          <h4>Included items</h4>
+          {p.items?.length ? (
+            <ul>
+              {p.items.map((item, index) => (
+                <li key={index}>
+                  {item.name} · {item.quantity} {item.unit}
+                  {item.description && ` · ${item.description}`}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No included items.</p>
+          )}
+          <h4>Optional items</h4>
+          <p>{p.optionalItems || "None specified"}</p>
+          {p.terms && <p>{p.terms}</p>}
+          <Link to={`/vendor/packages/${p.id}/edit`}>View package details</Link>
+        </article>
+      ))}
+    </div>
+  ) : (
+    <p>No packages added.</p>
+  );
+}
+function AvailabilityPreview({ id }) {
+  const state = useVendorData(`/services/${id}/availability`);
+  if (state.loading) return <Loading />;
+  if (state.error) return <ErrorView error={state.error} retry={state.retry} />;
+  const rows = state.data.filter(
+    (row) => String(row.date).slice(0, 10) >= today(),
+  );
+  return (
+    <details>
+      <summary>{rows.length} upcoming date overrides</summary>
+      {rows.length ? (
+        <ul>
+          {rows.map((row) => (
+            <li key={row.id}>
+              {date(row.date)} · {row.status}
+              {row.startTime &&
+                ` · ${String(row.startTime).match(/(?:T|^)(\d{2}:\d{2})/)?.[1]}–${String(row.endTime).match(/(?:T|^)(\d{2}:\d{2})/)?.[1]}`}
+              {row.notes && ` · ${row.notes}`}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No blocked dates or custom timings.</p>
+      )}
+    </details>
+  );
+}
+export function ServicePreview({
+  service: s,
+  category,
+  vendorName,
+  categoryFields = [],
+}) {
   return (
     <div className="sm-preview">
       <div className="sm-preview-images">
@@ -44,6 +175,27 @@ export function ServicePreview({ service: s, category, vendorName }) {
           </div>
         )}
       </div>
+      {!!s.images?.length && (
+        <details>
+          <summary>View all {s.images.length} images</summary>
+          <div className="sm-preview-gallery">
+            {s.images.map((image, index) => (
+              <a
+                key={image.id || index}
+                href={image.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <img
+                  src={image.url}
+                  alt={`${s.name} image ${index + 1}${image.primary ? " (primary)" : ""}`}
+                  loading="lazy"
+                />
+              </a>
+            ))}
+          </div>
+        </details>
+      )}
       <span className="sm-category-label">{category || "Service"}</span>
       <h2>{s.name || "Your service name"}</h2>
       <p>
@@ -61,6 +213,26 @@ export function ServicePreview({ service: s, category, vendorName }) {
       <p className="sm-whitespace">
         {s.description || "Add a detailed description."}
       </p>
+      <h3>Category details</h3>
+      <dl className="sm-definition">
+        {Object.entries(s.attributes || {}).map(([key, value]) => (
+          <div key={key}>
+            <dt>
+              {categoryFields.find((field) => field.key === key)?.label ||
+                key.replace(/([A-Z])/g, " $1")}
+            </dt>
+            <dd>
+              {typeof value === "boolean"
+                ? value
+                  ? "Yes"
+                  : "No"
+                : String(value ?? "Not set")}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <h3>Pricing details</h3>
+      <PricingDetails pricing={s.pricing} />
       <h3>Included items</h3>
       {s.items?.length ? (
         <ul>
@@ -73,6 +245,12 @@ export function ServicePreview({ service: s, category, vendorName }) {
         </ul>
       ) : (
         <p>No items added.</p>
+      )}
+      <h3>Packages</h3>
+      {s.id ? (
+        <PackagePreview id={s.id} />
+      ) : (
+        <p>Save your service draft to add packages.</p>
       )}
       <h3>Availability</h3>
       <p>
@@ -96,6 +274,7 @@ export function ServicePreview({ service: s, category, vendorName }) {
         Book up to {s.availability?.advanceDays} days ahead ·{" "}
         {s.availability?.noticeHours} hours’ notice
       </p>
+      {s.id && <AvailabilityPreview id={s.id} />}
       <h3>Location</h3>
       <p>
         {[
@@ -197,6 +376,7 @@ function Performance({ id }) {
           ["enquiries", "Total Enquiries", MessageCircle],
           ["quotations", "Total Quotations", FileText],
           ["bookings", "Total Bookings", CalendarCheck],
+          ["completedBookings", "Completed Bookings", CalendarCheck],
           ["conversionRate", "Conversion Rate", TrendingUp],
           ["revenue", "Revenue", IndianRupee],
           ["averageRating", "Average Rating", Star],
@@ -305,8 +485,9 @@ export default function ServiceDetails() {
         {[
           "Approval History",
           "Overview",
+          "Information",
           "Pricing",
-          "Items",
+          "Service Items",
           "Packages",
           "Images",
           "Location",
@@ -326,6 +507,38 @@ export default function ServiceDetails() {
         ))}
       </div>
       <Panel title={tab}>
+        {tab === "Information" && (
+          <div className="sm-form-body">
+            <dl className="sm-definition">
+              {[
+                ["Service ID", s.id],
+                ["Service name", s.name],
+                [
+                  "Category",
+                  metadata.data?.categories.find((c) => c.id === s.categoryId)
+                    ?.name,
+                ],
+                [
+                  "Subcategory",
+                  metadata.data?.subcategories.find(
+                    (c) => c.id === s.subcategoryId,
+                  )?.name,
+                ],
+                ["Service type", s.serviceType],
+                ["Description", s.description],
+                ["Approval status", s.status],
+                ["Active status", s.active ? "Active" : "Inactive"],
+                ["Created", date(s.createdAt)],
+                ["Updated", date(s.updatedAt)],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value || "—"}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
         {tab === "Approval History" && (
           <div className="sm-form-body">
             <ApprovalTimeline rows={s.approvalHistory} />
@@ -340,41 +553,26 @@ export default function ServiceDetails() {
                   ?.name
               }
               vendorName={metadata.data?.vendorName}
+              categoryFields={
+                metadata.data?.templates[
+                  metadata.data?.categories.find(
+                    (category) => category.id === s.categoryId,
+                  )?.name
+                ] || []
+              }
             />
-            <h3>Category-specific details</h3>
-            <dl className="sm-definition">
-              {Object.entries(s.attributes).map(([k, v]) => (
-                <div key={k}>
-                  <dt>
-                    {metadata.data?.templates[
-                      metadata.data.categories.find(
-                        (c) => c.id === s.categoryId,
-                      )?.name
-                    ]?.find((f) => f.key === k)?.label || k}
-                  </dt>
-                  <dd>{typeof v === "boolean" ? (v ? "Yes" : "No") : v}</dd>
-                </div>
-              ))}
-            </dl>
           </div>
         )}
         {tab === "Pricing" && (
           <div className="sm-form-body">
-            <dl className="sm-definition">
-              {Object.entries(s.pricing || {}).map(([k, v]) => (
-                <div key={k}>
-                  <dt>{k.replace(/([A-Z])/g, " $1")}</dt>
-                  <dd>{v ?? "Not set"}</dd>
-                </div>
-              ))}
-            </dl>
+            <PricingDetails pricing={s.pricing} />
             <div className="sm-price-preview">
               <span>SERVER-CALCULATED STARTING PRICE</span>
               <strong>{money(s.price)}</strong>
             </div>
           </div>
         )}
-        {tab === "Items" && (
+        {tab === "Service Items" && (
           <div className="sm-form-body">
             {s.items.length ? (
               <div className="sm-history">

@@ -6,7 +6,7 @@ import { dashboard } from "./admin.analytics.js";
 import { VendorDocument } from "../../models/index.js";
 import { downloadDocument } from "../vendors/documents.service.js";
 export const overview = async (req, res) =>
-  res.json(await dashboard(req.query));
+  res.json(await dashboard(req.query, req.admin));
 export const list = async (req, res) =>
   res.json(await repo.list(req.params.resource, listQuery.parse(req.query)));
 export const review = async (req, res) =>

@@ -739,6 +739,18 @@
   gap: 10px;
   margin-bottom: 25px;
 }
+.sm-preview-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.sm-preview-gallery img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+}
 .sm-preview-images img {
   width: 100%;
   height: 220px;
@@ -962,7 +974,7 @@
 }
 @media (min-width: 1550px) {
   .sm-stats {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-columns: repeat(9, minmax(0, 1fr));
   }
   .sm-stat {
     padding: 18px 13px;

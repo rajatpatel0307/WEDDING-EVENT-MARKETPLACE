@@ -1,3 +1,4 @@
+import { notifyAdmins } from "../notifications/admin-events.js";
 import { z } from "zod";
 import * as repo from "./admin.repository.js";
 export const fail = (message, status = 409) => {
@@ -18,7 +19,18 @@ export const policySchema = z
     minimumNoticeHours: z.number().int().min(0).max(8760),
   })
   .strict();
-export function commissionRate() {
+export async function commissionRate(tx) {
+  const [configured] = await repo.select(
+    "SELECT SettingValue FROM dbo.PlatformSettings WHERE SettingKey='bookingCommissionPercent'",
+    {},
+    tx,
+  );
+  if (configured) {
+    const value = Number(configured.SettingValue);
+    if (!Number.isFinite(value) || value < 0 || value > 100)
+      fail("Booking commission configuration is invalid.", 503);
+    return value;
+  }
   if (
     process.env.BOOKING_COMMISSION_PERCENT === undefined ||
     process.env.BOOKING_COMMISSION_PERCENT === ""
@@ -29,8 +41,8 @@ export function commissionRate() {
     fail("Booking commission configuration is invalid.", 503);
   return value;
 }
-export const audit = (ctx, action, bookingId, old, next, tx) =>
-  repo.select(
+export const audit = async (ctx, action, bookingId, old, next, tx) => {
+  await repo.select(
     "INSERT INTO dbo.AuditLogs(UserId,ActionType,EntityType,EntityId,OldValue,NewValue,IPAddress,UserAgent) VALUES(:user,:action,'Booking',:id,:old,:next,:ip,:agent)",
     {
       user: ctx.auth?.user?.id || null,
@@ -46,6 +58,8 @@ export const audit = (ctx, action, bookingId, old, next, tx) =>
     },
     tx,
   );
+  await notifyAdmins(action, "Booking", bookingId, tx);
+};
 export async function milestone(
   row,
   key,
@@ -288,7 +302,7 @@ export async function capturePolicy(row, tx) {
         terms,
         policy,
         capturedAt: new Date().toISOString(),
-        commissionRate: commissionRate(),
+        commissionRate: await commissionRate(tx),
       }),
     },
     tx,
@@ -389,8 +403,8 @@ export async function syncPayout(row, ctx, tx) {
     RefundDeduction: summary.refunded + summary.refundPending,
     PayoutStatus: status,
   };
-  if (!ledger.payouts.length)
-    await repo.insert(
+  if (!ledger.payouts.length) {
+    const [created] = await repo.insert(
       { table: "VendorPayouts", id: "PayoutId" },
       {
         BookingId: row.BookingId,
@@ -400,7 +414,9 @@ export async function syncPayout(row, ctx, tx) {
       },
       tx,
     );
-  else
+    if (created?.id)
+      await notifyAdmins("PAYOUT_REQUESTED", "VendorPayouts", created.id, tx);
+  } else
     for (const p of ledger.payouts)
       if (!["Paid", "Processing"].includes(p.PayoutStatus))
         await repo.update(

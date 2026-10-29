@@ -50,7 +50,7 @@ export default function ServiceEditor() {
   const [id, setId] = useState(params.id || null),
     [data, setData] = useState(blank),
     [step, setStep] = useState(
-      Math.min(9, Math.max(0, Number(search.get("step")) || 0)),
+      Math.min(8, Math.max(0, Number(search.get("step")) || 0)),
     ),
     [current, setCurrent] = useState(null),
     [dirty, setDirty] = useState(false),
@@ -92,7 +92,7 @@ export default function ServiceEditor() {
   }, [params.id]);
 
   useEffect(() => {
-    setStep(Math.min(9, Math.max(0, Number(search.get("step")) || 0)));
+    setStep(Math.min(8, Math.max(0, Number(search.get("step")) || 0)));
   }, [search]);
 
   const change = (key, value) => {
@@ -341,13 +341,13 @@ export default function ServiceEditor() {
           className="sm-editor-content"
           onSubmit={(e) => {
             e.preventDefault();
-            if (step < 9) setStep((v) => v + 1);
+            if (step < 8) setStep((v) => v + 1);
             else persist(true);
           }}
         >
           <Panel
             title={`${String(step + 1).padStart(2, "0")} / ${steps[step]}`}
-            description={`Step ${step + 1} of 10 · ${step === 9 ? "Review everything before submitting." : "Every detail helps customers choose with confidence."}`}
+            description={`Step ${step + 1} of 9 · ${step === 8 ? "Review everything before submitting." : "Every detail helps customers choose with confidence."}`}
           >
             <div className="sm-form-body">
               {step === 0 && (
@@ -395,6 +395,8 @@ export default function ServiceEditor() {
                       ))}
                     </select>
                   </Field>
+                  {field("location", "city", "Service Location (city)", "text", { maxLength: 100 })}
+                  {field("policies", "duration", "Estimated Duration (minutes)", "number", { step: 1, max: 1000000 })}
                   {!metadata.data.categories.length && (
                     <p className="sm-warning text-sm text-destructive bg-destructive/10 p-3 rounded-lg" role="alert">
                       No service categories are assigned to your business yet.{" "}
@@ -547,6 +549,8 @@ export default function ServiceEditor() {
                     {[
                       ["basePrice", "Base Price"],
                       ["unitPrice", "Unit Price"],
+                      ["minimumPrice", "Minimum Price (optional)"],
+                      ["maximumPrice", "Maximum Price (optional)"],
                       ["minimumQuantity", "Minimum Quantity"],
                       ["maximumQuantity", "Maximum Quantity"],
                       ["discount", "Discount (%)"],
@@ -568,12 +572,22 @@ export default function ServiceEditor() {
                         }
                       >
                         {units.map((u) => (
-                          <option key={u}>{u}</option>
+                          <option key={u} value={u}>{u === "Custom" ? "Custom Quote" : u === "Per KM" ? "Per Kilometer" : u}</option>
                         ))}
+                      </select>
+                    </Field>
+                    <Field label="Pricing Type">
+                      <select value={data.pricing.type || ""} onChange={(e) => nested("pricing", "type", e.target.value || null)}>
+                        <option value="">Match pricing unit</option>
+                        {[["Fixed", "Fixed price"], ["PerPerson", "Per person"], ["PerHour", "Hourly"], ["PerDay", "Daily"], ["PerItem", "Per item"], ["CustomQuote", "Custom quote"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                       </select>
                     </Field>
                     {field("pricing", "seasonalFrom", "Season starts", "date")}
                     {field("pricing", "seasonalTo", "Season ends", "date")}
+                    <label className="sm-checkbox">
+                      <input type="checkbox" checked={data.pricing.customQuote} onChange={(e) => nested("pricing", "customQuote", e.target.checked)} />
+                      Custom quotation available
+                    </label>
                   </div>
                   <div className="sm-price-preview mt-6 p-5 rounded-xl bg-primary/5 border border-primary/20 flex flex-col gap-1.5">
                     <span className="text-xs font-bold tracking-wider text-primary">ESTIMATED STARTING PRICE</span>
@@ -745,6 +759,18 @@ export default function ServiceEditor() {
                 ))}
               {step === 5 && (
                 <div className="sm-form-grid">
+                  {!!metadata.data.locations?.length && <Field label="Use a saved vendor location">
+                    <select value="" onChange={(e) => {
+                      const location = metadata.data.locations.find((row) => row.id === e.target.value);
+                      if (location) {
+                        const { id: locationId, ...address } = location;
+                        change("location", { ...data.location, ...address, latitude: address.latitude == null ? null : Number(address.latitude), longitude: address.longitude == null ? null : Number(address.longitude) });
+                      }
+                    }}>
+                      <option value="">Choose an address to copy</option>
+                      {metadata.data.locations.map((location) => <option key={location.id} value={location.id}>{location.address}, {location.city}</option>)}
+                    </select>
+                  </Field>}
                   {[
                     ["address", "Address"],
                     ["city", "City"],
@@ -872,7 +898,7 @@ export default function ServiceEditor() {
                   )}
                 </div>
               )}
-              {step === 8 && (
+              {step === 7 && (
                 <div className="sm-form-grid">
                   {field("seo", "title", "SEO Title")}
                   {area("seo", "description", "SEO Description")}
@@ -883,14 +909,16 @@ export default function ServiceEditor() {
                   </p>
                 </div>
               )}
-              {step === 9 && (
+              {step === 8 && (
                 <ServicePreview
                   service={{
                     ...data,
+                    id,
                     ...(current ? { images: current.images } : {}),
                     price: pricePreview(),
                   }}
                   category={category?.name}
+                  categoryFields={template}
                   vendorName={metadata.data.vendorName}
                 />
               )}
@@ -933,7 +961,8 @@ export default function ServiceEditor() {
                 <Save size={15} />
                 {busy ? "Saving…" : "Save Draft"}
               </button>
-              {step < 9 ? (
+              {step !== 8 && <button type="button" className="vw-button" disabled={busy} onClick={() => setStep(8)}>Preview</button>}
+              {step < 8 ? (
                 <button
                   type="submit"
                   className="vw-button vw-primary flex items-center gap-1"

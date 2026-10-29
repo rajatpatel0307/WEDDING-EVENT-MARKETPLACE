@@ -1,7 +1,7 @@
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { ArrowUpRight, Flower2, Heart, MapPin } from "lucide-react";
 import {
-  serviceGroups,
+  useServiceGroups,
   servicePath,
 } from "../../../components/layout/services";
 const titles = {
@@ -20,6 +20,7 @@ const titles = {
   cancellation: "Cancellation Policy",
 };
 export default function MarketplacePage() {
+  const serviceGroups = useServiceGroups();
   const { pathname } = useLocation(),
     [params] = useSearchParams();
   const page = pathname.split("/")[1],

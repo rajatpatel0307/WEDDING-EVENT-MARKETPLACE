@@ -91,6 +91,14 @@ export async function action(name, id, input, ctx) {
     if (previous !== body.expectedStatus)
       error("This record changed. Refresh before continuing.", 409);
     const values = {};
+    if (name === "sub-categories" && body.action === "Active") {
+      const [parent] = await repo.select(
+        "SELECT CategoryId FROM dbo.Categories WITH(UPDLOCK,HOLDLOCK) WHERE CategoryId=:category AND IsActive=1",
+        { category: old.CategoryId },
+        tx,
+      );
+      if (!parent) error("Activate the parent category first.", 409);
+    }
     if (name === "customers") {
       const [admin] = await repo.select(
         "SELECT COUNT(*) AS total FROM dbo.UserRoles ur JOIN dbo.Roles r ON r.RoleId=ur.RoleId WHERE ur.UserId=:id AND r.RoleCode='ADMIN'",
@@ -150,6 +158,52 @@ export async function save(name, id, input, ctx) {
     error("Complete the discount and validity dates.");
   return repo.transaction(async (tx) => {
     const old = id ? await repo.lockRecord(r, id, tx) : null;
+    if (["categories", "sub-categories"].includes(name)) {
+      if (
+        name === "categories" &&
+        /^AUTH_SERVICE_\d+$/.test(old?.CategoryCode || "") &&
+        old.CategoryCode !== body.code
+      )
+        error(
+          "The stable code of a built-in service category cannot be changed. Its display name, description, icon and order can be edited.",
+          409,
+        );
+      if (!/^[A-Za-z0-9_-]+$/.test(body.code))
+        error(
+          "Category code/slug may contain only letters, numbers, hyphens and underscores.",
+        );
+      if (name === "sub-categories") {
+        const [parent] = await repo.select(
+          "SELECT CategoryId FROM dbo.Categories WITH(UPDLOCK,HOLDLOCK) WHERE CategoryId=:parent",
+          { parent: body.categoryId },
+          tx,
+        );
+        if (!parent) error("Parent category not found.", 400);
+        if (old && old.CategoryId !== body.categoryId) {
+          const [used] = await repo.select(
+            "SELECT TOP(1) ServiceId FROM dbo.Services WHERE SubCategoryId=:id",
+            { id },
+            tx,
+          );
+          if (used)
+            error(
+              "A subcategory used by services cannot be moved to another parent.",
+              409,
+            );
+        }
+      }
+      const [duplicate] = await repo.select(
+        `SELECT TOP(1) [${r.id}] FROM dbo.[${r.table}] WITH(UPDLOCK,HOLDLOCK) WHERE [${r.id}]<>:id AND (${name === "categories" ? "CategoryCode" : "SubCategoryCode"}=:code OR (${name === "sub-categories" ? "CategoryId=:parent AND " : ""}${name === "categories" ? "CategoryName" : "SubCategoryName"}=:name))`,
+        {
+          id: id || 0,
+          code: body.code,
+          name: body.name,
+          parent: body.categoryId || 0,
+        },
+        tx,
+      );
+      if (duplicate) error("This category name or code already exists.", 409);
+    }
     if (
       old?.UpdatedAt &&
       (!body.expectedUpdatedAt ||

@@ -10,7 +10,7 @@ import {
   Heart,
 } from "lucide-react";
 import SectionHeader from "../common/SectionHeader";
-import { serviceGroups, servicePath } from "../layout/services";
+import { useServiceGroups, servicePath } from "../layout/services";
 export function AboutHero() {
   return (
     <section className="mp-about-hero">
@@ -107,6 +107,7 @@ export function MissionVision() {
   );
 }
 export function WhatWeDo() {
+  const serviceGroups = useServiceGroups();
   return (
     <section className="mp-section">
       <SectionHeader

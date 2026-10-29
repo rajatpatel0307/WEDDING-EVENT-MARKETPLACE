@@ -83,9 +83,13 @@ test("submission validation points vendors to the missing fields", () => {
 test("draft validation rejects invalid pricing, dates, items and slugs", () => {
   const cases = [
     [(data) => (data.pricing.discount = 101), 2],
+    [(data) => (data.pricing.type = "Approved"), 2],
+    [(data) => (data.policies.duration = 10.5), 7],
     [(data) => (data.availability.end = "08:00"), 6],
     [(data) => (data.items = [{ name: "", quantity: 1, price: 0 }]), 3],
-    [(data) => (data.seo.slug = "Bad Slug"), 8],
+    [(data) => (data.seo.slug = "Bad Slug"), 7],
+    [(data) => (data.pricing.minimumPrice = -1), 2],
+    [(data) => { data.pricing.minimumPrice = 200; data.pricing.maximumPrice = 100; }, 2],
   ];
   for (const [mutate, step] of cases) {
     const data = valid();

@@ -1,3 +1,4 @@
+import { up as operationsUp } from "../migrations/014-admin-operations.js";
 import { up as adminBookingsUp } from "../migrations/013-admin-bookings.js";
 import { up as adminServicesUp } from "../migrations/012-admin-services.js";
 import { up as serviceApprovalUp } from "../migrations/011-service-approval.js";
@@ -217,6 +218,23 @@ try {
       await adminBookingsUp(sequelize.getQueryInterface(), transaction);
       await sequelize.query(
         "INSERT INTO dbo.AuthMigrations(Name) VALUES('013-admin-bookings')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='014-admin-operations'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await operationsUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES('014-admin-operations')",
         { transaction },
       );
     }

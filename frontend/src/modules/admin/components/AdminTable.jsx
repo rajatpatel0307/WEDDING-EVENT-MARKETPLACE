@@ -76,7 +76,20 @@ function display(key, value, row = {}) {
   if (value === null || value === undefined || value === "") return "—";
   if (key === "status") return <Badge>{value}</Badge>;
   if (/At$|Date$|^validUntil$/.test(key)) return date(value);
-  if (["amount", "paid", "gross", "commission", "bookingAmount"].includes(key))
+  if (
+    [
+      "amount",
+      "paid",
+      "gross",
+      "commission",
+      "bookingAmount",
+      "totalSpending",
+      "totalEarnings",
+      "refundAdjustment",
+      "taxDeduction",
+      "fees",
+    ].includes(key)
+  )
     return row.currency && row.currency !== "INR"
       ? new Intl.NumberFormat("en-IN", {
           style: "currency",
@@ -84,9 +97,36 @@ function display(key, value, row = {}) {
           maximumFractionDigits: 2,
         }).format(Number(value))
       : money(value);
+  if (key === "id")
+    return <span title={String(value)}>{String(value).slice(0, 8)}?</span>;
   if (key === "emailVerified") return value ? "Verified" : "Unverified";
   if (typeof value === "number") return number(value);
   return String(value);
+}
+function VendorCategories({ value, vendorId }) {
+  const categories = String(value || "")
+    .split(",")
+    .map((category) => category.trim())
+    .filter(Boolean);
+  if (!categories.length) return "\u2014";
+  return (
+    <div className="ad-vendor-category-preview">
+      {categories.slice(0, 2).map((category, index) => (
+        <span key={`${index}-${category}`} title={category}>
+          {category}
+        </span>
+      ))}
+      {categories.length > 2 && (
+        <Link
+          to={`/admin/vendors/${vendorId}?tab=categories`}
+          aria-label={`View all ${categories.length} categories`}
+          title="View all categories"
+        >
+          &hellip;
+        </Link>
+      )}
+    </div>
+  );
 }
 export default function AdminTable({
   resource,
@@ -107,6 +147,9 @@ export default function AdminTable({
     [direction, setDirection] = useState("desc"),
     [from, setFrom] = useState(""),
     [to, setTo] = useState("");
+  const [category, setCategory] = useState(""),
+    [locationFilter, setLocationFilter] = useState(""),
+    [gateway, setGateway] = useState("");
   const [data, setData] = useState(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(null),
@@ -138,6 +181,9 @@ export default function AdminTable({
     pageSize: String(compact ? 5 : size),
     sort,
     direction,
+    ...(category ? { category } : {}),
+    ...(locationFilter ? { location: locationFilter } : {}),
+    ...(gateway ? { gateway } : {}),
     ...(from ? { from } : {}),
     ...(to ? { to } : {}),
   }).toString();
@@ -158,6 +204,11 @@ export default function AdminTable({
           (previous) =>
             previous ||
             result.columns
+              .filter(
+                (k) =>
+                  resource !== "vendors" ||
+                  !["id", "categories", "documents", "totalEarnings"].includes(k),
+              )
               .filter((k) =>
                 compact
                   ? [
@@ -169,7 +220,8 @@ export default function AdminTable({
                       "status",
                       "documents",
                     ].includes(k)
-                  : ![
+                  : (k === "emailVerified" && resource === "customers") ||
+                    ![
                       "description",
                       "remarks",
                       "emailVerified",
@@ -177,7 +229,14 @@ export default function AdminTable({
                       "updatedAt",
                     ].includes(k),
               )
-              .slice(0, compact ? 7 : 6),
+              .slice(
+                0,
+                compact
+                  ? 7
+                  : ["customers", "vendors"].includes(resource)
+                    ? 16
+                    : 8,
+              ),
         );
       })
       .catch((e) => {
@@ -222,6 +281,15 @@ export default function AdminTable({
       navigate(`/admin/bookings/${row.id}`);
       return;
     }
+    if (
+      ["quotations", "payments", "refunds", "payouts", "commission"].includes(
+        resource,
+      ) &&
+      action === "view"
+    ) {
+      navigate(`/admin/finance/${resource}/${row.id}`);
+      return;
+    }
     setDialog({ row, action });
   }
   async function submit(e) {
@@ -233,7 +301,12 @@ export default function AdminTable({
       let result;
       if (["create", "edit"].includes(dialog.action)) {
         const values = { ...fields };
-        for (const key of ["discountValue", "categoryId", "usageLimit"])
+        for (const key of [
+          "discountValue",
+          "categoryId",
+          "usageLimit",
+          "sortOrder",
+        ])
           if (key in values)
             values[key] = values[key] === "" ? null : Number(values[key]);
         if (dialog.row?.updatedAt)
@@ -301,7 +374,12 @@ export default function AdminTable({
       setExporting(false);
     }
   }
-  const cols = (visible || []).filter((k) => data?.columns.includes(k));
+  const listColumns = (data?.columns || []).filter(
+    (k) =>
+      resource !== "vendors" ||
+      !["id", "categories", "documents", "totalEarnings"].includes(k),
+  );
+  const cols = (visible || []).filter((k) => listColumns.includes(k));
   return (
     <section
       className="ad-panel ad-data-panel"
@@ -332,6 +410,44 @@ export default function AdminTable({
           />
         </label>
         <div className="ad-table-filters">
+          {["vendors", "sub-categories", "commission"].includes(resource) &&
+            !compact && (
+              <RecordPicker
+                resource="categories"
+                name="filterCategory"
+                required={false}
+                onChange={(value) => {
+                  setCategory(value);
+                  setPage(1);
+                }}
+              />
+            )}
+          {resource === "vendors" && !compact && (
+            <input
+              aria-label="Filter vendor location"
+              placeholder="City or state"
+              value={locationFilter}
+              onChange={(event) => {
+                setLocationFilter(event.target.value);
+                setPage(1);
+              }}
+            />
+          )}
+          {resource === "payments" && (
+            <select
+              aria-label="Filter payment gateway"
+              value={gateway}
+              onChange={(event) => {
+                setGateway(event.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">All gateways</option>
+              {data?.gatewayOptions?.map((value) => (
+                <option key={value}>{value}</option>
+              ))}
+            </select>
+          )}
           {!!data?.statuses.length && (
             <select
               aria-label="Filter by status"
@@ -385,7 +501,7 @@ export default function AdminTable({
                 </button>
                 {columnsOpen && (
                   <div className="ad-column-menu">
-                    {data?.columns.map((k) => (
+                    {listColumns.map((k) => (
                       <label key={k}>
                         <input
                           type="checkbox"
@@ -467,7 +583,10 @@ export default function AdminTable({
                 <tr key={row.id}>
                   {cols.map((k) => (
                     <td key={k} data-label={label(k)}>
-                      {k === "name" ? (
+                      {k === "categories" &&
+                      ["vendors", "applications"].includes(resource) ? (
+                        <VendorCategories value={row[k]} vendorId={row.id} />
+                      ) : k === "name" ? (
                         <button
                           className="ad-record-name"
                           onClick={() => open(row, "view")}
@@ -612,6 +731,14 @@ export default function AdminTable({
           busy={busy}
           close={() => setDialog(null)}
         >
+          {dialog.action === "Inactive" &&
+            ["categories", "sub-categories"].includes(resource) && (
+              <p className="ad-inline-error">
+                This category is used by {dialog.row.usageCount || 0} services.
+                Existing history will be preserved. Review affected listings
+                before deactivation.
+              </p>
+            )}
           {formError && (
             <div className="ad-inline-error" role="alert">
               {formError}
@@ -711,13 +838,16 @@ export default function AdminTable({
                                   "categoryId",
                                   "discountValue",
                                   "usageLimit",
+                                  "sortOrder",
                                 ].includes(k)
                               ? "number"
                               : "text"
                         }
                         step={k === "discountValue" ? "0.01" : undefined}
-                        min={k === "discountValue" ? 0 : 1}
-                        required={k !== "description" && k !== "usageLimit"}
+                        min={["discountValue", "sortOrder"].includes(k) ? 0 : 1}
+                        required={
+                          !["description", "usageLimit", "icon"].includes(k)
+                        }
                         maxLength={k === "code" ? 50 : 150}
                         defaultValue={
                           /Date$/.test(k)

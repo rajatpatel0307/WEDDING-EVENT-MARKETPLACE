@@ -27,7 +27,6 @@ export const steps = [
   "Location",
   "Availability",
   "Terms & policies",
-  "SEO",
   "Preview",
 ];
 export const units = [
@@ -50,8 +49,12 @@ export const blank = () => ({
   serviceType: "On site",
   attributes: {},
   pricing: {
+    type: null,
     basePrice: 0,
     unitPrice: 0,
+    minimumPrice: null,
+    maximumPrice: null,
+    customQuote: false,
     minimumQuantity: 1,
     maximumQuantity: 1,
     unit: "Per Event",

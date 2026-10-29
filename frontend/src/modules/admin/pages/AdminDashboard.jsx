@@ -35,7 +35,23 @@ const metrics = [
   ["customers", "Total customers", Users, "customers"],
   ["vendors", "Total vendors", Store, "vendors"],
   ["approvals", "Pending approvals", ClipboardCheck, "vendors/pending"],
-  ["services", "Active services", BriefcaseBusiness, "services"],
+  ["totalServices", "Total services", BriefcaseBusiness, "services"],
+  ["approvedVendors", "Approved vendors", Store, "vendors?status=Approved"],
+  [
+    "pendingServices",
+    "Pending service approvals",
+    ClipboardCheck,
+    "services/pending",
+  ],
+  [
+    "pendingBookings",
+    "Pending bookings",
+    CalendarCheck,
+    "bookings?status=Pending",
+  ],
+  ["pendingPayments", "Pending payments", IndianRupee, "payments"],
+  ["pendingRefunds", "Pending refunds", Wallet, "refunds"],
+  ["commission", "Platform commission", IndianRupee, "commission"],
   ["bookings", "Total bookings", CalendarCheck, "bookings"],
   ["today", "Today’s bookings", CalendarDays, "bookings"],
   ["revenue", "Total revenue", IndianRupee, "payments"],
@@ -187,6 +203,8 @@ export default function AdminDashboard() {
     [loading, setLoading] = useState(true),
     [error, setError] = useState(null),
     [version, setVersion] = useState(0);
+  const [preset, setPreset] = useState("30"),
+    [filterError, setFilterError] = useState("");
   useEffect(() => {
     const changed = () => setVersion((value) => value + 1);
     window.addEventListener(vendorChangedEvent, changed);
@@ -233,13 +251,66 @@ export default function AdminDashboard() {
         <div className="ad-heading-actions">
           <select
             aria-label="Analytics period"
-            defaultValue="30"
-            onChange={(e) => setRange(getRange(Number(e.target.value)))}
+            value={preset}
+            onChange={(e) => {
+              setPreset(e.target.value);
+              setFilterError("");
+              if (e.target.value !== "custom")
+                setRange(getRange(Number(e.target.value)));
+            }}
           >
             <option value="30">Last 30 days</option>
             <option value="90">Last 90 days</option>
             <option value="365">Last 12 months</option>
+            <option value="custom">Custom dates</option>
           </select>
+          {preset === "custom" && (
+            <form
+              className="ad-date-range"
+              key={`${range.from}-${range.to}`}
+              onSubmit={(event) => {
+                event.preventDefault();
+                const values = Object.fromEntries(
+                  new FormData(event.currentTarget),
+                );
+                if (
+                  values.to < values.from ||
+                  new Date(values.to) - new Date(values.from) > 366 * 86400000
+                ) {
+                  setFilterError(
+                    "Choose an ordered date range of up to one year.",
+                  );
+                  return;
+                }
+                setFilterError("");
+                setRange({ from: values.from, to: values.to });
+              }}
+            >
+              <label>
+                From
+                <input
+                  aria-label="Analytics from date"
+                  name="from"
+                  type="date"
+                  defaultValue={range.from}
+                  required
+                />
+              </label>
+              <label>
+                To
+                <input
+                  aria-label="Analytics to date"
+                  name="to"
+                  type="date"
+                  defaultValue={range.to}
+                  required
+                />
+              </label>
+              <button className="ad-button" type="submit">
+                Apply dates
+              </button>
+            </form>
+          )}
           <button
             className="ad-button"
             disabled={loading}
@@ -250,6 +321,11 @@ export default function AdminDashboard() {
           </button>
         </div>
       </div>
+      {filterError && (
+        <p className="ad-inline-error" role="alert">
+          {filterError}
+        </p>
+      )}
       <div className="ad-range-note">
         <CalendarDays size={13} />
         {date(range.from)} – {date(range.to)}
@@ -307,7 +383,13 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                     <strong>
-                      {["revenue", "payouts"].includes(key)
+                      {[
+                        "revenue",
+                        "payouts",
+                        "commission",
+                        "pendingPayments",
+                        "pendingRefunds",
+                      ].includes(key)
                         ? money(metric.total, true)
                         : number(metric.total)}
                     </strong>
@@ -436,6 +518,20 @@ export default function AdminDashboard() {
                 subtitle="Payout amounts by current status"
               >
                 <Distribution data={data.payouts} currency />
+              </ChartPanel>
+            </div>
+            <div className="ad-chart-grid">
+              <ChartPanel
+                title="Payment status"
+                subtitle="Recorded payment states"
+              >
+                <Distribution data={data.paymentStatus} />
+              </ChartPanel>
+              <ChartPanel
+                title="Service categories"
+                subtitle="Services created in this period"
+              >
+                <Distribution data={data.serviceCategories} />
               </ChartPanel>
             </div>
             <CategoryAnalytics rows={data.categories} />

@@ -16,8 +16,22 @@ export const pricingUnits = [
 ];
 export const pricingSchema = z
   .object({
+    type: z
+      .enum([
+        "Fixed",
+        "PerPerson",
+        "PerHour",
+        "PerDay",
+        "PerItem",
+        "CustomQuote",
+      ])
+      .nullable()
+      .default(null),
     basePrice: amount.default(0),
     unitPrice: amount.default(0),
+    minimumPrice: amount.nullable().default(null),
+    maximumPrice: amount.nullable().default(null),
+    customQuote: z.boolean().default(false),
     minimumQuantity: number.default(1),
     maximumQuantity: number.default(1),
     unit: z.enum(pricingUnits).default("Per Event"),
@@ -31,6 +45,15 @@ export const pricingSchema = z
     taxRate: amount.max(100).default(0),
   })
   .strict()
+  .refine(
+    (v) =>
+      v.minimumPrice === null ||
+      v.maximumPrice === null ||
+      v.maximumPrice >= v.minimumPrice,
+    {
+      message: "Maximum price must be at least minimum price.",
+    },
+  )
   .refine((v) => v.maximumQuantity >= v.minimumQuantity, {
     message: "Maximum quantity must be at least minimum quantity.",
   })
@@ -43,6 +66,20 @@ export const pricingSchema = z
         v.seasonalPrice !== null),
     { message: "Complete the seasonal date range and price." },
   );
+export function pricingTypeFor(pricing) {
+  return (
+    pricing.type ||
+    {
+      "Per Hour": "PerHour",
+      "Per Day": "PerDay",
+      "Per Item": "PerItem",
+      "Per Person": "PerPerson",
+      "Per Plate": "PerPerson",
+      Custom: "CustomQuote",
+    }[pricing.unit] ||
+    "Fixed"
+  );
+}
 export const itemSchema = z
   .object({
     name: z.string().trim().min(1).max(200),
@@ -100,8 +137,8 @@ export const policiesSchema = z
     rescheduling: text(),
     travelCharges: amount.default(0),
     additionalCharges: text(),
-    setupTime: number.default(0),
-    duration: number.default(0),
+    setupTime: number.int().default(0),
+    duration: number.int().default(0),
     terms: text(10000),
   })
   .strict();

@@ -6,9 +6,11 @@ The customer planning workspace is at `/customer/dashboard`. See [Customer works
 
 The approved vendor workspace is at `/vendor/dashboard`. See [Vendor workspace setup and API](backend/docs/vendor-workspace.md) for migrations, the 17 category forms, management routes, ownership rules and verification commands.
 
-The vendor service studio is at `/vendor/services`. See [Service management setup and API](backend/docs/service-management.md) for the ten-step editor, draft and approval lifecycle, media, pricing, packages, calendar, performance, migration `010-service-management`, and rollback-only MSSQL verification.
+The vendor service studio is at `/vendor/services`. See [Service management setup and API](backend/docs/service-management.md) for the nine-step editor, draft and approval lifecycle, media, pricing, packages, calendar, performance, migration `010-service-management`, and rollback-only MSSQL verification.
 
 Service approvals are at `/admin/services/pending`. See [Service approval workflow](backend/docs/service-approval.md) for migration `011-service-approval`, review and decision APIs, rejection/resubmission, notifications and approval history.
+
+The [Admin dashboard and operations extension](backend/docs/admin-operations.md) adds Recharts analytics, database-backed record search, category management, administrator notifications, financial detail views, audited default commission configuration and payout review with guarded external-settlement recording. Payout metadata requires migration `014-admin-operations`; see the document for rollout and verification limits.
 
 The centralized [Admin services management module](backend/docs/admin-services-management.md) is at `/admin/services`, with search, filtering, CSV export, service editing, item/package/media moderation and performance reporting. It requires migration `012-admin-services`.
 

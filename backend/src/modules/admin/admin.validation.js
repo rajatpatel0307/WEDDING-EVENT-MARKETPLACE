@@ -2,6 +2,9 @@ import { z } from "zod";
 export const listQuery = z
   .object({
     q: z.string().trim().max(200).default(""),
+    category: z.coerce.number().int().min(0).max(2147483647).default(0),
+    location: z.string().trim().max(100).default(""),
+    gateway: z.string().trim().max(50).default(""),
     status: z.string().max(40).default(""),
     page: z.coerce.number().int().min(1).max(100000).default(1),
     pageSize: z.coerce.number().int().min(1).max(100).default(20),
@@ -33,6 +36,8 @@ export const recordInput = z
     name: z.string().trim().min(2).max(150),
     code: z.string().trim().min(2).max(50).optional(),
     categoryId: z.coerce.number().int().positive().optional(),
+    sortOrder: z.coerce.number().int().min(0).max(100000).optional(),
+    icon: z.string().trim().max(100).optional(),
     description: z.string().trim().max(500).default(""),
     discountType: z.enum(["Percentage", "Fixed"]).optional(),
     discountValue: z.coerce.number().nonnegative().max(10000000).optional(),

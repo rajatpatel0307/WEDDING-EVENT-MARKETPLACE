@@ -1,3 +1,6 @@
+import * as commission from "./commission.service.js";
+import * as operations from "./operations.service.js";
+import * as payouts from "./payouts.service.js";
 import * as bookingManagement from "./bookings-management.service.js";
 import { initiate as initiateBookingRefund } from "./booking-refunds.service.js";
 import * as serviceManagement from "./services-management.service.js";
@@ -48,6 +51,47 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
       res,
       next,
     ),
+  );
+  router.get("/commission/configuration", async (req, res) =>
+    res.json(await commission.configuration(req.admin)),
+  );
+  router.put(
+    "/commission/configuration",
+    rateLimit({ windowMs: 60000, limit: 15 }),
+    async (req, res) =>
+      res.json(await commission.configure(req.body, req.admin)),
+  );
+  router.get("/search", async (req, res) =>
+    res.json(await operations.search(req.query, req.admin)),
+  );
+  router.get("/notifications/inbox", async (req, res) =>
+    res.json(await operations.inbox(req.admin, req.query)),
+  );
+  router.patch("/notifications/:id/read", async (req, res) =>
+    res.json(
+      await operations.readNotification(req.params.id, req.body, req.admin),
+    ),
+  );
+  router.get("/finance/:kind/:id", async (req, res) =>
+    res.json(
+      await operations.details(req.params.kind, req.params.id, req.admin),
+    ),
+  );
+  router.post("/finance/:kind/:id/notes", async (req, res) =>
+    res.json(
+      await operations.note(
+        req.params.kind,
+        req.params.id,
+        req.body,
+        req.admin,
+      ),
+    ),
+  );
+  router.post(
+    "/payouts/:id/decision",
+    rateLimit({ windowMs: 60000, limit: 15 }),
+    async (req, res) =>
+      res.json(await payouts.decide(req.params.id, req.body, req.admin)),
   );
   router.get("/bookings", async (req, res) =>
     res.json(await bookingManagement.list(req.query, req.admin)),
@@ -356,6 +400,9 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
   router.get("/settings", controller.getSettings);
   router.get("/vendors/:id/details", async (req, res) =>
     res.json(await vendorDetails.vendorDetails(req.params.id, req.admin)),
+  );
+  router.post("/vendors/:id/notes", async (req, res) =>
+    res.json(await vendorDetails.addNote(req.params.id, req.body, req.admin)),
   );
   router.get("/vendors/:id/records/:section", async (req, res) =>
     res.json(

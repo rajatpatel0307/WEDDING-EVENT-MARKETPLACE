@@ -103,8 +103,10 @@ test("approval activates and stores admin identity with audit and notification i
     calls.some((c) => c.arguments[0].startsWith("INSERT INTO dbo.AuditLogs")),
   );
   assert.ok(
-    calls.some((c) =>
-      c.arguments[0].startsWith("INSERT INTO dbo.Notifications"),
+    calls.some(
+      (c) =>
+        c.arguments[0].startsWith("INSERT INTO dbo.Notifications") &&
+        !c.arguments[0].includes("AdminEvent"),
     ),
   );
   assert.ok(calls.every((c) => c.arguments[1].transaction === tx));
@@ -125,8 +127,10 @@ test("rejection records reason and reviewer without activating the listing", asy
     c.arguments[0].startsWith("UPDATE"),
   );
   assert.match(update.arguments[0], /RejectedBy/);
-  const notification = query.mock.calls.find((c) =>
-    c.arguments[0].startsWith("INSERT INTO dbo.Notifications"),
+  const notification = query.mock.calls.find(
+    (c) =>
+      c.arguments[0].startsWith("INSERT INTO dbo.Notifications") &&
+      !c.arguments[0].includes("AdminEvent"),
   );
   assert.match(
     notification.arguments[1].replacements.message,

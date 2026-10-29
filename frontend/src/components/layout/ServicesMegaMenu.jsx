@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { serviceGroups, servicePath } from "./services";
+import { useServiceGroups, servicePath } from "./services";
 export default function ServicesMegaMenu({ close }) {
+  const serviceGroups = useServiceGroups();
   return (
     <div className="mn-mega">
       <div className="mn-mega-grid">

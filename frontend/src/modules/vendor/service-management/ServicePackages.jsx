@@ -8,6 +8,7 @@ import {
   Power,
   Trash2,
   ArrowLeft,
+  Eye,
 } from "lucide-react";
 import {
   Heading,
@@ -35,16 +36,32 @@ const blank = () => ({
   optionalItems: "",
   images: [],
 });
-export default function ServicePackages() {
-  const { id } = useParams(),
+export default function ServicePackages({
+  serviceId,
+  initialPackage,
+  create = false,
+}) {
+  const params = useParams(),
+    id = serviceId || params.id,
     [version, setVersion] = useState(0),
     state = useVendorData(`/services/${id}/packages`, version),
     parent = useVendorData(`/services/${id}`, version),
-    [form, setForm] = useState(null),
+    [form, setForm] = useState(() =>
+      initialPackage
+        ? {
+            ...blank(),
+            ...initialPackage,
+            expectedUpdatedAt: initialPackage.updatedAt,
+          }
+        : create
+          ? blank()
+          : null,
+    ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [dirty, setDirty] = useState(false);
+  const [viewOnly, setViewOnly] = useState(false);
   useUnsaved(dirty);
   const change = (k, v) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -65,7 +82,7 @@ export default function ServicePackages() {
       setBusy(false);
     }
   };
-  const edit = (p) =>
+  const edit = (p, viewing = false) =>
     run(async () => {
       const details = await vendorRequest(`/packages/${p.id}`);
       setForm({
@@ -74,6 +91,7 @@ export default function ServicePackages() {
         ...(p.details ? JSON.parse(p.details) : {}),
         expectedUpdatedAt: details.updatedAt,
       });
+      setViewOnly(viewing);
       return { message: "" };
     });
   const saveForm = async (e) => {
@@ -119,6 +137,7 @@ export default function ServicePackages() {
           disabled={!canEdit}
           onClick={() => {
             setForm(blank());
+            setViewOnly(false);
             setError("");
           }}
         >
@@ -150,6 +169,11 @@ export default function ServicePackages() {
               </span>
               <h2>{p.name}</h2>
               <p>{p.description}</p>
+              <p>
+                {p.minimumGuests ?? "Any"}–{p.maximumGuests ?? "Any"} guests
+                {p.duration != null && ` · ${p.duration} minutes`}
+                {p.featured ? " · Featured" : ""}
+              </p>
               <strong className="sm-package-price">
                 {money(p.finalPrice)}
               </strong>
@@ -159,6 +183,10 @@ export default function ServicePackages() {
                 </small>
               )}
               <div className="sm-row-actions">
+                <button disabled={busy} onClick={() => edit(p, true)}>
+                  <Eye size={15} />
+                  View Package
+                </button>
                 {canEdit && (
                   <>
                     <button disabled={busy} onClick={() => edit(p)}>
@@ -229,7 +257,13 @@ export default function ServicePackages() {
       </div>
       {form && (
         <Modal
-          title={form.id ? "Edit Package" : "Create Package"}
+          title={
+            viewOnly
+              ? "Package Details"
+              : form.id
+                ? "Edit Package"
+                : "Create Package"
+          }
           wide
           busy={busy}
           close={() => {
@@ -243,194 +277,199 @@ export default function ServicePackages() {
           }}
         >
           <form onSubmit={saveForm}>
-            <div className="sm-form-body sm-form-grid">
-              {[
-                ["name", "Package Name", "text"],
-                ["description", "Description", "text"],
-                ["price", "Original Price", "number"],
-                ["discount", "Discount (%)", "number"],
-                ["minimumGuests", "Minimum Guests", "number"],
-                ["maximumGuests", "Maximum Guests", "number"],
-                ["duration", "Duration (minutes)", "number"],
-              ].map(([k, l, t]) => (
-                <Field key={k} label={l}>
-                  <input
-                    required={k === "name"}
-                    type={t}
-                    min={0}
-                    max={k === "discount" ? 100 : 100000000}
-                    step={k === "price" || k === "discount" ? "0.01" : "1"}
-                    value={form[k] ?? ""}
-                    onChange={(e) =>
-                      change(
-                        k,
-                        t === "number"
-                          ? e.target.value === ""
-                            ? null
-                            : Number(e.target.value)
-                          : e.target.value,
-                      )
-                    }
-                  />
-                </Field>
-              ))}
-              <Field label="Package Price">
-                <output className="sm-package-price">
-                  {money(
-                    Number(form.price) * (1 - Number(form.discount) / 100),
-                  )}
-                </output>
-              </Field>
-              <Field label="Terms">
-                <textarea
-                  rows={3}
-                  value={form.terms}
-                  onChange={(e) => change("terms", e.target.value)}
-                />
-              </Field>
-              <Field label="Optional Items">
-                <textarea
-                  rows={3}
-                  value={form.optionalItems}
-                  onChange={(e) => change("optionalItems", e.target.value)}
-                />
-              </Field>
-              <label className="sm-checkbox">
-                <input
-                  type="checkbox"
-                  checked={form.active}
-                  onChange={(e) => change("active", e.target.checked)}
-                />
-                Active package
-              </label>
-              <label className="sm-checkbox">
-                <input
-                  type="checkbox"
-                  checked={form.featured}
-                  onChange={(e) => change("featured", e.target.checked)}
-                />
-                Featured package
-              </label>
-            </div>
-            <div className="sm-form-body">
-              <h3>Included items</h3>
-              {form.items.map((item, i) => (
-                <div className="sm-package-item" key={i}>
-                  <input
-                    aria-label="Item name"
-                    required
-                    value={item.name}
-                    placeholder="Item name"
-                    onChange={(e) =>
-                      change(
-                        "items",
-                        form.items.map((x, n) =>
-                          n === i ? { ...x, name: e.target.value } : x,
-                        ),
-                      )
-                    }
-                  />
-                  <input
-                    aria-label="Item description"
-                    value={item.description || ""}
-                    placeholder="Description"
-                    onChange={(e) =>
-                      change(
-                        "items",
-                        form.items.map((x, n) =>
-                          n === i ? { ...x, description: e.target.value } : x,
-                        ),
-                      )
-                    }
-                  />
-                  <input
-                    aria-label="Quantity"
-                    type="number"
-                    min="0"
-                    value={item.quantity ?? 1}
-                    onChange={(e) =>
-                      change(
-                        "items",
-                        form.items.map((x, n) =>
-                          n === i
-                            ? { ...x, quantity: Number(e.target.value) }
-                            : x,
-                        ),
-                      )
-                    }
-                  />
-                  <input
-                    aria-label="Unit"
-                    placeholder="Unit"
-                    value={item.unit || ""}
-                    onChange={(e) =>
-                      change(
-                        "items",
-                        form.items.map((x, n) =>
-                          n === i ? { ...x, unit: e.target.value } : x,
-                        ),
-                      )
-                    }
-                  />
-                  <button
-                    type="button"
-                    title="Delete item"
-                    onClick={() =>
-                      change(
-                        "items",
-                        form.items.filter((_, n) => n !== i),
-                      )
-                    }
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                className="vw-button"
-                onClick={() =>
-                  change("items", [
-                    ...form.items,
-                    { name: "", description: "", quantity: 1, unit: "item" },
-                  ])
-                }
-              >
-                <Plus size={15} />
-                Add Item
-              </button>
-              <h3 className="mt-5">Package images</h3>
-              <div className="sm-package-images">
-                {parent.data.images.map((image) => (
-                  <label key={image.id}>
-                    <img
-                      src={image.url}
-                      alt="Select package image"
-                      loading="lazy"
-                    />
+            <fieldset disabled={viewOnly || !canEdit}>
+              <div className="sm-form-body sm-form-grid">
+                {[
+                  ["name", "Package Name", "text"],
+                  ["description", "Description", "text"],
+                  ["price", "Original Price", "number"],
+                  ["discount", "Discount (%)", "number"],
+                  ["minimumGuests", "Minimum Guests", "number"],
+                  ["maximumGuests", "Maximum Guests", "number"],
+                  ["duration", "Duration (minutes)", "number"],
+                ].map(([k, l, t]) => (
+                  <Field key={k} label={l}>
                     <input
-                      type="checkbox"
-                      checked={form.images.includes(image.id)}
+                      required={k === "name"}
+                      type={t}
+                      min={0}
+                      max={k === "discount" ? 100 : 100000000}
+                      step={k === "price" || k === "discount" ? "0.01" : "1"}
+                      value={form[k] ?? ""}
                       onChange={(e) =>
                         change(
-                          "images",
-                          e.target.checked
-                            ? [...form.images, image.id]
-                            : form.images.filter((x) => x !== image.id),
+                          k,
+                          t === "number"
+                            ? e.target.value === ""
+                              ? null
+                              : Number(e.target.value)
+                            : e.target.value,
                         )
                       }
                     />
-                  </label>
+                  </Field>
                 ))}
+                <Field label="Package Price">
+                  <output className="sm-package-price">
+                    {money(
+                      Number(form.price) * (1 - Number(form.discount) / 100),
+                    )}
+                  </output>
+                </Field>
+                <Field label="Terms">
+                  <textarea
+                    rows={3}
+                    value={form.terms}
+                    onChange={(e) => change("terms", e.target.value)}
+                  />
+                </Field>
+                <Field label="Optional Items">
+                  <textarea
+                    rows={3}
+                    value={form.optionalItems}
+                    onChange={(e) => change("optionalItems", e.target.value)}
+                  />
+                </Field>
+                <label className="sm-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={form.active}
+                    onChange={(e) => change("active", e.target.checked)}
+                  />
+                  Active package
+                </label>
+                <label className="sm-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={form.featured}
+                    onChange={(e) => change("featured", e.target.checked)}
+                  />
+                  Featured package
+                </label>
               </div>
-              {error && (
-                <p className="sm-error" role="alert">
-                  {error}
-                </p>
-              )}
-            </div>
+              <div className="sm-form-body">
+                <h3>Included items</h3>
+                {form.items.map((item, i) => (
+                  <div className="sm-package-item" key={i}>
+                    <input
+                      aria-label="Item name"
+                      required
+                      value={item.name}
+                      placeholder="Item name"
+                      onChange={(e) =>
+                        change(
+                          "items",
+                          form.items.map((x, n) =>
+                            n === i ? { ...x, name: e.target.value } : x,
+                          ),
+                        )
+                      }
+                    />
+                    <input
+                      aria-label="Item description"
+                      value={item.description || ""}
+                      placeholder="Description"
+                      onChange={(e) =>
+                        change(
+                          "items",
+                          form.items.map((x, n) =>
+                            n === i ? { ...x, description: e.target.value } : x,
+                          ),
+                        )
+                      }
+                    />
+                    <input
+                      aria-label="Quantity"
+                      type="number"
+                      min="0"
+                      value={item.quantity ?? 1}
+                      onChange={(e) =>
+                        change(
+                          "items",
+                          form.items.map((x, n) =>
+                            n === i
+                              ? { ...x, quantity: Number(e.target.value) }
+                              : x,
+                          ),
+                        )
+                      }
+                    />
+                    <input
+                      aria-label="Unit"
+                      placeholder="Unit"
+                      value={item.unit || ""}
+                      onChange={(e) =>
+                        change(
+                          "items",
+                          form.items.map((x, n) =>
+                            n === i ? { ...x, unit: e.target.value } : x,
+                          ),
+                        )
+                      }
+                    />
+                    <button
+                      type="button"
+                      title="Delete item"
+                      onClick={() =>
+                        change(
+                          "items",
+                          form.items.filter((_, n) => n !== i),
+                        )
+                      }
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="vw-button"
+                  onClick={() =>
+                    change("items", [
+                      ...form.items,
+                      { name: "", description: "", quantity: 1, unit: "item" },
+                    ])
+                  }
+                >
+                  <Plus size={15} />
+                  Add Item
+                </button>
+                <h3 className="mt-5">Package images</h3>
+                <div className="sm-package-images">
+                  {parent.data.images.map((image) => (
+                    <label key={image.id}>
+                      <img
+                        src={image.url}
+                        alt="Select package image"
+                        loading="lazy"
+                      />
+                      <input
+                        type="checkbox"
+                        checked={form.images.includes(image.id)}
+                        onChange={(e) =>
+                          change(
+                            "images",
+                            e.target.checked
+                              ? [...form.images, image.id]
+                              : form.images.filter((x) => x !== image.id),
+                          )
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+                {error && (
+                  <p className="sm-error" role="alert">
+                    {error}
+                  </p>
+                )}
+              </div>
+            </fieldset>
             <div className="sm-actions">
-              <button className="vw-button vw-primary" disabled={busy}>
+              <button
+                className="vw-button vw-primary"
+                disabled={busy || !canEdit || viewOnly}
+              >
                 {busy ? "Saving…" : "Save Package"}
               </button>
             </div>

@@ -1,3 +1,4 @@
+import { categories as seededCategories } from "../auth/auth.validation.js";
 // This schema drives both the vendor form and server validation for every category.
 const field = (key, label, type = "text", options) => ({
   key,
@@ -20,6 +21,8 @@ export const serviceTemplates = {
       "Destination venue",
     ]),
     num("capacity", "Guest capacity"),
+    num("minimumCapacity", "Minimum capacity"),
+    num("maximumCapacity", "Maximum capacity"),
     select("setting", "Indoor / outdoor", ["Indoor", "Outdoor", "Both"]),
     bool("parking", "Parking"),
     bool("ac", "Air conditioning"),
@@ -278,6 +281,23 @@ export const serviceTemplates = {
     text("specifications", "Technical specifications"),
   ],
 };
+// Seed codes survive display-name edits; custom database categories use basic fields.
+export function templateFor(category) {
+  const seed = /^AUTH_SERVICE_(\d+)$/.exec(category.code || "");
+  return (
+    serviceTemplates[category.name] ||
+    (seed && serviceTemplates[seededCategories[Number(seed[1]) - 1]]) ||
+    []
+  );
+}
+export function templatesFor(categories) {
+  return {
+    ...serviceTemplates,
+    ...Object.fromEntries(
+      categories.map((category) => [category.name, templateFor(category)]),
+    ),
+  };
+}
 
 // Extend the existing stable keys so previously saved category attributes remain valid.
 const additionalFields = {

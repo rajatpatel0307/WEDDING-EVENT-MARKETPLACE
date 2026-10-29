@@ -6,16 +6,12 @@ import PackageCard from "../common/PackageCard";
 import Testimonials from "./Testimonials";
 import { useQuery } from "@apollo/client/react";
 import { VENDORS } from "../../services/public";
-const tabs = [
-  ["All", null],
-  ["Catering", "Catering & Food"],
-  ["Decoration", "Decoration"],
-  ["Photography", "Photography & Videography"],
-  ["DJ", "DJ & Entertainment"],
-  ["Makeup", "Makeup & Beauty"],
-  ["Mehndi", "Mehndi"],
-];
-function TopVendors({ items, loading, retry }) {
+
+function TopVendors({ items, loading, retry, categories = [] }) {
+  const tabs = [
+    ["All", null],
+    ...categories.slice(0, 6).map((category) => [category.name, category.name]),
+  ];
   const [category, setCategory] = useState(null);
   const filtered = useQuery(VENDORS, {
     variables: { category },
@@ -77,6 +73,7 @@ export default function HomeCollections({ data, loading, retry, part }) {
     return (
       <TopVendors
         items={data?.featuredVendors}
+        categories={data?.popularServices}
         loading={loading}
         retry={retry}
       />

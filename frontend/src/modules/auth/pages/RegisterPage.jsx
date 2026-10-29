@@ -1,3 +1,5 @@
+import { useQuery } from "@apollo/client/react";
+import { CATEGORIES } from "../../../services/public";
 import { useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -20,25 +22,7 @@ import {
 } from "../components/FormControls";
 import { mutate } from "../../../services/apollo";
 import { useAuth } from "../../../context/AuthContext";
-export const categories = [
-  "Venue & Location",
-  "Catering & Food",
-  "Tent & Infrastructure",
-  "Decoration",
-  "Lighting",
-  "DJ & Entertainment",
-  "Photography & Videography",
-  "Makeup & Beauty",
-  "Mehndi",
-  "Wedding Clothing",
-  "Jewellery & Accessories",
-  "Transportation",
-  "Religious & Ceremony Services",
-  "Traditional Wedding Services",
-  "Flowers & Florist",
-  "Event Support",
-  "Technology",
-];
+
 const steps = [
   "Account",
   "Business",
@@ -97,6 +81,13 @@ export default function RegisterPage() {
     { notify } = useAuth(),
     heading = useRef();
   const vendor = role === "Vendor";
+  const catalogue = useQuery(CATEGORIES, {
+    skip: !vendor,
+    fetchPolicy: "network-only",
+  });
+  const categories = (catalogue.data?.popularServices || []).map(
+    (category) => category.name,
+  );
   function update(name, value) {
     setData((old) => ({
       ...old,
@@ -247,7 +238,10 @@ export default function RegisterPage() {
           : "A little about you. A world of possibilities."}
       </p>
       {step === 0 && (
-        <div className="role-picker grid grid-cols-[1fr_1fr] gap-[10px] mb-[25px] [&_button]:flex [&_button]:items-center [&_button]:gap-[10px] [&_button]:[border:1px_solid_#e6dfe0] [&_button]:rounded-[7px] [&_button]:bg-white [&_button]:text-left [&_button]:[padding:12px] [&_button]:[color:#8c7e82] [&_button]:text-[12px] [&_button.selected]:[border-color:#a46a77] [&_button.selected]:[color:#8c414e] [&_button.selected]:[background:#fdf7f8] [&_span]:flex-1 [&_small]:block [&_small]:text-[9px] [&_small]:[color:#a18d93] [&_small]:mt-[2px] max-[480.001px]:gap-[8px] max-[480.001px]:[&_button]:[padding:10px] max-[480.001px]:[&_button]:gap-[7px] max-[480.001px]:[&_small]:text-[8px]" aria-label="Account type">
+        <div
+          className="role-picker grid grid-cols-[1fr_1fr] gap-[10px] mb-[25px] [&_button]:flex [&_button]:items-center [&_button]:gap-[10px] [&_button]:[border:1px_solid_#e6dfe0] [&_button]:rounded-[7px] [&_button]:bg-white [&_button]:text-left [&_button]:[padding:12px] [&_button]:[color:#8c7e82] [&_button]:text-[12px] [&_button.selected]:[border-color:#a46a77] [&_button.selected]:[color:#8c414e] [&_button.selected]:[background:#fdf7f8] [&_span]:flex-1 [&_small]:block [&_small]:text-[9px] [&_small]:[color:#a18d93] [&_small]:mt-[2px] max-[480.001px]:gap-[8px] max-[480.001px]:[&_button]:[padding:10px] max-[480.001px]:[&_button]:gap-[7px] max-[480.001px]:[&_small]:text-[8px]"
+          aria-label="Account type"
+        >
           {["Customer", "Vendor"].map((r) => (
             <button
               key={r}
@@ -274,7 +268,10 @@ export default function RegisterPage() {
         </div>
       )}
       {vendor && (
-        <ol className="progress-steps flex list-none p-0 [margin:10px_0_30px] justify-between relative [&::before]:[content:''] [&::before]:absolute [&::before]:top-[12px] [&::before]:left-[20px] [&::before]:right-[20px] [&::before]:h-[1px] [&::before]:[background:#eadddf] [&_li]:relative [&_li]:flex [&_li]:flex-col [&_li]:items-center [&_li]:gap-[7px] [&_li]:text-[9px] [&_li]:[color:#ac9da2] [&_li_>_span]:bg-white [&_li_>_span]:[border:1px_solid_#e5d8dc] [&_li_>_span]:rounded-full [&_li_>_span]:w-[24px] [&_li_>_span]:h-[24px] [&_li_>_span]:grid [&_li_>_span]:place-items-center [&_li.current]:[color:#8c414e] [&_li.current_>_span]:[background:#8c414e] [&_li.current_>_span]:text-white [&_li.current_>_span]:[border-color:#8c414e] [&_li.current_>_span]:[box-shadow:0_0_0_4px_#8c414e10] [&_li.complete_>_span]:[background:#f3e9eb] [&_li.complete_>_span]:[color:#8c414e] [&_li.complete_>_span]:[border-color:#dec1c9] max-[480.001px]:mt-[15px] max-[480.001px]:[&_small]:text-[8px] max-[480.001px]:[&_li]:gap-[6px]" aria-label="Registration progress">
+        <ol
+          className="progress-steps flex list-none p-0 [margin:10px_0_30px] justify-between relative [&::before]:[content:''] [&::before]:absolute [&::before]:top-[12px] [&::before]:left-[20px] [&::before]:right-[20px] [&::before]:h-[1px] [&::before]:[background:#eadddf] [&_li]:relative [&_li]:flex [&_li]:flex-col [&_li]:items-center [&_li]:gap-[7px] [&_li]:text-[9px] [&_li]:[color:#ac9da2] [&_li_>_span]:bg-white [&_li_>_span]:[border:1px_solid_#e5d8dc] [&_li_>_span]:rounded-full [&_li_>_span]:w-[24px] [&_li_>_span]:h-[24px] [&_li_>_span]:grid [&_li_>_span]:place-items-center [&_li.current]:[color:#8c414e] [&_li.current_>_span]:[background:#8c414e] [&_li.current_>_span]:text-white [&_li.current_>_span]:[border-color:#8c414e] [&_li.current_>_span]:[box-shadow:0_0_0_4px_#8c414e10] [&_li.complete_>_span]:[background:#f3e9eb] [&_li.complete_>_span]:[color:#8c414e] [&_li.complete_>_span]:[border-color:#dec1c9] max-[480.001px]:mt-[15px] max-[480.001px]:[&_small]:text-[8px] max-[480.001px]:[&_li]:gap-[6px]"
+          aria-label="Registration progress"
+        >
           {steps.map((label, i) => (
             <li
               key={label}
@@ -398,6 +395,22 @@ export default function RegisterPage() {
             <p className="step-description text-[12px] mb-[20px]">
               Choose one or more services your business offers.
             </p>
+            {catalogue.loading && (
+              <p role="status">Loading service categories?</p>
+            )}
+            {catalogue.error && (
+              <>
+                <ErrorBox message="Unable to load service categories." />
+                <button type="button" onClick={() => catalogue.refetch()}>
+                  Retry categories
+                </button>
+              </>
+            )}
+            {!catalogue.loading && !catalogue.error && !categories.length && (
+              <p role="status">
+                No service categories are currently available.
+              </p>
+            )}
             <div className="category-grid [&_input]:[accent-color:#8c414e] [&_input]:w-[14px] [&_input]:h-[14px] [&_input]:shrink-0 grid grid-cols-[1fr_1fr] gap-[9px] [margin:20px_0_25px] [&_label]:flex [&_label]:items-center [&_label]:gap-[8px] [&_label]:[padding:11px] [&_label]:[border:1px_solid_#e8dfe1] [&_label]:rounded-[6px] [&_label]:text-[10px] [&_label]:cursor-pointer [&_label.chosen]:[background:#fcf4f6] [&_label.chosen]:[border-color:#bf929d] [&_label.chosen]:[color:#8c414e] max-[480.001px]:grid-cols-[1fr]">
               {categories.map((category) => (
                 <label
@@ -491,7 +504,9 @@ export default function RegisterPage() {
                 ))}
               </select>
             </label>
-            <label className={`upload-box flex items-center justify-center flex-col relative [border:1px_dashed_#cdb4bc] [background:#fcf8f9] rounded-[8px] [padding:26px_15px] [color:#a07682] cursor-pointer text-center [&_strong]:font-medium [&_strong]:text-[12px] [&_strong]:mt-[10px] [&_span]:text-[9px] [&_span]:[color:#b29aa3] [&_span]:mt-[5px] [&_input]:absolute [&_input]:inset-[0] [&_input]:opacity-[0] [&_input]:w-full [&_input]:h-full [&_input]:cursor-pointer [&:focus-within]:[outline:3px_solid_#c68b96] [&:focus-within]:[outline-offset:3px] ${uploading ? "disabled" : ""}`}>
+            <label
+              className={`upload-box flex items-center justify-center flex-col relative [border:1px_dashed_#cdb4bc] [background:#fcf8f9] rounded-[8px] [padding:26px_15px] [color:#a07682] cursor-pointer text-center [&_strong]:font-medium [&_strong]:text-[12px] [&_strong]:mt-[10px] [&_span]:text-[9px] [&_span]:[color:#b29aa3] [&_span]:mt-[5px] [&_input]:absolute [&_input]:inset-[0] [&_input]:opacity-[0] [&_input]:w-full [&_input]:h-full [&_input]:cursor-pointer [&:focus-within]:[outline:3px_solid_#c68b96] [&:focus-within]:[outline-offset:3px] ${uploading ? "disabled" : ""}`}
+            >
               <Upload size={25} />
               <strong>
                 {uploading

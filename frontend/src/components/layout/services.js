@@ -1,3 +1,5 @@
+import { useQuery } from "@apollo/client/react";
+import { CATEGORIES } from "../../services/public";
 import {
   MapPin,
   Tent,
@@ -58,3 +60,27 @@ export const serviceGroups = [
 ];
 export const servicePath = (name) =>
   `/services?category=${encodeURIComponent(name)}`;
+export function useServiceGroups() {
+  const { data } = useQuery(CATEGORIES, { fetchPolicy: "cache-and-network" });
+  const groups = serviceGroups.map((group) => ({
+    name: group.name,
+    items: [],
+  }));
+  for (const category of data?.popularServices || []) {
+    const index = serviceGroups.findIndex((group) =>
+      group.items.some(([name]) => name === category.name),
+    );
+    const original =
+      index >= 0
+        ? serviceGroups[index].items.find(([name]) => name === category.name)
+        : null;
+    groups[index < 0 ? groups.length - 1 : index].items.push([
+      category.name,
+      category.description ||
+        original?.[1] ||
+        "Explore services for your celebration",
+      original?.[2] || Users,
+    ]);
+  }
+  return groups;
+}

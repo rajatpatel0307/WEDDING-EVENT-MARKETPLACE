@@ -15,6 +15,7 @@ export default function MediaManager({ id, onChanged, disabled = false }) {
     [error, setError] = useState(""),
     [preview, setPreview] = useState(null),
     [drag, setDrag] = useState(false);
+  const [progress, setProgress] = useState(null);
   const state = useVendorData(`/services/${id}`, version),
     images = state.data?.images || [];
   const mutate = async (body, removeId = null) => {
@@ -40,6 +41,7 @@ export default function MediaManager({ id, onChanged, disabled = false }) {
         setError(e.message);
       }
       setBusy(false);
+      setProgress(null);
     }
   };
   const upload = (files) =>
@@ -53,7 +55,11 @@ export default function MediaManager({ id, onChanged, disabled = false }) {
         if (!file.size || file.size > 5 * 1024 * 1024)
           throw new Error("Each image must be under 5 MB.");
       }
-      for (const file of list) await mutate({ base64: await readFile(file) });
+      setProgress({ done: 0, total: list.length });
+      for (const [index, file] of list.entries()) {
+        await mutate({ base64: await readFile(file) });
+        setProgress({ done: index + 1, total: list.length });
+      }
     });
   const move = (i, by) =>
     run(async () => {
@@ -96,6 +102,10 @@ export default function MediaManager({ id, onChanged, disabled = false }) {
           }}
         />
       </label>
+      {progress && <div role="status" aria-live="polite">
+        <progress max={progress.total} value={progress.done} aria-label="Images uploaded" />
+        <span> {progress.done} of {progress.total} images uploaded</span>
+      </div>}
       {error && (
         <p className="sm-error" role="alert">
           {error}

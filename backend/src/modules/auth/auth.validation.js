@@ -62,7 +62,7 @@ export const business = z.object({
   businessDescription: z.string().trim().min(10).max(5000),
   businessEmail: email,
   businessPhone: phone,
-  categories: z.array(z.enum(categories)).min(1).max(17),
+  categories: z.array(z.string().trim().min(2).max(150)).min(1).max(100),
   location,
   documents: z
     .array(

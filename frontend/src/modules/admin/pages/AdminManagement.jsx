@@ -1,3 +1,4 @@
+import CommissionConfiguration from "../components/CommissionConfiguration";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ShieldCheck, Save, LoaderCircle } from "lucide-react";
@@ -138,6 +139,7 @@ export default function AdminManagement() {
           <ShieldCheck size={14} /> Admin workspace
         </span>
       </div>
+      {resource === "commission" && <CommissionConfiguration />}
       {!valid ? (
         <div className="ad-panel ad-empty">
           This admin page is not available.

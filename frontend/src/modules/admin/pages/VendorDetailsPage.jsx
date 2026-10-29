@@ -42,6 +42,7 @@ const tabs = [
   ["overview", "Overview"],
   ["business", "Business Information"],
   ["documents", "Documents"],
+  ["categories", "Categories"],
   ["services", "Services"],
   ["packages", "Packages"],
   ["locations", "Locations"],
@@ -49,14 +50,38 @@ const tabs = [
   ["bookings", "Bookings"],
   ["quotations", "Quotations"],
   ["customers", "Customers"],
-  ["revenue", "Revenue"],
+  ["revenue", "Earnings"],
+  ["payments", "Payments"],
   ["payouts", "Payouts"],
   ["reviews", "Reviews"],
   ["offers", "Offers"],
+  ["coupons", "Coupons"],
+  ["history", "Approval History"],
   ["messages", "Messages"],
   ["audit", "Audit Logs"],
 ];
 const columns = {
+  payments: [
+    ["reference", "Payment reference"],
+    ["booking", "Booking"],
+    ["amount", "Amount"],
+    ["currency", "Currency"],
+    ["method", "Method"],
+    ["gateway", "Gateway"],
+    ["status", "Status"],
+    ["paidAt", "Paid date"],
+  ],
+  coupons: [
+    ["name", "Coupon code"],
+    ["description", "Description"],
+    ["discountType", "Discount type"],
+    ["discountValue", "Discount"],
+    ["usageLimit", "Limit"],
+    ["used", "Uses"],
+    ["startDate", "Valid from"],
+    ["endDate", "Valid until"],
+    ["active", "Active"],
+  ],
   history: [
     ["cycle", "Cycle"],
     ["fromStatus", "Previous status"],
@@ -324,7 +349,12 @@ function Cell({ field, row, section }) {
       "net",
     ].includes(field)
   )
-    return money(value);
+    return row.currency && row.currency !== "INR"
+      ? new Intl.NumberFormat("en-IN", {
+          style: "currency",
+          currency: row.currency,
+        }).format(Number(value))
+      : money(value);
   if (field === "discount") return `${number(value)}%`;
   if (field === "discountValue")
     return row.discountType === "Percentage"
@@ -619,29 +649,34 @@ export default function VendorDetailsPage() {
     const fields = Object.fromEntries(new FormData(event.currentTarget));
     try {
       const { action, doc } = dialog;
+      const internalNote = action === "Note";
       const account = ["Activate", "Deactivate"].includes(action);
-      const path = doc
-        ? `/vendors/${id}/documents/${doc.id}/review`
-        : `/vendors/${id}/${account ? "account" : "review"}`;
-      const body = doc
-        ? {
-            status: action,
-            expectedStatus: doc.status,
-            reason: fields.reason || "",
-            note: fields.note || "",
-          }
-        : account
+      const path = internalNote
+        ? `/vendors/${id}/notes`
+        : doc
+          ? `/vendors/${id}/documents/${doc.id}/review`
+          : `/vendors/${id}/${account ? "account" : "review"}`;
+      const body = internalNote
+        ? { note: fields.note }
+        : doc
           ? {
-              active: action === "Activate",
-              expectedActive: !!data.vendor.active,
-              note: fields.note,
-            }
-          : {
               status: action,
-              expectedStatus: data.vendor.status,
+              expectedStatus: doc.status,
               reason: fields.reason || "",
               note: fields.note || "",
-            };
+            }
+          : account
+            ? {
+                active: action === "Activate",
+                expectedActive: !!data.vendor.active,
+                note: fields.note,
+              }
+            : {
+                status: action,
+                expectedStatus: data.vendor.status,
+                reason: fields.reason || "",
+                note: fields.note || "",
+              };
       const result = await adminRequest(path, {
         method: account ? "PATCH" : "POST",
         body: JSON.stringify(body),
@@ -689,6 +724,12 @@ export default function VendorDetailsPage() {
     ["pending", "Pending payouts"],
   ];
   const recordDescriptions = {
+    history:
+      "Original verification decisions, administrators, reasons and timestamps.",
+    coupons:
+      "Coupon definitions created for this vendor, including usage and validity.",
+    payments:
+      "Recorded customer collections for vendor bookings, with original currencies.",
     availability:
       "Recorded availability slots, including unavailable and booked dates.",
     bookings: "Complete booking history, customer notes, and payment balances.",
@@ -801,6 +842,10 @@ export default function VendorDetailsPage() {
               >
                 <Power size={14} />
                 {v.active ? "Deactivate" : "Activate"}
+              </button>
+              <button className="ad-button" onClick={() => open("Note")}>
+                <FileText size={14} />
+                Add internal note
               </button>
             </div>
           </div>
@@ -1159,6 +1204,32 @@ export default function VendorDetailsPage() {
               )}
             </section>
           </>
+        ) : tab === "categories" ? (
+          <section className="ad-panel">
+            <div className="ad-panel-heading">
+              <h2>Service categories</h2>
+            </div>
+            {categories.length ? (
+              <dl className="ad-details">
+                {categories.map((category) => (
+                  <div key={category.id}>
+                    <dt>
+                      {category.isPrimary ? "Primary category" : "Category"}
+                    </dt>
+                    <dd>
+                      <Link
+                        to={`/admin/categories?q=${encodeURIComponent(category.name)}`}
+                      >
+                        {category.name}
+                      </Link>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <Empty text="No categories assigned" />
+            )}
+          </section>
         ) : tab === "revenue" ? (
           <>
             <div className="cd-section-heading">
@@ -1304,11 +1375,13 @@ export default function VendorDetailsPage() {
       {dialog && (
         <AdminDialog
           title={
-            dialog.doc
-              ? `${dialog.action === "Approved" ? "Approve" : "Reject"} ${dialog.doc.type}`
-              : ["Activate", "Deactivate"].includes(dialog.action)
-                ? `${dialog.action} vendor`
-                : `${{ Approved: "Approve", Rejected: "Reject", Suspended: "Suspend" }[dialog.action]} vendor`
+            dialog.action === "Note"
+              ? "Add internal vendor note"
+              : dialog.doc
+                ? `${dialog.action === "Approved" ? "Approve" : "Reject"} ${dialog.doc.type}`
+                : ["Activate", "Deactivate"].includes(dialog.action)
+                  ? `${dialog.action} vendor`
+                  : `${{ Approved: "Approve", Rejected: "Reject", Suspended: "Suspend" }[dialog.action]} vendor`
           }
           close={() => setDialog(null)}
           busy={busy}
@@ -1320,17 +1393,19 @@ export default function VendorDetailsPage() {
               </p>
             )}
             <p className="cd-dialog-note">
-              {dialog.doc
-                ? `Record a verification decision for ${dialog.doc.type}.`
-                : dialog.action === "Approved"
-                  ? `Approve ${v.businessName} for vendor access. This decision will be sent to the owner.`
-                  : dialog.action === "Rejected"
-                    ? `Reject ${v.businessName}'s application and explain what needs attention.`
-                    : dialog.action === "Suspended"
-                      ? `Suspend ${v.businessName} and end active owner sessions. Existing records are preserved.`
-                      : dialog.action === "Deactivate"
-                        ? `Deactivate ${v.businessName} and end active owner sessions. This does not change the verification decision.`
-                        : `Activate ${v.businessName}. Existing verification and owner account requirements still apply.`}
+              {dialog.action === "Note"
+                ? "Append an internal audit note without changing vendor approval or account status."
+                : dialog.doc
+                  ? `Record a verification decision for ${dialog.doc.type}.`
+                  : dialog.action === "Approved"
+                    ? `Approve ${v.businessName} for vendor access. This decision will be sent to the owner.`
+                    : dialog.action === "Rejected"
+                      ? `Reject ${v.businessName}'s application and explain what needs attention.`
+                      : dialog.action === "Suspended"
+                        ? `Suspend ${v.businessName} and end active owner sessions. Existing records are preserved.`
+                        : dialog.action === "Deactivate"
+                          ? `Deactivate ${v.businessName} and end active owner sessions. This does not change the verification decision.`
+                          : `Activate ${v.businessName}. Existing verification and owner account requirements still apply.`}
             </p>
             {["Rejected", "Suspended"].includes(dialog.action) && (
               <label>
@@ -1357,11 +1432,13 @@ export default function VendorDetailsPage() {
                 name="note"
                 rows={3}
                 minLength={
-                  ["Activate", "Deactivate"].includes(dialog.action)
+                  ["Activate", "Deactivate", "Note"].includes(dialog.action)
                     ? 3
                     : undefined
                 }
-                required={["Activate", "Deactivate"].includes(dialog.action)}
+                required={["Activate", "Deactivate", "Note"].includes(
+                  dialog.action,
+                )}
                 maxLength={2000}
                 placeholder="Add context for your administration team"
               />

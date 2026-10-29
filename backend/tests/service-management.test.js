@@ -5,6 +5,7 @@ import { sequelize } from "../src/config/database.js";
 import {
   serviceSchema,
   pricingSchema,
+  pricingTypeFor,
   calculatePrice,
   listSchema,
   actionsFor,
@@ -122,6 +123,23 @@ test("authoritative pricing uses paise, validates quantities and applies seasona
   ])
     assert.throws(() => pricingSchema.parse({ ...p, ...patch }));
 });
+test("pricing types preserve legacy unit inference and allow an explicit quotation type", () => {
+  assert.equal(
+    pricingTypeFor(pricingSchema.parse({ unit: "Per Plate" })),
+    "PerPerson",
+  );
+  assert.equal(
+    pricingTypeFor(pricingSchema.parse({ unit: "Per Hour" })),
+    "PerHour",
+  );
+  assert.equal(
+    pricingTypeFor(
+      pricingSchema.parse({ type: "CustomQuote", unit: "Per Event" }),
+    ),
+    "CustomQuote",
+  );
+  assert.throws(() => pricingSchema.parse({ type: "Approved" }));
+});
 test("strict service validation rejects owner, approval, price and nested attribute injection", () => {
   const d = document();
   for (const patch of [
@@ -147,10 +165,9 @@ test("service submission validates required listing content and image presence",
     { location: { ...valid.location, city: "" } },
     { policies: { ...valid.policies, cancellation: "" } },
   ])
-    assert.throws(
-      () => validateServiceSubmission({ ...valid, ...patch }, 1),
-      { status: 400 },
-    );
+    assert.throws(() => validateServiceSubmission({ ...valid, ...patch }, 1), {
+      status: 400,
+    });
   assert.throws(() => validateServiceSubmission(valid, 0), {
     status: 400,
     message: "Add at least one service image before submitting.",
@@ -179,7 +196,15 @@ test("an unapproved vendor can save an inactive draft but cannot submit it", asy
         ? [{ CategoryId: 1 }]
         : [],
   );
-  await services.saveService(null, document(), pending);
+  const draft = document();
+  draft.pricing.type = "CustomQuote";
+  Object.assign(draft.pricing, {
+    minimumPrice: 80000,
+    maximumPrice: 150000,
+    customQuote: true,
+  });
+  draft.policies.duration = 120;
+  await services.saveService(null, draft, pending);
   const insert = query.mock.calls.find((c) =>
     c.arguments[0].startsWith("INSERT INTO dbo.[Services]"),
   );
@@ -188,6 +213,11 @@ test("an unapproved vendor can save an inactive draft but cannot submit it", asy
   assert.equal(data.ApprovalStatus, "Draft");
   assert.equal(data.IsActive, 0);
   assert.equal(data.BasePrice, 90000);
+  assert.equal(data.MinimumPrice, 80000);
+  assert.equal(data.MaximumPrice, 150000);
+  assert.equal(data.IsCustomQuoteAvailable, 1);
+  assert.equal(data.PricingType, "CustomQuote");
+  assert.equal(data.DurationMinutes, 120);
   await assert.rejects(
     () => services.submit(serviceId, { expectedUpdatedAt: updatedAt }, pending),
     { status: 403 },
@@ -271,11 +301,18 @@ test("service metadata only offers categories assigned to the authenticated vend
   );
   const result = await services.metadata(ctx);
   const categoryQuery = query.mock.calls.find((call) =>
-    call.arguments[0].includes("FROM dbo.Categories c JOIN dbo.VendorCategories"),
+    call.arguments[0].includes(
+      "FROM dbo.Categories c JOIN dbo.VendorCategories",
+    ),
   );
   assert.deepEqual(result.categories, [{ id: 1, name: "Venue & Location" }]);
   assert.match(categoryQuery.arguments[0], /vc\.VendorId=:id/);
   assert.equal(categoryQuery.arguments[1].replacements.id, vendorId);
+  const locationsQuery = query.mock.calls.find((call) =>
+    call.arguments[0].includes("FROM dbo.VendorLocations"),
+  );
+  assert.match(locationsQuery.arguments[0], /VendorId=:id AND IsActive=1/);
+  assert.equal(locationsQuery.arguments[1].replacements.id, vendorId);
 });
 test("activation rejects every unapproved service status and stale versions", async (t) => {
   const row = record();
@@ -392,6 +429,81 @@ test("a booked date cannot be removed or overwritten", async (t) => {
   );
   assert.ok(!query.mock.calls.some((c) => c.arguments[0].startsWith("DELETE")));
 });
+
+test("CSV exports all matching services regardless of page, binds ownership and neutralizes formulas", async (t) => {
+  const query = setup(t, null, (sql) =>
+    sql.includes("COUNT_BIG(*) AS total ")
+      ? [{ total: 2 }]
+      : sql.includes("FETCH NEXT")
+        ? [
+            {
+              id: serviceId,
+              name: '=HYPERLINK("unsafe")',
+              category: "Venue, garden",
+              active: true,
+            },
+            { id: "second", name: "Other service", active: false },
+          ]
+        : [],
+  );
+  const csv = await services.exportServices(
+    { page: 9, pageSize: 1, approval: "Draft", q: "_%" },
+    ctx,
+  );
+  assert.ok(csv.startsWith("\ufeff"));
+  assert.match(csv, /"'=HYPERLINK\(""unsafe""\)"/);
+  assert.match(csv, /"Venue, garden"/);
+  assert.equal(csv.split("\r\n").length, 3);
+  const [sql, { replacements }] = query.mock.calls.find((call) =>
+    call.arguments[0].includes("FETCH NEXT"),
+  ).arguments;
+  assert.match(sql, /s.VendorId=:id/);
+  assert.match(sql, /s.ApprovalStatus=:approval/);
+  assert.equal(replacements.id, vendorId);
+  assert.equal(replacements.offset, 0);
+  assert.equal(replacements.size, 10000);
+  assert.equal(replacements.search, "%[_][%]%");
+});
+
+test("exports reject oversized results and non-vendor identities", async (t) => {
+  const query = setup(t, null, () => [{ total: 10001 }]);
+  await assert.rejects(
+    () => services.exportServices({}, ctx),
+    /Narrow your filters/,
+  );
+  assert.equal(query.mock.callCount(), 1);
+  await assert.rejects(
+    () => services.exportServices({}, { auth: null }),
+    /Please sign in/,
+  );
+  assert.equal(query.mock.callCount(), 1);
+});
+
+test("price bounds validate money and reject inverted limits", () => {
+  for (const patch of [
+    { minimumPrice: -1 },
+    { maximumPrice: 0.001 },
+    { minimumPrice: 100, maximumPrice: 99 },
+    { customQuote: "true" },
+  ])
+    assert.throws(() => pricingSchema.parse(patch));
+  const pricing = pricingSchema.parse({
+    minimumPrice: 100,
+    maximumPrice: 200,
+    customQuote: true,
+  });
+  assert.equal(pricing.customQuote, true);
+});
+test("a full service gallery refuses uploads before contacting storage", async (t) => {
+  const query = setup(t, record(), (sql) => sql.includes("COUNT_BIG(*) AS total FROM dbo.Media") ? [{ total: 30 }] : []);
+  await assert.rejects(() => services.images(serviceId, {
+    expectedUpdatedAt: updatedAt,
+    base64: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZioAAAAASUVORK5CYII=",
+  }, ctx), /up to 30 images/);
+  const countQuery = query.mock.calls.find((call) => call.arguments[0].includes("COUNT_BIG(*) AS total FROM dbo.Media"));
+  assert.equal(countQuery.arguments[1].replacements.serviceId, serviceId);
+  assert.ok(!query.mock.calls.some((call) => call.arguments[0].startsWith("INSERT")));
+});
 test("schedule enforces working days, custom timing, advance period and minimum notice", () => {
   const doc = document(),
     now = new Date("2026-10-28T00:00:00Z");
@@ -437,10 +549,12 @@ test("REST denies anonymous and customer access, validates parameters and enforc
   t.after(() => server.close());
   const base = `http://127.0.0.1:${server.address().port}/api/vendor`;
   assert.equal((await fetch(`${base}/services`)).status, 401);
+  assert.equal((await fetch(`${base}/services/export`)).status, 401);
   auth = {
     user: { ...ctx.auth.user, roles: [{ code: "CUSTOMER", active: true }] },
   };
   assert.equal((await fetch(`${base}/services`)).status, 403);
+  assert.equal((await fetch(`${base}/services/export`)).status, 403);
   auth = ctx.auth;
   assert.equal((await fetch(`${base}/services/bad-id`)).status, 400);
   assert.equal(

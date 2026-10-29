@@ -1,3 +1,4 @@
+import { notifySignup } from "../notifications/admin-events.js";
 import { createHash } from "node:crypto";
 import { GraphQLError } from "graphql";
 import { Transaction, TableHints } from "sequelize";
@@ -35,11 +36,16 @@ export async function limit(key, maximum = 10, seconds = 900) {
   if (!allowed)
     fail("Too many attempts. Please try again later.", "RATE_LIMITED");
 }
-export const audit = (
+export const audit = async (
   action,
   ctx,
   userId = null,
   entityId = null,
   transaction,
-) =>
-  Audit.create({ action, userId, entityId, ip: ctx.req.ip }, { transaction });
+) => {
+  await Audit.create(
+    { action, userId, entityId, ip: ctx.req.ip },
+    { transaction },
+  );
+  if (action === "SIGNUP") await notifySignup(userId, transaction);
+};

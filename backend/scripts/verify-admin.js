@@ -2,7 +2,8 @@
 import { sequelize } from "../src/config/database.js";
 import { dashboard } from "../src/modules/admin/admin.analytics.js";
 import { resources } from "../src/modules/admin/admin.resources.js";
-import { list } from "../src/modules/admin/admin.repository.js";
+import { list, select } from "../src/modules/admin/admin.repository.js";
+import { loadUser } from "../src/modules/auth/token.service.js";
 import { listQuery } from "../src/modules/admin/admin.validation.js";
 import { settings } from "../src/modules/admin/admin.service.js";
 try {
@@ -21,7 +22,17 @@ try {
     );
     console.log(`PASS ${name}: filtered query, ${result.total} matches`);
   }
-  const result = await dashboard({ from: "2026-10-01", to: "2026-10-27" });
+  const [admin] = await select(
+    "SELECT TOP(1) u.UserId AS id FROM dbo.Users u WHERE u.IsActive=1 AND u.IsBlocked=0 AND u.IsEmailVerified=1 AND EXISTS(SELECT 1 FROM dbo.UserRoles ur JOIN dbo.Roles r ON r.RoleId=ur.RoleId WHERE ur.UserId=u.UserId AND r.RoleCode='ADMIN' AND r.IsActive=1)",
+  );
+  if (!admin)
+    throw new Error(
+      "A verified active administrator is required for dashboard verification.",
+    );
+  const result = await dashboard(
+    { from: "2026-10-01", to: "2026-10-27" },
+    { auth: { user: await loadUser(admin.id) } },
+  );
   console.log(
     `PASS dashboard: ${Object.keys(result.kpis).length} KPIs, ${result.categories.length} categories`,
   );

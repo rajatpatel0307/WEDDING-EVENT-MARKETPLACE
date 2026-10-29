@@ -9,8 +9,6 @@ import {
   Package,
   ListChecks,
   CalendarDays,
-  CalendarOff,
-  CalendarCheck,
   ShoppingBag,
   Clock3,
   CheckCircle2,
@@ -46,10 +44,6 @@ export const vendorNavigation = [
     items: [
       ["services", "All Services", BriefcaseBusiness],
       ["services/add", "Add Service", PlusCircle],
-      ["services?approval=Draft", "Draft Services", Files],
-      ["services?approval=Pending", "Pending Approval", Clock3],
-      ["services?approval=Approved", "Approved Services", ShieldCheck],
-      ["services?approval=Rejected", "Rejected Services", XCircle],
       ["packages", "Service Packages", Package],
       ["items", "Service Items", ListChecks],
     ],
@@ -58,8 +52,6 @@ export const vendorNavigation = [
     label: "AVAILABILITY",
     items: [
       ["calendar", "Calendar", CalendarDays],
-      ["availability/blocked", "Block Dates", CalendarOff],
-      ["availability/available", "Available Dates", CalendarCheck],
     ],
   },
   {

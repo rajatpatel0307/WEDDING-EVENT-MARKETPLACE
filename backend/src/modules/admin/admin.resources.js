@@ -20,6 +20,13 @@ const vendors = resource(
       "(SELECT STRING_AGG(c.CategoryName, ', ') FROM dbo.VendorCategories vc JOIN dbo.Categories c ON c.CategoryId=vc.CategoryId WHERE vc.VendorId=t.VendorId)",
     documents:
       "(SELECT COUNT(*) FROM dbo.VendorDocuments d WHERE d.VendorId=t.VendorId)",
+    accountStatus: "CASE WHEN t.IsActive=1 THEN 'Active' ELSE 'Inactive' END",
+    totalServices:
+      "(SELECT COUNT(*) FROM dbo.Services s WHERE s.VendorId=t.VendorId)",
+    totalBookings:
+      "(SELECT COUNT(*) FROM dbo.Booking b WHERE b.VendorId=t.VendorId)",
+    totalEarnings:
+      "COALESCE((SELECT SUM(p.NetAmount) FROM dbo.VendorPayouts p WHERE p.VendorId=t.VendorId AND p.PayoutStatus='Paid'),0)",
     emailVerified: "u.IsEmailVerified",
     description: "t.BusinessDescription",
     remarks: "t.VerificationRemarks",
@@ -39,6 +46,10 @@ export const resources = {
       name: "CONCAT(t.FirstName,' ',t.LastName)",
       email: "t.Email",
       phone: "t.PhoneNumber",
+      totalBookings:
+        "(SELECT COUNT(*) FROM dbo.Booking b WHERE b.CustomerId=t.UserId)",
+      totalSpending:
+        "COALESCE((SELECT SUM(p.Amount) FROM dbo.Payments p JOIN dbo.Booking b ON b.BookingId=p.BookingId WHERE b.CustomerId=t.UserId AND p.PaymentStatus IN ('Success','Refunded') AND p.Currency='INR'),0)",
       status:
         "CASE WHEN t.IsBlocked=1 THEN 'Blocked' WHEN t.IsActive=0 THEN 'Inactive' ELSE 'Active' END",
       emailVerified: "t.IsEmailVerified",
@@ -76,6 +87,10 @@ export const resources = {
     {
       name: "t.CategoryName",
       code: "t.CategoryCode",
+      icon: "t.IconName",
+      sortOrder: "t.SortOrder",
+      usageCount:
+        "(SELECT COUNT(*) FROM dbo.Services s WHERE s.CategoryId=t.CategoryId)",
       description: "t.Description",
       status: "CASE WHEN t.IsActive=1 THEN 'Active' ELSE 'Inactive' END",
     },
@@ -88,6 +103,8 @@ export const resources = {
         name: "CategoryName",
         code: "CategoryCode",
         description: "Description",
+        icon: "IconName",
+        sortOrder: "SortOrder",
       },
     },
   ),
@@ -99,6 +116,9 @@ export const resources = {
       category: "c.CategoryName",
       categoryId: "t.CategoryId",
       code: "t.SubCategoryCode",
+      sortOrder: "t.SortOrder",
+      usageCount:
+        "(SELECT COUNT(*) FROM dbo.Services s WHERE s.SubCategoryId=t.SubCategoryId)",
       description: "t.Description",
       status: "CASE WHEN t.IsActive=1 THEN 'Active' ELSE 'Inactive' END",
     },
@@ -112,6 +132,7 @@ export const resources = {
         name: "SubCategoryName",
         categoryId: "CategoryId",
         code: "SubCategoryCode",
+        sortOrder: "SortOrder",
         description: "Description",
       },
     },
@@ -131,7 +152,14 @@ export const resources = {
       joins:
         "JOIN dbo.Vendors v ON v.VendorId=t.VendorId JOIN dbo.Categories c ON c.CategoryId=t.CategoryId",
       statusColumn: "ApprovalStatus",
-      statuses: ["Draft", "Pending", "UnderReview", "Approved", "Rejected", "Suspended"],
+      statuses: [
+        "Draft",
+        "Pending",
+        "UnderReview",
+        "Approved",
+        "Rejected",
+        "Suspended",
+      ],
       actions: ["Approved", "Rejected", "Suspended"],
     },
   ),
@@ -172,13 +200,16 @@ export const resources = {
     "QuotationId",
     {
       name: "t.QuotationNumber",
+      customer: "CONCAT(u.FirstName,' ',u.LastName)",
+      event: "e.EventName",
       vendor: "v.BusinessName",
       amount: "t.TotalAmount",
       status: "t.Status",
       validUntil: "t.ValidUntil",
     },
     {
-      joins: "JOIN dbo.Vendors v ON v.VendorId=t.VendorId",
+      joins:
+        "JOIN dbo.Vendors v ON v.VendorId=t.VendorId JOIN dbo.Users u ON u.UserId=t.CustomerId JOIN dbo.Events e ON e.EventId=t.EventId",
       statuses: [
         "Draft",
         "Sent",
@@ -195,6 +226,10 @@ export const resources = {
     "PaymentId",
     {
       name: "t.PaymentReference",
+      transactionId: "t.GatewayTransactionId",
+      gateway: "t.GatewayName",
+      customer: "CONCAT(u.FirstName,' ',u.LastName)",
+      vendor: "v.BusinessName",
       booking: "b.BookingNumber",
       amount: "t.Amount",
       currency: "t.Currency",
@@ -202,7 +237,8 @@ export const resources = {
       status: "t.PaymentStatus",
     },
     {
-      joins: "JOIN dbo.Booking b ON b.BookingId=t.BookingId",
+      joins:
+        "JOIN dbo.Booking b ON b.BookingId=t.BookingId JOIN dbo.Users u ON u.UserId=b.CustomerId JOIN dbo.Vendors v ON v.VendorId=b.VendorId",
       statuses: ["Pending", "Processing", "Success", "Failed", "Refunded"],
     },
   ),
@@ -211,13 +247,16 @@ export const resources = {
     "RefundId",
     {
       name: "t.RefundReference",
+      paymentReference: "p.PaymentReference",
+      customer: "CONCAT(u.FirstName,' ',u.LastName)",
       booking: "b.BookingNumber",
       amount: "t.RefundAmount",
       reason: "t.Reason",
       status: "t.RefundStatus",
     },
     {
-      joins: "JOIN dbo.Booking b ON b.BookingId=t.BookingId",
+      joins:
+        "JOIN dbo.Booking b ON b.BookingId=t.BookingId JOIN dbo.Payments p ON p.PaymentId=t.PaymentId JOIN dbo.Users u ON u.UserId=b.CustomerId",
       statuses: ["Pending", "Processing", "Completed", "Rejected", "Failed"],
     },
   ),
@@ -229,13 +268,16 @@ export const resources = {
       booking: "b.BookingNumber",
       amount: "t.NetAmount",
       gross: "t.GrossAmount",
+      refundAdjustment: "t.RefundDeduction",
+      taxDeduction: "t.TaxDeduction",
+      fees: "t.ApplicableFees",
       commission: "t.PlatformCommission",
       status: "t.PayoutStatus",
     },
     {
       joins:
         "JOIN dbo.Vendors v ON v.VendorId=t.VendorId JOIN dbo.Booking b ON b.BookingId=t.BookingId",
-      statuses: ["Pending", "Processing", "Paid", "Failed"],
+      statuses: ["Pending", "Processing", "Paid", "Failed", "OnHold"],
     },
   ),
   commission: resource(

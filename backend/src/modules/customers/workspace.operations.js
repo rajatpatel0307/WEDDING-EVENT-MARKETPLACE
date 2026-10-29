@@ -21,7 +21,7 @@ export async function availableService(serviceId, packageId, tx) {
   z.guid().parse(serviceId);
   if (packageId) z.guid().parse(packageId);
   const [s] = await repo.select(
-    `SELECT s.*,v.BusinessName FROM dbo.Services s ${tx ? "WITH(UPDLOCK,HOLDLOCK)" : ""} JOIN dbo.Vendors v ON v.VendorId=s.VendorId JOIN dbo.Users u ON u.UserId=v.UserId WHERE s.ServiceId=:serviceId AND s.IsActive=1 AND s.ApprovalStatus='Approved' AND ${eligibleVendor}`,
+    `SELECT s.*,v.BusinessName FROM dbo.Services s ${tx ? "WITH(UPDLOCK,HOLDLOCK)" : ""} JOIN dbo.Vendors v ON v.VendorId=s.VendorId JOIN dbo.Users u ON u.UserId=v.UserId JOIN dbo.Categories c ON c.CategoryId=s.CategoryId WHERE s.ServiceId=:serviceId AND c.IsActive=1 AND s.IsActive=1 AND s.ApprovalStatus='Approved' AND ${eligibleVendor}`,
     { serviceId },
     tx,
   );

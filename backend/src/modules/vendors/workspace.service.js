@@ -16,7 +16,7 @@ import {
   audit,
   assertVersion,
 } from "./workspace.common.js";
-import { serviceTemplates } from "./service-templates.js";
+import { templateFor, templatesFor } from "./service-templates.js";
 import {
   serviceInput,
   validateAttributes,
@@ -162,16 +162,14 @@ export async function records(section, input, ctx) {
 }
 export async function catalog(ctx) {
   const { id } = scope(ctx);
-  const categories = (
-    await repo.select(
-      "SELECT CategoryId AS id,CategoryName AS name FROM dbo.Categories WHERE IsActive=1 ORDER BY SortOrder,CategoryId",
-    )
-  ).filter((c) => serviceTemplates[c.name]);
+  const categories = await repo.select(
+    "SELECT CategoryId AS id,CategoryName AS name,CategoryCode AS code FROM dbo.Categories WHERE IsActive=1 ORDER BY SortOrder,CategoryId",
+  );
   const services = await repo.select(
     "SELECT ServiceId AS id,ServiceName AS name,BasePrice AS price,CategoryId AS categoryId,ApprovalStatus AS status FROM dbo.Services WHERE VendorId=:id ORDER BY ServiceName",
     { id },
   );
-  return { categories, services, templates: serviceTemplates };
+  return { categories, services, templates: templatesFor(categories) };
 }
 export async function business(ctx) {
   const { id } = scope(ctx);
@@ -299,12 +297,16 @@ export async function saveService(recordId, input, ctx) {
     const old = recordId ? await owned("services", recordId, id, tx) : null;
     if (old) assertVersion(old, body.expectedUpdatedAt);
     const [category] = await repo.select(
-      "SELECT CategoryName AS name FROM dbo.Categories WHERE CategoryId=:category AND IsActive=1",
+      "SELECT CategoryName AS name,CategoryCode AS code FROM dbo.Categories WHERE CategoryId=:category AND IsActive=1",
       { category: body.categoryId },
       tx,
     );
     if (!category) fail("Service category is unavailable.");
-    const attributes = validateAttributes(category.name, body.attributes);
+    const attributes = validateAttributes(
+      category.name,
+      body.attributes,
+      templateFor(category),
+    );
     await repo.select(
       "INSERT INTO dbo.VendorCategories(VendorId,CategoryId,IsPrimary) SELECT :vendor,:category,0 WHERE NOT EXISTS(SELECT 1 FROM dbo.VendorCategories WITH(UPDLOCK,HOLDLOCK) WHERE VendorId=:vendor AND CategoryId=:category)",
       { vendor: id, category: body.categoryId },

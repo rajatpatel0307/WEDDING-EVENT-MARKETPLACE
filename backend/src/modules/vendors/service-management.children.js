@@ -37,15 +37,29 @@ export async function packageDetails(packageId, ctx) {
 }
 export async function children(kind, id, ctx) {
   await parent(id, ctx, undefined, false);
-  return kind === "items"
-    ? repo.select(
-        "SELECT ServiceItemId AS id,ItemName AS name,Description AS description,Quantity AS quantity,Unit AS unit,UnitPrice AS price,IsIncluded AS included,SortOrder AS sortOrder FROM dbo.ServiceItems WHERE ServiceId=:id ORDER BY SortOrder,ServiceItemId",
-        { id },
-      )
-    : repo.select(
-        "SELECT PackageId AS id,PackageName AS name,Description AS description,Price AS price,DiscountPercentage AS discount,FinalPrice AS finalPrice,IsActive AS active,UpdatedAt AS updatedAt,DetailsJson AS details FROM dbo.ServicePackages WHERE ServiceId=:id ORDER BY CreatedAt DESC,PackageId",
-        { id },
-      );
+  if (kind === "items")
+    return repo.select(
+      "SELECT ServiceItemId AS id,ItemName AS name,Description AS description,Quantity AS quantity,Unit AS unit,UnitPrice AS price,IsIncluded AS included,SortOrder AS sortOrder FROM dbo.ServiceItems WHERE ServiceId=:id ORDER BY SortOrder,ServiceItemId",
+      { id },
+    );
+  const packages = await repo.select(
+    "SELECT PackageId AS id,PackageName AS name,Description AS description,Price AS price,DiscountPercentage AS discount,FinalPrice AS finalPrice,MinimumGuests AS minimumGuests,MaximumGuests AS maximumGuests,DurationMinutes AS duration,IsFeatured AS featured,IsActive AS active,UpdatedAt AS updatedAt,DetailsJson AS details FROM dbo.ServicePackages WHERE ServiceId=:id ORDER BY CreatedAt DESC,PackageId",
+    { id },
+  );
+  const items = await repo.select(
+    "SELECT pi.PackageId AS packageId,pi.ItemName AS name,pi.Description AS description,pi.Quantity AS quantity,pi.Unit AS unit FROM dbo.PackageItems pi JOIN dbo.ServicePackages p ON p.PackageId=pi.PackageId WHERE p.ServiceId=:id ORDER BY pi.SortOrder,pi.PackageItemId",
+    { id },
+  );
+  return packages.map((pack) => ({
+    ...pack,
+    items: items
+      .filter((item) => item.packageId.toLowerCase() === pack.id.toLowerCase())
+      .map(({ packageId, ...item }) => item),
+    optionalItems: pack.details
+      ? JSON.parse(pack.details).optionalItems || ""
+      : "",
+    terms: pack.details ? JSON.parse(pack.details).terms || "" : "",
+  }));
 }
 export async function itemMutation(id, itemId, input, ctx, del = false) {
   const body = z

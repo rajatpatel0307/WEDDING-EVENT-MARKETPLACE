@@ -1,9 +1,4 @@
 import {
-  CheckCircle2 as CheckCircleIcon,
-  XCircle as XCircleIcon,
-  ShieldOff as ShieldOffIcon,
-} from "lucide-react";
-import {
   LayoutDashboard,
   Users,
   Store,
@@ -30,10 +25,13 @@ import {
   ScrollText,
   Settings,
 } from "lucide-react";
-export const adminNavigation = [
-  { label: "WORKSPACE", items: [["dashboard", "Overview", LayoutDashboard]] },
+const navigationGroups = [
   {
-    label: "USERS",
+    label: "WORKSPACE",
+    items: [["dashboard", "Dashboard Analytics", LayoutDashboard]],
+  },
+  {
+    label: "USERS & VENDORS",
     items: [
       ["customers", "All Customers", Users],
       ["vendors", "All Vendors", Store],
@@ -42,13 +40,9 @@ export const adminNavigation = [
     ],
   },
   {
-    label: "SERVICES",
+    label: "MARKETPLACE",
     items: [
       ["services", "All Services", BriefcaseBusiness],
-      ["services/pending", "Pending Approval", ClipboardCheck],
-      ["services?status=Approved", "Approved Services", CheckCircleIcon],
-      ["services?status=Rejected", "Rejected Services", XCircleIcon],
-      ["services?status=Suspended", "Suspended Services", ShieldOffIcon],
       ["categories", "Categories", Tags],
       ["sub-categories", "Subcategories", Layers],
       ["service-items", "Service Items", Layers],
@@ -75,7 +69,7 @@ export const adminNavigation = [
     ],
   },
   {
-    label: "FINANCE",
+    label: "TRANSACTIONS",
     items: [
       ["quotations", "Quotations", FileText],
       ["payments", "Payments", CreditCard],
@@ -96,14 +90,28 @@ export const adminNavigation = [
     ],
   },
   {
-    label: "OPERATIONS",
+    label: "SYSTEM",
     items: [
       ["events", "Events", CalendarDays],
       ["guests", "Event Guests", ContactRound],
       ["media", "Media", Image],
       ["audit-logs", "Audit Logs", ScrollText],
       ["settings", "Settings", Settings],
+      ["profile", "Admin Profile", Users],
     ],
+  },
+];
+export const adminNavigation = [
+  { ...navigationGroups[0], label: "OVERVIEW" },
+  navigationGroups[1],
+  navigationGroups[2],
+  {
+    label: "TRANSACTIONS",
+    items: [...navigationGroups[3].items, ...navigationGroups[4].items],
+  },
+  {
+    label: "SYSTEM",
+    items: [...navigationGroups[5].items, ...navigationGroups[6].items],
   },
 ];
 export const resourceTitle = (key) =>
@@ -132,7 +140,15 @@ export const columnLabels = {
   startDate: "Valid from",
   endDate: "Valid until",
   categoryId: "Parent category",
-  code: "Code",
+  code: "Code / slug",
+  sortOrder: "Display order",
+  icon: "Lucide icon",
+  totalBookings: "Total bookings",
+  totalServices: "Services",
+  totalEarnings: "Paid earnings (INR)",
+  totalSpending: "Gross spending (INR)",
+  accountStatus: "Account status",
+  usageCount: "Services using category",
   usageLimit: "Usage limit",
   emailVerified: "Email verified",
 };

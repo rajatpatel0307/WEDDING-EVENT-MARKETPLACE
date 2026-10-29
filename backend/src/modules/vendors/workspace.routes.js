@@ -58,6 +58,15 @@ export function createVendorRouter({
       res.json({ success: true, ...result });
     });
   get("/services/metadata", (req) => services.metadata(req.vendorContext));
+  router.get("/services/export", async (req, res) => {
+    const csv = await services.exportServices(req.query, req.vendorContext);
+    res.type("text/csv; charset=utf-8");
+    res.set(
+      "Content-Disposition",
+      'attachment; filename="vendor-services.csv"',
+    );
+    res.send(csv);
+  });
   get("/services", (req) => services.list(req.query, req.vendorContext));
   get("/services/:id", (req) =>
     services.details(req.params.id, req.vendorContext),

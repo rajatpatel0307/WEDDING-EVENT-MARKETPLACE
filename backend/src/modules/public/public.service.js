@@ -49,7 +49,7 @@ export async function featuredVenues(args = {}) {
     FROM dbo.Services s JOIN dbo.Categories c ON c.CategoryId = s.CategoryId
     JOIN dbo.Vendors v ON v.VendorId = s.VendorId JOIN dbo.Users u ON u.UserId = v.UserId
     ${locationSql} ${imageSql("s.ServiceId")}
-    WHERE ${eligibleVendor} AND s.IsActive = 1 AND s.ApprovalStatus = 'Approved' AND c.IsActive = 1 AND c.CategoryName = 'Venue & Location'
+    WHERE ${eligibleVendor} AND s.IsActive = 1 AND s.ApprovalStatus = 'Approved' AND c.IsActive = 1 AND (c.CategoryCode='AUTH_SERVICE_1' OR c.CategoryName = 'Venue & Location')
     AND (:city IS NULL OR loc.City = :city) AND (:id IS NULL OR s.ServiceId = :id)
     AND (:q IS NULL OR s.ServiceName LIKE :q OR v.BusinessName LIKE :q OR c.CategoryName LIKE :q OR loc.City LIKE :q)
     ORDER BY v.AverageRating DESC, v.TotalReviews DESC, s.ServiceId`,

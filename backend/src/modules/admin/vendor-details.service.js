@@ -44,6 +44,26 @@ export async function vendorDetails(id, ctx) {
   requireRole(ctx, "ADMIN");
   return loadVendorDetails(id);
 }
+export async function addNote(id, input, ctx) {
+  requireRole(ctx, "ADMIN");
+  const body = z
+    .object({ note: z.string().trim().min(3).max(2000) })
+    .strict()
+    .parse(input);
+  return repo.transaction(async (tx) => {
+    await findVendor(id, tx, true);
+    await repo.auditAdmin(
+      ctx,
+      "ADMIN_VENDOR_NOTE_ADDED",
+      "Vendors",
+      id,
+      null,
+      body,
+      tx,
+    );
+    return { message: "Internal vendor note recorded." };
+  });
+}
 export async function loadVendorDetails(id) {
   const vendor = await findVendor(id);
   const categories = await repo.select(
@@ -89,6 +109,18 @@ export async function loadVendorDetails(id) {
 }
 
 const collections = {
+  payments: {
+    from: "dbo.Payments t JOIN dbo.Booking b ON b.BookingId=t.BookingId",
+    where: "b.VendorId=:id",
+    fields:
+      "t.PaymentId AS id,t.PaymentReference AS reference,b.BookingNumber AS booking,t.Amount AS amount,t.Currency AS currency,t.PaymentMethod AS method,t.GatewayName AS gateway,t.PaymentStatus AS status,t.PaidAt AS paidAt,t.CreatedAt AS createdAt",
+  },
+  coupons: {
+    from: "dbo.Coupons t",
+    where: "t.VendorId=:id",
+    fields:
+      "t.CouponId AS id,t.CouponCode AS name,t.Description AS description,t.DiscountType AS discountType,t.DiscountValue AS discountValue,t.UsageLimit AS usageLimit,t.UsedCount AS used,t.StartDate AS startDate,t.EndDate AS endDate,t.IsActive AS active,t.CreatedAt AS createdAt",
+  },
   history: {
     order: "t.CreatedAt DESC,t.HistoryId DESC",
     from: "dbo.VendorVerificationHistory t JOIN dbo.Users u ON u.UserId=t.AdminId",

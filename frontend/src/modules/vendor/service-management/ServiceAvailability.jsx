@@ -125,8 +125,16 @@ export default function ServiceAvailability() {
                         to: day,
                         status:
                           r?.status === "Available" ? "Available" : "Blocked",
-                        startTime: null,
-                        endTime: null,
+                        startTime: r?.startTime
+                          ? String(r.startTime).match(
+                              /(?:T|^)(\d{2}:\d{2})/,
+                            )?.[1] || null
+                          : null,
+                        endTime: r?.endTime
+                          ? String(r.endTime).match(
+                              /(?:T|^)(\d{2}:\d{2})/,
+                            )?.[1] || null
+                          : null,
                         notes: r?.notes || "",
                       });
                       setEditing(r?.id || null);
