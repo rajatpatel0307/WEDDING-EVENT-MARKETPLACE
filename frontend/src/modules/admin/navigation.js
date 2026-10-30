@@ -54,14 +54,15 @@ const navigationGroups = [
     items: [
       ["bookings", "All Bookings", CalendarCheck],
       ...[
-        "Pending",
-        "Confirmed",
-        "InProgress",
-        "Completed",
-        "Cancelled",
-        "Rejected",
-        "Disputed",
-      ].map((s) => [
+        // "Pending",
+        // "Confirmed",
+        // "InProgress",
+        // "Completed",
+        // "Cancelled",
+        // "Rejected",
+        // "Disputed",
+      ]
+      .map((s) => [
         `bookings?status=${s}`,
         s === "InProgress" ? "In Progress" : s,
         CalendarCheck,
