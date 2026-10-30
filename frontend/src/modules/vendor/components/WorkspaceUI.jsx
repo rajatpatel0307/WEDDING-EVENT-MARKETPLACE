@@ -1,4 +1,3 @@
-import { vendorClasses } from "../styles";
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertCircle, ArrowRight, Inbox, LoaderCircle, X } from "lucide-react";
@@ -28,7 +27,31 @@ export function Badge({ children }) {
   const value = String(children || "Unknown");
   return (
     <span
-      className={vendorClasses(`vw-badge vw-badge-${value.toLowerCase().replace(/\s/g, "")}`)}
+      className={`vw-badge inline-flex items-center [padding:3px_7px] rounded-[5px] text-[8px] font-medium leading-[1.5]
+        text-[#96a486] [background:#f0f4e9] whitespace-normal [&.vw-badge-approved]:[background:#edf5e4]
+        [&.vw-badge-approved]:text-[#7a9b5b] [&.vw-badge-active]:[background:#edf5e4]
+        [&.vw-badge-active]:text-[#7a9b5b] [&.vw-badge-confirmed]:[background:#edf5e4]
+        [&.vw-badge-confirmed]:text-[#7a9b5b] [&.vw-badge-completed]:[background:#edf5e4]
+        [&.vw-badge-completed]:text-[#7a9b5b] [&.vw-badge-paid]:[background:#edf5e4]
+        [&.vw-badge-paid]:text-[#7a9b5b] [&.vw-badge-success]:[background:#edf5e4]
+        [&.vw-badge-success]:text-[#7a9b5b] [&.vw-badge-accepted]:[background:#edf5e4]
+        [&.vw-badge-accepted]:text-[#7a9b5b] [&.vw-badge-available]:[background:#edf5e4]
+        [&.vw-badge-available]:text-[#7a9b5b] [&.vw-badge-published]:[background:#edf5e4]
+        [&.vw-badge-published]:text-[#7a9b5b] [&.vw-badge-pending]:text-[#b2a06a]
+        [&.vw-badge-pending]:[background:#fbf6e8] [&.vw-badge-processing]:text-[#b2a06a]
+        [&.vw-badge-processing]:[background:#fbf6e8] [&.vw-badge-draft]:text-[#718070]
+        [&.vw-badge-draft]:[background:#f0f2ed] [&.vw-badge-paymentpending]:text-[#b2a06a]
+        [&.vw-badge-paymentpending]:[background:#fbf6e8] [&.vw-badge-underreview]:text-[#b2a06a]
+        [&.vw-badge-underreview]:[background:#fbf6e8] [&.vw-badge-rejected]:text-[#c08d78]
+        [&.vw-badge-rejected]:[background:#fcf1e9] [&.vw-badge-cancelled]:text-[#c08d78]
+        [&.vw-badge-cancelled]:[background:#fcf1e9] [&.vw-badge-failed]:text-[#c08d78]
+        [&.vw-badge-failed]:[background:#fcf1e9] [&.vw-badge-suspended]:text-[#8c628e]
+        [&.vw-badge-suspended]:[background:#f6edf6] [&.vw-badge-blocked]:text-[#c08d78]
+        [&.vw-badge-blocked]:[background:#fcf1e9] [&.vw-badge-sent]:text-[#79a399]
+        [&.vw-badge-sent]:[background:#ebf4ef] [&.vw-badge-viewed]:text-[#79a399]
+        [&.vw-badge-viewed]:[background:#ebf4ef] [&.vw-badge-inprogress]:text-[#79a399]
+        [&.vw-badge-inprogress]:[background:#ebf4ef] [&.vw-badge-pendingapproval]:text-[#ab8a3c]
+        [&.vw-badge-pendingapproval]:[background:#fcf6e5] vw-badge-${value.toLowerCase().replace(/\s/g, "")}`}
     >
       {value === "UnderReview"
         ? "Under review"
@@ -135,7 +158,9 @@ export function Panel({
   className = "",
 }) {
   return (
-    <section className={vendorClasses(`vw-panel ${className}`)}>
+    <section className={`vw-panel [background:#fff] [border-top:1px_solid_#e4eade] [border-right:1px_solid_#e4eade]
+      [border-bottom:1px_solid_#e4eade] [border-left:1px_solid_#e4eade] rounded-[10px] min-w-[0]
+      overflow-hidden ${className}`}>
       <header className="
         flex items-center justify-between gap-[14px] [padding:20px_23px] [&_h2]:text-[13px]
         [&_h2]:font-semibold [&_p]:[margin:4px_0_0] [&_p]:text-[9px] [&_p]:text-[#a0ad94]
@@ -166,7 +191,41 @@ export function Modal({ title, close, busy, children, wide = false }) {
   }, []);
   return (
     <dialog
-      className={vendorClasses(`vw-modal ${wide ? "vw-modal-wide" : ""}`)}
+      className={`[&_h2]:[font-family:Inter,_'Segoe_UI',_Arial,_sans-serif] [&_h2]:text-[#2b4638] [&_h2]:font-semibold
+        [&_h2]:tracking-[-0.4px] [&_h2]:m-[0] [&_h2]:text-[15px] [&_button]:cursor-pointer
+        [&_:where(input)]:[font:inherit] [&_:where(input)]:[border-top:1px_solid_#e0e7dd]
+        [&_:where(input)]:[border-right:1px_solid_#e0e7dd]
+        [&_:where(input)]:[border-bottom:1px_solid_#e0e7dd]
+        [&_:where(input)]:[border-left:1px_solid_#e0e7dd] [&_:where(input)]:[background:#fff]
+        [&_:where(input)]:text-[#42573f] [&_:where(input)]:rounded-[7px]
+        [&_:where(input)]:[padding:10px_12px] [&_:where(input)]:min-w-[0]
+        [&_:where(input)]:[box-shadow:none] [&_:where(input)]:leading-[1.6]
+        [&_:where(select)]:[font:inherit] [&_:where(select)]:[border-top:1px_solid_#e0e7dd]
+        [&_:where(select)]:[border-right:1px_solid_#e0e7dd]
+        [&_:where(select)]:[border-bottom:1px_solid_#e0e7dd]
+        [&_:where(select)]:[border-left:1px_solid_#e0e7dd] [&_:where(select)]:[background:#fff]
+        [&_:where(select)]:text-[#42573f] [&_:where(select)]:rounded-[7px]
+        [&_:where(select)]:[padding:10px_12px] [&_:where(select)]:min-w-[0]
+        [&_:where(select)]:[box-shadow:none] [&_:where(select)]:leading-[1.6]
+        [&_:where(textarea)]:[font:inherit] [&_:where(textarea)]:[border-top:1px_solid_#e0e7dd]
+        [&_:where(textarea)]:[border-right:1px_solid_#e0e7dd]
+        [&_:where(textarea)]:[border-bottom:1px_solid_#e0e7dd]
+        [&_:where(textarea)]:[border-left:1px_solid_#e0e7dd] [&_:where(textarea)]:[background:#fff]
+        [&_:where(textarea)]:text-[#42573f] [&_:where(textarea)]:rounded-[7px]
+        [&_:where(textarea)]:[padding:10px_12px] [&_:where(textarea)]:min-w-[0]
+        [&_:where(textarea)]:[box-shadow:none] [&_:where(textarea)]:leading-[1.6]
+        [&_:focus-visible]:[outline:2px_solid_#8aaf94] [&_:focus-visible]:[outline-offset:3px]
+        [&_input:focus]:[outline:2px_solid_#b8ceb9] [&_input:focus]:[outline-offset:1px]
+        [&_textarea:focus]:[outline:2px_solid_#b8ceb9] [&_textarea:focus]:[outline-offset:1px]
+        [&_select:focus]:[outline:2px_solid_#b8ceb9] [&_select:focus]:[outline-offset:1px] text-[#5d7651]
+        [border-top:1px_solid_#dfe9d5] [border-right:1px_solid_#dfe9d5] [border-bottom:1px_solid_#dfe9d5]
+        [border-left:1px_solid_#dfe9d5] rounded-[12px] p-[0] max-h-[90dvh] w-[calc(100vw_-_32px)]
+        max-w-[590px] [background:white] [box-shadow:0_25px_100px_#18321c25] m-[auto] overflow-y-auto
+        [&.vw-modal-wide]:max-w-[850px] [&::backdrop]:[background:#243d2f66]
+        [&::backdrop]:[backdrop-filter:blur(3px)] [&_>_header]:sticky [&_>_header]:top-[0]
+        [&_>_header]:flex [&_>_header]:items-center [&_>_header]:justify-between [&_>_header]:gap-[15px]
+        [&_>_header]:[padding:18px_23px] [&_>_header]:[border-bottom:1px_solid_#e8eedf]
+        [&_>_header]:[background:white] [&_>_header]:z-[1] ${wide ? "vw-modal-wide" : ""}`}
       ref={ref}
       aria-labelledby={label}
       onCancel={(e) => {
@@ -224,7 +283,8 @@ export function Image({ src, alt = "", className = "" }) {
       onError={() => setFailed(true)}
     />
   ) : (
-    <div className={vendorClasses(`${className} vw-image-placeholder`)}>
+    <div className={`${className} grid place-items-center [background:linear-gradient(125deg,_#e8efde,_#f5f7f0)] text-[#b2c29c]
+      [&_>_span]:[font-family:Georgia,_serif] [&_>_span]:text-[45px] [&_>_span]:font-normal`}>
       <span>{alt?.[0] || "M"}</span>
     </div>
   );

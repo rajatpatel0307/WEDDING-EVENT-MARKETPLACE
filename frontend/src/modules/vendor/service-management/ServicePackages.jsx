@@ -1,4 +1,4 @@
-import { vendorClasses } from "../styles";
+
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -194,7 +194,32 @@ export default function ServicePackages({
                 <Package size={22} />
               </span>
               <span
-                className={vendorClasses(`vw-badge vw-badge-${p.active ? "active" : "inactive"}`)}
+                className={`vw-badge inline-flex items-center [padding:3px_7px] rounded-[5px] text-[8px] font-medium leading-[1.5]
+                  text-[#96a486] [background:#f0f4e9] whitespace-normal
+                  [&.vw-badge-approved]:[background:#edf5e4] [&.vw-badge-approved]:text-[#7a9b5b]
+                  [&.vw-badge-active]:[background:#edf5e4] [&.vw-badge-active]:text-[#7a9b5b]
+                  [&.vw-badge-confirmed]:[background:#edf5e4] [&.vw-badge-confirmed]:text-[#7a9b5b]
+                  [&.vw-badge-completed]:[background:#edf5e4] [&.vw-badge-completed]:text-[#7a9b5b]
+                  [&.vw-badge-paid]:[background:#edf5e4] [&.vw-badge-paid]:text-[#7a9b5b]
+                  [&.vw-badge-success]:[background:#edf5e4] [&.vw-badge-success]:text-[#7a9b5b]
+                  [&.vw-badge-accepted]:[background:#edf5e4] [&.vw-badge-accepted]:text-[#7a9b5b]
+                  [&.vw-badge-available]:[background:#edf5e4] [&.vw-badge-available]:text-[#7a9b5b]
+                  [&.vw-badge-published]:[background:#edf5e4] [&.vw-badge-published]:text-[#7a9b5b]
+                  [&.vw-badge-pending]:text-[#b2a06a] [&.vw-badge-pending]:[background:#fbf6e8]
+                  [&.vw-badge-processing]:text-[#b2a06a] [&.vw-badge-processing]:[background:#fbf6e8]
+                  [&.vw-badge-draft]:text-[#718070] [&.vw-badge-draft]:[background:#f0f2ed]
+                  [&.vw-badge-paymentpending]:text-[#b2a06a]
+                  [&.vw-badge-paymentpending]:[background:#fbf6e8] [&.vw-badge-underreview]:text-[#b2a06a]
+                  [&.vw-badge-underreview]:[background:#fbf6e8] [&.vw-badge-rejected]:text-[#c08d78]
+                  [&.vw-badge-rejected]:[background:#fcf1e9] [&.vw-badge-cancelled]:text-[#c08d78]
+                  [&.vw-badge-cancelled]:[background:#fcf1e9] [&.vw-badge-failed]:text-[#c08d78]
+                  [&.vw-badge-failed]:[background:#fcf1e9] [&.vw-badge-suspended]:text-[#8c628e]
+                  [&.vw-badge-suspended]:[background:#f6edf6] [&.vw-badge-blocked]:text-[#c08d78]
+                  [&.vw-badge-blocked]:[background:#fcf1e9] [&.vw-badge-sent]:text-[#79a399]
+                  [&.vw-badge-sent]:[background:#ebf4ef] [&.vw-badge-viewed]:text-[#79a399]
+                  [&.vw-badge-viewed]:[background:#ebf4ef] [&.vw-badge-inprogress]:text-[#79a399]
+                  [&.vw-badge-inprogress]:[background:#ebf4ef] [&.vw-badge-pendingapproval]:text-[#ab8a3c]
+                  [&.vw-badge-pendingapproval]:[background:#fcf6e5] vw-badge-${p.active ? "active" : "inactive"}`}
               >
                 {p.active ? "Active" : "Inactive"}
               </span>

@@ -1,4 +1,4 @@
-import { vendorClasses } from "../styles";
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -214,11 +214,11 @@ function Cell({ name, row }) {
   return (
     <span
       className={
-        vendorClasses(["review", "message", "services", "description", "reason"].includes(
+        ["review", "message", "services", "description", "reason"].includes(
           name,
         )
-          ? "vw-long-text"
-          : "")
+          ? "block min-w-[130px] max-w-[270px] whitespace-pre-wrap [overflow-wrap:anywhere] vendor-phone:min-w-[0] vendor-phone:max-w-[none]"
+          : ""
       }
     >
       {String(value)}

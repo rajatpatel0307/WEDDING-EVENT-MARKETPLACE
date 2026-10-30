@@ -1,4 +1,4 @@
-import { vendorClasses } from "../styles";
+
 import { useState } from "react";
 import {
   ImagePlus,
@@ -72,7 +72,13 @@ export default function MediaManager({ id, onChanged, disabled = false }) {
     <div>
       {state.error && <ErrorView error={state.error} retry={state.retry} />}
       <label
-        className={vendorClasses(`sm-dropzone ${drag ? "dragging" : ""}`)}
+        className={`flex flex-col items-center gap-[10px] [padding:45px_20px] [border-top:1px_dashed_#b9c8ae]
+          [border-right:1px_dashed_#b9c8ae] [border-bottom:1px_dashed_#b9c8ae]
+          [border-left:1px_dashed_#b9c8ae] rounded-[12px] [background:#f9fbf6] relative text-center
+          text-[#7f9571] cursor-pointer [&.dragging]:[background:#eaf4e4]
+          [&.dragging]:[border-color:#3d714a] [&_span]:text-[11px] [&_small]:text-[10px]
+          [&_small]:text-[#a1ac96] [&_input]:absolute [&_input]:[inset:0] [&_input]:opacity-[0]
+          [&_input]:w-[100%] [&_input]:cursor-pointer ${drag ? "dragging" : ""}`}
         onDragOver={(e) => {
           e.preventDefault();
           setDrag(true);

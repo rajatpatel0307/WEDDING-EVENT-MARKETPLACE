@@ -14,3 +14,21 @@
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+@theme static {
+  --animate-vendor-shimmer: vendor-shimmer 1.5s infinite;
+
+  @keyframes vendor-shimmer {
+    to { background-position: -200% 0; }
+  }
+}
+
+/* Preserve the vendor workspace's exact responsive breakpoints. */
+@custom-variant vendor-wide (@media (min-width: 1600px));
+@custom-variant vendor-compact (@media (max-width: 1200px));
+@custom-variant vendor-tablet (@media (max-width: 1000px));
+@custom-variant vendor-mobile (@media (max-width: 767px));
+@custom-variant vendor-phone (@media (max-width: 520px));
+@custom-variant service-wide (@media (min-width: 1550px));
+@custom-variant service-tablet (@media (max-width: 1150px));
+@custom-variant service-mobile (@media (max-width: 760px));

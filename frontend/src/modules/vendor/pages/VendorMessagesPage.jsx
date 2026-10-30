@@ -1,4 +1,4 @@
-import { vendorClasses } from "../styles";
+
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -290,7 +290,16 @@ export default function VendorMessagesPage() {
                   messages.map((message) => (
                     <article
                       key={message.id}
-                      className={vendorClasses(`vw-chat-bubble ${message.mine ? "mine" : ""}`)}
+                      className={`max-w-[78%] [padding:11px_14px] [background:#fff] [border-top:1px_solid_#eaf1df]
+                        [border-right:1px_solid_#eaf1df] [border-bottom:1px_solid_#eaf1df]
+                        [border-left:1px_solid_#eaf1df] [border-radius:0_10px_10px_10px]
+                        [align-self:flex-start] min-w-[90px] [&.mine]:[align-self:flex-end]
+                        [&.mine]:[background:#eef6e4] [&.mine]:[border-color:#e2edd6]
+                        [&.mine]:[border-radius:10px_0_10px_10px] [&_p]:text-[#637f4e] [&_p]:text-[11px]
+                        [&_p]:whitespace-pre-wrap [&_p]:[overflow-wrap:anywhere] [&_>_small]:flex
+                        [&_>_small]:items-center [&_>_small]:justify-end [&_>_small]:gap-[5px]
+                        [&_>_small]:text-[#bdcdae] [&_>_small]:text-[6px] [&_>_small]:mt-[7px]
+                        [&_.read]:text-[#9bbb7d] vendor-phone:max-w-[88%] ${message.mine ? "mine" : ""}`}
                     >
                       {message.text && <p>{message.text}</p>}
                       {!!message.hasAttachment && (

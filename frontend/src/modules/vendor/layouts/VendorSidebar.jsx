@@ -94,7 +94,8 @@ export default function VendorSidebar({
       className={`
         fixed inset-y-0 left-0 z-50
         flex w-[280px] max-w-[88vw]
-        flex-col border-r border-[#e6ebe1]
+        flex-col border-r
+        border-[#e6ebe1]
         bg-[#fffefa]
         shadow-xl
 
@@ -267,7 +268,6 @@ export default function VendorSidebar({
           min-h-0 flex-1
           overflow-y-auto overflow-x-hidden
           px-[15px] pb-[22px] pt-5
-
           [scrollbar-width:thin]
           [scrollbar-color:#ced8c7_transparent]
 
@@ -338,13 +338,16 @@ export default function VendorSidebar({
                         className={`
                           group relative flex
                           min-h-[43px] w-full
-                          items-center gap-[10px]
+                          items-center
+                          gap-[10px]
                           rounded-md px-3 py-[9px]
 
-                          text-[12px] leading-[1.5]
+                          text-[12px]
+                          leading-[1.5]
                           no-underline
 
-                          transition-colors duration-200
+                          transition-colors
+                          duration-200
 
                           ${
                             active
@@ -422,11 +425,13 @@ export default function VendorSidebar({
                             <span
                               className={`
                                 ml-auto flex min-w-[21px]
-                                items-center justify-center
+                                items-center
+                                justify-center
                                 rounded bg-[#dce9d0]
                                 px-[5px] py-[2px]
 
-                                text-[9px] font-semibold
+                                text-[9px]
+                                font-semibold
                                 text-[#486d3c]
 
                                 ${collapsed ? "lg:hidden" : ""}

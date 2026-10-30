@@ -1,4 +1,4 @@
-import { vendorClasses } from "../styles";
+
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -131,7 +131,15 @@ export default function ServiceAvailability() {
                   <button
                     key={day}
                     disabled={r?.status === "Booked"}
-                    className={vendorClasses(`sm-day sm-day-${status.toLowerCase()} ${form.from === day ? "selected" : ""}`)}
+                    className={`[border-top:1px_solid_#e5ebde] [border-right:1px_solid_#e5ebde] [border-bottom:1px_solid_#e5ebde]
+                      [border-left:1px_solid_#e5ebde] [background:#f3f8ee] min-h-[72px] rounded-[7px]
+                      [padding:10px_5px] text-[#6f8d5b] text-left [&_small]:block [&_small]:text-[8px]
+                      [&_small]:overflow-hidden [&.selected]:[outline:2px_solid_#578345]
+                      service-mobile:min-h-[55px] service-mobile:[padding:7px_3px]
+                      service-mobile:[&_small]:text-[7px] [&.sm-day-blocked]:[background:#fcf0eb]
+                      [&.sm-day-blocked]:text-[#b98c7d] [&.sm-day-blocked]:[border-color:#f0ddd5]
+                      [&.sm-day-booked]:[background:#f2edf8] [&.sm-day-booked]:text-[#9a83af]
+                      [&.sm-day-closed]:[background:#f6f7f4] [&.sm-day-closed]:text-[#adb5a2] sm-day-${status.toLowerCase()} ${form.from === day ? "selected" : ""}`}
                     onClick={() => {
                       setForm({
                         from: day,

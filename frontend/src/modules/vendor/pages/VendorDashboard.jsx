@@ -1020,10 +1020,10 @@ export default function VendorDashboard({
                 className={`
                   group flex min-w-0 flex-col
                   rounded-[10px] border
-                  px-5 py-[18px]
+                  px-5
+                  py-[18px]
                   no-underline
                   transition-all duration-200
-
                   hover:-translate-y-0.5
                   hover:border-[#adc29b]
 

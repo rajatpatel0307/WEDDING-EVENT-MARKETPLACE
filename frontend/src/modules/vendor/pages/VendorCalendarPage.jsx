@@ -1,4 +1,4 @@
-import { vendorClasses } from "../styles";
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, ChevronLeft, ChevronRight, Plus } from "lucide-react";
@@ -184,7 +184,16 @@ export default function VendorCalendarPage({ filter = "" }) {
                 return (
                   <button
                     key={day}
-                    className={vendorClasses(`vw-calendar-day ${day === today() ? "today" : ""}`)}
+                    className={`min-h-[115px] [border-top:0] [border-right:1px_solid_#edf2e4] [border-bottom:1px_solid_#edf2e4]
+                      [border-left:0] [background:#fff] [padding:10px_8px] min-w-[0] text-left
+                      [vertical-align:top] flex flex-col gap-[8px] [&:hover]:[background:#f8fcf1]
+                      [&_>_strong]:text-[11px] [&_>_strong]:text-[#a1b28d] [&_>_strong]:w-[23px]
+                      [&_>_strong]:h-[23px] [&_>_strong]:grid [&_>_strong]:place-items-center
+                      [&_>_strong]:font-normal [&.today_>_strong]:[background:#99b57b]
+                      [&.today_>_strong]:text-[white] [&.today_>_strong]:rounded-[50%] [&_>_div]:grid
+                      [&_>_div]:gap-[4px] [&_>_div]:w-[100%] [&_>_div]:min-w-[0] [&_small]:text-[7px]
+                      [&_small]:text-[#a3b38f] vendor-mobile:min-h-[85px] vendor-mobile:[padding:7px_3px]
+                      vendor-mobile:[&_>_strong]:text-[10px] vendor-phone:min-h-[75px] ${day === today() ? "today" : ""}`}
                     onClick={() => select(day)}
                     aria-label={`${date(day)}; ${slots.length} availability entries; ${bookings.length} bookings`}
                   >
@@ -193,7 +202,12 @@ export default function VendorCalendarPage({ filter = "" }) {
                       {slots.slice(0, 2).map((slot) => (
                         <span
                           key={slot.id}
-                          className={vendorClasses(`vw-calendar-entry ${slot.status.toLowerCase()}`)}
+                          className={`block [padding:3px_5px] rounded-[3px] text-[7px] whitespace-nowrap overflow-hidden text-ellipsis
+                            [&.available]:[background:#edf6e3] [&.available]:text-[#94b16e]
+                            [&.blocked]:[background:#fff2e9] [&.blocked]:text-[#c99c81]
+                            [&.pending]:[background:#fcf6e7] [&.pending]:text-[#bba66c]
+                            [&.booked]:[background:#eaf5ef] [&.booked]:text-[#81aa93]
+                            vendor-mobile:text-[6px] vendor-mobile:p-[2px] ${slot.status.toLowerCase()}`}
                         >
                           {slot.status}
                           {slot.startTime ? ` · ${slot.startTime}` : ""}
@@ -202,7 +216,12 @@ export default function VendorCalendarPage({ filter = "" }) {
                       {bookings.slice(0, 2).map((booking) => (
                         <span
                           key={booking.id}
-                          className={vendorClasses(`vw-calendar-entry ${booking.status === "Pending" ? "pending" : "booked"}`)}
+                          className={`block [padding:3px_5px] rounded-[3px] text-[7px] whitespace-nowrap overflow-hidden text-ellipsis
+                            [&.available]:[background:#edf6e3] [&.available]:text-[#94b16e]
+                            [&.blocked]:[background:#fff2e9] [&.blocked]:text-[#c99c81]
+                            [&.pending]:[background:#fcf6e7] [&.pending]:text-[#bba66c]
+                            [&.booked]:[background:#eaf5ef] [&.booked]:text-[#81aa93]
+                            vendor-mobile:text-[6px] vendor-mobile:p-[2px] ${booking.status === "Pending" ? "pending" : "booked"}`}
                         >
                           {booking.status === "Pending" ? "Request" : "Booked"}{" "}
                           · {booking.number}
