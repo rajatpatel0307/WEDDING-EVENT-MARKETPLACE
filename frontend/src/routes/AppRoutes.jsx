@@ -15,6 +15,9 @@ import {
   AccountLayout,
   VendorStatusPage,
 } from "../modules/auth/pages/AccountPages";
+const VendorBookingDetails = lazy(
+  () => import("../modules/vendor/pages/VendorBookingsPage"),
+);
 const BookingsManagementPage = lazy(
   () => import("../modules/admin/pages/BookingsManagementPage"),
 );
@@ -99,7 +102,9 @@ const VendorServiceList = lazy(
 const VendorServiceDetails = lazy(
   () => import("../modules/vendor/service-management/ServiceDetails"),
 );
-const VendorPackageRoute = lazy(() => import("../modules/vendor/service-management/PackageRoute"));
+const VendorPackageRoute = lazy(
+  () => import("../modules/vendor/service-management/PackageRoute"),
+);
 const VendorServicePackages = lazy(
   () => import("../modules/vendor/service-management/ServicePackages"),
 );
@@ -112,7 +117,9 @@ const QuotationForm = lazy(() =>
   })),
 );
 const AdminInbox = lazy(() => import("../modules/admin/pages/AdminInbox"));
-const FinancialDetails = lazy(() => import("../modules/admin/pages/FinancialDetails"));
+const FinancialDetails = lazy(
+  () => import("../modules/admin/pages/FinancialDetails"),
+);
 const AdminLayout = lazy(() => import("../modules/admin/AdminLayout"));
 const AdminDashboard = lazy(
   () => import("../modules/admin/pages/AdminDashboard"),
@@ -479,7 +486,10 @@ export default function AppRoutes() {
               />
               <Route path="packages/new" element={<VendorPackageRoute />} />
               <Route path="packages/add" element={<VendorPackageRoute />} />
-              <Route path="packages/:id/edit" element={<VendorPackageRoute />} />
+              <Route
+                path="packages/:id/edit"
+                element={<VendorPackageRoute />}
+              />
               <Route
                 path="requests"
                 element={<VendorResourcesPage section="requests" />}
@@ -538,22 +548,38 @@ export default function AppRoutes() {
                 path="bookings"
                 element={<Navigate to="/vendor/bookings/requests" replace />}
               />
-              {["requests", "upcoming", "active", "completed", "cancelled"].map(
-                (filter) => (
-                  <Route
-                    key={filter}
-                    path={`bookings/${filter}`}
-                    element={
-                      <VendorResourcesPage
-                        key={`bookings-${filter}`}
-                        section="bookings"
-                        filter={filter}
-                        title={`${filter === "requests" ? "Booking requests" : filter[0].toUpperCase() + filter.slice(1) + " bookings"}`}
-                      />
-                    }
-                  />
-                ),
-              )}
+              <Route
+                path="bookings/:id"
+                element={
+                  <Suspense
+                    fallback={<div role="status">Loading booking…</div>}
+                  >
+                    <VendorBookingDetails />
+                  </Suspense>
+                }
+              />
+              {[
+                "requests",
+                "upcoming",
+                "active",
+                "completed",
+                "cancelled",
+                "cancellations",
+                "reschedules",
+              ].map((filter) => (
+                <Route
+                  key={filter}
+                  path={`bookings/${filter}`}
+                  element={
+                    <VendorResourcesPage
+                      key={`bookings-${filter}`}
+                      section="bookings"
+                      filter={filter}
+                      title={`${filter === "requests" ? "Booking requests" : filter[0].toUpperCase() + filter.slice(1) + " bookings"}`}
+                    />
+                  }
+                />
+              ))}
               <Route
                 path="quotations"
                 element={<Navigate to="/vendor/quotations/sent" replace />}

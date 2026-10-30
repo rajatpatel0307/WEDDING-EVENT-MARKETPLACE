@@ -4,6 +4,7 @@ import { randomUUID, createHmac } from "node:crypto";
 import express from "express";
 import { sequelize } from "../src/config/database.js";
 import { up } from "../migrations/013-admin-bookings.js";
+import { up as lifecycleUp } from "../migrations/015-booking-lifecycle.js";
 import { createAdminRouter } from "../src/modules/admin/admin.routes.js";
 import { loadUser } from "../src/modules/auth/token.service.js";
 import { processRefundQueue } from "../src/modules/admin/booking-refunds.service.js";
@@ -36,6 +37,7 @@ try {
     const sql = (s, replacements = {}) => sequelize.query(s, { replacements });
     try {
       await up(sequelize.getQueryInterface(), tx);
+      await lifecycleUp(sequelize.getQueryInterface(), tx);
       const admin = randomUUID(),
         customer = randomUUID(),
         owner = randomUUID(),

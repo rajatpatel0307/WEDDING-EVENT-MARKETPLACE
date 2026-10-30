@@ -1,4 +1,10 @@
-import { milestone as bookingMilestone } from "../admin/booking-finance.js";
+import {
+  milestone as bookingMilestone,
+  financialRows,
+  syncPayout,
+} from "../admin/booking-finance.js";
+import { assertBookingReservation } from "../bookings/bookings.service.js";
+import { notifyAdmins } from "../notifications/admin-events.js";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
@@ -31,16 +37,30 @@ export async function bookingDecision(recordId, input, ctx) {
       fail("This request is no longer pending. Refresh the booking list.", 409);
     const next = body.action === "Accept" ? "Accepted" : "Rejected";
     if (next === "Accepted") {
-      const [blocked] = await repo.select(
-        "SELECT TOP(1) AvailabilityId FROM dbo.VendorAvailability WITH(UPDLOCK,HOLDLOCK) WHERE VendorId=:id AND AvailableDate=:date AND Status='Blocked' AND (ServiceId IS NULL OR ServiceId IN (SELECT ServiceId FROM dbo.BookingItems WHERE BookingId=:booking))",
-        { id, date: old.BookingDate, booking: old.BookingId },
-        tx,
-      );
-      if (blocked)
+      await assertBookingReservation(old, tx);
+    }
+    if (next === "Rejected") {
+      const ledger = await financialRows(old.BookingId, tx, true);
+      if (
+        ledger.payouts.some((p) =>
+          ["Paid", "Processing"].includes(p.PayoutStatus),
+        )
+      )
         fail(
-          "This date is blocked. Update availability before accepting.",
+          "An administrator must reconcile the existing payout before rejection.",
           409,
         );
+      if (
+        Number(old.PaidAmount) > 0 ||
+        ledger.payments.some((p) => p.PaymentStatus === "Success")
+      )
+        await notifyAdmins(
+          "BOOKING_REFUND_REVIEW_REQUIRED",
+          "Booking",
+          old.BookingId,
+          tx,
+        );
+      await syncPayout({ ...old, BookingStatus: "Rejected" }, ctx, tx);
     }
     await repo.update(
       { table: "Booking", id: "BookingId" },
@@ -60,7 +80,7 @@ export async function bookingDecision(recordId, input, ctx) {
       tx,
     );
     await repo.select(
-      "INSERT INTO dbo.BookingStatusHistory(BookingId,OldStatus,NewStatus,ChangedBy,Remarks) VALUES(:booking,:previous,:next,:user,:note)",
+      "INSERT INTO dbo.BookingStatusHistory(BookingId,OldStatus,NewStatus,ChangedBy,Remarks,PublicNote,ActorRole,ActionType) VALUES(:booking,:previous,:next,:user,:note,:note,'Vendor','VendorDecision')",
       {
         booking: old.BookingId,
         previous: old.BookingStatus,

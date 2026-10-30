@@ -31,6 +31,8 @@ const listInput = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   q: z.string().trim().max(200).default(""),
   status: z.string().max(30).default(""),
+  eventFrom: z.iso.date().optional(),
+  eventTo: z.iso.date().optional(),
 });
 const extra = {
   requests: {
@@ -94,6 +96,8 @@ export async function records(section, input, ctx) {
     size: q.pageSize,
     offset: (q.page - 1) * q.pageSize,
     search: `%${q.q.replace(/[\[\]%_]/g, (x) => `[${x}]`)}%`,
+    eventFrom: q.eventFrom || null,
+    eventTo: q.eventTo || null,
   };
   let condition = c.where;
   const filters = {
@@ -105,6 +109,10 @@ export async function records(section, input, ctx) {
         "t.BookingStatus IN ('Accepted','PaymentPending','Confirmed','InProgress')",
       completed: "t.BookingStatus='Completed'",
       cancelled: "t.BookingStatus IN ('Cancelled','Rejected','Refunded')",
+      cancellations:
+        "EXISTS(SELECT 1 FROM dbo.BookingChangeRequests cr WHERE cr.BookingId=t.BookingId AND cr.Kind='Cancellation' AND cr.Status='Pending')",
+      reschedules:
+        "EXISTS(SELECT 1 FROM dbo.BookingChangeRequests cr WHERE cr.BookingId=t.BookingId AND cr.Kind='Reschedule' AND cr.Status='Pending')",
     },
     quotations: {
       sent: "t.Status IN ('Sent','Viewed')",
@@ -132,7 +140,15 @@ export async function records(section, input, ctx) {
     coupons: "t.CouponCode",
     documents: "t.DocumentType",
   }[section];
-  if (q.q && searchable) condition += ` AND ${searchable} LIKE :search`;
+  if (section === "bookings") {
+    if (q.eventFrom && q.eventTo && q.eventFrom > q.eventTo)
+      fail("Choose a valid event date range.");
+    if (q.eventFrom) condition += " AND t.BookingDate>=:eventFrom";
+    if (q.eventTo) condition += " AND t.BookingDate<=:eventTo";
+    if (q.q)
+      condition +=
+        " AND (t.BookingNumber LIKE :search OR CONCAT(u.FirstName,' ',u.LastName) LIKE :search OR EXISTS(SELECT 1 FROM dbo.BookingItems si WHERE si.BookingId=t.BookingId AND si.ItemName LIKE :search))";
+  } else if (q.q && searchable) condition += ` AND ${searchable} LIKE :search`;
   const [count] = await repo.select(
     `SELECT COUNT_BIG(*) AS total FROM ${c.from} WHERE ${condition}`,
     params,

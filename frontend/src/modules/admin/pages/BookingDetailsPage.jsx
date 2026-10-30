@@ -28,6 +28,24 @@ import AdminDialog from "../components/AdminDialog";
 import { useAuth } from "../../../context/AuthContext";
 import "../services-management.css";
 import "../bookings-management.css";
+import BookingChanges from "../../bookings/BookingChanges";
+import BookingItemDetails from "../../bookings/BookingItemDetails";
+
+function ChangeRequests({ id, revision, saved }) {
+  const state = useAdminData(`/bookings/${id}/change-requests`, revision);
+  if (state.loading) return <Loading />;
+  if (state.error)
+    return <ErrorState error={state.error} retry={state.retry} />;
+  return (
+    <BookingChanges
+      id={id}
+      role="Admin"
+      data={{ requests: state.data }}
+      request={adminRequest}
+      saved={saved}
+    />
+  );
+}
 
 function PriceSummary({ f }) {
   return (
@@ -457,6 +475,11 @@ export default function BookingDetailsPage() {
     f = d.financial;
   return (
     <div className="asm-page ab-page">
+      <ChangeRequests
+        id={bookingId}
+        revision={revision}
+        saved={() => setRevision((v) => v + 1)}
+      />
       <Link className="asm-back" to="/admin/bookings">
         <ArrowLeft size={16} />
         All Bookings
@@ -669,6 +692,7 @@ export default function BookingDetailsPage() {
                         <Link to={`/admin/services/${i.serviceId}`}>
                           {i.name}
                         </Link>
+                        <BookingItemDetails description={i.description} />
                         {i.package && (
                           <small className="block">Package: {i.package}</small>
                         )}

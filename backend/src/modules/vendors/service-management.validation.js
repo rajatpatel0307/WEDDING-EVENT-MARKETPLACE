@@ -241,6 +241,13 @@ export function calculatePrice(
   quantity = input.minimumQuantity,
   date = null,
 ) {
+  return calculatePriceBreakdown(input, quantity, date).total;
+}
+export function calculatePriceBreakdown(
+  input,
+  quantity = input.minimumQuantity,
+  date = null,
+) {
   const p = pricingSchema.parse(input);
   if (
     !Number.isFinite(quantity) ||
@@ -284,7 +291,14 @@ export function calculatePrice(
       new Error("Calculated price exceeds the maximum supported amount."),
       { status: 400 },
     );
-  return finalPrice;
+  return {
+    subtotal: subtotal / 100,
+    discount:
+      Math.round((subtotal * Math.round(p.discount * 100)) / 10000) / 100,
+    charges: p.additionalCharges,
+    tax,
+    total: finalPrice,
+  };
 }
 export function actionsFor(row, approvedVendor = true) {
   const status = row.ApprovalStatus ?? row.status;

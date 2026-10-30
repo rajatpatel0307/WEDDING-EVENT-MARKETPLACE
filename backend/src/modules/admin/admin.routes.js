@@ -13,6 +13,7 @@ import * as controller from "./admin.controller.js";
 import * as customers from "./customers.service.js";
 import * as vendorDetails from "./vendor-details.service.js";
 import * as verification from "./vendor-verification.service.js";
+import * as lifecycle from "../bookings/bookings.service.js";
 export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
   const router = Router();
   router.use(
@@ -45,6 +46,25 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
   });
   const standardJson = json({ limit: "64kb" }),
     uploadJson = json({ limit: "8mb" });
+  router.get("/bookings/:id/change-requests", async (req, res) =>
+    res.json(
+      (await lifecycle.details(req.params.id, req.admin, "Admin")).requests,
+    ),
+  );
+  router.post(
+    "/bookings/:id/change-requests/:request/decision",
+    standardJson,
+    async (req, res) =>
+      res.json(
+        await lifecycle.decideChange(
+          req.params.id,
+          req.params.request,
+          req.body,
+          req.admin,
+          "Admin",
+        ),
+      ),
+  );
   router.use((req, res, next) =>
     (req.path.endsWith("/images/upload") ? uploadJson : standardJson)(
       req,

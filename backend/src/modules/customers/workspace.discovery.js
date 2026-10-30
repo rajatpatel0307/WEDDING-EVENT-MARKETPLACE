@@ -100,6 +100,10 @@ export async function serviceDetails(id, ctx, track = true) {
   if (track) await recordServiceMetric(id, "Views");
   return {
     service,
+    items: await repo.select(
+      "SELECT ServiceItemId AS id,ItemName AS name,Description AS description,UnitPrice AS price,IsIncluded AS included FROM dbo.ServiceItems WHERE ServiceId=:id ORDER BY SortOrder,ServiceItemId",
+      { id },
+    ),
     packages: await repo.select(
       "SELECT PackageId AS id,PackageName AS name,Description AS description,Price AS originalPrice,DiscountPercentage AS discount,FinalPrice AS price,MinimumGuests AS minGuests,MaximumGuests AS maxGuests FROM dbo.ServicePackages WHERE ServiceId=:id AND IsActive=1 ORDER BY FinalPrice",
       { id },

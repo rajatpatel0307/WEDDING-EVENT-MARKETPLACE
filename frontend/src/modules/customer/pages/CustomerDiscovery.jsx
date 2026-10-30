@@ -222,12 +222,14 @@ export default function CustomerDiscovery() {
     </>
   );
 }
-function ServiceAction({ service, packages, mode, close }) {
+function ServiceAction({ service, packages, items = [], mode, close }) {
   const events = useCustomerData("/records/events?pageSize=50"),
     { notify } = useAuth(),
     navigate = useNavigate(),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
+    [preview, setPreview] = useState(null),
+    [reviewBody, setReviewBody] = useState(null),
     [params] = useSearchParams();
   return (
     <Modal
@@ -239,6 +241,82 @@ function ServiceAction({ service, packages, mode, close }) {
         Final availability is confirmed by your vendor. All prices are
         calculated securely from the selected service or package.
       </p>
+      {preview && (
+        <section
+          className="my-4 rounded-xl border p-4"
+          aria-label="Booking review"
+        >
+          <h3 className="font-semibold">Review your booking</h3>
+          <p>
+            {preview.service} · {preview.vendor}
+          </p>
+          <p>
+            {preview.event.name} · {preview.event.date} · {preview.event.city} ·{" "}
+            {preview.event.guests} guests
+          </p>
+          {preview.items.map((i, k) => (
+            <p key={k}>
+              {i.name} × {i.quantity} · {money(i.total)}
+            </p>
+          ))}
+          <p className="my-2">
+            Subtotal {money(preview.subtotal)} · Discount{" "}
+            {money(preview.discount)} · Tax {money(preview.tax)}
+          </p>
+          <p className="my-2 font-semibold">
+            Total {money(preview.total)} · Advance {money(preview.advance)}
+          </p>
+          <p>
+            Cancellation:{" "}
+            {preview.terms?.cancellation ||
+              "Requires vendor and administrator review."}
+          </p>
+          <p>
+            Refund:{" "}
+            {preview.terms?.refund ||
+              "Subject to captured payment and policy review."}
+          </p>
+          <p>{preview.terms?.terms}</p>
+          <p>
+            Vendor confirmation is required. Payment status is tracked
+            separately.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <button
+              disabled={busy}
+              className="cw-button cw-primary"
+              onClick={async () => {
+                setBusy(true);
+                setError("");
+                try {
+                  const result = await save("/bookings", "POST", reviewBody);
+                  notify(`${result.number}: ${result.message}`);
+                  close();
+                  navigate(`/customer/bookings/${result.id}`);
+                } catch (err) {
+                  setError(err.message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Submitting…" : "Agree and submit booking"}
+            </button>
+            <button
+              disabled={busy}
+              className="cw-button"
+              onClick={() => setPreview(null)}
+            >
+              Edit selection
+            </button>
+          </div>
+          {error && (
+            <p role="alert" className="cw-form-error">
+              {error}
+            </p>
+          )}
+        </section>
+      )}
       {events.loading ? (
         <Loading />
       ) : events.error ? (
@@ -257,6 +335,8 @@ function ServiceAction({ service, packages, mode, close }) {
         />
       ) : (
         <form
+          hidden={!!preview}
+          style={preview ? { display: "none" } : undefined}
           className="cw-form"
           onSubmit={async (e) => {
             e.preventDefault();
@@ -269,14 +349,31 @@ function ServiceAction({ service, packages, mode, close }) {
                 serviceId: service.id,
                 ...(f.packageId ? { packageId: f.packageId } : {}),
                 ...(mode === "book"
-                  ? { quantity: Number(f.quantity) }
+                  ? {
+                      quantity: Number(f.quantity),
+                      requirements: f.requirements,
+                      coupon: f.coupon,
+                      items: items
+                        .filter(
+                          (i) => !i.included && Number(f[`item-${i.id}`]) > 0,
+                        )
+                        .map((i) => ({
+                          id: i.id,
+                          quantity: Number(f[`item-${i.id}`]),
+                        })),
+                    }
                   : { message: f.message }),
               };
               const r = await save(
-                mode === "book" ? "/bookings" : "/quotation-requests",
+                mode === "book" ? "/bookings/preview" : "/quotation-requests",
                 "POST",
                 b,
               );
+              if (mode === "book") {
+                setPreview(r);
+                setReviewBody({ ...b, reviewToken: r.reviewToken });
+                return;
+              }
               notify(r.message);
               close();
               navigate(
@@ -340,6 +437,32 @@ function ServiceAction({ service, packages, mode, close }) {
               />
             </Field>
           )}
+          {mode === "book" && (
+            <>
+              <Field label="Coupon (base service or package only)">
+                <input name="coupon" maxLength={50} pattern="[A-Za-z0-9_-]*" />
+              </Field>
+              <Field label="Special requirements">
+                <textarea name="requirements" maxLength={2000} rows={3} />
+              </Field>
+              {items
+                .filter((i) => !i.included)
+                .map((i) => (
+                  <Field
+                    label={`${i.name} · ${money(i.price)} each (optional)`}
+                    key={i.id}
+                  >
+                    <input
+                      type="number"
+                      name={`item-${i.id}`}
+                      min={0}
+                      max={100000}
+                      defaultValue={0}
+                    />
+                  </Field>
+                ))}
+            </>
+          )}
           {error && (
             <p className="cw-form-error" role="alert">
               {error}
@@ -349,7 +472,7 @@ function ServiceAction({ service, packages, mode, close }) {
             {busy
               ? "Sending…"
               : mode === "book"
-                ? "Send booking request"
+                ? "Review booking"
                 : "Request quotation"}
           </button>
         </form>
@@ -565,6 +688,7 @@ export function CustomerServiceDetails({ vendor = false }) {
         <ServiceAction
           service={item}
           packages={r.data.packages}
+          items={r.data.items}
           mode={mode}
           close={() => setMode(null)}
         />

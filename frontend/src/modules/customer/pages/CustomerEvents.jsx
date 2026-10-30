@@ -105,6 +105,20 @@ export function EventForm({ event, close, done }) {
               maxLength="100"
             />
           </Field>
+          <Field label="Start time (optional)">
+            <input
+              type="time"
+              name="startTime"
+              defaultValue={event?.startTime || ""}
+            />
+          </Field>
+          <Field label="End time (optional)">
+            <input
+              type="time"
+              name="endTime"
+              defaultValue={event?.endTime || ""}
+            />
+          </Field>
           <Field label="State">
             <input
               name="state"

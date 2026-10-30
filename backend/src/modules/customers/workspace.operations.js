@@ -2,10 +2,12 @@ import {
   capturePolicy,
   milestone as bookingMilestone,
 } from "../admin/booking-finance.js";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
+import { bookingInput } from "../bookings/bookings.validation.js";
+import { assertReservation, dayOf } from "../bookings/reservations.js";
+import { details as lifecycleDetails } from "../bookings/bookings.service.js";
 import { recordServiceMetric } from "../vendors/service-metrics.js";
-import { calculatePrice } from "../vendors/service-management.validation.js";
-import { assertServiceSchedule } from "../vendors/service-schedule.js";
+import { calculatePriceBreakdown } from "../vendors/service-management.validation.js";
 import { z } from "zod";
 import {
   scope,
@@ -41,37 +43,14 @@ async function futureEvent(eventId, id, tx) {
   const e = await owned("events", eventId, id, tx);
   if (
     !["Planning", "Confirmed"].includes(e.Status) ||
-    String(e.EventDate).slice(0, 10) <
+    dayOf(e.EventDate) <
       new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
   )
     fail("Select an upcoming active event.", 409);
   return e;
 }
 async function checkDate(vendorId, event, services, tx) {
-  const [blocked] = await repo.select(
-    `SELECT TOP(1) AvailabilityId FROM dbo.VendorAvailability WITH(UPDLOCK,HOLDLOCK) WHERE VendorId=:vendorId AND AvailableDate=:day AND Status IN('Blocked','Booked') AND (ServiceId IS NULL OR ServiceId IN(:services))`,
-    { vendorId, day: event.EventDate, services },
-    tx,
-  );
-  if (blocked) fail("This service is unavailable on your event date.", 409);
-  for (const serviceId of new Set(services)) {
-    const [service] = await repo.select(
-      "SELECT DetailsJson FROM dbo.Services WITH(UPDLOCK,HOLDLOCK) WHERE ServiceId=:serviceId AND VendorId=:vendorId",
-      { serviceId, vendorId },
-      tx,
-    );
-    const [override] = await repo.select(
-      "SELECT TOP(1) StartTime,EndTime FROM dbo.VendorAvailability WHERE VendorId=:vendorId AND AvailableDate=:day AND Status='Available' AND (ServiceId IS NULL OR ServiceId=:serviceId) ORDER BY CASE WHEN ServiceId IS NULL THEN 1 ELSE 0 END,AvailabilityId DESC",
-      { vendorId, serviceId, day: event.EventDate },
-      tx,
-    );
-    assertServiceSchedule(
-      service?.DetailsJson ? JSON.parse(service.DetailsJson) : null,
-      event.EventDate,
-      event.StartTime,
-      override,
-    );
-  }
+  return assertReservation(vendorId, event, services, tx);
 }
 async function createBooking(
   event,
@@ -80,6 +59,7 @@ async function createBooking(
   ctx,
   tx,
   quotationId = null,
+  snapshot = null,
 ) {
   const { id } = scope(ctx);
   await checkDate(
@@ -125,6 +105,20 @@ async function createBooking(
       PaidAmount: 0,
       BookingStatus: "Pending",
       PaymentStatus: "Pending",
+      EventSnapshotJson: JSON.stringify({
+        name: event.EventName,
+        type: event.EventType,
+        city: event.City,
+        state: event.State,
+        guests: event.GuestCount,
+        requirements: snapshot?.requirements || event.Description || "",
+      }),
+      StartTime: event.StartTime,
+      EndTime: event.EndTime,
+      PriceSnapshotJson: snapshot
+        ? JSON.stringify(snapshot)
+        : JSON.stringify({ source: "Quotation", quotationId }),
+      CustomerNotes: snapshot?.requirements || null,
     },
     tx,
   );
@@ -141,6 +135,8 @@ async function createBooking(
         UnitPrice: i.UnitPrice,
         DiscountAmount: i.DiscountAmount || 0,
         TaxAmount: i.TaxAmount || 0,
+        ServiceItemId: i.ServiceItemId || null,
+        DescriptionSnapshot: i.DescriptionSnapshot || null,
       },
       tx,
     );
@@ -153,6 +149,9 @@ async function createBooking(
       NewStatus: "Pending",
       ChangedBy: id,
       Remarks: "Customer requested a booking.",
+      PublicNote: "Customer requested a booking.",
+      ActorRole: "Customer",
+      ActionType: "Created",
     },
     tx,
   );
@@ -180,69 +179,254 @@ async function createBooking(
   );
   return {
     id: bookingId,
+    number,
+    bookingStatus: "Pending",
+    paymentStatus: "Pending",
     message: "Booking requested. Your vendor will confirm availability.",
   };
 }
-export async function book(input, ctx) {
+async function prepareBooking(input, ctx, tx) {
   const { id } = scope(ctx),
-    b = z
-      .object({
-        eventId: z.guid(),
-        serviceId: z.guid(),
-        packageId: z.guid().optional(),
-        quantity: z.coerce.number().int().min(1).max(100000).default(1),
-      })
-      .strict()
-      .parse(input);
-  return repo.transaction(async (tx) => {
-    const event = await futureEvent(b.eventId, id, tx),
-      { s, pack } = await availableService(b.serviceId, b.packageId, tx);
-    if (!pack && s.PricingType === "CustomQuote")
-      fail("Request a quotation for this service.");
-    const document = s.DetailsJson ? JSON.parse(s.DetailsJson) : null;
-    const flexible = !pack && !!document?.pricing;
-    const price = flexible
-      ? calculatePrice(
-          document.pricing,
-          b.quantity,
-          event.EventDate instanceof Date
-            ? event.EventDate.toISOString().slice(0, 10)
-            : String(event.EventDate).slice(0, 10),
-        )
-      : Number(pack ? pack.FinalPrice : s.BasePrice);
-    if (!Number.isFinite(price) || price <= 0)
-      fail("Request a quotation to confirm the price.");
-    const guests = Number(event.GuestCount);
-    if (
-      (pack?.MinimumGuests || s.MinimumGuests) > guests ||
-      ((pack?.MaximumGuests || s.MaximumGuests) &&
-        guests > (pack?.MaximumGuests || s.MaximumGuests))
-    )
-      fail("Your guest count is outside this service or package guest range.");
-    const [existing] = await repo.select(
-      "SELECT TOP(1) b.BookingId FROM dbo.Booking b JOIN dbo.BookingItems i ON i.BookingId=b.BookingId WHERE b.CustomerId=:id AND b.EventId=:event AND i.ServiceId=:service AND b.BookingStatus NOT IN('Cancelled','Rejected','Refunded')",
-      { id, event: b.eventId, service: b.serviceId },
+    b = bookingInput.parse(input);
+  const event = await futureEvent(b.eventId, id, tx),
+    { s, pack } = await availableService(b.serviceId, b.packageId, tx);
+  if (!pack && s.PricingType === "CustomQuote")
+    fail("Request a quotation for this service.");
+  const document = s.DetailsJson ? JSON.parse(s.DetailsJson) : null;
+  const flexible = !pack && !!document?.pricing;
+  const quantity =
+    !pack && s.PricingType === "PerPerson"
+      ? Number(event.GuestCount)
+      : b.quantity;
+  const breakdown = flexible
+    ? calculatePriceBreakdown(
+        document.pricing,
+        quantity,
+        dayOf(event.EventDate),
+      )
+    : null;
+  const price = flexible
+    ? breakdown.total
+    : Number(pack ? pack.FinalPrice : s.BasePrice);
+  if (!Number.isFinite(price) || price <= 0)
+    fail("Request a quotation to confirm the price.");
+  const guests = Number(event.GuestCount);
+  if (
+    (pack?.MinimumGuests || s.MinimumGuests) > guests ||
+    ((pack?.MaximumGuests || s.MaximumGuests) &&
+      guests > (pack?.MaximumGuests || s.MaximumGuests))
+  )
+    fail("Your guest count is outside this service or package guest range.");
+  const [existing] = await repo.select(
+    "SELECT TOP(1) b.BookingId FROM dbo.Booking b JOIN dbo.BookingItems i ON i.BookingId=b.BookingId WHERE b.CustomerId=:id AND b.EventId=:event AND i.ServiceId=:service AND b.BookingStatus NOT IN('Cancelled','Rejected','Refunded')",
+    { id, event: b.eventId, service: b.serviceId },
+    tx,
+  );
+  if (existing)
+    fail("You already have a booking for this service and event.", 409);
+  const items = [
+    {
+      ServiceId: s.ServiceId,
+      PackageId: pack?.PackageId,
+      ItemName: flexible
+        ? `${s.ServiceName.slice(0, 160)} (${quantity} ${document.pricing.unit})`
+        : pack?.PackageName || s.ServiceName,
+      Quantity: flexible ? 1 : quantity,
+      UnitPrice: breakdown ? breakdown.subtotal + breakdown.charges : price,
+      DiscountAmount: breakdown?.discount || 0,
+      TaxAmount: breakdown?.tax || 0,
+      DescriptionSnapshot: JSON.stringify({
+        description: document?.description || "",
+        package: pack || null,
+        inclusions: pack
+          ? await repo.select(
+              "SELECT ItemName AS name,Description AS description,Quantity AS quantity,Unit AS unit FROM dbo.PackageItems WHERE PackageId=:id ORDER BY SortOrder,PackageItemId",
+              { id: pack.PackageId },
+              tx,
+            )
+          : [],
+      }),
+    },
+  ];
+  let coupon = null;
+  if (b.coupon) {
+    const [c] = await repo.select(
+      "SELECT * FROM dbo.Coupons WITH(UPDLOCK,HOLDLOCK) WHERE CouponCode=:code AND (VendorId IS NULL OR VendorId=:vendor) AND IsActive=1 AND StartDate<=SYSUTCDATETIME() AND EndDate>=SYSUTCDATETIME() AND (UsageLimit IS NULL OR UsedCount<UsageLimit)",
+      { code: b.coupon.toUpperCase(), vendor: s.VendorId },
       tx,
     );
-    if (existing)
-      fail("You already have a booking for this service and event.", 409);
-    return createBooking(
-      event,
-      s.VendorId,
-      [
-        {
-          ServiceId: s.ServiceId,
-          PackageId: pack?.PackageId,
-          ItemName: flexible
-            ? `${s.ServiceName.slice(0, 160)} (${b.quantity} ${document.pricing.unit})`
-            : pack?.PackageName || s.ServiceName,
-          Quantity: flexible ? 1 : b.quantity,
-          UnitPrice: price,
-        },
-      ],
+    if (!c)
+      fail("Coupon is invalid, expired or has reached its usage limit.", 409);
+    const base =
+      Math.round(items[0].Quantity * items[0].UnitPrice * 100) -
+      Math.round((items[0].DiscountAmount || 0) * 100);
+    if (base < Math.round(Number(c.MinimumBookingAmount || 0) * 100))
+      fail("The base service or package does not meet the coupon minimum.");
+    const proposed =
+      c.DiscountType === "Percentage"
+        ? Math.round((base * Math.round(Number(c.DiscountValue) * 100)) / 10000)
+        : Math.round(Number(c.DiscountValue) * 100);
+    const reduction = Math.max(
+      0,
+      Math.min(
+        base,
+        proposed,
+        c.MaximumDiscountAmount === null
+          ? base
+          : Math.round(Number(c.MaximumDiscountAmount) * 100),
+      ),
+    );
+    if (reduction <= 0) fail("This coupon has no applicable discount.");
+    items[0].DiscountAmount =
+      (Math.round((items[0].DiscountAmount || 0) * 100) + reduction) / 100;
+    if (breakdown)
+      items[0].TaxAmount =
+        Math.round(
+          ((base - reduction) *
+            Math.round(Number(document.pricing.taxRate || 0) * 100)) /
+            10000,
+        ) / 100;
+    coupon = { id: c.CouponId, code: c.CouponCode, amount: reduction / 100 };
+  }
+  const optionalItems = b.items.length
+    ? await repo.select(
+        "SELECT * FROM dbo.ServiceItems WITH(UPDLOCK,HOLDLOCK) WHERE ServiceItemId IN(:ids) AND ServiceId=:service AND IsIncluded=0",
+        { ids: b.items.map((i) => i.id), service: s.ServiceId },
+        tx,
+      )
+    : [];
+  for (const selected of b.items) {
+    const item = optionalItems.find(
+      (i) => Number(i.ServiceItemId) === selected.id,
+    );
+    if (
+      !item ||
+      !Number.isFinite(Number(item.UnitPrice)) ||
+      Number(item.UnitPrice) <= 0
+    )
+      fail("An optional item is unavailable.", 409);
+    items.push({
+      ServiceId: s.ServiceId,
+      ServiceItemId: item.ServiceItemId,
+      ItemName: item.ItemName,
+      DescriptionSnapshot: item.Description,
+      Quantity: selected.quantity,
+      UnitPrice: Number(item.UnitPrice),
+    });
+  }
+  const travel = Number(document?.policies?.travelCharges || 0);
+  if (travel > 0 && document?.location?.mode !== "Vendor location")
+    items.push({
+      ServiceId: s.ServiceId,
+      ItemName: "Travel / setup charges",
+      Quantity: 1,
+      UnitPrice: travel,
+    });
+  await checkDate(s.VendorId, event, [s.ServiceId], tx);
+  const subtotal =
+    items.reduce(
+      (n, i) => n + Math.round(Number(i.Quantity) * Number(i.UnitPrice) * 100),
+      0,
+    ) / 100;
+  const discount =
+    items.reduce(
+      (n, i) => n + Math.round(Number(i.DiscountAmount || 0) * 100),
+      0,
+    ) / 100;
+  const tax =
+    items.reduce((n, i) => n + Math.round(Number(i.TaxAmount || 0) * 100), 0) /
+    100;
+  const total = Math.round((subtotal - discount + tax) * 100) / 100;
+  if (!Number.isFinite(total) || total <= 0 || total > 1e8)
+    fail("Booking total exceeds the supported limits.");
+  const percentage = document?.policies?.advanceRequired
+    ? Number(document.policies.advancePercentage || 0)
+    : 0;
+  const snapshot = {
+    source: "Service",
+    serviceId: s.ServiceId,
+    packageId: pack?.PackageId || null,
+    pricing: flexible ? document.pricing : null,
+    quantity,
+    requirements: b.requirements,
+    coupon,
+    policies: document?.policies || null,
+    subtotal,
+    discount,
+    tax,
+    total,
+    advance: Math.round(total * percentage) / 100,
+  };
+  const reviewToken = createHash("sha256")
+    .update(JSON.stringify({ snapshot, event, items }))
+    .digest("hex");
+  if (b.reviewToken && b.reviewToken !== reviewToken)
+    fail("The event, price or terms changed. Review the booking again.", 409);
+  return { event, s, items, snapshot, total, reviewToken };
+}
+export async function previewBooking(input, ctx) {
+  scope(ctx);
+  return repo.transaction(async (tx) => {
+    const p = await prepareBooking(input, ctx, tx);
+    return {
+      reviewToken: p.reviewToken,
+      service: p.s.ServiceName,
+      vendor: p.s.BusinessName,
+      event: {
+        name: p.event.EventName,
+        date: dayOf(p.event.EventDate),
+        city: p.event.City,
+        guests: p.event.GuestCount,
+      },
+      items: p.items.map((i) => ({
+        name: i.ItemName,
+        quantity: i.Quantity,
+        price: Number(i.UnitPrice),
+        discount: i.DiscountAmount || 0,
+        tax: i.TaxAmount || 0,
+        total:
+          Math.round(
+            (i.Quantity * i.UnitPrice -
+              (i.DiscountAmount || 0) +
+              (i.TaxAmount || 0)) *
+              100,
+          ) / 100,
+      })),
+      subtotal: p.snapshot.subtotal,
+      discount: p.snapshot.discount,
+      tax: p.snapshot.tax,
+      total: p.total,
+      advance: p.snapshot.advance,
+      terms: p.snapshot.policies,
+    };
+  });
+}
+export async function book(input, ctx) {
+  scope(ctx);
+  return repo.transaction(async (tx) => {
+    const p = await prepareBooking(input, ctx, tx);
+    const result = await createBooking(
+      p.event,
+      p.s.VendorId,
+      p.items,
       ctx,
       tx,
+      null,
+      p.snapshot,
     );
+    if (p.snapshot.coupon)
+      await repo.select(
+        "UPDATE dbo.Coupons SET UsedCount=UsedCount+1 WHERE CouponId=:id",
+        { id: p.snapshot.coupon.id },
+        tx,
+      );
+    await repo.update(
+      { table: "Booking", id: "BookingId" },
+      result.id,
+      { AdvanceAmount: p.snapshot.advance },
+      tx,
+    );
+    return result;
   });
 }
 export async function requestQuote(input, ctx) {
@@ -344,7 +528,22 @@ export async function decideQuote(recordId, input, ctx) {
     if (b.action === "Accept") {
       const event = await futureEvent(q.EventId, id, tx);
       for (const i of items) {
-        const { s } = await availableService(i.ServiceId, i.PackageId, tx);
+        const { s, pack } = await availableService(
+          i.ServiceId,
+          i.PackageId,
+          tx,
+        );
+        if (
+          pack &&
+          ((pack.MinimumGuests &&
+            Number(event.GuestCount) < Number(pack.MinimumGuests)) ||
+            (pack.MaximumGuests &&
+              Number(event.GuestCount) > Number(pack.MaximumGuests)))
+        )
+          fail(
+            "The event guest count is outside the quoted package limits.",
+            409,
+          );
         if (s.VendorId.toLowerCase() !== q.VendorId.toLowerCase())
           fail("Quotation contains an unavailable service.", 409);
       }
@@ -412,19 +611,8 @@ export async function decideQuote(recordId, input, ctx) {
   });
 }
 export async function bookingDetails(recordId, ctx) {
-  const { id } = scope(ctx),
-    booking = await owned("bookings", recordId, id, undefined, false);
-  return {
-    booking,
-    items: await repo.select(
-      "SELECT ItemName AS name,Quantity AS quantity,UnitPrice AS price,LineTotal AS total FROM dbo.BookingItems WHERE BookingId=:recordId ORDER BY BookingItemId",
-      { recordId },
-    ),
-    history: await repo.select(
-      "SELECT NewStatus AS status,Remarks AS note,CreatedAt AS createdAt FROM dbo.BookingStatusHistory WHERE BookingId=:recordId ORDER BY CreatedAt",
-      { recordId },
-    ),
-  };
+  scope(ctx);
+  return lifecycleDetails(recordId, ctx, "Customer");
 }
 export async function review(input, ctx) {
   const { id } = scope(ctx),

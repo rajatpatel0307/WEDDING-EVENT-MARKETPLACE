@@ -25,7 +25,15 @@ import {
   Field,
 } from "../components/WorkspaceUI";
 import { ServiceCard } from "../components/ServiceCards";
-import { save, money, date, timestamp } from "../services/workspace.api";
+import {
+  save,
+  money,
+  date,
+  timestamp,
+  customerRequest,
+} from "../services/workspace.api";
+import BookingChanges from "../../bookings/BookingChanges";
+import BookingItemDetails from "../../bookings/BookingItemDetails";
 import { checkout } from "../services/checkout";
 const columns = {
   bookings: [
@@ -526,8 +534,78 @@ export function CustomerRecordDetails({ quote = false }) {
             <tbody>
               {r.data.items.map((i, k) => (
                 <tr key={k}>
-                  <td>{i.name}</td>
-                  <td>{Number(i.quantity)}</td>
+                  <td>
+                    {i.name}
+                    <BookingItemDetails description={i.description} />
+                  </td>
+                  <td>
+                    {!quote &&
+                    b.BookingStatus === "Pending" &&
+                    i.serviceItemId ? (
+                      <form
+                        className="flex flex-wrap gap-2"
+                        onSubmit={async (event) => {
+                          event.preventDefault();
+                          const quantity = Number(
+                            new FormData(event.currentTarget).get("quantity"),
+                          );
+                          setBusy(true);
+                          setError("");
+                          try {
+                            await save(
+                              `/bookings/${id}/items/${i.id}`,
+                              "PATCH",
+                              { quantity },
+                            );
+                            setVersion((v) => v + 1);
+                          } catch (err) {
+                            setError(err.message);
+                          } finally {
+                            setBusy(false);
+                          }
+                        }}
+                      >
+                        <input
+                          aria-label={`${i.name} quantity`}
+                          className="w-20 rounded border p-1"
+                          type="number"
+                          name="quantity"
+                          defaultValue={Number(i.quantity)}
+                          min={1}
+                          max={100000}
+                          required
+                        />
+                        <button className="cw-button" disabled={busy}>
+                          Update
+                        </button>
+                        <button
+                          className="cw-button"
+                          type="button"
+                          disabled={busy}
+                          onClick={async () => {
+                            setBusy(true);
+                            setError("");
+                            try {
+                              await save(
+                                `/bookings/${id}/items/${i.id}`,
+                                "DELETE",
+                                {},
+                              );
+                              setVersion((v) => v + 1);
+                            } catch (err) {
+                              setError(err.message);
+                            } finally {
+                              setBusy(false);
+                            }
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </form>
+                    ) : (
+                      Number(i.quantity)
+                    )}
+                  </td>
                   <td>{money(i.price)}</td>
                   <td>{money(i.total)}</td>
                 </tr>
@@ -638,11 +716,24 @@ export function CustomerRecordDetails({ quote = false }) {
       </section>
       {!quote && (
         <section className="cw-panel cw-prose">
+          <BookingChanges
+            id={id}
+            data={r.data}
+            request={customerRequest}
+            saved={(message) => {
+              notify(message);
+              setVersion((v) => v + 1);
+            }}
+          />
           <h2>Booking journey</h2>
           <ol className="cw-timeline">
             {r.data.history.map((h, i) => (
               <li key={i}>
                 <Badge>{h.status}</Badge>
+                <span>
+                  {h.action} · {h.role || "System"}
+                  {h.previous ? ` · ${h.previous} → ${h.status}` : ""}
+                </span>
                 <time>{timestamp(h.createdAt)}</time>
                 <p>{h.note}</p>
               </li>

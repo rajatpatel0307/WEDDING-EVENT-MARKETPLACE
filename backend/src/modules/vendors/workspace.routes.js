@@ -11,6 +11,7 @@ import * as workspace from "./workspace.service.js";
 import * as operations from "./workspace.operations.js";
 import * as messaging from "./workspace.messaging.js";
 import { dashboard } from "./workspace.analytics.js";
+import * as lifecycle from "../bookings/bookings.service.js";
 
 // Service drafts are available to signed-in vendors; other tools require approval.
 export function createVendorRouter({
@@ -57,6 +58,26 @@ export function createVendorRouter({
       const result = await fn(req);
       res.json({ success: true, ...result });
     });
+  get("/bookings/:id", (req) =>
+    lifecycle.details(req.params.id, req.vendorContext, "Vendor"),
+  );
+  mutation("post", "/bookings/:id/change-requests", (req) =>
+    lifecycle.requestChange(
+      req.params.id,
+      req.body,
+      req.vendorContext,
+      "Vendor",
+    ),
+  );
+  mutation("post", "/bookings/:id/change-requests/:request/decision", (req) =>
+    lifecycle.decideChange(
+      req.params.id,
+      req.params.request,
+      req.body,
+      req.vendorContext,
+      "Vendor",
+    ),
+  );
   get("/services/metadata", (req) => services.metadata(req.vendorContext));
   router.get("/services/export", async (req, res) => {
     const csv = await services.exportServices(req.query, req.vendorContext);

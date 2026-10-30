@@ -50,9 +50,7 @@ export const vendorNavigation = [
   },
   {
     label: "AVAILABILITY",
-    items: [
-      ["calendar", "Calendar", CalendarDays],
-    ],
+    items: [["calendar", "Calendar", CalendarDays]],
   },
   {
     label: "BOOKINGS",
@@ -62,6 +60,8 @@ export const vendorNavigation = [
       ["bookings/active", "Active Bookings", Clock3],
       ["bookings/completed", "Completed Bookings", CheckCircle2],
       ["bookings/cancelled", "Cancelled Bookings", XCircle],
+      ["bookings/cancellations", "Cancellation Requests", XCircle],
+      ["bookings/reschedules", "Reschedule Requests", CalendarDays],
     ],
   },
   {

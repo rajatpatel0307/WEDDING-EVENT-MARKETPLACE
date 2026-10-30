@@ -3,6 +3,9 @@ const events = {
   PAYOUT_REQUESTED: "Payout requested",
   CUSTOMER_BOOKING_CREATED: "New booking",
   BOOKING_CANCELLED: "Booking cancelled",
+  BOOKING_CHANGE_REQUESTED: "Booking change needs review",
+  BOOKING_REFUND_REVIEW_REQUIRED:
+    "Cancelled or rejected booking needs refund review",
   VENDOR_SERVICE_SUBMITTED: "Service awaiting approval",
   VENDOR_SERVICE_RESUBMITTED: "Service resubmitted",
   ADMIN_VENDOR_APPROVED: "Vendor approved",

@@ -7,6 +7,7 @@ import * as d from "./workspace.discovery.js";
 import * as o from "./workspace.operations.js";
 import * as m from "./workspace.messaging.js";
 import * as p from "./workspace.payments.js";
+import * as lifecycle from "../bookings/bookings.service.js";
 export function createCustomerRouter({
   authenticateRequest = authenticate,
 } = {}) {
@@ -80,8 +81,29 @@ export function createCustomerRouter({
   mut("patch", "/notifications/:id/read", (q) =>
     w.readNotification(q.params.id, q.ctx),
   );
+  const bookingLimit = rateLimit({
+    windowMs: 60000,
+    limit: 20,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+  });
+  r.use("/bookings", (req, res, next) =>
+    ["GET", "HEAD"].includes(req.method)
+      ? next()
+      : bookingLimit(req, res, next),
+  );
+  mut("post", "/bookings/preview", (q) => o.previewBooking(q.body, q.ctx));
   mut("post", "/bookings", (q) => o.book(q.body, q.ctx));
   get("/bookings/:id", (q) => o.bookingDetails(q.params.id, q.ctx));
+  mut("post", "/bookings/:id/change-requests", (q) =>
+    lifecycle.requestChange(q.params.id, q.body, q.ctx),
+  );
+  mut("patch", "/bookings/:id/items/:item", (q) =>
+    lifecycle.editOptionalItem(q.params.id, q.params.item, q.body, q.ctx),
+  );
+  mut("delete", "/bookings/:id/items/:item", (q) =>
+    lifecycle.editOptionalItem(q.params.id, q.params.item, q.body, q.ctx, true),
+  );
   mut("post", "/quotation-requests", (q) => o.requestQuote(q.body, q.ctx));
   get("/quotations/:id", (q) => o.quoteDetails(q.params.id, q.ctx));
   mut("post", "/quotations/:id/decision", (q) =>
@@ -132,22 +154,18 @@ export function createCustomerRouter({
               : e.name === "SequelizeUniqueConstraintError"
                 ? 409
                 : e.status || 500;
-    res
-      .status(status)
-      .json({
-        success: false,
-        message:
-          status === 500
-            ? "Customer workspace is temporarily unavailable. Please try again."
-            : e.name === "ZodError"
-              ? e.issues
-                  .map((i) => `${i.path.join(".")}: ${i.message}`)
-                  .join(" ")
-              : status === 409 && e.name === "SequelizeUniqueConstraintError"
-                ? "This action has already been completed. Refresh the page."
-                : e.message,
-        data: null,
-      });
+    res.status(status).json({
+      success: false,
+      message:
+        status === 500
+          ? "Customer workspace is temporarily unavailable. Please try again."
+          : e.name === "ZodError"
+            ? e.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(" ")
+            : status === 409 && e.name === "SequelizeUniqueConstraintError"
+              ? "This action has already been completed. Refresh the page."
+              : e.message,
+      data: null,
+    });
   });
   return r;
 }

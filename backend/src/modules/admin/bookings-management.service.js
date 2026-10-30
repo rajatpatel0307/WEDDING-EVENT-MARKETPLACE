@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { assertBookingReservation } from "../bookings/bookings.service.js";
 import * as repo from "./admin.repository.js";
 import { requireRole } from "../../middleware/auth.middleware.js";
 import { assertVersion } from "../vendors/workspace.common.js";
@@ -30,6 +31,7 @@ export const listInput = z
   .object({
     q: text,
     status: z.enum(["", ...statuses]).default(""),
+    changeRequest: z.enum(["", "Cancellation", "Reschedule"]).default(""),
     payment: z
       .enum([
         "",
@@ -103,8 +105,12 @@ export function filters(q) {
       "EXISTS(SELECT 1 FROM dbo.BookingItems bi JOIN dbo.Services s ON s.ServiceId=bi.ServiceId WHERE bi.BookingId=b.BookingId AND s.CategoryId=:category)",
     );
   if (q.location) where.push("(e.City LIKE :city OR e.State LIKE :city)");
-  if (q.eventFrom) where.push("e.EventDate>=:eventFrom");
-  if (q.eventTo) where.push("e.EventDate<=:eventTo");
+  if (q.eventFrom) where.push("b.BookingDate>=:eventFrom");
+  if (q.eventTo) where.push("b.BookingDate<=:eventTo");
+  if (q.changeRequest)
+    where.push(
+      "EXISTS(SELECT 1 FROM dbo.BookingChangeRequests cr WHERE cr.BookingId=b.BookingId AND cr.Kind=:changeRequest AND cr.Status='Pending')",
+    );
   const dates = dateBounds(q.bookedFrom, q.bookedTo);
   if (dates.from) {
     p.from = dates.from;
@@ -144,13 +150,13 @@ export async function list(input, ctx) {
     number: "b.BookingNumber",
     customer: "u.FirstName",
     vendor: "v.BusinessName",
-    eventDate: "e.EventDate",
+    eventDate: "b.BookingDate",
     bookingDate: "b.BookingDate",
     amount: "b.TotalAmount",
     status: "b.BookingStatus",
   }[q.sort];
   const rows = await repo.select(
-    `SELECT b.BookingId AS id,b.BookingNumber AS number,b.CustomerId AS customerId,CONCAT(u.FirstName,' ',u.LastName) AS customer,u.ProfilePhotoUrl AS customerImage,b.VendorId AS vendorId,v.BusinessName AS vendor,v.LogoUrl AS vendorLogo,e.EventName AS event,e.EventDate AS eventDate,b.BookingDate AS bookingDate,b.CreatedAt AS createdAt,b.UpdatedAt AS updatedAt,b.TotalAmount AS amount,b.PaymentStatus AS paymentStatus,b.BookingStatus AS status,(SELECT COUNT(*) FROM dbo.BookingItems bi WHERE bi.BookingId=b.BookingId) AS services ${source} WHERE ${where} ORDER BY ${sort} ${q.direction === "asc" ? "ASC" : "DESC"},b.BookingId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
+    `SELECT b.BookingId AS id,b.BookingNumber AS number,b.CustomerId AS customerId,CONCAT(u.FirstName,' ',u.LastName) AS customer,u.ProfilePhotoUrl AS customerImage,b.VendorId AS vendorId,v.BusinessName AS vendor,v.LogoUrl AS vendorLogo,e.EventName AS event,b.BookingDate AS eventDate,b.BookingDate AS bookingDate,b.CreatedAt AS createdAt,b.UpdatedAt AS updatedAt,b.TotalAmount AS amount,b.PaymentStatus AS paymentStatus,b.BookingStatus AS status,(SELECT COUNT(*) FROM dbo.BookingItems bi WHERE bi.BookingId=b.BookingId) AS services ${source} WHERE ${where} ORDER BY ${sort} ${q.direction === "asc" ? "ASC" : "DESC"},b.BookingId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
     p,
   );
   return {
@@ -206,7 +212,7 @@ export async function getBooking(id, ctx, tx, lock = false) {
 export async function items(id, ctx) {
   await getBooking(id, ctx);
   return repo.select(
-    "SELECT bi.BookingItemId AS id,bi.ServiceId AS serviceId,bi.PackageId AS packageId,bi.ItemName AS name,s.ServiceName AS service,c.CategoryName AS category,v.BusinessName AS vendor,p.PackageName AS package,bi.Quantity AS quantity,bi.UnitPrice AS unitPrice,bi.DiscountAmount AS discount,bi.TaxAmount AS tax,bi.LineTotal AS total FROM dbo.BookingItems bi LEFT JOIN dbo.Services s ON s.ServiceId=bi.ServiceId LEFT JOIN dbo.Categories c ON c.CategoryId=s.CategoryId LEFT JOIN dbo.Vendors v ON v.VendorId=s.VendorId LEFT JOIN dbo.ServicePackages p ON p.PackageId=bi.PackageId WHERE bi.BookingId=:id ORDER BY bi.BookingItemId",
+    "SELECT bi.BookingItemId AS id,bi.ServiceId AS serviceId,bi.PackageId AS packageId,bi.ItemName AS name,bi.DescriptionSnapshot AS description,s.ServiceName AS service,c.CategoryName AS category,v.BusinessName AS vendor,p.PackageName AS package,bi.Quantity AS quantity,bi.UnitPrice AS unitPrice,bi.DiscountAmount AS discount,bi.TaxAmount AS tax,bi.LineTotal AS total FROM dbo.BookingItems bi LEFT JOIN dbo.Services s ON s.ServiceId=bi.ServiceId LEFT JOIN dbo.Categories c ON c.CategoryId=s.CategoryId LEFT JOIN dbo.Vendors v ON v.VendorId=s.VendorId LEFT JOIN dbo.ServicePackages p ON p.PackageId=bi.PackageId WHERE bi.BookingId=:id ORDER BY bi.BookingItemId",
     { id },
   );
 }
@@ -280,12 +286,17 @@ export async function detail(id, ctx) {
     booking: row,
     customer,
     vendor,
-    event,
+    event: {
+      ...event,
+      date: row.BookingDate,
+      startTime: row.StartTime ?? event.startTime,
+      endTime: row.EndTime ?? event.endTime,
+    },
     quotation,
     items: bookedItems,
     history: statusHistory,
     audits,
-    financial: financialSummary({ ...row, EventDate: event.date }, ledger),
+    financial: financialSummary(row, ledger),
     payouts: ledger.payouts,
     policies: policies.map((s) => {
       let d = {};
@@ -340,6 +351,7 @@ export async function changeStatus(id, next, input, ctx) {
     const row = await getBooking(id, ctx, tx, true);
     assertVersion(row, body.expectedUpdatedAt);
     assertTransition(row, next);
+    if (next === "Confirmed") await assertBookingReservation(row, tx);
     const ledger = await financialRows(id, tx, true),
       summary = financialSummary(row, ledger);
     if (
@@ -402,7 +414,7 @@ export async function changeStatus(id, next, input, ctx) {
       row,
       `status:${next}`,
       `Booking ${next === "InProgress" ? "in progress" : next.toLowerCase()}`,
-      `${row.BookingNumber}: ${body.reason}${body.notes ? ` ${body.notes}` : ""}`,
+      `${row.BookingNumber}: ${body.reason}`,
       tx,
     );
     if (next === "Completed")

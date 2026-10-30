@@ -172,8 +172,18 @@ export function financialSummary(row, ledger, now = new Date()) {
   }
   const parsed = policySchema.safeParse(snapshot.policy),
     policy = parsed.success ? parsed.data : null;
+  const bookedDate =
+    row.BookingDate instanceof Date
+      ? row.BookingDate.toISOString().slice(0, 10)
+      : String(row.BookingDate || row.EventDate).slice(0, 10);
+  const bookedStart =
+    row.StartTime instanceof Date
+      ? row.StartTime.toISOString().slice(11, 19)
+      : String(row.StartTime || "00:00:00").slice(0, 8);
   const notice =
-    (new Date(row.EventDate || row.BookingDate).getTime() -
+    (new Date(
+      `${bookedDate}T${bookedStart.length === 5 ? `${bookedStart}:00` : bookedStart}+05:30`,
+    ).getTime() -
       new Date(row.CancelledAt || now).getTime()) /
     3600000;
   const cutoffPassed =

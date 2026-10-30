@@ -10,6 +10,7 @@ import {
 } from "./workspace.common.js";
 import { customerReadCollections } from "../admin/customers.service.js";
 import { phone } from "../auth/auth.validation.js";
+import { dayOf, clockOf } from "../bookings/reservations.js";
 const localDay = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 export const eventInput = z
@@ -27,6 +28,12 @@ export const eventInput = z
       "Other",
     ]),
     eventDate: z.iso.date(),
+    startTime: z
+      .union([z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), z.literal("")])
+      .default(""),
+    endTime: z
+      .union([z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), z.literal("")])
+      .default(""),
     city: z.string().trim().min(2).max(100),
     state: z.string().trim().max(100).default(""),
     guests: z.coerce.number().int().min(1).max(100000),
@@ -34,8 +41,13 @@ export const eventInput = z
     description: z.string().trim().max(5000).default(""),
     expectedUpdatedAt: z.iso.datetime().optional(),
   })
-  .strict();
-const eventFields = `t.EventId AS id,t.EventName AS name,t.EventType AS type,t.EventDate AS eventDate,t.City AS city,t.State AS state,t.GuestCount AS guests,t.Budget AS budget,t.Description AS description,t.Status AS status,t.UpdatedAt AS updatedAt,t.CreatedAt AS createdAt,(SELECT COUNT(*) FROM dbo.Booking b WHERE b.EventId=t.EventId AND b.BookingStatus IN('Accepted','Confirmed','InProgress','Completed','PaymentPending')) AS bookedServices,(SELECT COALESCE(SUM(TotalAmount),0) FROM dbo.Booking b WHERE b.EventId=t.EventId AND b.BookingStatus NOT IN('Cancelled','Rejected','Refunded')) AS committed`;
+  .strict()
+  .refine(
+    (b) =>
+      (!b.startTime && !b.endTime) || (b.startTime && b.endTime > b.startTime),
+    { message: "Provide valid start and end times on the same day." },
+  );
+const eventFields = `t.EventId AS id,t.EventName AS name,t.EventType AS type,t.EventDate AS eventDate,CONVERT(char(5),t.StartTime,108) AS startTime,CONVERT(char(5),t.EndTime,108) AS endTime,t.City AS city,t.State AS state,t.GuestCount AS guests,t.Budget AS budget,t.Description AS description,t.Status AS status,t.UpdatedAt AS updatedAt,t.CreatedAt AS createdAt,(SELECT COUNT(*) FROM dbo.Booking b WHERE b.EventId=t.EventId AND b.BookingStatus IN('Accepted','Confirmed','InProgress','Completed','PaymentPending')) AS bookedServices,(SELECT COALESCE(SUM(TotalAmount),0) FROM dbo.Booking b WHERE b.EventId=t.EventId AND b.BookingStatus NOT IN('Cancelled','Rejected','Refunded')) AS committed`;
 const extra = {
   events: {
     from: "dbo.Events t",
@@ -133,11 +145,14 @@ export async function saveEvent(recordId, input, ctx) {
       );
       if (
         n.n &&
-        (String(old.EventDate).slice(0, 10) !== b.eventDate ||
-          old.City !== b.city)
+        (dayOf(old.EventDate) !== b.eventDate ||
+          old.City !== b.city ||
+          Number(old.GuestCount) !== b.guests ||
+          clockOf(old.StartTime) !== (b.startTime || null) ||
+          clockOf(old.EndTime) !== (b.endTime || null))
       )
         fail(
-          "Contact your vendors before changing the date or city of an event with bookings.",
+          "Use each booking's change workflow before changing the date, times, guest count or city of an event with bookings.",
           409,
         );
     }
@@ -145,6 +160,8 @@ export async function saveEvent(recordId, input, ctx) {
       EventName: b.name,
       EventType: b.type,
       EventDate: b.eventDate,
+      StartTime: b.startTime || null,
+      EndTime: b.endTime || null,
       City: b.city,
       State: b.state || null,
       GuestCount: b.guests,

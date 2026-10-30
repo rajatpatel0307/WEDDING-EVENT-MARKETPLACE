@@ -171,6 +171,7 @@ function Filters({ params, apply, close }) {
         }}
       >
         <div className="asm-form-grid">
+          {select("changeRequest", "Pending change request", [["Cancellation", "Cancellation"], ["Reschedule", "Reschedule"]])}
           {/* Booking Status */}
 
           {select(

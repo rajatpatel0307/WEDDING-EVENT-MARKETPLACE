@@ -16,6 +16,8 @@ The centralized [Admin services management module](backend/docs/admin-services-m
 
 [Admin bookings management](backend/docs/admin-bookings-management.md) is at `/admin/bookings`, with party/event details, historical items, payment and payout ledgers, cancellation, reviewed refund policies, idempotent Razorpay refunds, notifications and audit history. It requires migration `013-admin-bookings`.
 
+The [Booking lifecycle implementation report](backend/docs/booking-lifecycle.md) covers customer price review and add-ons, server-side coupons, exclusive reservations, vendor decisions, cancellation and rescheduling approvals, private history, migration `015-booking-lifecycle`, actual API paths, verification results and rollout requirements.
+
 Cloudinary handles new signup documents and profile photos. See [Cloudinary setup](backend/docs/cloudinary.md) for required credentials and the profile photo database migration.
 
 The role-based authentication implementation, environment setup, database mapping, migration commands, secure administrator provisioning and verification limitations are documented in [Authentication setup](backend/docs/authentication.md).

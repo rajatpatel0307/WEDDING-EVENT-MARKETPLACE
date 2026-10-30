@@ -233,6 +233,8 @@ export default function VendorResourcesPage({
   const { notify, reload } = useAuth(),
     navigate = useNavigate();
   const [page, setPage] = useState(1),
+    [eventFrom, setEventFrom] = useState(""),
+    [eventTo, setEventTo] = useState(""),
     [query, setQuery] = useState(""),
     [search, setSearch] = useState(""),
     [version, setVersion] = useState(0),
@@ -240,7 +242,7 @@ export default function VendorResourcesPage({
     [busy, setBusy] = useState(false),
     [formError, setFormError] = useState("");
   const resource = useVendorData(
-    `/records/${section}?${new URLSearchParams({ page, pageSize: 12, status: filter, q: search })}`,
+    `/records/${section}?${new URLSearchParams({ page, pageSize: 12, status: filter, q: search, ...(eventFrom ? { eventFrom } : {}), ...(eventTo ? { eventTo } : {}) })}`,
     version,
   );
   const mutable = ["packages", "locations", "offers", "coupons"].includes(
@@ -328,6 +330,39 @@ export default function VendorResourcesPage({
           </span>
         }
       >
+        {section === "bookings" && (
+          <div className="mb-4 flex flex-wrap gap-3">
+            <label>
+              Event from
+              <input
+                type="date"
+                aria-label="Event from"
+                className="ml-2 rounded border p-2"
+                value={eventFrom}
+                onChange={(e) => {
+                  setEventFrom(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </label>
+            <label>
+              Event to
+              <input
+                type="date"
+                aria-label="Event to"
+                className="ml-2 rounded border p-2"
+                value={eventTo}
+                onChange={(e) => {
+                  setEventTo(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </label>
+            <p className="text-sm">
+              Search bookings by reference, customer or service.
+            </p>
+          </div>
+        )}
         {[
           "services",
           "packages",
@@ -493,6 +528,12 @@ export default function VendorResourcesPage({
                         )}
                         {section === "bookings" && (
                           <>
+                            <Link
+                              className="vw-button"
+                              to={`/vendor/bookings/${row.id}`}
+                            >
+                              Manage booking
+                            </Link>
                             {row.status === "Pending" && (
                               <>
                                 <button
