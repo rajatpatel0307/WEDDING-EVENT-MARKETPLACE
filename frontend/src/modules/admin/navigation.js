@@ -54,13 +54,7 @@ const navigationGroups = [
     items: [
       ["bookings", "All Bookings", CalendarCheck],
       ...[
-        // "Pending",
-        // "Confirmed",
-        // "InProgress",
-        // "Completed",
-        // "Cancelled",
-        // "Rejected",
-        // "Disputed",
+
       ]
       .map((s) => [
         `bookings?status=${s}`,
@@ -73,7 +67,11 @@ const navigationGroups = [
     label: "TRANSACTIONS",
     items: [
       ["quotations", "Quotations", FileText],
+      ["quotation-requests", "Quotation Requests", FileText],
       ["payments", "Payments", CreditCard],
+      ["payment-overview", "Payment Overview", CreditCard],
+      ["refund-requests", "Refund Review", RotateCcw],
+      ["payment-reconciliation", "Reconciliation", Landmark],
       ["refunds", "Refunds", RotateCcw],
       ["payouts", "Vendor Payouts", Wallet],
       ["commission", "Platform Commission", Landmark],

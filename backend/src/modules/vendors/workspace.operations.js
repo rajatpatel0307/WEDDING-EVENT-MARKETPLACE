@@ -5,6 +5,7 @@ import {
 } from "../admin/booking-finance.js";
 import { assertBookingReservation } from "../bookings/bookings.service.js";
 import { notifyAdmins } from "../notifications/admin-events.js";
+import * as quotations from "../quotations/quotations.service.js";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
@@ -16,7 +17,7 @@ import {
   assertVersion,
   notifyCustomer,
 } from "./workspace.common.js";
-import { availabilityInput, quoteInput } from "./workspace.validation.js";
+import { availabilityInput } from "./workspace.validation.js";
 
 export async function bookingDecision(recordId, input, ctx) {
   const { id, user } = scope(ctx),
@@ -121,225 +122,31 @@ export async function quotationOptions(ctx) {
     "SELECT p.PackageId AS id,p.ServiceId AS serviceId,p.PackageName AS name,p.FinalPrice AS price FROM dbo.ServicePackages p JOIN dbo.Services s ON s.ServiceId=p.ServiceId WHERE s.VendorId=:id AND p.IsActive=1",
     { id },
   );
-  return { events, packages };
-}
-export async function saveQuote(recordId, input, ctx) {
-  const { id } = scope(ctx),
-    body = quoteInput.parse(input);
-  if (
-    body.validUntil <
-    new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
-  )
-    fail("Choose a valid future quotation expiry date.");
-  return repo.transaction(async (tx) => {
-    const old = recordId ? await owned("quotations", recordId, id, tx) : null;
-    if (old) {
-      assertVersion(old, body.expectedUpdatedAt);
-      if (old.Status !== "Draft")
-        fail("Only draft quotations can be edited.", 409);
-    }
-    const [event] = await repo.select(
-      "SELECT EventId,CustomerId FROM dbo.Events e WHERE EventId=:event AND (EXISTS(SELECT 1 FROM dbo.Booking b WHERE b.VendorId=:id AND b.EventId=e.EventId) OR EXISTS(SELECT 1 FROM dbo.Quotations q WHERE q.VendorId=:id AND q.EventId=e.EventId) OR EXISTS(SELECT 1 FROM dbo.QuotationRequests qr WHERE qr.VendorId=:id AND qr.EventId=e.EventId))",
-      { event: body.eventId, id },
-      tx,
-    );
-    if (!event)
-      fail("Choose an event belonging to one of your customers.", 404);
-    for (const line of body.items) {
-      const service = await owned("services", line.serviceId, id, tx);
-      if (
-        body.status === "Sent" &&
-        (!service.IsActive || service.ApprovalStatus !== "Approved")
-      )
-        fail(
-          "Only active, approved services can be sent in a customer quotation.",
-        );
-      if (line.packageId) {
-        const pack = await owned("packages", line.packageId, id, tx);
-        if (pack.ServiceId.toLowerCase() !== line.serviceId.toLowerCase())
-          fail("Package does not belong to the selected service.");
-        if (body.status === "Sent" && !pack.IsActive)
-          fail("Activate the selected package before sending this quotation.");
-      }
-    }
-    const round = (v) => Math.round((v + Number.EPSILON) * 100) / 100;
-    const subTotal = round(
-        body.items.reduce((sum, x) => sum + x.quantity * x.price, 0),
-      ),
-      discount = round(body.items.reduce((sum, x) => sum + x.discount, 0)),
-      tax = round(body.items.reduce((sum, x) => sum + x.tax, 0));
-    if (subTotal > 100000000 || tax > 100000000)
-      fail("Quotation total exceeds the supported amount.");
-    const quoteId = old?.QuotationId || randomUUID(),
-      values = {
-        EventId: body.eventId,
-        CustomerId: event.CustomerId,
-        VendorId: id,
-        ValidUntil: new Date(`${body.validUntil}T23:59:59+05:30`),
-        SubTotal: subTotal,
-        DiscountAmount: discount,
-        TaxAmount: tax,
-        Status: body.status,
-        VendorMessage: body.message,
-        UpdatedAt: new Date(),
-      };
-    if (old)
-      await repo.update(
-        { table: "Quotations", id: "QuotationId" },
-        quoteId,
-        values,
-        tx,
-      );
-    else
-      await repo.insert(
-        { table: "Quotations", id: "QuotationId" },
-        {
-          ...values,
-          QuotationId: quoteId,
-          QuotationNumber: `QT-${Date.now().toString(36).toUpperCase()}-${quoteId.slice(0, 8).toUpperCase()}`,
-        },
-        tx,
-      );
-    await repo.select(
-      "DELETE FROM dbo.QuotationItems WHERE QuotationId=:id",
-      { id: quoteId },
-      tx,
-    );
-    for (const line of body.items)
-      await repo.insert(
-        { table: "QuotationItems", id: "QuotationItemId" },
-        {
-          QuotationId: quoteId,
-          ServiceId: line.serviceId,
-          PackageId: line.packageId || null,
-          ItemName: line.name,
-          Quantity: line.quantity,
-          UnitPrice: line.price,
-          DiscountAmount: line.discount,
-          TaxAmount: line.tax,
-        },
-        tx,
-      );
-    await audit(
-      ctx,
-      "QUOTATION_SAVED",
-      "Quotations",
-      quoteId,
-      old ? { status: old.Status } : null,
-      { status: body.status, total: round(subTotal - discount + tax) },
-      tx,
-    );
-    if (body.status === "Sent")
-      await repo.select(
-        "UPDATE dbo.QuotationRequests SET Status='Responded' WHERE VendorId=:id AND EventId=:event AND Status='Pending' AND ServiceId IN(SELECT ServiceId FROM dbo.QuotationItems WHERE QuotationId=:quote)",
-        { id, event: body.eventId, quote: quoteId },
-        tx,
-      );
-    if (body.status === "Sent")
-      await notifyCustomer(
-        event.CustomerId,
-        "New quotation received",
-        "A vendor has sent you a quotation for your event.",
-        "Quotation",
-        quoteId,
-        tx,
-      );
-    return {
-      id: quoteId,
-      message:
-        body.status === "Sent"
-          ? "Quotation sent to the customer."
-          : "Quotation saved as a draft.",
-    };
-  });
-}
-export async function quoteDetails(recordId, ctx) {
-  const { id } = scope(ctx),
-    row = await owned("quotations", recordId, id, undefined, false);
-  const items = await repo.select(
-    "SELECT ServiceId AS serviceId,PackageId AS packageId,ItemName AS name,Quantity AS quantity,UnitPrice AS price,DiscountAmount AS discount,TaxAmount AS tax FROM dbo.QuotationItems WHERE QuotationId=:id ORDER BY QuotationItemId",
-    { id: row.QuotationId },
+  const requests = await repo.select(
+    "SELECT RequestId AS id,RequestNumber AS number,EventId AS eventId,OriginalQuotationId AS previousQuotationId,Message AS message FROM dbo.QuotationRequests WHERE VendorId=:id AND Status='Pending' ORDER BY CreatedAt DESC",
+    { id },
   );
+  const items = await repo.select(
+    "SELECT si.ServiceItemId AS id,si.ServiceId AS serviceId,si.ItemName AS name,si.Description AS description,si.Unit AS unit,si.UnitPrice AS price FROM dbo.ServiceItems si JOIN dbo.Services s ON s.ServiceId=si.ServiceId WHERE s.VendorId=:id ORDER BY s.ServiceName,si.SortOrder,si.ServiceItemId",
+    { id },
+  );
+  return { events, packages, requests, items };
+}
+export const saveQuote = (id, input, ctx) => quotations.save(id, input, ctx);
+export async function quoteDetails(id, ctx) {
+  const d = await quotations.details(id, ctx, "Vendor");
   return {
-    id: row.QuotationId,
-    eventId: row.EventId,
-    validUntil: row.ValidUntil,
-    message: row.VendorMessage || "",
-    status: row.Status,
-    items,
-    updatedAt: row.UpdatedAt,
+    ...d,
+    id: d.quotation.QuotationId,
+    eventId: d.quotation.EventId,
+    validUntil: d.quotation.ValidUntil,
+    message: d.quotation.VendorMessage || "",
+    status: d.quotation.Status,
+    updatedAt: d.quotation.UpdatedAt,
   };
 }
-export async function quoteAction(recordId, input, ctx) {
-  const { id } = scope(ctx),
-    body = z
-      .object({
-        action: z.enum(["Send", "Cancel"]),
-        expectedUpdatedAt: z.iso.datetime().optional(),
-      })
-      .strict()
-      .parse(input);
-  return repo.transaction(async (tx) => {
-    const row = await owned("quotations", recordId, id, tx);
-    assertVersion(row, body.expectedUpdatedAt);
-    if (
-      !(body.action === "Send"
-        ? row.Status === "Draft"
-        : ["Draft", "Sent", "Viewed"].includes(row.Status))
-    )
-      fail("This quotation can no longer be changed.", 409);
-    if (
-      body.action === "Send" &&
-      row.ValidUntil &&
-      new Date(row.ValidUntil) < new Date()
-    )
-      fail("Update the expiry date before sending this quotation.");
-    if (body.action === "Send") {
-      const [check] = await repo.select(
-        "SELECT COUNT(*) AS total,SUM(CASE WHEN s.ServiceId IS NULL OR s.VendorId<>:vendor OR s.ApprovalStatus<>'Approved' OR s.IsActive=0 OR (qi.PackageId IS NOT NULL AND (p.PackageId IS NULL OR p.IsActive=0 OR p.ServiceId<>s.ServiceId)) THEN 1 ELSE 0 END) AS invalid FROM dbo.QuotationItems qi LEFT JOIN dbo.Services s ON s.ServiceId=qi.ServiceId LEFT JOIN dbo.ServicePackages p ON p.PackageId=qi.PackageId WHERE qi.QuotationId=:quote",
-        { vendor: id, quote: row.QuotationId },
-        tx,
-      );
-      if (!check.total || Number(check.invalid))
-        fail(
-          "A quoted service or package needs approval or activation. Edit this draft before sending.",
-          409,
-        );
-    }
-    const next = body.action === "Send" ? "Sent" : "Cancelled";
-    if (body.action === "Send")
-      await repo.select(
-        "UPDATE dbo.QuotationRequests SET Status='Responded' WHERE VendorId=:id AND EventId=:event AND Status='Pending' AND ServiceId IN(SELECT ServiceId FROM dbo.QuotationItems WHERE QuotationId=:quote)",
-        { id, event: row.EventId, quote: row.QuotationId },
-        tx,
-      );
-    await repo.update(
-      { table: "Quotations", id: "QuotationId" },
-      row.QuotationId,
-      { Status: next, UpdatedAt: new Date() },
-      tx,
-    );
-    await audit(
-      ctx,
-      "QUOTATION_STATUS",
-      "Quotations",
-      row.QuotationId,
-      { status: row.Status },
-      { status: next },
-      tx,
-    );
-    if (body.action === "Send" || row.Status !== "Draft")
-      await notifyCustomer(
-        row.CustomerId,
-        `Quotation ${next.toLowerCase()}`,
-        "A vendor updated your event quotation.",
-        "Quotation",
-        row.QuotationId,
-        tx,
-      );
-    return { message: `Quotation ${next.toLowerCase()}.` };
-  });
-}
+export const quoteAction = (id, input, ctx) =>
+  quotations.action(id, input, ctx);
 export async function calendar(month, ctx) {
   const { id } = scope(ctx);
   z.string()

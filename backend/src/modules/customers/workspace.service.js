@@ -11,6 +11,7 @@ import {
 import { customerReadCollections } from "../admin/customers.service.js";
 import { phone } from "../auth/auth.validation.js";
 import { dayOf, clockOf } from "../bookings/reservations.js";
+import { csvCell } from "../../utils/csv.js";
 const localDay = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 export const eventInput = z
@@ -28,6 +29,9 @@ export const eventInput = z
       "Other",
     ]),
     eventDate: z.iso.date(),
+    endDate: z.union([z.iso.date(), z.literal("")]).default(""),
+    brideName: z.string().trim().max(150).default(""),
+    groomName: z.string().trim().max(150).default(""),
     startTime: z
       .union([z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), z.literal("")])
       .default(""),
@@ -42,12 +46,15 @@ export const eventInput = z
     expectedUpdatedAt: z.iso.datetime().optional(),
   })
   .strict()
+  .refine((b) => !b.endDate || b.endDate >= b.eventDate, {
+    message: "End date must be on or after the start date.",
+  })
   .refine(
     (b) =>
       (!b.startTime && !b.endTime) || (b.startTime && b.endTime > b.startTime),
     { message: "Provide valid start and end times on the same day." },
   );
-const eventFields = `t.EventId AS id,t.EventName AS name,t.EventType AS type,t.EventDate AS eventDate,CONVERT(char(5),t.StartTime,108) AS startTime,CONVERT(char(5),t.EndTime,108) AS endTime,t.City AS city,t.State AS state,t.GuestCount AS guests,t.Budget AS budget,t.Description AS description,t.Status AS status,t.UpdatedAt AS updatedAt,t.CreatedAt AS createdAt,(SELECT COUNT(*) FROM dbo.Booking b WHERE b.EventId=t.EventId AND b.BookingStatus IN('Accepted','Confirmed','InProgress','Completed','PaymentPending')) AS bookedServices,(SELECT COALESCE(SUM(TotalAmount),0) FROM dbo.Booking b WHERE b.EventId=t.EventId AND b.BookingStatus NOT IN('Cancelled','Rejected','Refunded')) AS committed`;
+const eventFields = `t.EventId AS id,t.EventName AS name,t.EventType AS type,t.EventDate AS eventDate,t.EndDate AS endDate,t.BrideName AS brideName,t.GroomName AS groomName,CONVERT(char(5),t.StartTime,108) AS startTime,CONVERT(char(5),t.EndTime,108) AS endTime,t.City AS city,t.State AS state,t.GuestCount AS guests,t.Budget AS budget,t.Description AS description,t.Status AS status,t.UpdatedAt AS updatedAt,t.CreatedAt AS createdAt,(SELECT COUNT(*) FROM dbo.Booking b WHERE b.EventId=t.EventId AND b.BookingStatus IN('Accepted','Confirmed','InProgress','Completed','PaymentPending')) AS bookedServices,(SELECT COALESCE(SUM(TotalAmount),0) FROM dbo.Booking b WHERE b.EventId=t.EventId AND b.BookingStatus NOT IN('Cancelled','Rejected','Refunded')) AS committed`;
 const extra = {
   events: {
     from: "dbo.Events t",
@@ -61,7 +68,7 @@ const extra = {
   },
   quotations: {
     from: "dbo.Quotations t JOIN dbo.Vendors v ON v.VendorId=t.VendorId JOIN dbo.Events e ON e.EventId=t.EventId",
-    where: "t.CustomerId=:id AND t.Status<>'Draft'",
+    where: "t.CustomerId=:id AND t.Status<>'Draft' AND t.SentAt IS NOT NULL",
     fields: `t.QuotationId AS id,t.QuotationNumber AS number,t.VendorId AS vendorId,v.BusinessName AS vendor,e.EventName AS event,t.TotalAmount AS amount,t.Status AS status,t.ValidUntil AS validUntil,t.CreatedAt AS createdAt,(SELECT STRING_AGG(CONVERT(nvarchar(max),ItemName),', ') FROM dbo.QuotationItems WHERE QuotationId=t.QuotationId) AS services`,
   },
   requests: {
@@ -90,18 +97,46 @@ const allowed = new Set([
 export async function records(section, input, ctx) {
   const { id } = scope(ctx);
   if (!allowed.has(section)) fail("Page not found.", 404);
-  const q = pageInput.parse(input),
+  const q = pageInput
+      .extend({
+        status: z
+          .enum([
+            "",
+            "Pending",
+            "Confirmed",
+            "Upcoming",
+            "Completed",
+            "Cancelled",
+          ])
+          .default(""),
+      })
+      .parse(input),
     c = extra[section] || customerReadCollections[section],
     p = { id, offset: (q.page - 1) * q.pageSize, size: q.pageSize };
+  const bookingFilters = {
+    Pending: "t.BookingStatus IN('Pending','Accepted','PaymentPending')",
+    Confirmed: "t.BookingStatus='Confirmed'",
+    Upcoming:
+      "t.BookingDate>=CONVERT(date,DATEADD(minute,330,SYSUTCDATETIME())) AND t.BookingStatus IN('Pending','Accepted','PaymentPending','Confirmed')",
+    Completed: "t.BookingStatus='Completed'",
+    Cancelled: "t.BookingStatus IN('Cancelled','Rejected','Refunded')",
+  };
+  const where =
+    c.where +
+    (section === "bookings" && q.status
+      ? ` AND (${bookingFilters[q.status]})`
+      : section === "events" && q.status === "Upcoming"
+        ? " AND t.EventDate>=CONVERT(date,DATEADD(minute,330,SYSUTCDATETIME())) AND t.Status IN('Planning','Confirmed')"
+        : "");
   const [n] = await repo.select(
-    `SELECT COUNT(*) AS total FROM ${c.from} WHERE ${c.where}`,
+    `SELECT COUNT(*) AS total FROM ${c.from} WHERE ${where}`,
     p,
   );
   return {
     ...q,
     total: n.total,
     rows: await repo.select(
-      `SELECT ${c.fields} FROM ${c.from} WHERE ${c.where} ORDER BY t.CreatedAt DESC,[id] OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
+      `SELECT ${c.fields} FROM ${c.from} WHERE ${where} ORDER BY t.CreatedAt DESC,[id] OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
       p,
     ),
   };
@@ -160,6 +195,9 @@ export async function saveEvent(recordId, input, ctx) {
       EventName: b.name,
       EventType: b.type,
       EventDate: b.eventDate,
+      EndDate: b.endDate || null,
+      BrideName: b.brideName || null,
+      GroomName: b.groomName || null,
       StartTime: b.startTime || null,
       EndTime: b.endTime || null,
       City: b.city,
@@ -200,9 +238,26 @@ export async function saveEvent(recordId, input, ctx) {
     };
   });
 }
-export async function eventDetails(recordId, ctx) {
+export async function eventDetails(recordId, ctx, input = {}) {
   const { id } = scope(ctx);
   await owned("events", recordId, id, undefined, false);
+  const filters = z
+    .object({
+      q: z.string().trim().max(150).default(""),
+      rsvp: z
+        .enum(["", "Invited", "Accepted", "Declined", "Attended"])
+        .default(""),
+      guestPage: z.coerce.number().int().min(1).max(10000).default(1),
+    })
+    .parse(input);
+  const guestParams = {
+    recordId,
+    query: `%${filters.q.replace(/[\[\]%_]/g, (c) => `[${c}]`)}%`,
+    rsvp: filters.rsvp,
+    offset: (filters.guestPage - 1) * 50,
+  };
+  const guestWhere =
+    "EventId=:recordId AND (GuestName LIKE :query OR COALESCE(GroupName,'') LIKE :query) AND (:rsvp ='' OR RsvpStatus=:rsvp)";
   const [event] = await repo.select(
     `SELECT ${eventFields} FROM dbo.Events t WHERE t.EventId=:recordId AND t.CustomerId=:id`,
     { recordId, id },
@@ -210,19 +265,45 @@ export async function eventDetails(recordId, ctx) {
   return {
     event,
     guests: await repo.select(
-      "SELECT GuestId AS id,GuestName AS name,Email AS email,Phone AS phone,RsvpStatus AS status FROM dbo.EventGuests WHERE EventId=:recordId ORDER BY CreatedAt,GuestId",
-      { recordId },
+      `SELECT GuestId AS id,GuestName AS name,Email AS email,Phone AS phone,RsvpStatus AS status,GroupName AS [group],InvitationStatus AS invitation,Attendees AS attendees,DietaryPreferences AS dietary,Notes AS notes FROM dbo.EventGuests WHERE ${guestWhere} ORDER BY GroupName,CreatedAt,GuestId OFFSET :offset ROWS FETCH NEXT 50 ROWS ONLY`,
+      guestParams,
     ),
+    guestTotal: Number(
+      (
+        await repo.select(
+          `SELECT COUNT(*) AS total FROM dbo.EventGuests WHERE ${guestWhere}`,
+          guestParams,
+        )
+      )[0].total,
+    ),
+    guestStats: (
+      await repo.select(
+        "SELECT COUNT(*) AS guests,COALESCE(SUM(Attendees),0) AS attendees,COALESCE(SUM(CASE WHEN RsvpStatus IN('Accepted','Attended') THEN Attendees ELSE 0 END),0) AS confirmed FROM dbo.EventGuests WHERE EventId=:recordId",
+        { recordId },
+      )
+    )[0],
     bookings: await repo.select(
       "SELECT BookingId AS id,BookingNumber AS number,TotalAmount AS amount,BookingStatus AS status FROM dbo.Booking WHERE EventId=:recordId AND CustomerId=:id ORDER BY CreatedAt DESC",
       { recordId, id },
     ),
+    quotations: await repo.select(
+      "SELECT QuotationId AS id,QuotationNumber AS number,TotalAmount AS amount,Status AS status FROM dbo.Quotations WHERE EventId=:recordId AND CustomerId=:id AND Status<>'Draft' AND SentAt IS NOT NULL ORDER BY CreatedAt DESC",
+      { recordId, id },
+    ),
+    financial: (
+      await repo.select(
+        "SELECT COALESCE(SUM(b.TotalAmount),0) AS committed,(SELECT COALESCE(SUM(p.Amount),0) FROM dbo.Payments p JOIN dbo.Booking pb ON pb.BookingId=p.BookingId WHERE pb.EventId=:recordId AND pb.CustomerId=:id AND p.PaymentStatus IN('Success','Refunded')) AS captured FROM dbo.Booking b WHERE b.EventId=:recordId AND b.CustomerId=:id AND b.BookingStatus NOT IN('Cancelled','Rejected','Refunded')",
+        { recordId, id },
+      )
+    )[0],
   };
 }
 export async function guest(recordId, guestId, input, ctx, remove = false) {
   const { id } = scope(ctx);
   return repo.transaction(async (tx) => {
-    await owned("events", recordId, id, tx);
+    const event = await owned("events", recordId, id, tx);
+    if (["Cancelled", "Completed"].includes(event.Status))
+      fail("Archived and completed event guest lists are read-only.", 409);
     if (guestId) {
       z.guid().parse(guestId);
       const [old] = await repo.select(
@@ -244,7 +325,12 @@ export async function guest(recordId, guestId, input, ctx, remove = false) {
       .object({
         name: z.string().trim().min(1).max(200),
         email: z.union([z.email(), z.literal("")]).default(""),
-        phone: z.string().max(20).default(""),
+        phone: z.union([phone, z.literal("")]).default(""),
+        group: z.string().trim().max(100).default(""),
+        invitation: z.enum(["", "NotSent", "Sent"]).default(""),
+        attendees: z.coerce.number().int().min(1).max(100).default(1),
+        dietary: z.string().trim().max(500).default(""),
+        notes: z.string().trim().max(1000).default(""),
         status: z
           .enum(["Invited", "Accepted", "Declined", "Attended"])
           .default("Invited"),
@@ -256,6 +342,11 @@ export async function guest(recordId, guestId, input, ctx, remove = false) {
       Email: b.email || null,
       Phone: b.phone || null,
       RsvpStatus: b.status,
+      GroupName: b.group || null,
+      InvitationStatus: b.invitation || null,
+      Attendees: b.attendees,
+      DietaryPreferences: b.dietary || null,
+      Notes: b.notes || null,
       UpdatedAt: new Date(),
     };
     if (guestId)
@@ -283,6 +374,86 @@ export async function guest(recordId, guestId, input, ctx, remove = false) {
     );
     return { message: "Guest saved." };
   });
+}
+export async function archiveEvent(recordId, ctx) {
+  const { id } = scope(ctx);
+  return repo.transaction(async (tx) => {
+    const event = await owned("events", recordId, id, tx);
+    if (event.Status === "Cancelled")
+      return { message: "Event is already archived." };
+    const [active] = await repo.select(
+      "SELECT CASE WHEN EXISTS(SELECT 1 FROM dbo.Booking WHERE EventId=:recordId AND BookingStatus NOT IN('Cancelled','Rejected','Refunded','Completed')) OR EXISTS(SELECT 1 FROM dbo.Quotations q WHERE q.EventId=:recordId AND (q.Status IN('Sent','Viewed') OR (q.Status='Accepted' AND NOT EXISTS(SELECT 1 FROM dbo.Booking qb WHERE qb.QuotationId=q.QuotationId AND qb.BookingStatus IN('Completed','Cancelled','Rejected','Refunded'))))) OR EXISTS(SELECT 1 FROM dbo.QuotationRequests WHERE EventId=:recordId AND Status='Pending') THEN 1 ELSE 0 END AS active",
+      { recordId },
+      tx,
+    );
+    if (active.active)
+      fail(
+        "Resolve active bookings and quotations before archiving this event.",
+        409,
+      );
+    await repo.update(
+      { table: "Events", id: "EventId" },
+      recordId,
+      { Status: "Cancelled", UpdatedAt: new Date() },
+      tx,
+    );
+    await audit(
+      ctx,
+      "EVENT_ARCHIVED",
+      "Events",
+      recordId,
+      { status: event.Status },
+      { status: "Cancelled" },
+      tx,
+    );
+    return { message: "Event archived. Your history is preserved." };
+  });
+}
+export async function exportGuests(recordId, ctx) {
+  const { id } = scope(ctx);
+  await owned("events", recordId, id, undefined, false);
+  const rows = await repo.select(
+    "SELECT GuestName,Email,Phone,GroupName,InvitationStatus,RsvpStatus,Attendees,DietaryPreferences,Notes FROM dbo.EventGuests WHERE EventId=:recordId ORDER BY GroupName,GuestName,GuestId",
+    { recordId },
+  );
+  const headers = [
+    "Name",
+    "Email",
+    "Phone",
+    "Group",
+    "Invitation",
+    "RSVP",
+    "Attendees",
+    "Dietary preferences",
+    "Notes",
+  ];
+  return (
+    "\ufeff" +
+    [
+      headers.map(csvCell).join(","),
+      ...rows.map((r) => Object.values(r).map(csvCell).join(",")),
+    ].join("\r\n")
+  );
+}
+export async function transactionDetails(recordId, ctx) {
+  const { id } = scope(ctx);
+  z.guid().parse(recordId);
+  const [payment] = await repo.select(
+    "SELECT p.PaymentId AS id,p.BookingId AS bookingId,p.PaymentReference AS reference,p.Amount AS amount,p.Currency AS currency,p.PaymentMethod AS method,p.GatewayName AS gateway,p.PaymentStatus AS status,p.PaidAt AS paidAt,p.CreatedAt AS createdAt,b.BookingNumber AS booking FROM dbo.Payments p JOIN dbo.Booking b ON b.BookingId=p.BookingId WHERE p.PaymentId=:recordId AND b.CustomerId=:id",
+    { recordId, id },
+  );
+  if (!payment) fail("Transaction not found.", 404);
+  return {
+    payment,
+    transactions: await repo.select(
+      "SELECT TransactionId AS id,TransactionType AS type,Amount AS amount,TransactionStatus AS status,CreatedAt AS createdAt FROM dbo.PaymentTransactions WHERE PaymentId=:recordId ORDER BY CreatedAt,TransactionId",
+      { recordId },
+    ),
+    refunds: await repo.select(
+      "SELECT RefundAmount AS amount,RefundStatus AS status,CreatedAt AS createdAt FROM dbo.Refunds WHERE PaymentId=:recordId ORDER BY CreatedAt,RefundId",
+      { recordId },
+    ),
+  };
 }
 export async function profile(ctx) {
   const { id } = scope(ctx);

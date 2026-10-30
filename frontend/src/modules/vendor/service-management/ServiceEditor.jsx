@@ -216,12 +216,26 @@ export default function ServiceEditor() {
     );
   if (current && !current.actions.edit)
     return (
-      <div className="sm-page">
+      <div className="
+        [--sm-accent:#2d604b] [--sm-border:#e2e8df] max-w-[1700px] m-[auto]
+        [&_button:disabled]:opacity-[0.45] [&_button:disabled]:cursor-not-allowed
+        [&_:focus-visible]:[outline:2px_solid_#397455] [&_:focus-visible]:[outline-offset:3px]
+      ">
         <Heading
           title="Service editing is locked"
           description="Editing is unavailable while a service is under review or suspended."
         />
-        <Link className="vw-button mt-4" to={`/vendor/services/${id}`}>
+        <Link className="
+          vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+          [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+          rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+          font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+          [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+          [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+          [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+          [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+          mt-4
+        " to={`/vendor/services/${id}`}>
           View service
         </Link>
       </div>
@@ -258,8 +272,16 @@ export default function ServiceEditor() {
   };
 
   return (
-    <div className="sm-page animate-fade-in">
-      <Link className="sm-back inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-2" to="/vendor/services">
+    <div className="
+      [--sm-accent:#2d604b] [--sm-border:#e2e8df] max-w-[1700px] m-[auto]
+      [&_button:disabled]:opacity-[0.45] [&_button:disabled]:cursor-not-allowed
+      [&_:focus-visible]:[outline:2px_solid_#397455] [&_:focus-visible]:[outline-offset:3px]
+      animate-fade-in
+    ">
+      <Link className="
+        inline-flex items-center gap-[7px] text-[#5d7566] mb-[18px] text-[12px] inline-flex items-center
+        gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors mb-2
+      " to="/vendor/services">
         <ArrowLeft size={15} />
         All services
       </Link>
@@ -272,14 +294,25 @@ export default function ServiceEditor() {
       <Notice message={notice} />
 
       {current?.status === "Approved" && (
-        <div className="sm-warning flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-200 p-4 rounded-xl mb-4">
+        <div className="
+          rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fbf5e7]
+          [border-top:1px_solid_#ede1c6] [border-right:1px_solid_#ede1c6] [border-bottom:1px_solid_#ede1c6]
+          [border-left:1px_solid_#ede1c6] text-[#93773e] flex items-center gap-2 bg-amber-500/10 border
+          border-amber-500/20 text-amber-800 dark:text-amber-200 p-4 rounded-xl mb-4
+        ">
           <AlertTriangle size={18} className="shrink-0 text-amber-600" />
           <span>Changes require admin approval. Saving will withdraw this listing until it is reviewed again.</span>
         </div>
       )}
 
       {current?.status === "Rejected" && (
-        <div className="sm-rejected bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-xl mb-4">
+        <div className="
+          rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fcf0ed]
+          [border-top:1px_solid_#efd4cd] [border-right:1px_solid_#efd4cd] [border-bottom:1px_solid_#efd4cd]
+          [border-left:1px_solid_#efd4cd] text-[#9d5348] [&_p]:text-[inherit]! [&_.vw-button]:inline-flex
+          [&_.vw-button]:m-[10px] bg-destructive/10 border border-destructive/20 text-destructive p-4
+          rounded-xl mb-4
+        ">
           <div className="flex items-center gap-2 font-semibold mb-1">
             <AlertTriangle size={18} />
             <strong>Service Rejected</strong>
@@ -291,15 +324,47 @@ export default function ServiceEditor() {
       )}
 
       {!metadata.data.canSubmit && (
-        <div className="sm-warning flex items-center gap-2 bg-primary/5 border border-primary/20 p-4 rounded-xl mb-4">
+        <div className="
+          rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fbf5e7]
+          [border-top:1px_solid_#ede1c6] [border-right:1px_solid_#ede1c6] [border-bottom:1px_solid_#ede1c6]
+          [border-left:1px_solid_#ede1c6] text-[#93773e] flex items-center gap-2 bg-primary/5 border
+          border-primary/20 p-4 rounded-xl mb-4
+        ">
           <Info size={18} className="shrink-0 text-primary" />
           <span>Save your work as a draft. Submission becomes available after your business is approved.</span>
         </div>
       )}
 
-      <div className="sm-editor-layout">
+      <div className="
+        grid grid-cols-[235px_minmax(0,_1fr)] gap-[24px] [align-items:start] mt-[24px]
+        service-tablet:grid-cols-[190px_minmax(0,_1fr)] service-mobile:flex service-mobile:flex-col
+        service-mobile:gap-[15px]
+      ">
         {/* Enhanced Interactive Stepper Sidebar */}
-        <aside className="sm-stepper">
+        <aside className="
+          [background:#fff] [border-top:1px_solid_var(--sm-border)] [border-right:1px_solid_var(--sm-border)]
+          [border-bottom:1px_solid_var(--sm-border)] [border-left:1px_solid_var(--sm-border)] rounded-[12px]
+          [padding:20px_12px] sticky top-[90px] [&_>_span]:block [&_>_span]:text-[9px]
+          [&_>_span]:tracking-[1.5px] [&_>_span]:text-[#99a38d] [&_>_span]:[margin:0_10px_18px]
+          [&_>_button]:[border-top:0] [&_>_button]:[border-right:0] [&_>_button]:[border-bottom:0]
+          [&_>_button]:[border-left:0] [&_>_button]:[background:none] [&_>_button]:flex [&_>_button]:gap-[12px]
+          [&_>_button]:items-center [&_>_button]:p-[12px] [&_>_button]:w-[100%] [&_>_button]:text-left
+          [&_>_button]:text-[#94a08e] [&_>_button]:rounded-[8px] [&_>_button]:text-[12px] [&_button_b]:w-[27px]
+          [&_button_b]:h-[27px] [&_button_b]:rounded-[50%] [&_button_b]:[border-top:1px_solid_#dde5d7]
+          [&_button_b]:[border-right:1px_solid_#dde5d7] [&_button_b]:[border-bottom:1px_solid_#dde5d7]
+          [&_button_b]:[border-left:1px_solid_#dde5d7] [&_button_b]:flex [&_button_b]:items-center
+          [&_button_b]:justify-center [&_button_b]:text-[10px] [&_button_small]:block
+          [&_button_small]:text-[9px] [&_button_small]:mt-[3px] [&_button_small]:text-[#aab1a1]
+          [&_button.current]:[background:#edf4e9] [&_button.current]:text-[#2d604b]
+          [&_button.current]:font-semibold [&_button.current_b]:[background:#3d6c50]
+          [&_button.current_b]:text-[#fff] [&_button.current_b]:[border-color:#3d6c50]
+          [&_button.done_b]:[background:#3d6c50] [&_button.done_b]:text-[#fff]
+          [&_button.done_b]:[border-color:#3d6c50] service-mobile:static service-mobile:flex
+          service-mobile:overflow-x-auto service-mobile:w-[100%] service-mobile:p-[8px]
+          service-mobile:[&_>_span]:hidden service-mobile:[&_small]:hidden service-mobile:[&_>_button]:shrink-0
+          service-mobile:[&_>_button]:w-[auto] service-mobile:[&_>_button]:min-w-[155px]
+          service-mobile:[&_>_button]:p-[10px]
+        ">
           <div className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-muted-foreground tracking-wider">
             <Sparkles size={14} className="text-primary" />
             <span>BUILD YOUR LISTING</span>
@@ -330,7 +395,11 @@ export default function ServiceEditor() {
               </div>
             </button>
           ))}
-          <div className="sm-stepper-note mt-4 p-4 rounded-xl bg-muted/40 border border-border/50 flex flex-col gap-2">
+          <div className="
+            [margin:20px_10px_0] [border-top:1px_solid_var(--sm-border)] pt-[20px] text-[#b4a174]
+            [&_p]:text-[10px]! [&_p]:leading-[1.7] service-mobile:hidden mt-4 p-4 rounded-xl bg-muted/40 border
+            border-border/50 flex flex-col gap-2
+          ">
             <ShieldCheck size={22} className="text-primary" />
             <p className="text-xs text-muted-foreground leading-relaxed">Your work stays private until approved and activated.</p>
           </div>
@@ -338,7 +407,7 @@ export default function ServiceEditor() {
 
         <form
           ref={form}
-          className="sm-editor-content"
+          className="min-w-[0] service-mobile:w-[100%]"
           onSubmit={(e) => {
             e.preventDefault();
             if (step < 8) setStep((v) => v + 1);
@@ -349,9 +418,16 @@ export default function ServiceEditor() {
             title={`${String(step + 1).padStart(2, "0")} / ${steps[step]}`}
             description={`Step ${step + 1} of 9 · ${step === 8 ? "Review everything before submitting." : "Every detail helps customers choose with confidence."}`}
           >
-            <div className="sm-form-body">
+            <div className="p-[25px] service-mobile:p-[18px]">
               {step === 0 && (
-                <div className="sm-form-grid">
+                <div className="
+                  grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_input]:w-[100%] [&_input]:rounded-[7px]
+                  [&_input]:[padding:10px_12px] [&_input]:[background:#fff] [&_input]:min-h-[40px] [&_select]:w-[100%]
+                  [&_select]:rounded-[7px] [&_select]:[padding:10px_12px] [&_select]:[background:#fff]
+                  [&_select]:min-h-[40px] [&_textarea]:w-[100%] [&_textarea]:rounded-[7px]
+                  [&_textarea]:[padding:10px_12px] [&_textarea]:[background:#fff] [&_textarea]:min-h-[40px]
+                  [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
+                ">
                   <Field label="Service Name *">
                     <input
                       required
@@ -398,7 +474,12 @@ export default function ServiceEditor() {
                   {field("location", "city", "Service Location (city)", "text", { maxLength: 100 })}
                   {field("policies", "duration", "Estimated Duration (minutes)", "number", { step: 1, max: 1000000 })}
                   {!metadata.data.categories.length && (
-                    <p className="sm-warning text-sm text-destructive bg-destructive/10 p-3 rounded-lg" role="alert">
+                    <p className="
+                      rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fbf5e7]
+                      [border-top:1px_solid_#ede1c6] [border-right:1px_solid_#ede1c6] [border-bottom:1px_solid_#ede1c6]
+                      [border-left:1px_solid_#ede1c6] text-[#93773e] text-sm text-destructive bg-destructive/10 p-3
+                      rounded-lg
+                    " role="alert">
                       No service categories are assigned to your business yet.{" "}
                       <Link to="/vendor/business/profile" className="underline font-semibold">
                         Update your business profile
@@ -410,7 +491,11 @@ export default function ServiceEditor() {
                     !metadata.data.categories.some(
                       (c) => c.id === data.categoryId,
                     ) && (
-                      <p className="sm-warning text-sm text-amber-700 bg-amber-500/10 p-3 rounded-lg" role="alert">
+                      <p className="
+                        rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fbf5e7]
+                        [border-top:1px_solid_#ede1c6] [border-right:1px_solid_#ede1c6] [border-bottom:1px_solid_#ede1c6]
+                        [border-left:1px_solid_#ede1c6] text-[#93773e] text-sm text-amber-700 bg-amber-500/10 p-3 rounded-lg
+                      " role="alert">
                         This category is not assigned to your business. Choose
                         an assigned category or update your{" "}
                         <Link to="/vendor/business/profile" className="underline font-semibold">
@@ -474,11 +559,22 @@ export default function ServiceEditor() {
                   </p>
                 ) : (
                   <div>
-                    <div className="sm-category-label font-bold text-primary mb-4 pb-2 border-b">{category.name} Specifications</div>
-                    <div className="sm-form-grid">
+                    <div className="inline-block [padding:5px_10px] [background:#edf4e9] text-[#4c7254] text-[10px] rounded-[5px] mb-[20px] font-bold text-primary mb-4 pb-2 border-b">{category.name} Specifications</div>
+                    <div className="
+                      grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_input]:w-[100%] [&_input]:rounded-[7px]
+                      [&_input]:[padding:10px_12px] [&_input]:[background:#fff] [&_input]:min-h-[40px] [&_select]:w-[100%]
+                      [&_select]:rounded-[7px] [&_select]:[padding:10px_12px] [&_select]:[background:#fff]
+                      [&_select]:min-h-[40px] [&_textarea]:w-[100%] [&_textarea]:rounded-[7px]
+                      [&_textarea]:[padding:10px_12px] [&_textarea]:[background:#fff] [&_textarea]:min-h-[40px]
+                      [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
+                    ">
                       {template.map((f) =>
                         f.type === "boolean" ? (
-                          <label key={f.key} className="sm-checkbox flex items-center gap-2 cursor-pointer py-1">
+                          <label key={f.key} className="
+                            flex gap-[9px] items-center text-[#61765f] text-[12px] [&_input[type=checkbox]]:w-[16px]
+                            [&_input[type=checkbox]]:h-[16px] [&_input[type=checkbox]]:min-h-[0]
+                            [&_input[type=checkbox]]:[accent-color:#396d4d] flex items-center gap-2 cursor-pointer py-1
+                          ">
                             <input
                               type="checkbox"
                               checked={!!data.attributes[f.key]}
@@ -545,7 +641,14 @@ export default function ServiceEditor() {
                 ))}
               {step === 2 && (
                 <>
-                  <div className="sm-form-grid">
+                  <div className="
+                    grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_input]:w-[100%] [&_input]:rounded-[7px]
+                    [&_input]:[padding:10px_12px] [&_input]:[background:#fff] [&_input]:min-h-[40px] [&_select]:w-[100%]
+                    [&_select]:rounded-[7px] [&_select]:[padding:10px_12px] [&_select]:[background:#fff]
+                    [&_select]:min-h-[40px] [&_textarea]:w-[100%] [&_textarea]:rounded-[7px]
+                    [&_textarea]:[padding:10px_12px] [&_textarea]:[background:#fff] [&_textarea]:min-h-[40px]
+                    [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
+                  ">
                     {[
                       ["basePrice", "Base Price"],
                       ["unitPrice", "Unit Price"],
@@ -584,12 +687,24 @@ export default function ServiceEditor() {
                     </Field>
                     {field("pricing", "seasonalFrom", "Season starts", "date")}
                     {field("pricing", "seasonalTo", "Season ends", "date")}
-                    <label className="sm-checkbox">
+                    <label className="
+                      flex gap-[9px] items-center text-[#61765f] text-[12px] [&_input[type=checkbox]]:w-[16px]
+                      [&_input[type=checkbox]]:h-[16px] [&_input[type=checkbox]]:min-h-[0]
+                      [&_input[type=checkbox]]:[accent-color:#396d4d]
+                    ">
                       <input type="checkbox" checked={data.pricing.customQuote} onChange={(e) => nested("pricing", "customQuote", e.target.checked)} />
                       Custom quotation available
                     </label>
                   </div>
-                  <div className="sm-price-preview mt-6 p-5 rounded-xl bg-primary/5 border border-primary/20 flex flex-col gap-1.5">
+                  <div className="
+                    p-[25px] [background:#f3f7ef] [border-top:1px_solid_#e1e8d9] [border-right:1px_solid_#e1e8d9]
+                    [border-bottom:1px_solid_#e1e8d9] [border-left:1px_solid_#e1e8d9] rounded-[10px] [margin:24px_0]
+                    [&_>_span]:block [&_>_span]:text-[10px] [&_>_span]:tracking-[1px] [&_>_span]:text-[#8d9b80]
+                    [&_>_strong]:block [&_>_strong]:text-[32px] [&_>_strong]:font-semibold [&_>_strong]:text-[#3c6348]
+                    [&_>_strong]:[margin:5px_0] [&_p]:max-w-[680px] [&_p]:leading-[1.8] [&_p]:[margin:8px_0_0]
+                    service-mobile:p-[18px] mt-6 p-5 rounded-xl bg-primary/5 border border-primary/20 flex flex-col
+                    gap-1.5
+                  ">
                     <span className="text-xs font-bold tracking-wider text-primary">ESTIMATED STARTING PRICE</span>
                     <strong className="text-2xl font-extrabold">{money(pricePreview())}</strong>
                     <p className="text-xs text-muted-foreground leading-relaxed">
@@ -608,8 +723,17 @@ export default function ServiceEditor() {
                   </p>
                   <div className="flex flex-col gap-4">
                     {data.items.map((item, i) => (
-                      <div className="sm-item-editor p-4 rounded-xl border bg-card shadow-sm" key={i}>
-                        <div className="sm-item-title flex items-center justify-between pb-3 mb-3 border-b">
+                      <div className="
+                        p-[18px] [border-top:1px_solid_var(--sm-border)] [border-right:1px_solid_var(--sm-border)]
+                        [border-bottom:1px_solid_var(--sm-border)] [border-left:1px_solid_var(--sm-border)] rounded-[10px]
+                        mb-[15px] p-4 rounded-xl border bg-card shadow-sm
+                      " key={i}>
+                        <div className="
+                          flex justify-between items-center mb-[15px] [&_>_div]:flex [&_>_div]:gap-[12px]
+                          [&_button]:[background:none] [&_button]:[border-top:0] [&_button]:[border-right:0]
+                          [&_button]:[border-bottom:0] [&_button]:[border-left:0] [&_button]:text-[#8c9c83] flex items-center
+                          justify-between pb-3 mb-3 border-b
+                        ">
                           <strong className="text-sm font-bold flex items-center gap-2">
                             <span className="w-6 h-6 rounded-full bg-primary/10 text-primary inline-flex items-center justify-center text-xs">
                               {i + 1}
@@ -650,7 +774,14 @@ export default function ServiceEditor() {
                             </button>
                           </div>
                         </div>
-                        <div className="sm-form-grid">
+                        <div className="
+                          grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_input]:w-[100%] [&_input]:rounded-[7px]
+                          [&_input]:[padding:10px_12px] [&_input]:[background:#fff] [&_input]:min-h-[40px] [&_select]:w-[100%]
+                          [&_select]:rounded-[7px] [&_select]:[padding:10px_12px] [&_select]:[background:#fff]
+                          [&_select]:min-h-[40px] [&_textarea]:w-[100%] [&_textarea]:rounded-[7px]
+                          [&_textarea]:[padding:10px_12px] [&_textarea]:[background:#fff] [&_textarea]:min-h-[40px]
+                          [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
+                        ">
                           {[
                             ["name", "Item Name", "text"],
                             ["description", "Description", "text"],
@@ -677,7 +808,11 @@ export default function ServiceEditor() {
                               />
                             </Field>
                           ))}
-                          <label className="sm-checkbox flex items-center gap-2 pt-2 cursor-pointer">
+                          <label className="
+                            flex gap-[9px] items-center text-[#61765f] text-[12px] [&_input[type=checkbox]]:w-[16px]
+                            [&_input[type=checkbox]]:h-[16px] [&_input[type=checkbox]]:min-h-[0]
+                            [&_input[type=checkbox]]:[accent-color:#396d4d] flex items-center gap-2 pt-2 cursor-pointer
+                          ">
                             <input
                               type="checkbox"
                               checked={item.included}
@@ -694,7 +829,17 @@ export default function ServiceEditor() {
                   </div>
                   <button
                     type="button"
-                    className="vw-button mt-4 flex items-center gap-2"
+                    className="
+                      vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                      [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                      rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                      font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                      [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                      [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                      [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                      [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                      mt-4 flex items-center gap-2
+                    "
                     disabled={data.items.length >= 100}
                     onClick={() =>
                       change("items", [
@@ -726,7 +871,17 @@ export default function ServiceEditor() {
                         <p className="text-sm font-medium">You have unsaved changes in your listing.</p>
                         <button
                           type="button"
-                          className="vw-button vw-primary"
+                          className="
+                            vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                            [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                            rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                            font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                            [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                            [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                            [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                            [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                            vw-primary
+                          "
                           disabled={busy}
                           onClick={() => persist()}
                         >
@@ -738,7 +893,7 @@ export default function ServiceEditor() {
                     )}
                   </>
                 ) : (
-                  <div className="sm-save-first p-8 rounded-2xl border bg-card text-center flex flex-col items-center gap-3 shadow-sm">
+                  <div className="text-center [padding:60px_20px] [&_button]:mt-[15px] p-8 rounded-2xl border bg-card text-center flex flex-col items-center gap-3 shadow-sm">
                     <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-1">
                       <Sparkles size={24} />
                     </div>
@@ -748,7 +903,17 @@ export default function ServiceEditor() {
                     </p>
                     <button
                       type="button"
-                      className="vw-button vw-primary mt-2 flex items-center gap-2"
+                      className="
+                        vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                        [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                        rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                        font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                        [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                        [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                        [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                        [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                        vw-primary mt-2 flex items-center gap-2
+                      "
                       disabled={busy}
                       onClick={() => persist()}
                     >
@@ -758,7 +923,14 @@ export default function ServiceEditor() {
                   </div>
                 ))}
               {step === 5 && (
-                <div className="sm-form-grid">
+                <div className="
+                  grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_input]:w-[100%] [&_input]:rounded-[7px]
+                  [&_input]:[padding:10px_12px] [&_input]:[background:#fff] [&_input]:min-h-[40px] [&_select]:w-[100%]
+                  [&_select]:rounded-[7px] [&_select]:[padding:10px_12px] [&_select]:[background:#fff]
+                  [&_select]:min-h-[40px] [&_textarea]:w-[100%] [&_textarea]:rounded-[7px]
+                  [&_textarea]:[padding:10px_12px] [&_textarea]:[background:#fff] [&_textarea]:min-h-[40px]
+                  [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
+                ">
                   {!!metadata.data.locations?.length && <Field label="Use a saved vendor location">
                     <select value="" onChange={(e) => {
                       const location = metadata.data.locations.find((row) => row.id === e.target.value);
@@ -805,7 +977,16 @@ export default function ServiceEditor() {
               {step === 6 && (
                 <>
                   <p className="text-sm font-medium mb-3">Available working days</p>
-                  <div className="sm-days flex flex-wrap gap-2 mb-6">
+                  <div className="
+                    flex gap-[9px] [margin:16px_0_25px] flex-wrap [&_button]:[background:#fff]
+                    [&_button]:[border-top:1px_solid_var(--sm-border)]
+                    [&_button]:[border-right:1px_solid_var(--sm-border)]
+                    [&_button]:[border-bottom:1px_solid_var(--sm-border)]
+                    [&_button]:[border-left:1px_solid_var(--sm-border)] [&_button]:rounded-[8px]
+                    [&_button]:[padding:10px_14px] [&_button]:text-[#8b9980] [&_button.selected]:[background:#eaf3e5]
+                    [&_button.selected]:[border-color:#6f9463] [&_button.selected]:text-[#346144] flex flex-wrap gap-2
+                    mb-6
+                  ">
                     {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
                       (day, i) => (
                         <button
@@ -831,7 +1012,14 @@ export default function ServiceEditor() {
                       ),
                     )}
                   </div>
-                  <div className="sm-form-grid">
+                  <div className="
+                    grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_input]:w-[100%] [&_input]:rounded-[7px]
+                    [&_input]:[padding:10px_12px] [&_input]:[background:#fff] [&_input]:min-h-[40px] [&_select]:w-[100%]
+                    [&_select]:rounded-[7px] [&_select]:[padding:10px_12px] [&_select]:[background:#fff]
+                    [&_select]:min-h-[40px] [&_textarea]:w-[100%] [&_textarea]:rounded-[7px]
+                    [&_textarea]:[padding:10px_12px] [&_textarea]:[background:#fff] [&_textarea]:min-h-[40px]
+                    [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
+                  ">
                     {field(
                       "availability",
                       "start",
@@ -854,7 +1042,17 @@ export default function ServiceEditor() {
                   </div>
                   {id ? (
                     <Link
-                      className="vw-button mt-6 inline-flex items-center gap-2"
+                      className="
+                        vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                        [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                        rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                        font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                        [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                        [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                        [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                        [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                        mt-6 inline-flex items-center gap-2
+                      "
                       to={`/vendor/services/${id}/availability`}
                     >
                       Manage blocked dates, holidays & custom timings
@@ -867,7 +1065,14 @@ export default function ServiceEditor() {
                 </>
               )}
               {step === 7 && (
-                <div className="sm-form-grid">
+                <div className="
+                  grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_input]:w-[100%] [&_input]:rounded-[7px]
+                  [&_input]:[padding:10px_12px] [&_input]:[background:#fff] [&_input]:min-h-[40px] [&_select]:w-[100%]
+                  [&_select]:rounded-[7px] [&_select]:[padding:10px_12px] [&_select]:[background:#fff]
+                  [&_select]:min-h-[40px] [&_textarea]:w-[100%] [&_textarea]:rounded-[7px]
+                  [&_textarea]:[padding:10px_12px] [&_textarea]:[background:#fff] [&_textarea]:min-h-[40px]
+                  [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
+                ">
                   {[
                     ["cancellation", "Cancellation Policy"],
                     ["refund", "Refund Policy"],
@@ -875,7 +1080,11 @@ export default function ServiceEditor() {
                     ["additionalCharges", "Additional Charges"],
                     ["terms", "Terms & Conditions"],
                   ].map(([k, l]) => area("policies", k, l))}
-                  <label className="sm-checkbox flex items-center gap-2 py-2 cursor-pointer">
+                  <label className="
+                    flex gap-[9px] items-center text-[#61765f] text-[12px] [&_input[type=checkbox]]:w-[16px]
+                    [&_input[type=checkbox]]:h-[16px] [&_input[type=checkbox]]:min-h-[0]
+                    [&_input[type=checkbox]]:[accent-color:#396d4d] flex items-center gap-2 py-2 cursor-pointer
+                  ">
                     <input
                       type="checkbox"
                       checked={data.policies.advanceRequired}
@@ -899,12 +1108,19 @@ export default function ServiceEditor() {
                 </div>
               )}
               {step === 7 && (
-                <div className="sm-form-grid">
+                <div className="
+                  grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_input]:w-[100%] [&_input]:rounded-[7px]
+                  [&_input]:[padding:10px_12px] [&_input]:[background:#fff] [&_input]:min-h-[40px] [&_select]:w-[100%]
+                  [&_select]:rounded-[7px] [&_select]:[padding:10px_12px] [&_select]:[background:#fff]
+                  [&_select]:min-h-[40px] [&_textarea]:w-[100%] [&_textarea]:rounded-[7px]
+                  [&_textarea]:[padding:10px_12px] [&_textarea]:[background:#fff] [&_textarea]:min-h-[40px]
+                  [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
+                ">
                   {field("seo", "title", "SEO Title")}
                   {area("seo", "description", "SEO Description")}
                   {field("seo", "keywords", "SEO Keywords")}
                   {field("seo", "slug", "URL Slug")}
-                  <p className="sm-muted text-xs text-muted-foreground italic">
+                  <p className="text-[#8f9c84] text-[11px] text-xs text-muted-foreground italic">
                     Use lowercase letters, numbers and hyphens. Every service URL must be globally unique.
                   </p>
                 </div>
@@ -926,14 +1142,29 @@ export default function ServiceEditor() {
           </Panel>
 
           {error && (
-            <div className="sm-error mt-4 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-2" role="alert">
+            <div className="
+              rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fff0ed] text-[#ab4b3c]
+              mt-4 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex
+              items-center gap-2
+            " role="alert">
               <AlertTriangle size={16} className="shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Enhanced Sticky Actions Bar */}
-          <div className="sm-sticky-actions mt-6 p-4 rounded-2xl bg-card border shadow-lg flex items-center justify-between sticky bottom-4 z-20 backdrop-blur-md bg-card/95">
+          <div className="
+            sticky bottom-[12px] [background:#fff] [border-top:1px_solid_var(--sm-border)]
+            [border-right:1px_solid_var(--sm-border)] [border-bottom:1px_solid_var(--sm-border)]
+            [border-left:1px_solid_var(--sm-border)] [box-shadow:0_5px_30px_#2a462514] rounded-[9px] flex
+            items-center justify-between p-[16px] gap-[10px] z-[3] mt-[20px] [&_>_span]:text-[10px]
+            [&_>_span]:text-[#a09064] [&_>_div]:flex [&_>_div]:gap-[8px] service-tablet:[&_>_span]:hidden
+            service-mobile:p-[10px] service-mobile:bottom-[6px] service-mobile:[&_>_div]:w-[100%]
+            service-mobile:[&_>_div]:justify-between service-mobile:[&_>_div]:gap-[5px]
+            service-mobile:[&_.vw-button]:text-[10px] service-mobile:[&_.vw-button]:p-[9px]
+            service-mobile:[&_svg]:w-[12px] mt-6 p-4 rounded-2xl bg-card border shadow-lg flex items-center
+            justify-between sticky bottom-4 z-20 backdrop-blur-md bg-card/95
+          ">
             <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
               <span className={`w-2 h-2 rounded-full ${dirty ? "bg-amber-500 animate-pulse" : "bg-emerald-500"}`} />
               {dirty
@@ -945,7 +1176,17 @@ export default function ServiceEditor() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="vw-button flex items-center gap-1"
+                className="
+                  vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                  [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                  rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                  font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                  [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                  [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                  [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                  [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                  flex items-center gap-1
+                "
                 disabled={busy || step === 0}
                 onClick={() => setStep((v) => v - 1)}
               >
@@ -954,18 +1195,47 @@ export default function ServiceEditor() {
               </button>
               <button
                 type="button"
-                className="vw-button flex items-center gap-1"
+                className="
+                  vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                  [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                  rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                  font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                  [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                  [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                  [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                  [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                  flex items-center gap-1
+                "
                 disabled={busy}
                 onClick={() => persist()}
               >
                 <Save size={15} />
                 {busy ? "Saving…" : "Save Draft"}
               </button>
-              {step !== 8 && <button type="button" className="vw-button" disabled={busy} onClick={() => setStep(8)}>Preview</button>}
+              {step !== 8 && <button type="button" className="
+                vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+              " disabled={busy} onClick={() => setStep(8)}>Preview</button>}
               {step < 8 ? (
                 <button
                   type="submit"
-                  className="vw-button vw-primary flex items-center gap-1"
+                  className="
+                    vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                    [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                    rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                    font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                    [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                    [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                    [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                    [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                    vw-primary flex items-center gap-1
+                  "
                   disabled={busy}
                 >
                   Continue
@@ -974,7 +1244,17 @@ export default function ServiceEditor() {
               ) : (
                 <button
                   type="submit"
-                  className="vw-button vw-primary flex items-center gap-1.5"
+                  className="
+                    vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                    [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                    rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                    font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                    [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                    [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                    [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                    [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                    vw-primary flex items-center gap-1.5
+                  "
                   disabled={busy || !metadata.data.canSubmit}
                 >
                   <Send size={15} />

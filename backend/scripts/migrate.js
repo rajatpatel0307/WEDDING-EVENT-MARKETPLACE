@@ -1,3 +1,8 @@
+import { up as paymentIntegrityUp } from "../migrations/019-payment-integrity.js";
+import { up as financialControlsUp } from '../migrations/020-financial-controls.js';
+import { up as quotationHardeningUp } from "../migrations/018-quotation-history-hardening.js";
+import { up as quotationsUp } from "../migrations/017-quotation-lifecycle.js";
+import { up as customerWebsiteUp } from "../migrations/016-customer-website.js";
 import { up as lifecycleUp } from "../migrations/015-booking-lifecycle.js";
 import { up as operationsUp } from "../migrations/014-admin-operations.js";
 import { up as adminBookingsUp } from "../migrations/013-admin-bookings.js";
@@ -256,6 +261,70 @@ try {
         { transaction },
       );
     }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='016-customer-website'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await customerWebsiteUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES('016-customer-website')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='017-quotation-lifecycle'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await quotationsUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES('017-quotation-lifecycle')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query(
+      "DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;",
+      { transaction },
+    );
+    const [rows] = await sequelize.query(
+      "SELECT Name FROM dbo.AuthMigrations WHERE Name='018-quotation-history-hardening'",
+      { transaction },
+    );
+    if (!rows.length) {
+      await quotationHardeningUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query(
+        "INSERT INTO dbo.AuthMigrations(Name) VALUES('018-quotation-history-hardening')",
+        { transaction },
+      );
+    }
+  });
+  await sequelize.transaction(async (transaction) => {
+    await sequelize.query("DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;", { transaction });
+    const [rows] = await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='019-payment-integrity'", { transaction });
+    if (!rows.length) {
+      await paymentIntegrityUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query("INSERT INTO dbo.AuthMigrations(Name) VALUES('019-payment-integrity')", { transaction });
+    }
+  });
+  await sequelize.transaction(async transaction=>{
+    await sequelize.query("DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;",{transaction});
+    const [rows]=await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='020-financial-controls'",{transaction});
+    if(!rows.length){await financialControlsUp(sequelize.getQueryInterface(),transaction);await sequelize.query("INSERT INTO dbo.AuthMigrations(Name) VALUES('020-financial-controls')",{transaction});}
   });
   console.log("Database migrations are current.");
 } catch (error) {

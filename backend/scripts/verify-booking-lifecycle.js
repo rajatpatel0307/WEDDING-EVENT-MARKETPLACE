@@ -1,3 +1,4 @@
+import { up as quotationLifecycleUp } from "../migrations/017-quotation-lifecycle.js";
 // Real MSSQL lifecycle verification. DDL, fixtures, notifications and ledgers roll back.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -64,6 +65,7 @@ try {
     try {
       await up(sequelize.getQueryInterface(), tx);
       await up(sequelize.getQueryInterface(), tx); // safe to re-run
+      await quotationLifecycleUp(sequelize.getQueryInterface(), tx);
       const admin = randomUUID(),
         customer = randomUUID(),
         other = randomUUID(),
@@ -353,12 +355,16 @@ try {
       // Quotation acceptance copies agreed item totals into the same booking aggregate.
       const quote = randomUUID();
       await sql(
-        "INSERT INTO dbo.Quotations(QuotationId,QuotationNumber,EventId,CustomerId,VendorId,Status,SubTotal,ValidUntil) VALUES(:quote,:number,:event,:customer,:vendor,'Sent',500,'2090-02-01')",
+        "INSERT INTO dbo.Quotations(QuotationId,QuotationNumber,EventId,CustomerId,VendorId,Status,SubTotal,ValidUntil) VALUES(:quote,:number,:event,:customer,:vendor,'Draft',500,'2090-02-01')",
         { quote, number: `Q-${quote.slice(0, 20)}`, event, customer, vendor },
       );
       await sql(
         "INSERT INTO dbo.QuotationItems(QuotationId,ServiceId,ItemName,Quantity,UnitPrice) VALUES(:quote,:service,'Agreed lawn',1,500)",
         { quote, service },
+      );
+      await sql(
+        "UPDATE dbo.Quotations SET Status='Sent',SentAt=SYSUTCDATETIME() WHERE QuotationId=:quote",
+        { quote },
       );
       const accepted = await decideQuote(quote, { action: "Accept" }, c);
       d = await details(accepted.id, c, "Customer");

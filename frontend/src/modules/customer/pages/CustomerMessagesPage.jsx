@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import {
   CheckCheck,
   Download,
@@ -211,6 +211,15 @@ export default function CustomerMessagesPage() {
                 </span>
                 <div>
                   <h2>{conversation?.customer || "Vendor conversation"}</h2>
+                  {conversation?.bookingId ? (
+                    <Link to={`/customer/bookings/${conversation.bookingId}`}>
+                      View booking
+                    </Link>
+                  ) : conversation?.eventId ? (
+                    <Link to={`/customer/events/${conversation.eventId}`}>
+                      View event
+                    </Link>
+                  ) : null}
                   <p>
                     {conversation?.event ||
                       conversation?.booking ||
@@ -241,7 +250,7 @@ export default function CustomerMessagesPage() {
                             try {
                               download(
                                 await customerRequest(
-                                  `/conversations/${selected}/messages/${message.id}/attachment`,
+                                  `/conversations/${selected}/messages/${message.id}/file`,
                                   { download: true },
                                 ),
                                 message.attachmentName || "attachment",

@@ -1,3 +1,4 @@
+import { vendorClasses } from "../styles";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -72,20 +73,28 @@ export default function ServiceAvailability() {
   const rows = state.data,
     avail = parent.data.availability;
   return (
-    <div className="sm-page">
-      <Link to={`/vendor/services/${id}`} className="sm-back">
+    <div className="
+      [--sm-accent:#2d604b] [--sm-border:#e2e8df] max-w-[1700px] m-[auto]
+      [&_button:disabled]:opacity-[0.45] [&_button:disabled]:cursor-not-allowed
+      [&_:focus-visible]:[outline:2px_solid_#397455] [&_:focus-visible]:[outline-offset:3px]
+    ">
+      <Link to={`/vendor/services/${id}`} className="inline-flex items-center gap-[7px] text-[#5d7566] mb-[18px] text-[12px]">
         <ArrowLeft size={15} />
         Back to service
       </Link>
       <Heading title="Service Availability" description={parent.data.name} />
       <Notice message={notice} />
-      <div className="sm-availability-layout">
+      <div className="grid grid-cols-[1.4fr_1fr] gap-[20px] [align-items:start] service-tablet:grid-cols-[1fr]">
         <Panel
           title="Your service calendar"
           description={`${avail?.start || "09:00"}–${avail?.end || "20:00"} · ${avail?.noticeHours ?? 24} hours’ minimum notice`}
         >
-          <div className="sm-calendar">
-            <div className="sm-calendar-title">
+          <div className="p-[20px] service-mobile:p-[12px]">
+            <div className="
+              flex justify-between items-center mb-[20px] [&_button]:[background:none] [&_button]:[border-top:0]
+              [&_button]:[border-right:0] [&_button]:[border-bottom:0] [&_button]:[border-left:0]
+              [&_button]:text-[#759167] service-mobile:[&_h3]:text-[15px]
+            ">
               <button aria-label="Previous month" onClick={() => shift(-1)}>
                 <ChevronLeft size={20} />
               </button>
@@ -100,7 +109,11 @@ export default function ServiceAvailability() {
                 <ChevronRight size={20} />
               </button>
             </div>
-            <div className="sm-calendar-grid">
+            <div className="
+              grid grid-cols-[repeat(7,_minmax(0,_1fr))] gap-[6px] [&_>_strong]:text-center
+              [&_>_strong]:text-[10px] [&_>_strong]:text-[#99a98c] [&_>_strong]:font-medium
+              [&_>_strong]:[padding:8px_0] service-mobile:gap-[3px]
+            ">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
                 <strong key={d}>{d}</strong>
               ))}
@@ -118,7 +131,7 @@ export default function ServiceAvailability() {
                   <button
                     key={day}
                     disabled={r?.status === "Booked"}
-                    className={`sm-day sm-day-${status.toLowerCase()} ${form.from === day ? "selected" : ""}`}
+                    className={vendorClasses(`sm-day sm-day-${status.toLowerCase()} ${form.from === day ? "selected" : ""}`)}
                     onClick={() => {
                       setForm({
                         from: day,
@@ -146,7 +159,7 @@ export default function ServiceAvailability() {
                 );
               })}
             </div>
-            <div className="sm-calendar-legend">
+            <div className="text-[9px] text-[#98a48d] mt-[18px]">
               Green: available · Rose: blocked · Gray: closed · Booked dates are
               protected
             </div>
@@ -156,7 +169,7 @@ export default function ServiceAvailability() {
           title={editing ? "Edit date override" : "Block a date or set timing"}
         >
           <form
-            className="sm-form-body"
+            className="p-[25px] service-mobile:p-[18px]"
             onSubmit={(e) => {
               e.preventDefault();
               run(() =>
@@ -168,7 +181,14 @@ export default function ServiceAvailability() {
               );
             }}
           >
-            <div className="sm-form-grid">
+            <div className="
+              grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_input]:w-[100%] [&_input]:rounded-[7px]
+              [&_input]:[padding:10px_12px] [&_input]:[background:#fff] [&_input]:min-h-[40px] [&_select]:w-[100%]
+              [&_select]:rounded-[7px] [&_select]:[padding:10px_12px] [&_select]:[background:#fff]
+              [&_select]:min-h-[40px] [&_textarea]:w-[100%] [&_textarea]:rounded-[7px]
+              [&_textarea]:[padding:10px_12px] [&_textarea]:[background:#fff] [&_textarea]:min-h-[40px]
+              [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
+            ">
               <Field label="From">
                 <input
                   type="date"
@@ -219,18 +239,38 @@ export default function ServiceAvailability() {
               </Field>
             </div>
             {error && (
-              <p className="sm-error" role="alert">
+              <p className="rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fff0ed] text-[#ab4b3c]" role="alert">
                 {error}
               </p>
             )}
-            <button className="vw-button vw-primary mt-5" disabled={busy}>
+            <button className="
+              vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+              [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+              rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+              font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+              [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+              [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+              [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+              [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+              vw-primary mt-5
+            " disabled={busy}>
               <CalendarOff size={15} />
               {busy ? "Saving…" : "Save Availability"}
             </button>
             {editing && (
               <button
                 type="button"
-                className="vw-button mt-5"
+                className="
+                  vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                  [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                  rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                  font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                  [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                  [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                  [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                  [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                  mt-5
+                "
                 disabled={busy}
                 onClick={() => {
                   if (
@@ -252,7 +292,7 @@ export default function ServiceAvailability() {
               </button>
             )}
             <Link
-              className="sm-back mt-5"
+              className="inline-flex items-center gap-[7px] text-[#5d7566] mb-[18px] text-[12px] mt-5"
               to={`/vendor/services/${id}/edit?step=6`}
             >
               Edit weekly schedule & booking periods

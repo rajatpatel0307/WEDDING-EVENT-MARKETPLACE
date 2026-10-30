@@ -21,7 +21,14 @@ import {
   Modal,
   Field,
 } from "../components/WorkspaceUI";
-import { save, date, money, today } from "../services/workspace.api";
+import {
+  save,
+  date,
+  money,
+  today,
+  customerRequest,
+  download,
+} from "../services/workspace.api";
 export function EventForm({ event, close, done }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -103,6 +110,27 @@ export function EventForm({ event, close, done }) {
               defaultValue={event?.city}
               required
               maxLength="100"
+            />
+          </Field>
+          <Field label="Event end date (optional)">
+            <input
+              type="date"
+              name="endDate"
+              defaultValue={event?.endDate?.slice(0, 10) || ""}
+            />
+          </Field>
+          <Field label="Bride name (if applicable)">
+            <input
+              name="brideName"
+              maxLength={150}
+              defaultValue={event?.brideName || ""}
+            />
+          </Field>
+          <Field label="Groom name (if applicable)">
+            <input
+              name="groomName"
+              maxLength={150}
+              defaultValue={event?.groomName || ""}
             />
           </Field>
           <Field label="Start time (optional)">
@@ -343,6 +371,44 @@ function GuestForm({ eventId, guest, close, done }) {
             {error}
           </p>
         )}
+        <Field label="Family or group">
+          <input
+            name="group"
+            maxLength={100}
+            defaultValue={guest?.group || ""}
+          />
+        </Field>
+        <Field label="Invitation">
+          <select name="invitation" defaultValue={guest?.invitation || ""}>
+            <option value="">Not recorded</option>
+            <option value="NotSent">Not sent</option>
+            <option value="Sent">Sent</option>
+          </select>
+        </Field>
+        <Field label="Number of attendees">
+          <input
+            type="number"
+            name="attendees"
+            min={1}
+            max={100}
+            defaultValue={guest?.attendees || 1}
+            required
+          />
+        </Field>
+        <Field label="Dietary preferences (optional)">
+          <input
+            name="dietary"
+            maxLength={500}
+            defaultValue={guest?.dietary || ""}
+          />
+        </Field>
+        <Field label="Private notes">
+          <textarea
+            name="notes"
+            maxLength={1000}
+            defaultValue={guest?.notes || ""}
+          />
+        </Field>
         <button disabled={busy} className="cw-button cw-primary">
           {busy ? "Saving…" : "Save guest"}
         </button>
@@ -353,7 +419,14 @@ function GuestForm({ eventId, guest, close, done }) {
 export function CustomerEventDetails() {
   const { id } = useParams(),
     [v, setV] = useState(0),
-    r = useCustomerData(`/events/${id}`, v),
+    [guestSearch, setGuestSearch] = useState(""),
+    [guestPage, setGuestPage] = useState(1),
+    [rsvp, setRsvp] = useState(""),
+    [archive, setArchive] = useState(false),
+    r = useCustomerData(
+      `/events/${id}?${new URLSearchParams({ q: guestSearch, guestPage, rsvp })}`,
+      v,
+    ),
     [edit, setEdit] = useState(false),
     [guest, setGuest] = useState(null),
     [remove, setRemove] = useState(null),
@@ -371,18 +444,66 @@ export function CustomerEventDetails() {
         title={e.name}
         description={`${e.type} · ${date(e.eventDate)} · ${[e.city, e.state].filter(Boolean).join(", ")}`}
       >
-        <button className="cw-button" onClick={() => setEdit(true)}>
+        <button
+          className="cw-button"
+          disabled={e.status === "Cancelled"}
+          onClick={() => setEdit(true)}
+        >
           <Pencil size={15} /> Edit event
         </button>
         <Link className="cw-button cw-primary" to="/customer/discover">
           Find services <Plus size={15} />
         </Link>
       </Heading>
+      <p>
+        {e.brideName && e.groomName
+          ? `${e.brideName} & ${e.groomName}`
+          : e.brideName || e.groomName}{" "}
+        {e.endDate ? ` | Until ${date(e.endDate)}` : ""}
+      </p>
+      <button
+        className="cw-button"
+        disabled={e.status === "Cancelled"}
+        onClick={() => setArchive(true)}
+      >
+        Archive event
+      </button>
+      {archive && (
+        <Modal
+          title="Archive this event?"
+          close={() => setArchive(false)}
+          busy={busy}
+        >
+          <p>
+            Your history will be preserved. Active bookings or quotations must
+            be resolved first.
+          </p>
+          <button
+            className="cw-button"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                const result = await save(`/events/${id}/archive`, "POST", {});
+                notify(result.message);
+                setArchive(false);
+                setV((v) => v + 1);
+              } catch (err) {
+                notify(err.message);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Confirm archive
+          </button>
+        </Modal>
+      )}
       <div className="cw-event-summary">
         <div>
           <span>Guest count</span>
           <strong>{e.guests}</strong>
-          <small>{r.data.guests.length} on your guest list</small>
+          <small>{r.data.guestStats?.guests || 0} on your guest list</small>
         </div>
         <div>
           <span>Budget</span>
@@ -395,15 +516,11 @@ export function CustomerEventDetails() {
           <Badge>{e.status}</Badge>
         </div>
         <div>
-          <span>RSVPs accepted</span>
-          <strong>
-            {
-              r.data.guests.filter(
-                (g) => g.status === "Accepted" || g.status === "Attended",
-              ).length
-            }
-          </strong>
-          <small>Of {r.data.guests.length} invited guests</small>
+          <span>Confirmed attendees</span>
+          <strong>{r.data.guestStats?.confirmed || 0}</strong>
+          <small>
+            Of {r.data.guestStats?.attendees || 0} invited attendees
+          </small>
         </div>
       </div>
       {e.description && (
@@ -415,10 +532,66 @@ export function CustomerEventDetails() {
       <section className="cw-panel">
         <div className="cw-panel-heading">
           <h2>Your guest list</h2>
-          <button className="cw-button" onClick={() => setGuest({})}>
+          <button
+            className="cw-button"
+            disabled={["Cancelled", "Completed"].includes(e.status)}
+            onClick={() => setGuest({})}
+          >
             <Plus size={15} /> Add guest
           </button>
         </div>
+        <form
+          className="cw-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            setGuestSearch(new FormData(event.currentTarget).get("q"));
+            setGuestPage(1);
+          }}
+        >
+          <Field label="Search guests or family">
+            <input name="q" defaultValue={guestSearch} maxLength={150} />
+          </Field>
+          <Field label="RSVP filter">
+            <select
+              value={rsvp}
+              onChange={(e) => {
+                setRsvp(e.target.value);
+                setGuestPage(1);
+              }}
+            >
+              <option value="">All responses</option>
+              {["Invited", "Accepted", "Declined", "Attended"].map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </select>
+          </Field>
+          <button className="cw-button">Search guests</button>
+        </form>
+        <p>
+          {r.data.guestStats?.attendees || 0} invited attendees |{" "}
+          {r.data.guestStats?.confirmed || 0} confirmed | Event guest count{" "}
+          {e.guests}
+        </p>
+        <button
+          className="cw-button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              const blob = await customerRequest(
+                `/events/${id}/guests/export`,
+                { download: true },
+              );
+              download(blob, "event-guests.csv");
+            } catch (err) {
+              notify(err.message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          Export guest list
+        </button>
         {!r.data.guests.length ? (
           <Empty
             title="Your favourite people, all together"
@@ -432,6 +605,10 @@ export function CustomerEventDetails() {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Phone</th>
+                  <th>Family / group</th>
+                  <th>Invitation</th>
+                  <th>Attendees</th>
+                  <th>Dietary / notes</th>
                   <th>RSVP</th>
                   <th>Actions</th>
                 </tr>
@@ -450,6 +627,7 @@ export function CustomerEventDetails() {
                         className="cw-icon"
                         onClick={() => setGuest(g)}
                         aria-label={`Edit ${g.name}`}
+                        disabled={["Cancelled", "Completed"].includes(e.status)}
                       >
                         <Pencil size={15} />
                       </button>
@@ -457,6 +635,7 @@ export function CustomerEventDetails() {
                         className="cw-icon"
                         onClick={() => setRemove(g)}
                         aria-label={`Remove ${g.name}`}
+                        disabled={["Cancelled", "Completed"].includes(e.status)}
                       >
                         <Trash2 size={15} />
                       </button>
@@ -468,8 +647,29 @@ export function CustomerEventDetails() {
           </div>
         )}
       </section>
+      <div className="cw-pagination">
+        <button
+          className="cw-button"
+          disabled={guestPage <= 1}
+          onClick={() => setGuestPage((p) => p - 1)}
+        >
+          Previous guests
+        </button>
+        <span>Page {guestPage}</span>
+        <button
+          className="cw-button"
+          disabled={guestPage * 50 >= (r.data.guestTotal || 0)}
+          onClick={() => setGuestPage((p) => p + 1)}
+        >
+          Next guests
+        </button>
+      </div>
       <section className="cw-panel cw-prose">
         <h2>Event bookings</h2>
+        <p>
+          Committed: {money(r.data.financial?.committed)} · Captured payments:{" "}
+          {money(r.data.financial?.captured)} · Budget: {money(e.budget)}
+        </p>
         {r.data.bookings.length ? (
           r.data.bookings.map((b) => (
             <div className="cw-record-line" key={b.id}>
@@ -480,6 +680,19 @@ export function CustomerEventDetails() {
           ))
         ) : (
           <p>Discover a service to send your first booking request.</p>
+        )}
+      </section>
+      <section className="cw-panel cw-prose">
+        <h2>Event quotations</h2>
+        {r.data.quotations?.length ? (
+          r.data.quotations.map((q) => (
+            <p key={q.id}>
+              <Link to={`/customer/quotations/${q.id}`}>{q.number}</Link> ·{" "}
+              {q.status} · {money(q.amount)}
+            </p>
+          ))
+        ) : (
+          <p>No proposals received yet.</p>
         )}
       </section>
       {edit && (

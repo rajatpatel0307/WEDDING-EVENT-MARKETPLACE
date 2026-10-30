@@ -20,17 +20,50 @@ export async function conversations(ctx) {
 }
 export async function startConversation(input, ctx) {
   const { id } = scope(ctx),
-    body = z.object({ bookingId: z.guid() }).strict().parse(input);
+    body = z
+      .object({
+        bookingId: z.guid().optional(),
+        requestId: z.guid().optional(),
+        quotationId: z.guid().optional(),
+      })
+      .strict()
+      .refine(
+        (b) =>
+          [b.bookingId, b.requestId, b.quotationId].filter(Boolean).length ===
+          1,
+        { message: "Select one booking, request or quotation." },
+      )
+      .parse(input);
   return repo.transaction(async (tx) => {
-    const booking = await owned("bookings", body.bookingId, id, tx);
+    let record;
+    if (body.bookingId)
+      record = await owned("bookings", body.bookingId, id, tx);
+    else {
+      const request = !!body.requestId;
+      [record] = await repo.select(
+        `SELECT CustomerId,EventId FROM dbo.${request ? "QuotationRequests" : "Quotations"} WITH(UPDLOCK,HOLDLOCK) WHERE ${request ? "RequestId" : "QuotationId"}=:record AND VendorId=:id`,
+        { record: body.requestId || body.quotationId, id },
+        tx,
+      );
+      if (!record)
+        fail("Quotation or request not found in your business.", 404);
+    }
     await repo.select(
       "DECLARE @r int; EXEC @r=sp_getapplock @Resource=:key,@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Conversation is being updated',1;",
-      { key: `VendorChat:${id}:${booking.CustomerId}` },
+      {
+        key: `MarketplaceChat:${id.toLowerCase()}:${record.CustomerId.toLowerCase()}`,
+      },
       tx,
     );
+    const params = {
+      id,
+      customer: record.CustomerId,
+      booking: body.bookingId || null,
+      event: record.EventId || null,
+    };
     const [old] = await repo.select(
-      "SELECT TOP(1) ConversationId AS id FROM dbo.Conversations WHERE VendorId=:id AND CustomerId=:customer AND BookingId=:booking AND IsActive=1 ORDER BY CreatedAt",
-      { id, customer: booking.CustomerId, booking: booking.BookingId },
+      "SELECT TOP(1) ConversationId AS id FROM dbo.Conversations WHERE VendorId=:id AND CustomerId=:customer AND IsActive=1 AND (BookingId=:booking OR (BookingId IS NULL AND :booking IS NULL)) AND (EventId=:event OR (EventId IS NULL AND :event IS NULL)) ORDER BY CreatedAt",
+      params,
       tx,
     );
     if (old) return old;
@@ -38,8 +71,9 @@ export async function startConversation(input, ctx) {
       { table: "Conversations", id: "ConversationId" },
       {
         VendorId: id,
-        CustomerId: booking.CustomerId,
-        BookingId: booking.BookingId,
+        CustomerId: record.CustomerId,
+        BookingId: body.bookingId || null,
+        EventId: record.EventId || null,
         IsActive: 1,
       },
       tx,
@@ -50,7 +84,11 @@ export async function startConversation(input, ctx) {
       "Conversations",
       created.id,
       null,
-      { booking: booking.BookingId },
+      {
+        booking: body.bookingId || null,
+        request: body.requestId || null,
+        quotation: body.quotationId || null,
+      },
       tx,
     );
     return created;

@@ -1,4 +1,7 @@
 import * as commission from "./commission.service.js";
+import * as finance from "../payments/finance-reports.js";
+import * as refundReview from "../payments/refund-review.js";
+import * as commissionRules from '../payments/commission-rules.js';
 import * as operations from "./operations.service.js";
 import * as payouts from "./payouts.service.js";
 import * as bookingManagement from "./bookings-management.service.js";
@@ -14,6 +17,7 @@ import * as customers from "./customers.service.js";
 import * as vendorDetails from "./vendor-details.service.js";
 import * as verification from "./vendor-verification.service.js";
 import * as lifecycle from "../bookings/bookings.service.js";
+import * as quotations from "../quotations/quotations.service.js";
 export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
   const router = Router();
   router.use(
@@ -74,6 +78,37 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
   );
   router.get("/commission/configuration", async (req, res) =>
     res.json(await commission.configuration(req.admin)),
+  );
+  router.get('/payment-overview',async(q,res)=>res.json(await finance.overview(q.query,q.admin)));
+  router.get('/commission/rules',async(q,res)=>res.json(await commissionRules.list(q.admin)));
+  router.post('/commission/rules',async(q,res)=>res.json(await commissionRules.create(q.body,q.admin)));
+  router.post('/commission/rules/:id/disable',async(q,res)=>res.json(await commissionRules.disable(q.params.id,q.body,q.admin)));
+  router.get('/payment-reconciliation',async(q,res)=>res.json(await finance.reconciliation(q.query,q.admin)));
+  router.post('/payment-orders/:id/refresh',rateLimit({windowMs:60000,limit:15}),async(q,res)=>res.json(await finance.refresh(q.params.id,q.admin)));
+  router.post('/payment-events/:id/retry',async(q,res)=>res.json(await finance.retryEvent(q.params.id,q.admin)));
+  router.get('/refund-requests',async(q,res)=>res.json(await refundReview.list(q.query,q.admin)));
+  router.post('/refund-requests/:id/decision',async(q,res)=>res.json(await refundReview.decide(q.params.id,q.body,q.admin)));
+  router.get('/payment-reports/export',async(q,res)=>{
+    res.set({'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="payments-latest-10000.csv"'});
+    res.send(await finance.exportReport(q.query,q.admin));
+  });
+  router.get("/quotation-requests", async (req, res) =>
+    res.json(await quotations.list(req.query, req.admin, "Admin", true)),
+  );
+  router.get("/quotation-requests/:id", async (req, res) =>
+    res.json(await quotations.requestDetail(req.params.id, req.admin, "Admin")),
+  );
+  router.get("/quotations/statistics", async (req, res) =>
+    res.json(await quotations.statistics(req.admin, "Admin")),
+  );
+  router.get("/quotations", async (req, res) =>
+    res.json(await quotations.list(req.query, req.admin, "Admin")),
+  );
+  router.get("/quotations/:id", async (req, res) =>
+    res.json(await quotations.details(req.params.id, req.admin, "Admin")),
+  );
+  router.post("/quotations/:id/notes", async (req, res) =>
+    res.json(await quotations.adminNote(req.params.id, req.body, req.admin)),
   );
   router.put(
     "/commission/configuration",

@@ -97,12 +97,21 @@ export async function details(id, ctx, role) {
     ...safe
   } = row;
   const snapshot = JSON.parse(PolicySnapshotJson || "{}");
+  const [vendorLabel] = await repo.select(
+    "SELECT BusinessName AS name FROM dbo.Vendors WHERE VendorId=:vendor",
+    { vendor: row.VendorId },
+  );
+  let eventSnapshot = {};
+  try {
+    eventSnapshot = JSON.parse(row.EventSnapshotJson || "{}");
+  } catch {}
   const pending = requests.some((r) => r.status === "Pending");
   // Read the policy estimate through the existing captured/refunded ledger, and
   // expose only customer-facing financial fields (no payout or review notes).
   const summary = financialSummary(row, await financialRows(id));
   return {
     booking: safe,
+    checkout: { vendor: vendorLabel?.name || "", event: eventSnapshot },
     items,
     history: historyRows,
     requests: requests.map((r) => ({

@@ -14,7 +14,7 @@ import {
 export async function conversations(ctx) {
   const { id } = scope(ctx);
   return repo.select(
-    "SELECT c.ConversationId AS id,c.VendorId AS vendorId,v.BusinessName AS customer,v.LogoUrl AS image,e.EventName AS event,b.BookingNumber AS booking,c.LastMessageAt AS updatedAt,lastMessage.MessageText AS lastMessage,(SELECT COUNT(*) FROM dbo.Messages m WHERE m.ConversationId=c.ConversationId AND m.IsRead=0 AND m.SenderUserId<> :id) AS unread FROM dbo.Conversations c JOIN dbo.Vendors v ON v.VendorId=c.VendorId LEFT JOIN dbo.Booking b ON b.BookingId=c.BookingId LEFT JOIN dbo.Events e ON e.EventId=COALESCE(c.EventId,b.EventId) OUTER APPLY(SELECT TOP(1) MessageText FROM dbo.Messages m WHERE m.ConversationId=c.ConversationId ORDER BY m.CreatedAt DESC,m.MessageId) lastMessage WHERE c.CustomerId=:id AND c.IsActive=1 ORDER BY COALESCE(c.LastMessageAt,c.CreatedAt) DESC,c.ConversationId",
+    "SELECT c.ConversationId AS id,c.VendorId AS vendorId,c.BookingId AS bookingId,COALESCE(c.EventId,b.EventId) AS eventId,v.BusinessName AS customer,v.LogoUrl AS image,e.EventName AS event,b.BookingNumber AS booking,c.LastMessageAt AS updatedAt,lastMessage.MessageText AS lastMessage,(SELECT COUNT(*) FROM dbo.Messages m WHERE m.ConversationId=c.ConversationId AND m.IsRead=0 AND m.SenderUserId<> :id) AS unread FROM dbo.Conversations c JOIN dbo.Vendors v ON v.VendorId=c.VendorId LEFT JOIN dbo.Booking b ON b.BookingId=c.BookingId LEFT JOIN dbo.Events e ON e.EventId=COALESCE(c.EventId,b.EventId) OUTER APPLY(SELECT TOP(1) MessageText FROM dbo.Messages m WHERE m.ConversationId=c.ConversationId ORDER BY m.CreatedAt DESC,m.MessageId) lastMessage WHERE c.CustomerId=:id AND c.IsActive=1 ORDER BY COALESCE(c.LastMessageAt,c.CreatedAt) DESC,c.ConversationId",
     { id },
   );
 }
@@ -43,7 +43,7 @@ export async function startConversation(input, ctx) {
     }
     await repo.select(
       "DECLARE @r int; EXEC @r=sp_getapplock @Resource=:key,@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Conversation is being updated',1;",
-      { key: `CustomerChat:${id}:${b.vendorId}` },
+      { key: `MarketplaceChat:${b.vendorId.toLowerCase()}:${id.toLowerCase()}` },
       tx,
     );
     const [old] = await repo.select(

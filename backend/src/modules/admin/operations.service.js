@@ -34,7 +34,7 @@ const definitions = {
     table: "VendorPayouts",
     pk: "PayoutId",
     fields:
-      "v.BusinessName AS name,t.PayoutStatus AS status,t.GrossAmount,t.PlatformCommission,t.TaxDeduction,t.RefundDeduction,t.ApplicableFees,t.NetAmount,t.PaidAt,t.ReviewStatus,t.ReviewReason,t.SettlementReference,t.UpdatedAt",
+      "v.BusinessName AS name,t.PayoutStatus AS status,t.GrossAmount,t.PlatformCommission,t.TaxDeduction,t.RefundDeduction,t.ApplicableFees,t.NetAmount,t.PaidAt,t.ReviewStatus,t.ReviewReason,t.SettlementReference,t.DestinationLabel,t.UpdatedAt",
     joins: "JOIN dbo.Booking b ON b.BookingId=t.BookingId",
     extra: ",b.BookingId,b.BookingNumber,b.BookingStatus",
   },

@@ -1,4 +1,5 @@
 import customerRoutes from "./modules/customers/workspace.routes.js";
+import marketplaceRoutes from "./modules/customers/marketplace.routes.js";
 import { webhook } from "./modules/customers/workspace.payments.js";
 import express from "express";
 import cors from "cors";
@@ -41,6 +42,7 @@ export async function createApp() {
     webhook,
   );
   app.use("/api/customer", customerRoutes);
+  app.use("/api/marketplace", marketplaceRoutes);
   const apollo = new ApolloServer({
     typeDefs,
     resolvers,

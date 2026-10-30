@@ -12,6 +12,8 @@ import * as operations from "./workspace.operations.js";
 import * as messaging from "./workspace.messaging.js";
 import { dashboard } from "./workspace.analytics.js";
 import * as lifecycle from "../bookings/bookings.service.js";
+import * as quotations from "../quotations/quotations.service.js";
+import { earnings } from "../payments/finance-reports.js";
 
 // Service drafts are available to signed-in vendors; other tools require approval.
 export function createVendorRouter({
@@ -58,6 +60,7 @@ export function createVendorRouter({
       const result = await fn(req);
       res.json({ success: true, ...result });
     });
+  get('/earnings',req=>earnings(req.vendorContext));
   get("/bookings/:id", (req) =>
     lifecycle.details(req.params.id, req.vendorContext, "Vendor"),
   );
@@ -270,6 +273,38 @@ export function createVendorRouter({
   );
   mutation("post", "/bookings/:id/decision", (req) =>
     operations.bookingDecision(req.params.id, req.body, req.vendorContext),
+  );
+  const quoteLimit = rateLimit({
+    windowMs: 60000,
+    limit: 25,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+  });
+  router.use(["/quotations", "/quotation-requests"], (req, res, next) =>
+    ["GET", "HEAD"].includes(req.method) ? next() : quoteLimit(req, res, next),
+  );
+  get("/quotation-requests", (req) =>
+    quotations.list(req.query, req.vendorContext, "Vendor", true),
+  );
+  get("/quotation-requests/:id", (req) =>
+    quotations.requestDetail(req.params.id, req.vendorContext, "Vendor"),
+  );
+  mutation("post", "/quotation-requests/:id/action", (req) =>
+    quotations.requestAction(
+      req.params.id,
+      req.body,
+      req.vendorContext,
+      "Vendor",
+    ),
+  );
+  get("/quotations", (req) =>
+    quotations.list(req.query, req.vendorContext, "Vendor"),
+  );
+  get("/quotations/statistics", (req) =>
+    quotations.statistics(req.vendorContext, "Vendor"),
+  );
+  mutation("post", "/quotations/preview", (req) =>
+    quotations.save(null, req.body, req.vendorContext, true),
   );
   get("/quotation-options", (req) =>
     operations.quotationOptions(req.vendorContext),

@@ -1,3 +1,4 @@
+import { vendorClasses } from "../styles";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, ChevronLeft, ChevronRight, Plus } from "lucide-react";
@@ -59,7 +60,17 @@ export default function VendorCalendarPage({ filter = "" }) {
         description="Make space for celebrations. Keep your schedule clear and current."
       >
         <button
-          className="vw-button vw-primary"
+          className="
+            vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+            [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+            rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+            font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+            [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+            [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+            [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+            [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+            vw-primary
+          "
           onClick={() => select(`${month}-01`)}
         >
           <Plus size={15} />
@@ -74,22 +85,41 @@ export default function VendorCalendarPage({ filter = "" }) {
         })}
         description="Select a day to mark availability or block a date."
         action={
-          <div className="vw-calendar-controls">
+          <div className="flex items-center gap-[7px] vendor-phone:gap-[3px] vendor-phone:[&_.vw-button]:[padding:5px_8px] vendor-phone:[&_.vw-button]:text-[8px]">
             <button
-              className="vw-icon"
+              className="
+                vw-icon inline-flex items-center justify-center shrink-0 w-[29px] h-[29px] text-[#99a38e]
+                [background:none] [border-top:1px_solid_transparent] [border-right:1px_solid_transparent]
+                [border-bottom:1px_solid_transparent] [border-left:1px_solid_transparent] rounded-[5px] p-[0]
+                [&:hover]:[background:#edf3e4] [&:hover]:text-[#608146]
+              "
               aria-label="Previous month"
               onClick={() => move(-1)}
             >
               <ChevronLeft size={17} />
             </button>
             <button
-              className="vw-button"
+              className="
+                vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+              "
               onClick={() => setMonth(today().slice(0, 7))}
             >
               Today
             </button>
             <button
-              className="vw-icon"
+              className="
+                vw-icon inline-flex items-center justify-center shrink-0 w-[29px] h-[29px] text-[#99a38e]
+                [background:none] [border-top:1px_solid_transparent] [border-right:1px_solid_transparent]
+                [border-bottom:1px_solid_transparent] [border-left:1px_solid_transparent] rounded-[5px] p-[0]
+                [&:hover]:[background:#edf3e4] [&:hover]:text-[#608146]
+              "
               aria-label="Next month"
               onClick={() => move(1)}
             >
@@ -98,7 +128,13 @@ export default function VendorCalendarPage({ filter = "" }) {
           </div>
         }
       >
-        <div className="vw-calendar-legend">
+        <div className="
+          flex justify-end gap-[18px] flex-wrap [padding:0_22px_20px] [&_span]:flex [&_span]:items-center
+          [&_span]:gap-[6px] [&_span]:text-[8px] [&_span]:text-[#a5b592] [&_i]:w-[6px] [&_i]:h-[6px]
+          [&_i]:rounded-[50%] [&_.available]:[background:#95b773] [&_.blocked]:[background:#d49c85]
+          [&_.booked]:[background:#6ca895] [&_.pending]:[background:#d1bd82] vendor-mobile:justify-start
+          vendor-mobile:[padding:0_17px_15px] vendor-mobile:gap-[12px] vendor-phone:[&_span]:text-[7px]
+        ">
           <span>
             <i className="available" />
             Available
@@ -122,14 +158,22 @@ export default function VendorCalendarPage({ filter = "" }) {
           <Loading />
         ) : (
           <div className="vw-calendar">
-            <div className="vw-calendar-week">
+            <div className="
+              grid grid-cols-[repeat(7,_minmax(0,_1fr))] [border-top:1px_solid_#e6efdb]
+              [border-bottom:1px_solid_#e6efdb] [background:#f9fcf4] [&_>_strong]:[padding:13px_5px]
+              [&_>_strong]:text-[#a0b38a] [&_>_strong]:text-center [&_>_strong]:text-[9px] [&_>_strong]:font-medium
+            ">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
                 <strong key={day}>{day}</strong>
               ))}
             </div>
-            <div className="vw-calendar-grid">
+            <div className="grid grid-cols-[repeat(7,_minmax(0,_1fr))]">
               {Array.from({ length: offset }, (_, i) => (
-                <div key={`blank-${i}`} className="vw-calendar-blank" />
+                <div key={`blank-${i}`} className="
+                  min-h-[115px] [border-top:0] [border-right:1px_solid_#edf2e4] [border-bottom:1px_solid_#edf2e4]
+                  [border-left:0] [background:#fff] [padding:10px_8px] min-w-[0] text-left [vertical-align:top]
+                  vendor-mobile:min-h-[85px] vendor-mobile:[padding:7px_3px] vendor-phone:min-h-[75px]
+                " />
               ))}
               {Array.from({ length: last }, (_, i) => {
                 const day = `${month}-${String(i + 1).padStart(2, "0")}`,
@@ -140,7 +184,7 @@ export default function VendorCalendarPage({ filter = "" }) {
                 return (
                   <button
                     key={day}
-                    className={`vw-calendar-day ${day === today() ? "today" : ""}`}
+                    className={vendorClasses(`vw-calendar-day ${day === today() ? "today" : ""}`)}
                     onClick={() => select(day)}
                     aria-label={`${date(day)}; ${slots.length} availability entries; ${bookings.length} bookings`}
                   >
@@ -149,7 +193,7 @@ export default function VendorCalendarPage({ filter = "" }) {
                       {slots.slice(0, 2).map((slot) => (
                         <span
                           key={slot.id}
-                          className={`vw-calendar-entry ${slot.status.toLowerCase()}`}
+                          className={vendorClasses(`vw-calendar-entry ${slot.status.toLowerCase()}`)}
                         >
                           {slot.status}
                           {slot.startTime ? ` · ${slot.startTime}` : ""}
@@ -158,7 +202,7 @@ export default function VendorCalendarPage({ filter = "" }) {
                       {bookings.slice(0, 2).map((booking) => (
                         <span
                           key={booking.id}
-                          className={`vw-calendar-entry ${booking.status === "Pending" ? "pending" : "booked"}`}
+                          className={vendorClasses(`vw-calendar-entry ${booking.status === "Pending" ? "pending" : "booked"}`)}
                         >
                           {booking.status === "Pending" ? "Request" : "Booked"}{" "}
                           · {booking.number}
@@ -188,7 +232,16 @@ export default function VendorCalendarPage({ filter = "" }) {
           }
           description="Accepted and confirmed bookings are protected when dates are blocked."
         >
-          <div className="vw-schedule-list">
+          <div className="
+            grid [padding:0_22px_22px] [&_>_article]:flex [&_>_article]:items-center [&_>_article]:gap-[15px]
+            [&_>_article]:[padding:15px_0] [&_>_article]:[border-top:1px_solid_#edf3e3]
+            [&_>_article_>_svg]:text-[#a7bc8c] [&_>_article_>_div]:[flex:1] [&_>_article_>_div]:min-w-[0]
+            [&_strong]:block [&_strong]:text-[11px] [&_strong]:font-medium [&_strong]:text-[#93aa7a]
+            [&_span:not(.vw-badge)]:block [&_span:not(.vw-badge)]:text-[9px]
+            [&_span:not(.vw-badge)]:text-[#b1c29c] [&_small]:block [&_small]:text-[#b1c29c] [&_small]:text-[8px]
+            [&_small]:[overflow-wrap:anywhere] vendor-phone:[&_>_article]:flex-wrap
+            vendor-phone:[&_>_article]:gap-[9px]
+          ">
             {calendar.data.slots
               .filter(
                 (s) =>
@@ -210,7 +263,16 @@ export default function VendorCalendarPage({ filter = "" }) {
                   </div>
                   <Badge>{slot.status}</Badge>
                   <button
-                    className="vw-button"
+                    className="
+                      vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                      [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                      rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                      font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                      [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                      [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                      [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                      [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                    "
                     onClick={() => {
                       setError("");
                       setSelection({
@@ -230,7 +292,11 @@ export default function VendorCalendarPage({ filter = "" }) {
                 </article>
               ))}
             {!calendar.data.slots.length && (
-              <p className="vw-form-note">
+              <p className="
+                [background:#f4f7ee] [border-top:1px_solid_#e8eedc] [border-right:1px_solid_#e8eedc]
+                [border-bottom:1px_solid_#e8eedc] [border-left:1px_solid_#e8eedc] text-[#95a581]! [padding:12px_15px]
+                rounded-[6px] text-[10px]! leading-[1.8]
+              ">
                 No availability entries for this month. Customers' booking
                 requests still appear on the calendar.
               </p>
@@ -245,7 +311,7 @@ export default function VendorCalendarPage({ filter = "" }) {
                 <Badge>{booking.status}</Badge>
                 <Link
                   to={`/vendor/bookings/${booking.status === "Pending" ? "requests" : "active"}`}
-                  className="vw-text-link"
+                  className="inline-flex items-center gap-[6px] text-[#799464] text-[10px] [border-top:0] [border-right:0] [border-bottom:0] [border-left:0] [background:none] p-[0]"
                 >
                   View booking
                 </Link>
@@ -263,7 +329,11 @@ export default function VendorCalendarPage({ filter = "" }) {
           busy={busy}
         >
           <form
-            className="vw-form vw-modal-form"
+            className="
+              min-w-[0] [&_fieldset]:[border-top:0] [&_fieldset]:[border-right:0] [&_fieldset]:[border-bottom:0]
+              [&_fieldset]:[border-left:0] [&_fieldset]:p-[0] [&_fieldset]:m-[0] [&_fieldset]:min-w-[0]
+              [&_>_.vw-panel_+_.vw-panel]:mt-[22px] grid gap-[19px] [padding:22px_24px]
+            "
             onSubmit={async (e) => {
               e.preventDefault();
               setBusy(true);
@@ -286,7 +356,11 @@ export default function VendorCalendarPage({ filter = "" }) {
             }}
           >
             {error && (
-              <p className="vw-form-error" role="alert">
+              <p className="
+                vw-form-error [background:#fff4ee] [border-top:1px_solid_#f0ddcf] [border-right:1px_solid_#f0ddcf]
+                [border-bottom:1px_solid_#f0ddcf] [border-left:1px_solid_#f0ddcf] text-[#b6836e]! [padding:12px_15px]
+                rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]
+              " role="alert">
                 {error}
               </p>
             )}
@@ -355,20 +429,43 @@ export default function VendorCalendarPage({ filter = "" }) {
                 onChange={(e) => change("notes", e.target.value)}
               />
             </Field>
-            <p className="vw-form-note">
+            <p className="
+              [background:#f4f7ee] [border-top:1px_solid_#e8eedc] [border-right:1px_solid_#e8eedc]
+              [border-bottom:1px_solid_#e8eedc] [border-left:1px_solid_#e8eedc] text-[#95a581]! [padding:12px_15px]
+              rounded-[6px] text-[10px]! leading-[1.8]
+            ">
               Choose up to 91 days. Existing entries for the selected service
               are updated; confirmed booking dates cannot be blocked.
             </p>
-            <div className="vw-modal-actions">
+            <div className="flex justify-end gap-[9px] pt-[7px]">
               <button
-                className="vw-button"
+                className="
+                  vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                  [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                  rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                  font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                  [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                  [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                  [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                  [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                "
                 type="button"
                 disabled={busy}
                 onClick={() => setSelection(null)}
               >
                 Cancel
               </button>
-              <button className="vw-button vw-primary" disabled={busy}>
+              <button className="
+                vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                vw-primary
+              " disabled={busy}>
                 {busy ? "Saving…" : "Save availability"}
               </button>
             </div>

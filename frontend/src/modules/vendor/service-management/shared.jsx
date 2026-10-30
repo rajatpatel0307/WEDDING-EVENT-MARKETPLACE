@@ -17,7 +17,7 @@ import {
 import { Badge, Modal } from "../components/WorkspaceUI";
 import { save, vendorRequest } from "../services/workspace.api";
 import { useAuth } from "../../../context/AuthContext";
-import "./services.css";
+
 export const steps = [
   "Basic information",
   "Category details",
@@ -134,7 +134,7 @@ export function editableDocument(data) {
 }
 export function Status({ status, active }) {
   return (
-    <div className="sm-status">
+    <div className="flex gap-[5px] flex-wrap [&_.vw-badge]:text-[9px]">
       <Badge>
         {status === "Pending"
           ? "Pending Approval"
@@ -152,7 +152,7 @@ export function Notice({ message }) {
     if (message) notify(message);
   }, [message]);
   return message ? (
-    <div className="sm-notice" role="status">
+    <div className="rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#eaf4e9] text-[#346245] flex items-center gap-[10px]" role="status">
       <Check size={16} />
       {message}
     </div>
@@ -170,16 +170,35 @@ export function Confirm({
     <Modal title={title} close={onClose} busy={busy}>
       <p className="p-5">{text}</p>
       {error && (
-        <p className="sm-error" role="alert">
+        <p className="rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fff0ed] text-[#ab4b3c]" role="alert">
           {error}
         </p>
       )}
-      <div className="sm-actions">
-        <button className="vw-button" onClick={onClose} disabled={busy}>
+      <div className="[padding:18px_24px] flex justify-end gap-[10px] [border-top:1px_solid_#e6ebdf]">
+        <button className="
+          vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+          [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+          rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+          font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+          [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+          [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+          [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+          [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+        " onClick={onClose} disabled={busy}>
           Cancel
         </button>
         <button
-          className="vw-button vw-primary"
+          className="
+            vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+            [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+            rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+            font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+            [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+            [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+            [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+            [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+            vw-primary
+          "
           onClick={onConfirm}
           disabled={busy}
         >
@@ -252,7 +271,22 @@ export function ServiceActions({ service, onChange, full = false }) {
   };
   return (
     <>
-      <div className="sm-row-actions">
+      <div className="
+        sm-row-actions flex items-center gap-[5px] flex-wrap [&_a]:[border-top:1px_solid_#e3e9df]
+        [&_a]:[border-right:1px_solid_#e3e9df] [&_a]:[border-bottom:1px_solid_#e3e9df]
+        [&_a]:[border-left:1px_solid_#e3e9df] [&_a]:inline-flex [&_a]:items-center [&_a]:justify-center
+        [&_a]:gap-[6px] [&_a]:[background:#fff] [&_a]:min-w-[29px] [&_a]:min-h-[29px] [&_a]:p-[5px]
+        [&_a]:text-[#72856f] [&_a]:rounded-[6px] [&_a]:text-[11px] [&_button]:[border-top:1px_solid_#e3e9df]
+        [&_button]:[border-right:1px_solid_#e3e9df] [&_button]:[border-bottom:1px_solid_#e3e9df]
+        [&_button]:[border-left:1px_solid_#e3e9df] [&_button]:inline-flex [&_button]:items-center
+        [&_button]:justify-center [&_button]:gap-[6px] [&_button]:[background:#fff] [&_button]:min-w-[29px]
+        [&_button]:min-h-[29px] [&_button]:p-[5px] [&_button]:text-[#72856f] [&_button]:rounded-[6px]
+        [&_button]:text-[11px] [&_a:hover]:[background:#eef4e9] [&_a:hover]:text-[#2d604b]
+        [&_button:hover]:[background:#eef4e9] [&_button:hover]:text-[#2d604b] [&_.sm-danger]:text-[#b36f68]
+        [&_>_select]:p-[5px] [&_>_select]:rounded-[6px] [&_>_select]:max-w-[105px]
+        [&_>_select]:[background:#fff] [&_>_select]:text-[#72856f] [&_>_select]:text-[10px]
+        [&_>_select]:min-h-[29px]
+      ">
         <Link to={base} title="View service" aria-label="View service">
           <Eye size={16} />
           {full && "View"}
@@ -367,7 +401,7 @@ export function ServiceActions({ service, onChange, full = false }) {
         />
       )}
       {error && (
-        <p className="sm-error" role="alert">
+        <p className="rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fff0ed] text-[#ab4b3c]" role="alert">
           {error}
         </p>
       )}
@@ -376,7 +410,17 @@ export function ServiceActions({ service, onChange, full = false }) {
 }
 export function AddButton() {
   return (
-    <Link className="vw-button vw-primary" to="/vendor/services/add">
+    <Link className="
+      vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+      [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+      rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+      font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+      [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+      [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+      [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+      [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+      vw-primary
+    " to="/vendor/services/add">
       <Plus size={17} />
       Add New Service
     </Link>

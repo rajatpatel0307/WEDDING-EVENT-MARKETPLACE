@@ -1,3 +1,4 @@
+import { QuotationOverview } from "../../quotations/QuotationPages";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -186,6 +187,7 @@ export default function CustomerDashboard() {
           </div>
         ))}
       </div>
+      <QuotationOverview role="Customer" />
       <div className="cw-dashboard-middle">
         <section className="cw-event-feature">
           <header>

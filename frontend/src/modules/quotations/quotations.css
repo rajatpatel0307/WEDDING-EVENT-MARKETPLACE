@@ -1,0 +1,220 @@
+.quotation-workspace {
+  color: #342d2a;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.quotation-workspace h1 {
+  font:
+    clamp(28px, 4vw, 42px)/1.2 Georgia,
+    serif;
+  margin: 12px 0;
+}
+.quotation-workspace h2 {
+  font:
+    25px/1.3 Georgia,
+    serif;
+  margin: 12px 0;
+}
+.quotation-workspace h3 {
+  font-size: 17px;
+  margin: 12px 0;
+}
+.quotation-workspace p {
+  line-height: 1.7;
+}
+.quotation-workspace .qt-panel {
+  border: 1px solid #e7dfda;
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px;
+  margin: 20px 0;
+}
+.quotation-workspace .qt-actions,
+.quotation-workspace .qt-toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 16px 0;
+}
+.quotation-workspace button,
+.quotation-workspace .qt-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #ded2cd;
+  border-radius: 8px;
+  padding: 10px 15px;
+  background: white;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.quotation-workspace .qt-primary {
+  background: #8c414e;
+  border-color: #8c414e;
+  color: white;
+}
+.quotation-workspace button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.quotation-workspace input,
+.quotation-workspace select,
+.quotation-workspace textarea {
+  width: 100%;
+  border: 1px solid #ded2cd;
+  border-radius: 8px;
+  padding: 10px;
+  background: white;
+  color: inherit;
+  font: inherit;
+  min-width: 0;
+}
+.quotation-workspace label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+}
+.quotation-workspace .qt-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.quotation-workspace .qt-lines {
+  display: grid;
+  gap: 18px;
+}
+.quotation-workspace .qt-line {
+  border: 1px solid #e7dfda;
+  border-radius: 12px;
+  padding: 18px;
+}
+.quotation-workspace .qt-line-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.quotation-workspace .qt-table {
+  overflow: auto;
+  max-width: 100%;
+}
+.quotation-workspace table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.quotation-workspace td,
+.quotation-workspace th {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #e7dfda;
+  min-width: 110px;
+  vertical-align: top;
+}
+.quotation-workspace .qt-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.quotation-workspace .qt-stat {
+  padding: 16px;
+  border: 1px solid #e7dfda;
+  background: white;
+  border-radius: 12px;
+}
+.quotation-workspace .qt-stat strong {
+  display: block;
+  font-size: 24px;
+}
+.quotation-workspace .qt-stat span {
+  font-size: 12px;
+  color: #7c6c65;
+}
+.quotation-workspace .qt-badge {
+  display: inline-block;
+  border-radius: 6px;
+  background: #f6ecee;
+  color: #8c414e;
+  padding: 5px 9px;
+  font-size: 12px;
+}
+.quotation-workspace .qt-note {
+  font-size: 13px;
+  color: #75665e;
+}
+.quotation-workspace .qt-error {
+  color: #a22d40;
+}
+.quotation-workspace .qt-timeline {
+  list-style: none;
+  padding: 0;
+}
+.quotation-workspace .qt-timeline li {
+  border-left: 2px solid #ead5da;
+  padding: 0 0 22px 18px;
+  margin-left: 8px;
+}
+.quotation-workspace :focus-visible {
+  outline: 3px solid #8c414e;
+  outline-offset: 3px;
+}
+.quotation-workspace .qt-check {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  margin: 16px 0;
+}
+.quotation-workspace .qt-check input {
+  width: 18px;
+  margin-top: 4px;
+}
+.quotation-workspace.qt-dialog {
+  margin: auto;
+  max-width: 620px;
+  width: calc(100% - 32px);
+  max-height: 90dvh;
+  border: 1px solid #e7dfda;
+  border-radius: 16px;
+  padding: 24px;
+  overflow: auto;
+}
+.quotation-workspace.qt-dialog::backdrop {
+  background: rgb(35 22 25 / 0.45);
+}
+.quotation-workspace .qt-skeleton {
+  height: 250px;
+  background: #f2eeeb;
+  border-radius: 14px;
+}
+.quotation-workspace .qt-pagination {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  margin: 18px 0;
+}
+@media (max-width: 700px) {
+  .quotation-workspace .qt-fields,
+  .quotation-workspace .qt-line-fields {
+    grid-template-columns: 1fr;
+  }
+  .quotation-workspace .qt-panel {
+    padding: 16px;
+  }
+  .quotation-workspace .qt-toolbar > label {
+    flex: 1;
+    min-width: 140px;
+  }
+}
+@media print {
+  .quotation-workspace button,
+  .quotation-workspace nav,
+  .quotation-workspace .qt-actions {
+    display: none;
+  }
+  .quotation-workspace .qt-panel {
+    break-inside: avoid;
+  }
+}

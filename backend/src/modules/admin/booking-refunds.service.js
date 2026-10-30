@@ -4,6 +4,7 @@ import { requireRole } from "../../middleware/auth.middleware.js";
 import { assertVersion } from "../vendors/workspace.common.js";
 import * as repo from "./admin.repository.js";
 import { getBooking } from "./bookings-management.service.js";
+import { postLedger } from "../payments/ledger.js";
 import {
   minor,
   financialRows,
@@ -22,14 +23,15 @@ export const refundInput = z
     notes: z.string().trim().max(2000).default(""),
   })
   .strict();
-export async function initiate(id, input, ctx) {
+export async function initiate(id, input, ctx, { transaction, amount } = {}) {
   requireRole(ctx, "ADMIN");
   z.guid().parse(id);
   const b = refundInput.parse(input),
     hash = createHash("sha256")
-      .update(JSON.stringify({ id, reason: b.reason, notes: b.notes }))
+      .update(JSON.stringify({ id, reason: b.reason, notes: b.notes, amount }))
       .digest("hex");
-  return repo.transaction(async (tx) => {
+  const transact = transaction ? (fn) => fn(transaction) : repo.transaction;
+  return transact(async (tx) => {
     const row = await getBooking(id, ctx, tx, true);
     const [prior] = await repo.select(
       "SELECT * FROM dbo.AdminBookingOperations WITH(UPDLOCK,HOLDLOCK) WHERE IdempotencyKey=:key",
@@ -53,6 +55,13 @@ export async function initiate(id, input, ctx) {
     const ledger = await financialRows(id, tx, true),
       summary = financialSummary(row, ledger);
     if (!summary.canRefund) fail(summary.refundBlockedReason);
+    if (amount !== undefined)
+      z.number()
+        .positive()
+        .multipleOf(0.01)
+        .max(summary.refundEligible)
+        .parse(amount);
+    const requested = amount ?? summary.refundEligible;
     const operationId = randomUUID();
     await repo.insert(
       { table: "AdminBookingOperations", id: "OperationId" },
@@ -65,7 +74,7 @@ export async function initiate(id, input, ctx) {
       },
       tx,
     );
-    let outstanding = minor(summary.refundEligible);
+    let outstanding = minor(requested);
     const ids = [];
     for (const p of ledger.payments.filter((p) =>
       ["Success", "Refunded"].includes(p.PaymentStatus),
@@ -127,7 +136,7 @@ export async function initiate(id, input, ctx) {
       {
         operationId,
         refundIds: ids,
-        amount: summary.refundEligible,
+        amount: requested,
         reason: b.reason,
         notes: b.notes,
       },
@@ -138,7 +147,7 @@ export async function initiate(id, input, ctx) {
       row,
       `refund-initiated:${operationId}`,
       "Refund initiated",
-      `${row.BookingNumber}: INR ${summary.refundEligible.toFixed(2)} refund has been queued. ${b.reason}`,
+      `${row.BookingNumber}: INR ${requested.toFixed(2)} refund has been queued. ${b.reason}`,
       tx,
     );
     return {
@@ -146,7 +155,7 @@ export async function initiate(id, input, ctx) {
         "Refund queued. Completion will be recorded after payment-provider confirmation.",
       operationId,
       refundIds: ids,
-      amount: summary.refundEligible,
+      amount: requested,
     };
   });
 }
@@ -166,7 +175,11 @@ export async function reconcileRefund(value) {
     "SELECT * FROM dbo.Payments WHERE GatewayName='Razorpay' AND GatewayTransactionId=:id",
     { id: remote.payment_id },
   );
-  if (!payment) return { ignored: true };
+  if (!payment)
+    fail(
+      "Original payment is awaiting reconciliation. Retry this refund event after capture verification.",
+      503,
+    );
   return repo.transaction(async (tx) => {
     const [row] = await repo.select(
       "SELECT * FROM dbo.Booking WITH(UPDLOCK,HOLDLOCK) WHERE BookingId=:id",
@@ -183,6 +196,11 @@ export async function reconcileRefund(value) {
       payment.Currency !== remote.currency
     )
       fail("Refund does not match the captured payment.");
+    if (!["Success", "Refunded"].includes(payment.PaymentStatus))
+      fail(
+        "Original payment is awaiting capture verification. Retry this refund event.",
+        503,
+      );
     let refund = stored;
     if (
       refund &&
@@ -192,6 +210,13 @@ export async function reconcileRefund(value) {
     )
       fail("Refund provider response does not match the refund request.");
     if (!refund) {
+      const [used] = await repo.select(
+        "SELECT COALESCE(SUM(RefundAmount),0) AS total FROM dbo.Refunds WITH(UPDLOCK,HOLDLOCK) WHERE PaymentId=:id AND RefundStatus='Completed'",
+        { id: payment.PaymentId },
+        tx,
+      );
+      if (minor(used.total) + remote.amount > minor(payment.Amount))
+        fail("Cumulative provider refunds exceed the captured payment.");
       refund = {
         RefundId: randomUUID(),
         BookingId: row.BookingId,
@@ -217,6 +242,15 @@ export async function reconcileRefund(value) {
         : remote.status === "failed"
           ? "Failed"
           : "Processing";
+    if (status === "Completed") {
+      const [other] = await repo.select(
+        "SELECT COALESCE(SUM(RefundAmount),0) AS total FROM dbo.Refunds WITH(UPDLOCK,HOLDLOCK) WHERE PaymentId=:id AND RefundId<>:refund AND RefundStatus='Completed'",
+        { id: payment.PaymentId, refund: refund.RefundId },
+        tx,
+      );
+      if (minor(other.total) + remote.amount > minor(payment.Amount))
+        fail("Cumulative provider refunds exceed the captured payment.");
+    }
     if (
       refund.RefundStatus === "Completed" ||
       (refund.RefundStatus === "Failed" && status !== "Completed")
@@ -269,8 +303,36 @@ export async function reconcileRefund(value) {
       },
       tx,
     );
+    if (status === "Completed")
+      await postLedger(row, "Refund", -(remote.amount / 100), remote.id, tx);
     const ledger = await financialRows(row.BookingId, tx, true),
       summary = financialSummary(row, ledger);
+    if (
+      status === "Completed" &&
+      ledger.payouts.some((p) =>
+        ["Paid", "Processing"].includes(p.PayoutStatus),
+      )
+    ) {
+      await postLedger(
+        row,
+        "RecoveryRequired",
+        remote.amount / 100,
+        remote.id,
+        tx,
+      );
+      await audit(
+        { auth: { user: { id: null } }, req: { ip: "payment-provider" } },
+        "BOOKING_PAYOUT_REVIEW_REQUIRED",
+        row.BookingId,
+        null,
+        {
+          refundId: refund.RefundId,
+          reason:
+            "Verified refund after payout; recover funds through a separately approved adjustment.",
+        },
+        tx,
+      );
+    }
     const payRefunded = ledger.refunds
       .filter(
         (r) =>

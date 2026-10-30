@@ -1,3 +1,4 @@
+import { vendorClasses } from "../styles";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -147,13 +148,47 @@ export default function VendorMessagesPage() {
         title="Messages"
         description="Good conversations are the beginning of beautiful celebrations."
       />
-      <div className="vw-messages">
-        <aside className="vw-conversations">
+      <div className="
+        grid grid-cols-[295px_minmax(0,_1fr)] [border-top:1px_solid_#e1ead7] [border-right:1px_solid_#e1ead7]
+        [border-bottom:1px_solid_#e1ead7] [border-left:1px_solid_#e1ead7] rounded-[10px] [background:white]
+        min-h-[570px] h-[calc(100dvh_-_238px)] max-h-[850px] overflow-hidden
+        vendor-compact:grid-cols-[260px_minmax(0,_1fr)] vendor-tablet:grid-cols-[215px_minmax(0,_1fr)]
+        vendor-mobile:grid-cols-[1fr] vendor-mobile:h-[auto] vendor-mobile:min-h-[700px]
+        vendor-mobile:max-h-[none]
+      ">
+        <aside className="
+          [border-right:1px_solid_#e7eedf] min-w-[0] overflow-y-auto [&_>_header]:flex
+          [&_>_header]:items-center [&_>_header]:justify-between [&_>_header]:[padding:22px_19px_15px]
+          [&_h2]:text-[12px] [&_h2]:text-[#829e69] [&_>_header_>_span]:text-[8px]
+          [&_>_header_>_span]:text-[#b3c39e] [&_>_header_>_span]:[background:#f2f7e9]
+          [&_>_header_>_span]:[padding:2px_6px] [&_>_header_>_span]:rounded-[4px] [&_>_button]:flex
+          [&_>_button]:w-[100%] [&_>_button]:items-start [&_>_button]:gap-[10px]
+          [&_>_button]:[padding:16px_17px] [&_>_button]:[border-top:1px_solid_#f1f5e9]
+          [&_>_button]:[border-right:0] [&_>_button]:[border-bottom:0] [&_>_button]:[border-left:0]
+          [&_>_button]:[background:white] [&_>_button]:text-left [&_>_button.selected]:[background:#f1f7e9]
+          [&_>_button.selected]:[border-left:2px_solid_#99b87b] [&_>_button.selected]:pl-[15px]
+          [&_>_button_>_div]:[flex:1] [&_>_button_>_div]:min-w-[0] [&_strong]:flex [&_strong]:justify-between
+          [&_strong]:gap-[9px] [&_strong]:text-[10px] [&_strong]:text-[#91ac78] [&_strong]:font-medium
+          [&_time]:text-[6px] [&_time]:text-[#bdcbae] [&_time]:font-normal [&_time]:whitespace-nowrap
+          [&_p]:text-[9px] [&_p]:text-[#aebf98] [&_p]:whitespace-nowrap [&_p]:text-ellipsis
+          [&_p]:overflow-hidden [&_p]:[margin:3px_0] [&_small]:text-[#c0ccac] [&_small]:text-[7px]
+          [&_em]:not-italic [&_em]:[background:#a8c48b] [&_em]:text-[white] [&_em]:[padding:1px_5px]
+          [&_em]:rounded-[4px] [&_em]:text-[8px] vendor-mobile:max-h-[230px] vendor-mobile:[border-right:0]
+          vendor-mobile:[border-bottom:1px_solid_#e6efdb] vendor-mobile:[&_>_button]:[padding:12px_17px]
+          vendor-mobile:[&_>_header]:[padding:15px_17px_10px]
+        ">
           <header>
             <h2>Conversations</h2>
             <span>{list.data?.length || 0}</span>
           </header>
-          <label className="vw-conversation-search">
+          <label className="
+            flex items-center gap-[7px] [margin:0_17px_17px] [border-top:1px_solid_#e7efd9]
+            [border-right:1px_solid_#e7efd9] [border-bottom:1px_solid_#e7efd9] [border-left:1px_solid_#e7efd9]
+            rounded-[6px] [padding:0_8px] text-[#b4c89b] [&_input]:[padding:8px_0] [&_input]:[border-top:0]
+            [&_input]:[border-right:0] [&_input]:[border-bottom:0] [&_input]:[border-left:0]
+            [&_input]:[outline:0] [&_input]:min-w-[0] [&_input]:w-[100%] [&_input]:text-[9px]
+            vendor-mobile:mb-[10px]
+          ">
             <Search size={15} />
             <input
               placeholder="Find a customer…"
@@ -183,7 +218,11 @@ export default function VendorMessagesPage() {
                   key={c.id}
                   onClick={() => setParams({ conversation: c.id })}
                 >
-                  <span className="vw-chat-avatar">{c.customer[0]}</span>
+                  <span className="
+                    w-[33px] min-w-[33px] h-[33px] [border-top:1px_solid_#e3edda] [border-right:1px_solid_#e3edda]
+                    [border-bottom:1px_solid_#e3edda] [border-left:1px_solid_#e3edda] [background:#f1f6e8] rounded-[50%]
+                    grid place-items-center text-[#aac091] text-[12px]
+                  ">{c.customer[0]}</span>
                   <div>
                     <strong>
                       {c.customer}
@@ -197,7 +236,14 @@ export default function VendorMessagesPage() {
               ))
           )}
         </aside>
-        <section className="vw-chat">
+        <section className="
+          [&_h2]:text-[12px] [&_h2]:text-[#829e69] flex flex-col min-w-[0] min-h-[0] [&_>_header]:flex
+          [&_>_header]:items-center [&_>_header]:gap-[11px] [&_>_header]:[padding:18px_23px]
+          [&_>_header]:[border-bottom:1px_solid_#e8f0df] [&_>_header_>_div]:[flex:1]
+          [&_>_header_>_svg]:text-[#c0cfae] [&_header_p]:text-[8px] [&_header_p]:text-[#adbf96]
+          [&_header_p]:mt-[3px] [&_>_.vw-form-error]:[margin:5px_15px] [&_>_.vw-form-error]:text-[9px]!
+          vendor-mobile:h-[550px] vendor-mobile:[&_>_header]:[padding:14px_17px]
+        ">
           {!selected ? (
             <Empty
               title="A little conversation goes a long way"
@@ -206,7 +252,11 @@ export default function VendorMessagesPage() {
           ) : (
             <>
               <header>
-                <span className="vw-chat-avatar">
+                <span className="
+                  w-[33px] min-w-[33px] h-[33px] [border-top:1px_solid_#e3edda] [border-right:1px_solid_#e3edda]
+                  [border-bottom:1px_solid_#e3edda] [border-left:1px_solid_#e3edda] [background:#f1f6e8] rounded-[50%]
+                  grid place-items-center text-[#aac091] text-[12px]
+                ">
                   {conversation?.customer?.[0] || "C"}
                 </span>
                 <div>
@@ -219,9 +269,18 @@ export default function VendorMessagesPage() {
                 </div>
                 <MessageSquare size={18} />
               </header>
-              <div className="vw-chat-scroll" aria-live="polite">
+              <div className="[flex:1] min-h-[0] overflow-y-auto [background:#fcfdf8] p-[23px] flex flex-col gap-[15px] vendor-mobile:p-[16px]" aria-live="polite">
                 {hasMore && (
-                  <button className="vw-button" onClick={loadEarlier}>
+                  <button className="
+                    vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                    [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                    rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                    font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                    [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                    [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                    [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                    [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                  " onClick={loadEarlier}>
                     Load earlier messages
                   </button>
                 )}
@@ -231,12 +290,16 @@ export default function VendorMessagesPage() {
                   messages.map((message) => (
                     <article
                       key={message.id}
-                      className={`vw-chat-bubble ${message.mine ? "mine" : ""}`}
+                      className={vendorClasses(`vw-chat-bubble ${message.mine ? "mine" : ""}`)}
                     >
                       {message.text && <p>{message.text}</p>}
                       {!!message.hasAttachment && (
                         <button
-                          className="vw-chat-attachment"
+                          className="
+                            flex items-center gap-[7px] [border-top:1px_solid_#dfebd2] [border-right:1px_solid_#dfebd2]
+                            [border-bottom:1px_solid_#dfebd2] [border-left:1px_solid_#dfebd2] [background:#f8fcef]
+                            [padding:9px_11px] rounded-[5px] text-[9px] text-[#9bb780] max-w-[100%] [overflow-wrap:anywhere]
+                          "
                           onClick={async () => {
                             try {
                               download(
@@ -268,23 +331,32 @@ export default function VendorMessagesPage() {
                     </article>
                   ))
                 ) : (
-                  <p className="vw-chat-intro">
+                  <p className="text-center m-[auto] text-[#b5c7a1]! text-[11px]!">
                     Say hello and start planning something special.
                   </p>
                 )}
                 <div ref={end} />
               </div>
               {error && (
-                <p className="vw-form-error" role="alert">
+                <p className="
+                  vw-form-error [background:#fff4ee] [border-top:1px_solid_#f0ddcf] [border-right:1px_solid_#f0ddcf]
+                  [border-bottom:1px_solid_#f0ddcf] [border-left:1px_solid_#f0ddcf] text-[#b6836e]! [padding:12px_15px]
+                  rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]
+                " role="alert">
                   {error}
                 </p>
               )}
               {attachment && (
-                <div className="vw-staged-attachment">
+                <div className="flex items-center gap-[7px] [padding:9px_21px] [background:#f7fbf0] text-[#abc192] text-[10px] [&_.vw-icon]:ml-[auto]">
                   <Paperclip size={14} />
                   {attachment.name}
                   <button
-                    className="vw-icon"
+                    className="
+                      vw-icon inline-flex items-center justify-center shrink-0 w-[29px] h-[29px] text-[#99a38e]
+                      [background:none] [border-top:1px_solid_transparent] [border-right:1px_solid_transparent]
+                      [border-bottom:1px_solid_transparent] [border-left:1px_solid_transparent] rounded-[5px] p-[0]
+                      [&:hover]:[background:#edf3e4] [&:hover]:text-[#608146]
+                    "
                     aria-label="Remove attachment"
                     onClick={() => setAttachment(null)}
                   >
@@ -293,7 +365,14 @@ export default function VendorMessagesPage() {
                 </div>
               )}
               <form
-                className="vw-chat-compose"
+                className="
+                  flex items-center gap-[11px] [padding:15px_20px_5px] [border-top:1px_solid_#eaf1df]
+                  [&_textarea]:[flex:1] [&_textarea]:resize-none [&_textarea]:min-w-[0] [&_textarea]:text-[11px]
+                  [&_textarea]:[border-top:0] [&_textarea]:[border-right:0] [&_textarea]:[border-bottom:0]
+                  [&_textarea]:[border-left:0] [&_textarea]:[outline:0] [&_textarea]:[padding:8px_0]
+                  [&_textarea]:max-h-[150px] vendor-mobile:[padding:12px_14px_5px] vendor-mobile:gap-[6px]
+                  vendor-mobile:[&_>_button_>_span]:hidden
+                "
                 onSubmit={async (e) => {
                   e.preventDefault();
                   if (!text.trim() && !attachment) return;
@@ -322,7 +401,14 @@ export default function VendorMessagesPage() {
                 }}
               >
                 <label
-                  className="vw-icon vw-attach-button"
+                  className="
+                    vw-icon inline-flex items-center justify-center shrink-0 w-[29px] h-[29px] text-[#99a38e]
+                    [background:none] [border-top:1px_solid_transparent] [border-right:1px_solid_transparent]
+                    [border-bottom:1px_solid_transparent] [border-left:1px_solid_transparent] rounded-[5px] p-[0]
+                    [&:hover]:[background:#edf3e4] [&:hover]:text-[#608146] relative overflow-hidden cursor-pointer
+                    [&_input]:absolute [&_input]:[inset:0] [&_input]:opacity-[0] [&_input]:w-[100%] [&_input]:h-[100%]
+                    [&_input]:cursor-pointer
+                  "
                   title="Attach a PDF or image"
                 >
                   <Paperclip size={19} />
@@ -375,14 +461,24 @@ export default function VendorMessagesPage() {
                   onChange={(e) => setText(e.target.value)}
                 />
                 <button
-                  className="vw-button vw-primary"
+                  className="
+                    vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                    [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                    rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                    font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                    [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                    [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                    [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                    [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                    vw-primary
+                  "
                   disabled={busy || uploading || (!text.trim() && !attachment)}
                 >
                   <Send size={16} />
                   <span>{busy ? "Sending…" : "Send"}</span>
                 </button>
               </form>
-              <p className="vw-chat-file-note">
+              <p className="text-center text-[7px]! text-[#c2d0b1]! [margin:0_0_11px]">
                 Private attachments · PDF, PNG or JPEG · Up to 5 MB
               </p>
             </>

@@ -21,10 +21,15 @@ function loadCheckout() {
     });
   return checkoutScript;
 }
-export async function checkout(bookingId, user) {
+export async function checkout(bookingId, user, options = {}) {
   await loadCheckout();
-  const order = await save(`/bookings/${bookingId}/payment-order`, "POST", {});
+  const order = await save(`/bookings/${bookingId}/payment-order`, "POST", {
+    idempotencyKey: options.idempotencyKey || crypto.randomUUID(),
+    mode: options.mode || 'balance', termsAccepted: options.termsAccepted === true,
+  });
+  if(order.alreadyPaid) return order;
   return new Promise((resolve, reject) => {
+    let verifying = false;
     const instance = new window.Razorpay({
       key: order.key,
       order_id: order.orderId,
@@ -39,6 +44,7 @@ export async function checkout(bookingId, user) {
       },
       theme: { color: "#955365" },
       handler: async (result) => {
+        verifying = true;
         try {
           const r = await save("/payments/verify", "POST", {
             razorpay_order_id: result.razorpay_order_id,
@@ -51,13 +57,23 @@ export async function checkout(bookingId, user) {
         }
       },
       modal: {
-        ondismiss: () =>
-          resolve({ message: "Checkout closed. Your booking is unchanged." }),
+        ondismiss: () => {
+          if (verifying) return;
+          resolve({
+            closed: true,
+            message: "Checkout closed. Check server status if money was deducted.",
+          });
+        },
       },
     });
     instance.on("payment.failed", () =>
       reject(
-        new Error("Payment did not complete. You can retry from your booking."),
+        Object.assign(
+          new Error(
+            "Payment did not complete. You can retry from your booking.",
+          ),
+          { paymentFailed: true },
+        ),
       ),
     );
     instance.open();

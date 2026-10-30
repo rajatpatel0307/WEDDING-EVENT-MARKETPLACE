@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useParams,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import {
   Plus,
   Pencil,
@@ -34,7 +40,6 @@ import {
 } from "../services/workspace.api";
 import BookingChanges from "../../bookings/BookingChanges";
 import BookingItemDetails from "../../bookings/BookingItemDetails";
-import { checkout } from "../services/checkout";
 const columns = {
   bookings: [
     ["number", "Booking"],
@@ -92,6 +97,8 @@ const names = {
   notifications: "Notifications",
 };
 function Cell({ name, value, row }) {
+  if (name === "reference" && row.id)
+    return <Link to={`/customer/payments/${row.id}`}>{value}</Link>;
   if (name === "amount") return money(value, false, row.currency || "INR");
   if (["validUntil", "bookingDate", "paidAt", "createdAt"].includes(name))
     return date(value);
@@ -101,6 +108,7 @@ function Cell({ name, value, row }) {
   return value || "—";
 }
 export default function CustomerRecords({ section: explicit }) {
+  const [filterParams, setFilterParams] = useSearchParams();
   const location = useLocation(),
     section = explicit || location.pathname.split("/")[2],
     [page, setPage] = useState(1),
@@ -110,7 +118,9 @@ export default function CustomerRecords({ section: explicit }) {
     [busy, setBusy] = useState(false),
     { notify, reload } = useAuth(),
     r = useCustomerData(
-      section === "wishlist" ? "/wishlist" : `/records/${section}?page=${page}`,
+      section === "wishlist"
+        ? "/wishlist"
+        : `/records/${section}?${new URLSearchParams({ page, status: section === "bookings" ? filterParams.get("status") || "" : "" })}`,
       version,
     );
   useEffect(() => {
@@ -146,6 +156,30 @@ export default function CustomerRecords({ section: explicit }) {
           </Link>
         ) : null}
       </Heading>
+      {section === "bookings" && (
+        <nav className="cw-inline-tabs" aria-label="Booking status">
+          {[
+            "",
+            "Pending",
+            "Confirmed",
+            "Upcoming",
+            "Completed",
+            "Cancelled",
+          ].map((status) => (
+            <button
+              key={status}
+              className="cw-button"
+              aria-pressed={(filterParams.get("status") || "") === status}
+              onClick={() => {
+                setFilterParams(status ? { status } : {});
+                setPage(1);
+              }}
+            >
+              {status || "All bookings"}
+            </button>
+          ))}
+        </nav>
+      )}
       {section === "quotations" && (
         <div className="cw-inline-tabs">
           <Link to="/customer/quotations" className="active">
@@ -169,6 +203,7 @@ export default function CustomerRecords({ section: explicit }) {
             Payments are made securely through Razorpay after your vendor
             accepts the booking.{" "}
             <Link to="/customer/bookings">Go to your bookings →</Link>
+            {' '}<Link to="/customer/refunds">Refund requests</Link>
           </p>
         </section>
       )}
@@ -257,6 +292,15 @@ export default function CustomerRecords({ section: explicit }) {
                 <h3>{n.title}</h3>
                 <p>{n.message}</p>
                 <small>{timestamp(n.createdAt)}</small>
+                {["Quotation", "QuotationRequest"].includes(n.referenceType) &&
+                  /^[0-9a-f-]{36}$/i.test(n.referenceId || "") && (
+                    <Link
+                      className="cw-button"
+                      to={`/customer/${n.referenceType === "Quotation" ? "quotations" : "requests"}/${n.referenceId}`}
+                    >
+                      View details
+                    </Link>
+                  )}
               </div>
               {!n.isRead && (
                 <button
@@ -459,7 +503,7 @@ export function CustomerRecordDetails({ quote = false }) {
     [review, setReview] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    { notify, user } = useAuth(),
+    { notify } = useAuth(),
     navigate = useNavigate();
   if (r.loading) return <Loading />;
   if (r.error) return <ErrorView error={r.error} retry={r.retry} />;
@@ -629,6 +673,17 @@ export function CustomerRecordDetails({ quote = false }) {
         </dl>
         {b.VendorMessage && <p>{b.VendorMessage}</p>}
         {b.CustomerMessage && <p>Your note: {b.CustomerMessage}</p>}
+        {quote && r.data.revisions?.length > 0 && (
+          <section>
+            <h2>Requested revisions</h2>
+            {r.data.revisions.map((revision) => (
+              <p key={revision.id}>
+                {timestamp(revision.createdAt)} · {revision.status} ·{" "}
+                {revision.message}
+              </p>
+            ))}
+          </section>
+        )}
         {quote && ["Sent", "Viewed"].includes(b.Status) && (
           <div className="cw-detail-actions">
             <button
@@ -660,6 +715,12 @@ export function CustomerRecordDetails({ quote = false }) {
             b.BookingStatus,
           ) && (
             <div className="cw-payment-action">
+              <Link
+                className="cw-button"
+                to={`/customer/bookings/${id}/checkout`}
+              >
+                Review checkout and payment terms
+              </Link>
               <button
                 className="cw-button cw-primary"
                 disabled={busy || !config.data?.enabled}
@@ -667,9 +728,7 @@ export function CustomerRecordDetails({ quote = false }) {
                   setBusy(true);
                   setError("");
                   try {
-                    const result = await checkout(id, user);
-                    notify(result.message);
-                    setVersion((v) => v + 1);
+                    navigate(`/customer/bookings/${id}/checkout`);
                   } catch (e) {
                     setError(e.message);
                     setVersion((v) => v + 1);

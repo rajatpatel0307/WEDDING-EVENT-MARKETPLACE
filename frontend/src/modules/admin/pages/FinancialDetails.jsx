@@ -228,6 +228,13 @@ export default function FinancialDetails() {
                             action: decision[0],
                             expectedUpdatedAt: row.UpdatedAt,
                             note: values.note,
+                            ...(decision[0] === "start-settlement"
+                              ? {
+                                  destination: values.destination,
+                                  destinationVerified:
+                                    values.destinationVerified === "on",
+                                }
+                              : {}),
                             ...(["confirm-paid", "record-failure"].includes(
                               decision[0],
                             )
@@ -251,6 +258,25 @@ export default function FinancialDetails() {
             }}
           >
             <p>This action will be recorded in the audit history.</p>
+            {decision[0] === "start-settlement" && (
+              <>
+                <label>
+                  Masked external destination reference
+                  <input
+                    name="destination"
+                    required
+                    minLength={6}
+                    maxLength={150}
+                    placeholder="Verified beneficiary — account ending 1234"
+                  />
+                </label>
+                <label>
+                  <input name="destinationVerified" type="checkbox" required />{" "}
+                  I verified the external beneficiary belongs to this vendor and
+                  is eligible for settlement.
+                </label>
+              </>
+            )}
             <label>
               Reason / internal note
               <textarea name="note" required minLength={3} maxLength={2000} />

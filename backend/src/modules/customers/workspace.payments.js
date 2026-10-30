@@ -5,7 +5,16 @@ import {
   financialSummary,
 } from "../admin/booking-finance.js";
 import { reconcileRefund } from "../admin/booking-refunds.service.js";
-import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
+import {
+  createHmac,
+  timingSafeEqual,
+  randomUUID,
+  createHash,
+} from "node:crypto";
+import { minor } from "../admin/booking-finance.js";
+import { postLedger } from "../payments/ledger.js";
+import { calculateCommission } from "../payments/commission-rules.js";
+import { notifyAdmins } from "../notifications/admin-events.js";
 import { z } from "zod";
 import {
   scope,
@@ -33,7 +42,7 @@ export function validSignature(text, signature, secret) {
   const expected = createHmac("sha256", secret).update(text).digest();
   return timingSafeEqual(expected, Buffer.from(signature, "hex"));
 }
-async function gateway(path, body) {
+export async function gateway(path, body) {
   if (!configured())
     fail(
       "Online payments are not configured yet. Please contact support.",
@@ -68,25 +77,84 @@ export function paymentEligible(booking) {
   if (Number(booking.RemainingAmount) <= 0)
     fail("This booking is already paid.", 409);
 }
-export async function createOrder(recordId, ctx) {
+export const checkoutInput = z
+  .object({
+    idempotencyKey: z.guid(),
+    mode: z.enum(["advance", "balance"]).default("balance"),
+    termsAccepted: z.literal(true),
+  })
+  .strict();
+export function payableMinor(booking, mode = "balance") {
+  paymentEligible(booking);
+  const remaining = minor(booking.RemainingAmount);
+  const advance = Math.max(
+    0,
+    minor(booking.AdvanceAmount) - minor(booking.PaidAmount),
+  );
+  const amount = mode === "advance" ? Math.min(advance, remaining) : remaining;
+  if (!amount)
+    fail("No advance installment remains. Pay the outstanding balance.", 409);
+  return amount;
+}
+export async function createOrder(recordId, ctx, input) {
   const { id } = scope(ctx);
   if (!configured())
     fail(
       "Online payments are not configured yet. Please contact support.",
       503,
     );
+  const body = checkoutInput.parse(input);
   return repo.transaction(async (tx) => {
     const booking = await owned("bookings", recordId, id, tx);
-    paymentEligible(booking);
-    const amount = Math.round(Number(booking.RemainingAmount) * 100);
+    const [replay] = await repo.select(
+      "SELECT * FROM dbo.CustomerPaymentOrders WITH(UPDLOCK,HOLDLOCK) WHERE CheckoutKey=:key",
+      { key: body.idempotencyKey },
+      tx,
+    );
+    if (
+      replay &&
+      (replay.BookingId.toLowerCase() !== recordId.toLowerCase() ||
+        replay.CustomerId.toLowerCase() !== id.toLowerCase() ||
+        replay.PaymentMode !== body.mode)
+    )
+      fail("Idempotency key belongs to another checkout.", 409);
+    if (replay?.Status === "Paid")
+      return {
+        alreadyPaid: true,
+        message: "This payment was already verified.",
+      };
+    const ledger = await financialRows(recordId, tx, true);
+    const captured = ledger.payments
+      .filter(
+        (p) =>
+          ["Success", "Refunded"].includes(p.PaymentStatus) &&
+          p.Currency === "INR",
+      )
+      .reduce((n, p) => n + minor(p.Amount), 0);
+    if (captured !== minor(booking.PaidAmount))
+      fail("The payment balance requires reconciliation before checkout.", 409);
+    if (
+      ledger.refunds.some((r) =>
+        ["Pending", "Processing"].includes(r.RefundStatus),
+      )
+    )
+      fail("A refund is in progress.", 409);
+    const amount = payableMinor(booking, body.mode);
     if (!Number.isSafeInteger(amount) || amount <= 0)
       fail("Invalid booking balance.", 409);
     const [existing] = await repo.select(
-      "SELECT TOP(1) * FROM dbo.CustomerPaymentOrders WHERE BookingId=:booking AND Status='Created' AND AmountMinor=:amount ORDER BY CreatedAt DESC",
+      "SELECT TOP(1) * FROM dbo.CustomerPaymentOrders WITH(UPDLOCK,HOLDLOCK) WHERE BookingId=:booking AND Status='Created' ORDER BY CreatedAt DESC",
       { booking: recordId, amount },
       tx,
     );
-    let order = existing;
+    if (existing && Number(existing.AmountMinor) !== amount)
+      fail(
+        "Another checkout is active. Contact support to reconcile it before changing installments.",
+        409,
+      );
+    let order = replay || existing;
+    if (order && Number(order.AmountMinor) !== amount)
+      fail("Booking balance changed. Refresh checkout.", 409);
     if (!order) {
       const remote = await gateway("/orders", {
         amount,
@@ -106,6 +174,8 @@ export async function createOrder(recordId, ctx) {
           AmountMinor: amount,
           Currency: "INR",
           Status: "Created",
+          CheckoutKey: body.idempotencyKey,
+          PaymentMode: body.mode,
         },
         tx,
       );
@@ -121,9 +191,28 @@ export async function createOrder(recordId, ctx) {
   });
 }
 export async function settle(payment) {
+  z.object({
+    id: z.string().regex(/^pay_[A-Za-z0-9]+$/),
+    order_id: z.string().regex(/^order_[A-Za-z0-9]+$/),
+    amount: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+    currency: z.literal("INR"),
+    created_at: z.number().int().nonnegative(),
+  })
+    .passthrough()
+    .parse(payment);
   if (payment.status !== "captured")
     fail("Payment is awaiting capture. Refresh payments shortly.", 409);
+  const [source] = await repo.select(
+    "SELECT BookingId FROM dbo.CustomerPaymentOrders WHERE GatewayOrderId=:order",
+    { order: payment.order_id },
+  );
+  if (!source) fail("Payment order not found.", 404);
   return repo.transaction(async (tx) => {
+    await repo.lockRecord(
+      { table: "Booking", id: "BookingId" },
+      source.BookingId,
+      tx,
+    );
     const [order] = await repo.select(
       "SELECT * FROM dbo.CustomerPaymentOrders WITH(UPDLOCK,HOLDLOCK) WHERE GatewayOrderId=:order",
       { order: payment.order_id },
@@ -142,37 +231,69 @@ export async function settle(payment) {
     );
     if (!booking) fail("Booking not found.", 404);
     const [prior] = await repo.select(
-      "SELECT PaymentId FROM dbo.Payments WHERE GatewayName='Razorpay' AND GatewayTransactionId=:payment",
+      "SELECT PaymentId,PaymentStatus FROM dbo.Payments WHERE GatewayName='Razorpay' AND GatewayTransactionId=:payment",
       { payment: payment.id },
       tx,
     );
-    if (prior) return { message: "Payment already confirmed." };
+    if (prior && ["Success", "Refunded"].includes(prior.PaymentStatus))
+      return { verified: true, message: "Payment already confirmed." };
     const amount = payment.amount / 100;
     const reconciliation =
       Number(booking.RemainingAmount) < amount ||
       ["Cancelled", "Rejected", "Refunded"].includes(booking.BookingStatus);
-    const p = await insert(
-      "Payments",
-      "PaymentId",
-      {
-        BookingId: booking.BookingId,
-        PaymentReference: payment.id,
-        GatewayName: "Razorpay",
-        GatewayTransactionId: payment.id,
-        PaymentMethod: payment.method || "Online",
-        Amount: amount,
-        Currency: "INR",
-        PaymentStatus: "Success",
-        PaidAt: new Date(payment.created_at * 1000),
-        GatewayResponse: JSON.stringify({
-          orderId: payment.order_id,
-          captured: true,
-          reconciliation,
-        }),
-      },
-      tx,
+    const capturedValues = {
+      BookingId: booking.BookingId,
+      PaymentReference: payment.id,
+      GatewayName: "Razorpay",
+      GatewayTransactionId: payment.id,
+      PaymentMethod: String(payment.method || "Online").slice(0, 30),
+      Amount: amount,
+      Currency: "INR",
+      PaymentStatus: "Success",
+      PaidAt: new Date(payment.created_at * 1000),
+      GatewayResponse: JSON.stringify({
+        orderId: payment.order_id,
+        captured: true,
+        reconciliation,
+      }),
+    };
+    const p = prior
+      ? { id: prior.PaymentId }
+      : await insert("Payments", "PaymentId", capturedValues, tx);
+    if (prior)
+      await repo.update(
+        { table: "Payments", id: "PaymentId" },
+        prior.PaymentId,
+        capturedValues,
+        tx,
+      );
+    await postLedger(booking, "Capture", amount, payment.id, tx);
+    let commissionSnapshot = {};
+    try {
+      commissionSnapshot = JSON.parse(booking.PolicySnapshotJson || "{}");
+    } catch {}
+    const commissionTotal = calculateCommission(
+      booking,
+      commissionSnapshot.commissionRule,
+      commissionSnapshot.commissionRate,
     );
-    const paid = Math.round((Number(booking.PaidAmount) + amount) * 100) / 100;
+    if (commissionTotal !== null && minor(booking.TotalAmount) > 0) {
+      const total = BigInt(minor(booking.TotalAmount)),
+        commission = BigInt(minor(commissionTotal));
+      const before = BigInt(Math.min(minor(booking.PaidAmount), Number(total)));
+      const after = BigInt(
+        Math.min(minor(booking.PaidAmount) + payment.amount, Number(total)),
+      );
+      await postLedger(
+        booking,
+        "CommissionAccrued",
+        Number((commission * after) / total - (commission * before) / total) /
+          100,
+        payment.id,
+        tx,
+      );
+    }
+    const paid = (minor(booking.PaidAmount) + payment.amount) / 100;
     const next = reconciliation
       ? booking.BookingStatus
       : ["Accepted", "PaymentPending"].includes(booking.BookingStatus)
@@ -193,7 +314,7 @@ export async function settle(payment) {
     await repo.update(
       { table: "CustomerPaymentOrders", id: "OrderId" },
       order.OrderId,
-      { Status: "Paid" },
+      { Status: "Paid", UpdatedAt: new Date() },
       tx,
     );
     if (next !== booking.BookingStatus)
@@ -258,6 +379,13 @@ export async function settle(payment) {
       { amount, payment: payment.id, reconciliation },
       tx,
     );
+    if (reconciliation)
+      await notifyAdmins(
+        "PAYMENT_RECONCILIATION_REVIEW",
+        "Booking",
+        booking.BookingId,
+        tx,
+      );
     await milestone(
       booking,
       `payment:${payment.id}`,
@@ -273,7 +401,11 @@ export async function settle(payment) {
         `${booking.BookingNumber} is confirmed.`,
         tx,
       );
-    return { message: "Payment verified and confirmed." };
+    return {
+      verified: true,
+      amount,
+      message: "Payment verified and confirmed.",
+    };
   });
 }
 export async function verifyPayment(input, ctx) {
@@ -306,7 +438,17 @@ export async function verifyPayment(input, ctx) {
 }
 export async function recordFailedPayment(payment) {
   if (!payment?.order_id || !payment.id || payment.status !== "failed") return;
+  const [source] = await repo.select(
+    "SELECT BookingId FROM dbo.CustomerPaymentOrders WHERE GatewayOrderId=:order",
+    { order: payment.order_id },
+  );
+  if (!source) return;
   return repo.transaction(async (tx) => {
+    await repo.lockRecord(
+      { table: "Booking", id: "BookingId" },
+      source.BookingId,
+      tx,
+    );
     const [order] = await repo.select(
       "SELECT * FROM dbo.CustomerPaymentOrders WITH(UPDLOCK,HOLDLOCK) WHERE GatewayOrderId=:id",
       { id: payment.order_id },
@@ -398,6 +540,13 @@ export async function recordFailedPayment(payment) {
 }
 export async function webhook(req, res) {
   try {
+    if (!Buffer.isBuffer(req.body))
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "A raw JSON provider event is required.",
+        });
     if (!process.env.RAZORPAY_WEBHOOK_SECRET)
       return res
         .status(503)
@@ -413,19 +562,77 @@ export async function webhook(req, res) {
         .status(400)
         .json({ success: false, message: "Invalid webhook signature." });
     const event = JSON.parse(req.body.toString("utf8"));
-    if (event.event === "payment.captured")
-      await settle(event.payload.payment.entity);
-    if (event.event === "payment.failed")
-      await recordFailedPayment(event.payload?.payment?.entity);
     if (
-      ["refund.created", "refund.processed", "refund.failed"].includes(
-        event.event,
-      )
+      ![
+        "payment.captured",
+        "payment.failed",
+        "refund.created",
+        "refund.processed",
+        "refund.failed",
+      ].includes(event.event)
     )
-      await reconcileRefund(event.payload?.refund?.entity);
+      return res.json({ success: true, ignored: true });
+    const entity = event.event.startsWith("refund.")
+      ? event.payload?.refund?.entity
+      : event.payload?.payment?.entity;
+    if (!entity?.id)
+      return res
+        .status(400)
+        .json({ success: false, message: "Malformed provider event." });
+    // Retain only reconciliation fields, never card data, tokens or complete provider responses.
+    const safe = Object.fromEntries(
+      [
+        "id",
+        "order_id",
+        "payment_id",
+        "amount",
+        "currency",
+        "status",
+        "method",
+        "created_at",
+        "receipt",
+      ]
+        .filter((k) => entity[k] !== undefined)
+        .map((k) => [k, entity[k]]),
+    );
+    const hash = createHash("sha256").update(req.body).digest("hex");
+    const eventId = req.get("x-razorpay-event-id") || hash;
+    if (!/^[A-Za-z0-9_-]{1,150}$/.test(eventId))
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid event identifier." });
+    await repo.transaction(async (tx) => {
+      const [prior] = await repo.select(
+        "SELECT EventId,PayloadHash FROM dbo.PaymentWebhookEvents WITH(UPDLOCK,HOLDLOCK) WHERE EventId=:id OR PayloadHash=:hash",
+        { id: eventId, hash },
+        tx,
+      );
+      if (prior) {
+        if (
+          prior.EventId.toLowerCase() === eventId.toLowerCase() &&
+          prior.PayloadHash !== hash
+        )
+          fail(
+            "Provider event identifier was reused with a different payload.",
+            409,
+          );
+        return;
+      }
+      await insert(
+        "PaymentWebhookEvents",
+        "EventId",
+        {
+          EventId: eventId,
+          EventType: event.event,
+          PayloadHash: hash,
+          PayloadJson: JSON.stringify(safe),
+        },
+        tx,
+      );
+    });
     return res.json({ success: true });
   } catch (e) {
-    return res.status(e.status || 500).json({
+    return res.status(e instanceof SyntaxError ? 400 : e.status || 500).json({
       success: false,
       message: e.status ? e.message : "Payment reconciliation failed.",
     });

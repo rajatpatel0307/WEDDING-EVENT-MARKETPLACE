@@ -4,7 +4,8 @@ import { Heart, ArrowUpRight } from "lucide-react";
 import AuthLayout from "../components/AuthLayout";
 import { Field, Submit, ErrorBox } from "../components/FormControls";
 import { mutate } from "../../../services/apollo";
-import { useAuth, destination } from "../../../context/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
+import { customerLoginDestination } from "../../../routes/authNavigation";
 export default function LoginPage() {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -22,13 +23,9 @@ export default function LoginPage() {
       const result = await mutate("login", data);
       setUser(result.user);
       notify("Welcome back to MarryNest.");
-      navigate(
-        result.user.role === "Customer" &&
-          params.get("redirect") === "/customer/wishlist"
-          ? "/customer/wishlist"
-          : destination(result.user),
-        { replace: true },
-      );
+      navigate(customerLoginDestination(result.user, params.get("redirect")), {
+        replace: true,
+      });
     } catch (e) {
       setError(e.message);
       if (e.errors?.some((x) => x.extensions?.code === "EMAIL_UNVERIFIED")) {
@@ -44,17 +41,24 @@ export default function LoginPage() {
       <div className="form-icon w-[48px] h-[48px] [border:1px_solid_#eaded9] rounded-[13px] grid place-items-center [color:#9a5f65] [background:#fcf8f6] mb-[23px] max-[480.001px]:mb-[20px]">
         <Heart size={22} strokeWidth={1.5} />
       </div>
-      <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full form-eyebrow [&.form-eyebrow]:text-[9px] [&.form-eyebrow]:tracking-[2px] [&.form-eyebrow]:mb-[12px]">WELCOME TO MARRYNEST</span>
+      <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full form-eyebrow [&.form-eyebrow]:text-[9px] [&.form-eyebrow]:tracking-[2px] [&.form-eyebrow]:mb-[12px]">
+        WELCOME TO MARRYNEST
+      </span>
       <h2>
         Your next chapter
         <br />
         starts here.
       </h2>
-      <p className="form-intro text-[12px] leading-[1.8] [margin:14px_0_28px] max-[480.001px]:mb-[25px]">Sign in to bring your celebration to life.</p>
+      <p className="form-intro text-[12px] leading-[1.8] [margin:14px_0_28px] max-[480.001px]:mb-[25px]">
+        Sign in to bring your celebration to life.
+      </p>
       <form onSubmit={submit}>
         <ErrorBox message={error} />
         {unverified && (
-          <Link className="text-link [color:#8c414e] font-medium inline-flex items-center gap-[7px] [&:hover]:underline" to="/auth/verify-email">
+          <Link
+            className="text-link [color:#8c414e] font-medium inline-flex items-center gap-[7px] [&:hover]:underline"
+            to="/auth/verify-email"
+          >
             Verify your email →
           </Link>
         )}
@@ -76,8 +80,13 @@ export default function LoginPage() {
           maxLength={72}
         />
         <div className="form-row flex justify-between items-center gap-[8px] text-[10px] [margin:-1px_0_24px]">
-          <span className="session-note [color:#aa9a9e]">Your private planning space</span>
-          <Link className="text-link [color:#8c414e] font-medium inline-flex items-center gap-[7px] [&:hover]:underline" to="/auth/forgot-password">
+          <span className="session-note [color:#aa9a9e]">
+            Your private planning space
+          </span>
+          <Link
+            className="text-link [color:#8c414e] font-medium inline-flex items-center gap-[7px] [&:hover]:underline"
+            to="/auth/forgot-password"
+          >
             Forgot password?
           </Link>
         </div>

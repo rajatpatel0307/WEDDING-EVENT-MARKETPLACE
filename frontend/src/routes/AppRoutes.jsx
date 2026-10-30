@@ -56,6 +56,21 @@ const CustomerEventDetails = lazy(() =>
     default: m.CustomerEventDetails,
   })),
 );
+const QuotationList = lazy(() =>
+  import("../modules/quotations/QuotationPages").then((m) => ({
+    default: m.QuotationList,
+  })),
+);
+const QuotationDetails = lazy(() =>
+  import("../modules/quotations/QuotationPages").then((m) => ({
+    default: m.QuotationDetails,
+  })),
+);
+const QuotationRequestDetails = lazy(() =>
+  import("../modules/quotations/QuotationPages").then((m) => ({
+    default: m.RequestDetails,
+  })),
+);
 const CustomerRecords = lazy(
   () => import("../modules/customer/pages/CustomerRecords"),
 );
@@ -69,6 +84,11 @@ const CustomerProfile = lazy(() =>
     default: m.CustomerProfile,
   })),
 );
+const CustomerCheckout = lazy(
+  () => import("../modules/customer/pages/CustomerCheckout"),
+);
+const CustomerRefundHistory = lazy(()=>import('../modules/customer/pages/CustomerRefunds').then(m=>({default:m.RefundHistory})));
+const PaymentManagementPage = lazy(()=>import('../modules/admin/pages/PaymentManagementPage'));
 const CustomerMessages = lazy(
   () => import("../modules/customer/pages/CustomerMessagesPage"),
 );
@@ -120,7 +140,9 @@ const AdminInbox = lazy(() => import("../modules/admin/pages/AdminInbox"));
 const FinancialDetails = lazy(
   () => import("../modules/admin/pages/FinancialDetails"),
 );
-const AdminLayout = lazy(() => import("../modules/admin/AdminLayout"));
+
+const AdminLayout = lazy(() => import("../modules/admin/layouts/AdminLayout"));
+
 const AdminDashboard = lazy(
   () => import("../modules/admin/pages/AdminDashboard"),
 );
@@ -144,7 +166,10 @@ const TermsPage = lazy(
   () => import("../modules/public/pages/TermsAndConditionsPage"),
 );
 const MarketplaceListingsPage = lazy(
-  () => import("../modules/public/pages/MarketplaceListingsPage"),
+  () => import("../modules/marketplace/BrowsePage"),
+);
+const PublicListingDetails = lazy(
+  () => import("../modules/marketplace/DetailPage"),
 );
 function PublicPage({ children }) {
   return (
@@ -314,13 +339,13 @@ export default function AppRoutes() {
           />
         ),
       )}
-      {["venues", "vendors", "packages"].map((path) => (
+      {["services", "venues", "vendors", "packages"].map((path) => (
         <Route
           key={path}
           path={`/${path}/:id`}
           element={
             <PublicPage>
-              <MarketplaceListingsPage />
+              <PublicListingDetails />
             </PublicPage>
           }
         />
@@ -374,29 +399,10 @@ export default function AppRoutes() {
             <Route path="dashboard" element={<CustomerDashboardPage />} />
             <Route path="profile" element={<CustomerProfile />} />
             <Route path="settings" element={<CustomerProfile settings />} />
+            <Route path="refunds" element={<CustomerRefundHistory />} />
             <Route path="events" element={<CustomerEvents />} />
             <Route path="events/:id" element={<CustomerEventDetails />} />
             <Route path="discover" element={<CustomerDiscovery />} />
-            <Route
-              path="bookings"
-              element={
-                <Suspense
-                  fallback={<div role="status">Loading bookings...</div>}
-                >
-                  <BookingsManagementPage />
-                </Suspense>
-              }
-            />
-            <Route
-              path="bookings/:bookingId"
-              element={
-                <Suspense
-                  fallback={<div role="status">Loading booking...</div>}
-                >
-                  <BookingDetailsPage />
-                </Suspense>
-              }
-            />
             <Route
               path="services"
               element={<Navigate to="/customer/discover" replace />}
@@ -408,14 +414,36 @@ export default function AppRoutes() {
             />
             <Route path="bookings/:id" element={<CustomerRecordDetails />} />
             <Route
+              path="bookings/:id/checkout"
+              element={<CustomerCheckout />}
+            />
+            <Route
+              path="bookings/:id/checkout/:result"
+              element={<CustomerCheckout />}
+            />
+            <Route
+              path="payments/:id"
+              element={<CustomerCheckout transaction />}
+            />
+            <Route
               path="quotations/:id"
-              element={<CustomerRecordDetails quote />}
+              element={<QuotationDetails role="Customer" />}
+            />
+            <Route
+              path="requests"
+              element={<QuotationList role="Customer" requests />}
+            />
+            <Route
+              path="requests/:id"
+              element={<QuotationRequestDetails role="Customer" />}
+            />
+            <Route
+              path="quotations"
+              element={<QuotationList role="Customer" />}
             />
             <Route path="messages" element={<CustomerMessages />} />
             {[
               "bookings",
-              "quotations",
-              "requests",
               "wishlist",
               "payments",
               "reviews",
@@ -492,7 +520,15 @@ export default function AppRoutes() {
               />
               <Route
                 path="requests"
-                element={<VendorResourcesPage section="requests" />}
+                element={<QuotationList role="Vendor" requests />}
+              />
+              <Route
+                path="requests/:id"
+                element={<QuotationRequestDetails role="Vendor" />}
+              />
+              <Route
+                path="quotations/:id"
+                element={<QuotationDetails role="Vendor" />}
               />
               <Route path="quotations/new" element={<QuotationForm />} />
               <Route path="quotations/:id/edit" element={<QuotationForm />} />
@@ -584,17 +620,20 @@ export default function AppRoutes() {
                 path="quotations"
                 element={<Navigate to="/vendor/quotations/sent" replace />}
               />
-              {["drafts", "sent", "accepted", "rejected"].map((filter) => (
+              {Object.entries({
+                drafts: "Draft",
+                sent: "Sent",
+                accepted: "Accepted",
+                rejected: "Rejected",
+                expired: "Expired",
+                negotiations: "Negotiation",
+                converted: "Converted",
+              }).map(([path, status]) => (
                 <Route
-                  key={filter}
-                  path={`quotations/${filter}`}
+                  key={path}
+                  path={`quotations/${path}`}
                   element={
-                    <VendorResourcesPage
-                      key={`quotes-${filter}`}
-                      section="quotations"
-                      filter={filter}
-                      title={`${filter[0].toUpperCase() + filter.slice(1)} quotations`}
-                    />
+                    <QuotationList key={path} role="Vendor" filter={status} />
                   }
                 />
               ))}
@@ -627,6 +666,12 @@ export default function AppRoutes() {
           >
             <Route path="profile" element={<ProfilePage />} />
             <Route path="finance/:kind/:id" element={<FinancialDetails />} />
+            <Route path="bookings" element={<BookingsManagementPage />} />
+            <Route path="bookings/:bookingId" element={<BookingDetailsPage />} />
+            <Route path="payments" element={<PaymentManagementPage key="transactions" section="transactions" />} />
+            <Route path="payment-overview" element={<PaymentManagementPage key="overview" />} />
+            <Route path="refund-requests" element={<PaymentManagementPage key="refunds" section="refunds" />} />
+            <Route path="payment-reconciliation" element={<PaymentManagementPage key="reconciliation" section="reconciliation" />} />
             <Route path="notifications" element={<AdminInbox />} />
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route
@@ -766,6 +811,50 @@ export default function AppRoutes() {
                   }
                 >
                   <CustomerDetailsPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="quotations"
+              element={
+                <Suspense
+                  fallback={<div role="status">Loading quotations?</div>}
+                >
+                  <QuotationList role="Admin" />
+                </Suspense>
+              }
+            />
+            <Route
+              path="quotations/:id"
+              element={
+                <Suspense
+                  fallback={<div role="status">Loading quotation?</div>}
+                >
+                  <QuotationDetails role="Admin" />
+                </Suspense>
+              }
+            />
+            <Route
+              path="quotation-requests"
+              element={
+                <Suspense fallback={<div role="status">Loading requests?</div>}>
+                  <QuotationList role="Admin" requests />
+                </Suspense>
+              }
+            />
+            <Route
+              path="requests/:id"
+              element={
+                <Suspense fallback={<div role="status">Loading request?</div>}>
+                  <QuotationRequestDetails role="Admin" />
+                </Suspense>
+              }
+            />
+            <Route
+              path="quotation-requests/:id"
+              element={
+                <Suspense fallback={<div role="status">Loading request?</div>}>
+                  <QuotationRequestDetails role="Admin" />
                 </Suspense>
               }
             />

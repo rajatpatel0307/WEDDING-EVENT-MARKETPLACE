@@ -2,6 +2,7 @@ import {
   capturePolicy,
   milestone as bookingMilestone,
 } from "../admin/booking-finance.js";
+import * as quotations from "../quotations/quotations.service.js";
 import { randomUUID, createHash } from "node:crypto";
 import { bookingInput } from "../bookings/bookings.validation.js";
 import { assertReservation, dayOf } from "../bookings/reservations.js";
@@ -52,7 +53,7 @@ async function futureEvent(eventId, id, tx) {
 async function checkDate(vendorId, event, services, tx) {
   return assertReservation(vendorId, event, services, tx);
 }
-async function createBooking(
+export async function createBooking(
   event,
   vendorId,
   items,
@@ -101,7 +102,7 @@ async function createBooking(
       ),
       TaxAmount: items.reduce((n, i) => n + Number(i.TaxAmount || 0), 0),
       PlatformFee: 0,
-      AdvanceAmount: 0,
+      AdvanceAmount: snapshot?.advance || 0,
       PaidAmount: 0,
       BookingStatus: "Pending",
       PaymentStatus: "Pending",
@@ -429,187 +430,9 @@ export async function book(input, ctx) {
     return result;
   });
 }
-export async function requestQuote(input, ctx) {
-  const { id } = scope(ctx),
-    b = z
-      .object({
-        eventId: z.guid(),
-        serviceId: z.guid(),
-        packageId: z.guid().optional(),
-        message: z.string().trim().min(5).max(2000),
-      })
-      .strict()
-      .parse(input);
-  return repo.transaction(async (tx) => {
-    await futureEvent(b.eventId, id, tx);
-    const { s } = await availableService(b.serviceId, b.packageId, tx);
-    const [old] = await repo.select(
-      "SELECT RequestId FROM dbo.QuotationRequests WITH(UPDLOCK,HOLDLOCK) WHERE CustomerId=:id AND EventId=:event AND ServiceId=:service AND Status='Pending'",
-      { id, event: b.eventId, service: b.serviceId },
-      tx,
-    );
-    if (old)
-      fail(
-        "You already have a pending request for this service. Message the vendor to add details.",
-        409,
-      );
-    const row = await insert(
-      "QuotationRequests",
-      "RequestId",
-      {
-        CustomerId: id,
-        VendorId: s.VendorId,
-        EventId: b.eventId,
-        ServiceId: b.serviceId,
-        PackageId: b.packageId || null,
-        Message: b.message,
-      },
-      tx,
-    );
-    await recordServiceMetric(b.serviceId, "Enquiries", tx);
-    await notifyBusiness(
-      s.VendorId,
-      "Quotation requested",
-      b.message,
-      "QuotationRequest",
-      row.id,
-      tx,
-    );
-    await audit(
-      ctx,
-      "QUOTATION_REQUESTED",
-      "QuotationRequests",
-      row.id,
-      null,
-      { event: b.eventId, service: b.serviceId },
-      tx,
-    );
-    return {
-      ...row,
-      message: "Quotation requested. The vendor has been notified.",
-    };
-  });
-}
-export async function quoteDetails(recordId, ctx) {
-  const { id } = scope(ctx),
-    q = await owned("quotations", recordId, id, undefined, false);
-  if (q.Status === "Draft") fail("Quotation not found.", 404);
-  return {
-    quotation: q,
-    items: await repo.select(
-      "SELECT ItemName AS name,Quantity AS quantity,UnitPrice AS price,DiscountAmount AS discount,TaxAmount AS tax,LineTotal AS total FROM dbo.QuotationItems WHERE QuotationId=:recordId ORDER BY QuotationItemId",
-      { recordId },
-    ),
-  };
-}
-export async function decideQuote(recordId, input, ctx) {
-  const { id } = scope(ctx),
-    b = z
-      .object({
-        action: z.enum(["Accept", "Reject", "Modify"]),
-        message: z.string().trim().max(2000).default(""),
-      })
-      .strict()
-      .parse(input);
-  if (b.action === "Modify" && b.message.length < 5)
-    fail("Describe the changes you need.");
-  return repo.transaction(async (tx) => {
-    const q = await owned("quotations", recordId, id, tx);
-    if (!["Sent", "Viewed"].includes(q.Status))
-      fail("This quotation has already been handled.", 409);
-    if (q.ValidUntil && new Date(q.ValidUntil) < new Date())
-      fail("This quotation has expired. Request a new quotation.", 409);
-    const items = await repo.select(
-      "SELECT * FROM dbo.QuotationItems WHERE QuotationId=:recordId",
-      { recordId },
-      tx,
-    );
-    let result;
-    if (b.action === "Accept") {
-      const event = await futureEvent(q.EventId, id, tx);
-      for (const i of items) {
-        const { s, pack } = await availableService(
-          i.ServiceId,
-          i.PackageId,
-          tx,
-        );
-        if (
-          pack &&
-          ((pack.MinimumGuests &&
-            Number(event.GuestCount) < Number(pack.MinimumGuests)) ||
-            (pack.MaximumGuests &&
-              Number(event.GuestCount) > Number(pack.MaximumGuests)))
-        )
-          fail(
-            "The event guest count is outside the quoted package limits.",
-            409,
-          );
-        if (s.VendorId.toLowerCase() !== q.VendorId.toLowerCase())
-          fail("Quotation contains an unavailable service.", 409);
-      }
-      result = await createBooking(event, q.VendorId, items, ctx, tx, recordId);
-    }
-    if (b.action === "Modify") {
-      if (!items[0]?.ServiceId)
-        fail("Message the vendor to request a revised quotation.");
-      await insert(
-        "QuotationRequests",
-        "RequestId",
-        {
-          CustomerId: id,
-          VendorId: q.VendorId,
-          EventId: q.EventId,
-          ServiceId: items[0].ServiceId,
-          PackageId: items[0].PackageId,
-          OriginalQuotationId: recordId,
-          Message: b.message,
-        },
-        tx,
-      );
-    }
-    const status = {
-      Accept: "Accepted",
-      Reject: "Rejected",
-      Modify: "Cancelled",
-    }[b.action];
-    await repo.update(
-      { table: "Quotations", id: "QuotationId" },
-      recordId,
-      {
-        Status: status,
-        CustomerMessage: b.message || null,
-        UpdatedAt: new Date(),
-      },
-      tx,
-    );
-    await notifyBusiness(
-      q.VendorId,
-      b.action === "Modify"
-        ? "Quotation changes requested"
-        : `Quotation ${status.toLowerCase()}`,
-      b.message || `${q.QuotationNumber} was ${status.toLowerCase()}.`,
-      "Quotation",
-      recordId,
-      tx,
-    );
-    await audit(
-      ctx,
-      "QUOTATION_DECISION",
-      "Quotations",
-      recordId,
-      { status: q.Status },
-      { status, message: b.message },
-      tx,
-    );
-    return {
-      id: result?.id,
-      message:
-        b.action === "Modify"
-          ? "Your changes were sent to the vendor. The original quotation is retained."
-          : result?.message || "Quotation rejected.",
-    };
-  });
-}
+export const requestQuote=(input,ctx)=>quotations.request(input,ctx);
+export const quoteDetails=(id,ctx)=>quotations.details(id,ctx,'Customer');
+export const decideQuote=(id,input,ctx)=>quotations.decide(id,input,ctx);
 export async function bookingDetails(recordId, ctx) {
   scope(ctx);
   return lifecycleDetails(recordId, ctx, "Customer");

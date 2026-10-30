@@ -4,6 +4,7 @@ import { requireRole } from "../../middleware/auth.middleware.js";
 import * as repo from "./admin.repository.js";
 import { assertVersion } from "../vendors/workspace.common.js";
 import { financialRows, minor, fail } from "./booking-finance.js";
+import { postLedger } from "../payments/ledger.js";
 const input = z
   .object({
     action: z.enum([
@@ -18,6 +19,8 @@ const input = z
     note: z.string().trim().min(3).max(2000),
     idempotencyKey: z.guid().optional(),
     reference: z.string().trim().min(6).max(150).optional(),
+    destination: z.string().trim().min(6).max(150).optional(),
+    destinationVerified: z.literal(true).optional(),
   })
   .strict();
 export function eligiblePayout(booking, row, ledger) {
@@ -115,6 +118,16 @@ export async function decide(id, body, ctx) {
       (p) => p.PayoutId.toLowerCase() === id.toLowerCase(),
     );
     if (!row) fail("Payout not found.", 404);
+    const [refundRequest] = await repo.select(
+      "SELECT RequestId FROM dbo.CustomerRefundRequests WHERE BookingId=:id AND Status='Requested'",
+      { id: source.BookingId },
+      tx,
+    );
+    if (
+      refundRequest &&
+      ["approve", "start-settlement", "confirm-paid"].includes(b.action)
+    )
+      fail("A customer refund request must be reviewed before settlement.");
     if (
       b.action === "confirm-paid" &&
       b.idempotencyKey &&
@@ -163,6 +176,17 @@ export async function decide(id, body, ctx) {
         if (row.PayoutStatus !== "Pending")
           fail("Settlement is already in flight.");
         values.PayoutStatus = "Processing";
+        if (
+          !b.destination ||
+          !b.destinationVerified ||
+          (b.destination.match(/\d/g)?.length || 0) > 4
+        )
+          fail(
+            "A masked destination reference and external beneficiary verification are required. Never enter a complete bank account number.",
+            400,
+          );
+        values.DestinationLabel = b.destination;
+        values.SettlementStartedBy = user.id;
       } else if (b.action === "record-failure") {
         if (row.PayoutStatus !== "Processing" || !b.reference)
           fail(
@@ -178,6 +202,20 @@ export async function decide(id, body, ctx) {
           fail("Reserve this payout for external settlement first.");
         if (!b.idempotencyKey || !b.reference)
           fail("A settlement reference and idempotency key are required.", 400);
+        const threshold = Number(
+          process.env.PAYOUT_DUAL_APPROVAL_THRESHOLD || 0,
+        );
+        if (!Number.isFinite(threshold) || threshold < 0)
+          fail("Payout approval threshold configuration is invalid.", 503);
+        if (
+          threshold > 0 &&
+          Number(row.NetAmount) >= threshold &&
+          row.SettlementStartedBy?.toLowerCase() === user.id.toLowerCase()
+        )
+          fail(
+            "Policy requires a second administrator to confirm this payout.",
+            403,
+          );
         Object.assign(values, {
           PayoutStatus: "Paid",
           PaidAt: new Date(),
@@ -192,6 +230,16 @@ export async function decide(id, body, ctx) {
       values,
       tx,
     );
+    if (b.action === "confirm-paid")
+      await postLedger(booking, "Payout", -Number(row.NetAmount), id, tx);
+    if (b.action === "start-settlement")
+      await postLedger(
+        booking,
+        "PayoutReserved",
+        Number(row.NetAmount),
+        `${id}:${new Date(row.UpdatedAt).getTime()}`,
+        tx,
+      );
     await repo.auditAdmin(
       ctx,
       b.action === "record-failure"

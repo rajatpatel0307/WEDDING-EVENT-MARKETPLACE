@@ -1,15 +1,25 @@
 import { notifyAdmins } from "../notifications/admin-events.js";
 import { z } from "zod";
 import * as repo from "./admin.repository.js";
+import { postLedger } from "../payments/ledger.js";
+import {
+  ruleForServices,
+  calculateCommission,
+} from "../payments/commission-rules.js";
 export const fail = (message, status = 409) => {
   throw Object.assign(new Error(message), { status });
 };
 export const minor = (value) => {
-  const amount = Number(value || 0),
-    result = Math.round(amount * 100);
-  if (!Number.isFinite(amount) || !Number.isSafeInteger(result) || result < 0)
+  const text = String(value ?? 0);
+  if (!/^\d+(?:\.\d+)?$/.test(text)) fail("Invalid stored financial amount.");
+  const [whole, fraction = ""] = text.split(".");
+  const amount =
+    BigInt(whole) * 100n +
+    BigInt((fraction + "00").slice(0, 2)) +
+    (Number(fraction[2] || 0) >= 5 ? 1n : 0n);
+  if (amount > BigInt(Number.MAX_SAFE_INTEGER))
     fail("Invalid stored financial amount.");
-  return result;
+  return Number(amount);
 };
 export const moneyValue = (n) => n / 100;
 export const policySchema = z
@@ -313,6 +323,10 @@ export async function capturePolicy(row, tx) {
         policy,
         capturedAt: new Date().toISOString(),
         commissionRate: await commissionRate(tx),
+        commissionRule: await ruleForServices(
+          rows.map((s) => s.ServiceId),
+          tx,
+        ),
       }),
     },
     tx,
@@ -371,20 +385,21 @@ export async function syncPayout(row, ctx, tx) {
     return;
   }
   let rate = null;
+  let appliedRule = null;
   try {
-    rate = JSON.parse(row.PolicySnapshotJson || "{}").commissionRate ?? null;
+    const snapshot = JSON.parse(row.PolicySnapshotJson || "{}");
+    rate = snapshot.commissionRate ?? null;
+    appliedRule = snapshot.commissionRule || null;
   } catch {}
-  if (!ledger.commissions.length && rate !== null) {
-    const amount = moneyValue(
-      Math.round((minor(row.TotalAmount) * Math.round(rate * 10000)) / 1000000),
-    );
+  if (!ledger.commissions.length && (rate !== null || appliedRule)) {
+    const amount = calculateCommission(row, appliedRule, rate);
     await repo.insert(
       { table: "PlatformCommission", id: "CommissionId" },
       {
         BookingId: row.BookingId,
         VendorId: row.VendorId,
-        CommissionType: "Percentage",
-        CommissionRate: rate,
+        CommissionType: appliedRule?.type || "Percentage",
+        CommissionRate: appliedRule?.rate ?? rate,
         BookingAmount: row.TotalAmount,
         CommissionAmount: amount,
       },
@@ -392,6 +407,7 @@ export async function syncPayout(row, ctx, tx) {
     );
     summary.commission = amount;
     summary.commissionRecorded = true;
+    await postLedger(row, "Commission", amount, row.BookingId, tx);
     await audit(
       ctx,
       "BOOKING_COMMISSION_RECORDED",
@@ -407,11 +423,16 @@ export async function syncPayout(row, ctx, tx) {
     summary.paid < Number(row.TotalAmount)
       ? "OnHold"
       : "Pending";
+  const [requestedRefund] = await repo.select(
+    "SELECT RequestId FROM dbo.CustomerRefundRequests WHERE BookingId=:id AND Status='Requested'",
+    { id: row.BookingId },
+    tx,
+  );
   const values = {
     GrossAmount: row.TotalAmount,
     PlatformCommission: summary.commission,
     RefundDeduction: summary.refunded + summary.refundPending,
-    PayoutStatus: status,
+    PayoutStatus: requestedRefund ? "OnHold" : status,
   };
   if (!ledger.payouts.length) {
     const [created] = await repo.insert(
@@ -426,6 +447,16 @@ export async function syncPayout(row, ctx, tx) {
     );
     if (created?.id)
       await notifyAdmins("PAYOUT_REQUESTED", "VendorPayouts", created.id, tx);
+    if (created?.id)
+      await repo.select(
+        "INSERT INTO dbo.Notifications(UserId,NotificationType,Title,Message,ReferenceType,ReferenceId) SELECT UserId,'PayoutUpdate','Settlement calculated',:message,'Booking',:booking FROM dbo.Vendors WHERE VendorId=:vendor",
+        {
+          message: `${row.BookingNumber}: settlement calculated. ${values.PayoutStatus === "Pending" ? "Earnings are awaiting payout review." : "Settlement is on hold pending financial review."}`,
+          booking: row.BookingId,
+          vendor: row.VendorId,
+        },
+        tx,
+      );
   } else
     for (const p of ledger.payouts)
       if (!["Paid", "Processing"].includes(p.PayoutStatus))

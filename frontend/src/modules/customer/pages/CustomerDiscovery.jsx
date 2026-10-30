@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Link,
   useParams,
@@ -6,8 +6,6 @@ import {
   useNavigate,
 } from "react-router-dom";
 import {
-  Search,
-  SlidersHorizontal,
   MapPin,
   Star,
   ArrowLeft,
@@ -26,210 +24,23 @@ import {
   Modal,
   Field,
 } from "../components/WorkspaceUI";
+import BrowsePage from "../../marketplace/BrowsePage";
+import { AvailabilityCalendar } from "../../marketplace/DetailPage";
 import { ServiceCard } from "../components/ServiceCards";
 import { save, money } from "../services/workspace.api";
 export default function CustomerDiscovery() {
-  const [params, setParams] = useSearchParams(),
-    catalog = useCustomerData("/catalog"),
-    [search, setSearch] = useState(params.get("q") || "");
-  const queryText = params.get("q") || "";
-  useEffect(() => {
-    setSearch(queryText);
-  }, [queryText]);
-  useEffect(() => {
-    if (params.get("venue") && catalog.data) {
-      const category = catalog.data.categories.find(
-        (c) => c.name === "Venue & Location",
-      );
-      if (category) {
-        const n = new URLSearchParams(params);
-        n.delete("venue");
-        n.set("category", category.id);
-        setParams(n, { replace: true });
-      }
-    }
-  }, [catalog.data, params, setParams]);
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (search !== (params.get("q") || "")) {
-        const n = new URLSearchParams(params);
-        if (search) n.set("q", search);
-        else n.delete("q");
-        n.delete("page");
-        setParams(n, { replace: true });
-      }
-    }, 350);
-    return () => clearTimeout(t);
-  }, [search, params, setParams]);
-  const r = useCustomerData(`/discover?${params}`);
-  function filter(k, v) {
-    const n = new URLSearchParams(params);
-    if (v) n.set(k, v);
-    else n.delete(k);
-    n.delete("page");
-    setParams(n);
-  }
-  return (
-    <>
-      <Heading
-        title="Find your kind of extraordinary"
-        description="The right people make all the difference. Discover your dream team."
-      />
-      <div className="cw-discovery-filters">
-        <label className="cw-search">
-          <Search size={18} />
-          <input
-            aria-label="Search services or vendors"
-            placeholder="Venues, photographers, a little magic…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </label>
-        <select
-          aria-label="Browse type"
-          value={params.get("type") || "services"}
-          onChange={(e) => filter("type", e.target.value)}
-        >
-          <option value="services">Services</option>
-          <option value="vendors">Vendors</option>
-          <option value="packages">Packages</option>
-          <option value="offers">Vendors with offers</option>
-        </select>
-        <select
-          aria-label="Category"
-          value={params.get("category") || ""}
-          onChange={(e) => filter("category", e.target.value)}
-        >
-          <option value="">All categories</option>
-          {catalog.data?.categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="Location"
-          value={params.get("city") || ""}
-          onChange={(e) => filter("city", e.target.value)}
-        >
-          <option value="">All locations</option>
-          {catalog.data?.cities.map((c) => (
-            <option key={c.name}>{c.name}</option>
-          ))}
-        </select>
-        <input
-          type="number"
-          min="0"
-          key={`min-${params.get("min") || ""}`}
-          aria-label="Minimum price"
-          placeholder="Min ₹"
-          defaultValue={params.get("min") || ""}
-          onBlur={(e) => filter("min", e.target.value)}
-        />
-        <input
-          type="number"
-          min="0"
-          key={`max-${params.get("max") || ""}`}
-          aria-label="Maximum price"
-          placeholder="Max ₹"
-          defaultValue={params.get("max") || ""}
-          onBlur={(e) => filter("max", e.target.value)}
-        />
-        <select
-          aria-label="Minimum rating"
-          value={params.get("rating") || ""}
-          onChange={(e) => filter("rating", e.target.value)}
-        >
-          <option value="">All ratings</option>
-          {[4, 3, 2].map((v) => (
-            <option key={v} value={v}>
-              {v} stars & above
-            </option>
-          ))}
-        </select>
-        <button
-          className="cw-button"
-          onClick={() => {
-            setSearch("");
-            setParams({});
-          }}
-        >
-          Clear filters
-        </button>
-      </div>
-      {catalog.error && (
-        <ErrorView error={catalog.error} retry={catalog.retry} />
-      )}
-      <p className="cw-results-label">
-        <SlidersHorizontal size={14} />
-        {r.loading
-          ? "Finding beautiful possibilities…"
-          : `${r.data?.total || 0} possibilities for your celebration`}
-      </p>
-      {r.loading ? (
-        <div
-          className="cw-discovery-grid"
-          role="status"
-          aria-label="Loading services"
-        >
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div className="cw-skeleton cw-card-skeleton" key={i} />
-          ))}
-        </div>
-      ) : r.error ? (
-        <ErrorView error={r.error} retry={r.retry} />
-      ) : !r.data.rows.length ? (
-        <Empty
-          title="Let’s try a different combination"
-          text="Try another location, category or price range to find your match."
-        />
-      ) : (
-        <>
-          <div className="cw-discovery-grid">
-            {r.data.rows.map((i) => (
-              <ServiceCard key={i.id} item={i} />
-            ))}
-          </div>
-          <div className="cw-pagination">
-            <button
-              className="cw-button"
-              disabled={r.data.page === 1}
-              onClick={() => {
-                const n = new URLSearchParams(params);
-                n.set("page", r.data.page - 1);
-                setParams(n);
-              }}
-            >
-              Previous
-            </button>
-            <span>
-              Page {r.data.page} of {Math.ceil(r.data.total / r.data.pageSize)}
-            </span>
-            <button
-              className="cw-button"
-              disabled={r.data.page * r.data.pageSize >= r.data.total}
-              onClick={() => {
-                const n = new URLSearchParams(params);
-                n.set("page", r.data.page + 1);
-                setParams(n);
-              }}
-            >
-              Next
-            </button>
-          </div>
-        </>
-      )}
-    </>
-  );
+  return <BrowsePage embedded />;
 }
 function ServiceAction({ service, packages, items = [], mode, close }) {
-  const events = useCustomerData("/records/events?pageSize=50"),
+  const related = useCustomerData(`/vendors/${service.vendorId}`),
+    events = useCustomerData("/records/events?status=Upcoming&pageSize=50"),
     { notify } = useAuth(),
     navigate = useNavigate(),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [preview, setPreview] = useState(null),
     [reviewBody, setReviewBody] = useState(null),
+    [quoteDraft, setQuoteDraft] = useState(null),
     [params] = useSearchParams();
   return (
     <Modal
@@ -241,6 +52,55 @@ function ServiceAction({ service, packages, items = [], mode, close }) {
         Final availability is confirmed by your vendor. All prices are
         calculated securely from the selected service or package.
       </p>
+      {quoteDraft && (
+        <section className="cw-panel cw-prose">
+          <h2>Review quotation request</h2>
+          <p>{service.name}</p>
+          <p>
+            {events.data?.rows.find((e) => e.id === quoteDraft.eventId)?.name} ·{" "}
+            {events.data?.rows
+              .find((e) => e.id === quoteDraft.eventId)
+              ?.eventDate?.slice(0, 10)}
+          </p>
+          <p>{quoteDraft.message}</p>
+          <p>
+            Your event location, guest count, budget and package preference will
+            be shared with this vendor. This request does not confirm a booking
+            or authorize payment.
+          </p>
+          <button
+            disabled={busy}
+            className="cw-button cw-primary"
+            onClick={async () => {
+              setBusy(true);
+              try {
+                const result = await save(
+                  "/quotation-requests",
+                  "POST",
+                  quoteDraft,
+                );
+                notify(result.message);
+                close();
+                navigate("/customer/requests");
+              } catch (err) {
+                setError(err.message);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Send quotation request
+          </button>
+          <button
+            disabled={busy}
+            className="cw-button"
+            onClick={() => setQuoteDraft(null)}
+          >
+            Edit request
+          </button>
+          {error && <p role="alert">{error}</p>}
+        </section>
+      )}
       {preview && (
         <section
           className="my-4 rounded-xl border p-4"
@@ -335,12 +195,13 @@ function ServiceAction({ service, packages, items = [], mode, close }) {
         />
       ) : (
         <form
-          hidden={!!preview}
-          style={preview ? { display: "none" } : undefined}
+          hidden={!!preview || !!quoteDraft}
+          style={preview || quoteDraft ? { display: "none" } : undefined}
           className="cw-form"
           onSubmit={async (e) => {
             e.preventDefault();
-            const f = Object.fromEntries(new FormData(e.currentTarget));
+            const fields = new FormData(e.currentTarget);
+            const f = Object.fromEntries(fields);
             setBusy(true);
             setError("");
             try {
@@ -362,8 +223,24 @@ function ServiceAction({ service, packages, items = [], mode, close }) {
                           quantity: Number(f[`item-${i.id}`]),
                         })),
                     }
-                  : { message: f.message }),
+                  : {
+                      message: f.message,
+                      services: fields
+                        .getAll("additionalService")
+                        .map((serviceId) => ({ serviceId })),
+                      items: items
+                        .filter((i) => Number(f[`request-item-${i.id}`]) > 0)
+                        .map((i) => ({
+                          serviceId: service.id,
+                          id: i.id,
+                          quantity: Number(f[`request-item-${i.id}`]),
+                        })),
+                    }),
               };
+              if (mode === "quote") {
+                setQuoteDraft(b);
+                return;
+              }
               const r = await save(
                 mode === "book" ? "/bookings/preview" : "/quotation-requests",
                 "POST",
@@ -400,7 +277,15 @@ function ServiceAction({ service, packages, items = [], mode, close }) {
             </select>
           </Field>
           <Field label="Service or package">
-            <select name="packageId" defaultValue={params.get("package") || ""}>
+            <select
+              name="packageId"
+              defaultValue={
+                packages.find(
+                  (p) =>
+                    p.id.toLowerCase() === params.get("package")?.toLowerCase(),
+                )?.id || ""
+              }
+            >
               <option value="">
                 {service.name} ·{" "}
                 {service.price ? money(service.price) : "Custom quote"}
@@ -436,6 +321,55 @@ function ServiceAction({ service, packages, items = [], mode, close }) {
                 placeholder="Your requirements, preferred style and anything else that matters…"
               />
             </Field>
+          )}
+          {mode === "quote" && (
+            <fieldset>
+              <legend>Requested services and items</legend>
+              <p>
+                The event supplies the date, time, location, guest count and
+                estimated budget. Edit your event first if these need changing.
+              </p>
+              {related.loading ? (
+                <p role="status">Loading this vendor's services...</p>
+              ) : related.error ? (
+                <ErrorView error={related.error} retry={related.retry} />
+              ) : (
+                related.data?.services
+                  .filter(
+                    (s) =>
+                      s.customQuote &&
+                      s.id.toLowerCase() !== service.id.toLowerCase(),
+                  )
+                  .map((s) => (
+                    <label key={s.id}>
+                      <input
+                        type="checkbox"
+                        name="additionalService"
+                        value={s.id}
+                      />
+                      {s.name}
+                    </label>
+                  ))
+              )}
+              {items.map((i) => (
+                <Field
+                  key={i.id}
+                  label={`Requested ${i.name} quantity (optional)`}
+                >
+                  <input
+                    type="number"
+                    name={`request-item-${i.id}`}
+                    min={0}
+                    max={100000}
+                    defaultValue={0}
+                  />
+                </Field>
+              ))}
+              <p>
+                Share reference attachments securely through the vendor
+                conversation after submitting.
+              </p>
+            </fieldset>
           )}
           {mode === "book" && (
             <>
@@ -473,7 +407,7 @@ function ServiceAction({ service, packages, items = [], mode, close }) {
               ? "Sending…"
               : mode === "book"
                 ? "Review booking"
-                : "Request quotation"}
+                : "Review quotation request"}
           </button>
         </form>
       )}
@@ -482,10 +416,15 @@ function ServiceAction({ service, packages, items = [], mode, close }) {
 }
 export function CustomerServiceDetails({ vendor = false }) {
   const { id } = useParams(),
+    [detailParams] = useSearchParams(),
     r = useCustomerData(`/${vendor ? "vendors" : "services"}/${id}`),
     { notify, reload } = useAuth(),
     navigate = useNavigate(),
-    [mode, setMode] = useState(null),
+    [mode, setMode] = useState(() =>
+      ["book", "quote"].includes(detailParams.get("action"))
+        ? detailParams.get("action")
+        : null,
+    ),
     [busy, setBusy] = useState(false);
   if (r.loading) return <Loading />;
   if (r.error) return <ErrorView error={r.error} retry={r.retry} />;
@@ -527,6 +466,14 @@ export function CustomerServiceDetails({ vendor = false }) {
               <>
                 <button
                   className="cw-button cw-primary"
+                  disabled={
+                    item.customQuote === false || item.customQuote === 0
+                  }
+                  title={
+                    item.customQuote === false || item.customQuote === 0
+                      ? "This service accepts bookings rather than custom quotation requests."
+                      : undefined
+                  }
                   onClick={() => setMode("quote")}
                 >
                   <FileText size={16} /> Request quotation
@@ -563,6 +510,34 @@ export function CustomerServiceDetails({ vendor = false }) {
           </div>
         </div>
       </section>
+      {!vendor && (
+        <div className="customer-marketplace cm-embedded">
+          <div className="cm-gallery">
+            {r.data.gallery?.map((m) => (
+              <a href={m.url} target="_blank" rel="noreferrer" key={m.id}>
+                <img src={m.url} alt={item.name} loading="lazy" />
+              </a>
+            ))}
+          </div>
+          <AvailabilityCalendar id={id} />
+          <section className="cm-panel">
+            <h2>Booking policies</h2>
+            {Object.entries(r.data.policies || {})
+              .filter(
+                ([k, v]) =>
+                  ["cancellation", "refund", "rescheduling", "terms"].includes(
+                    k,
+                  ) && v,
+              )
+              .map(([k, v]) => (
+                <p key={k}>
+                  <strong>{k}: </strong>
+                  {v}
+                </p>
+              ))}
+          </section>
+        </div>
+      )}
       <div className="cw-detail-columns">
         <section className="cw-panel cw-prose">
           <h2>

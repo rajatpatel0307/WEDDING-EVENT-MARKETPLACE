@@ -1,210 +1,325 @@
-import { Suspense, useEffect, useState } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+
 import {
-  Bell,
-  ChevronDown,
-  ChevronsLeft,
-  Menu,
+  Suspense,
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  Link,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
+
+import {
   Plus,
-  Search,
   ShieldCheck,
-  X,
 } from "lucide-react";
+
 import { useAuth } from "../../../context/AuthContext";
-import { vendorNavigation, vendorTitle } from "../navigation";
-import compactLogo from "../../../assets/small logo.png";
-import "../vendor.css";
+
+import VendorHeader from "./VendorHeader";
+import VendorSidebar from "./VendorSidebar";
+
+// ============================================
+// VENDOR LAYOUT
+// ============================================
+
 export default function VendorLayout() {
-  const { user, reload } = useAuth(),
-    location = useLocation();
-  const [collapsed, setCollapsed] = useState(false),
-    [mobile, setMobile] = useState(false),
-    [query, setQuery] = useState("");
-  const current = location.pathname.replace(/^\/vendor\/?/, "") || "dashboard";
-  const navigationKey =
-    current === "services"
-      ? current +
-        (new URLSearchParams(location.search).get("approval")
-          ? `?approval=${new URLSearchParams(location.search).get("approval")}`
-          : "")
-      : current;
+  const { reload } = useAuth();
+  const location = useLocation();
+
+  // Sidebar state
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobile, setMobile] = useState(false);
+
+  // ============================================
+  // REFRESH VENDOR ACCESS
+  // ============================================
+
   useEffect(() => {
-    const changed = () => reload().catch(() => {});
-    window.addEventListener("vendor:access-changed", changed);
-    return () => window.removeEventListener("vendor:access-changed", changed);
+    const refreshVendor = () => {
+      reload().catch(() => {});
+    };
+
+    window.addEventListener(
+      "vendor:access-changed",
+      refreshVendor
+    );
+
+    return () => {
+      window.removeEventListener(
+        "vendor:access-changed",
+        refreshVendor
+      );
+    };
   }, [reload]);
-  const matches = query.trim()
-    ? vendorNavigation
-        .flatMap((g) => g.items)
-        .filter(([, label]) =>
-          label.toLowerCase().includes(query.toLowerCase()),
-        )
-        .slice(0, 6)
-    : [];
+
+  // ============================================
+  // CLOSE MOBILE SIDEBAR ON NAVIGATION
+  // ============================================
+
+  useEffect(() => {
+    setMobile(false);
+  }, [location.pathname, location.search]);
+
+  // ============================================
+  // MOBILE SCROLL LOCK + ESCAPE KEY
+  // ============================================
+
+  useEffect(() => {
+    if (!mobile) return;
+
+    const previousOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setMobile(false);
+      }
+    };
+
+    window.addEventListener(
+      "keydown",
+      handleEscape
+    );
+
+    return () => {
+      document.body.style.overflow =
+        previousOverflow;
+
+      window.removeEventListener(
+        "keydown",
+        handleEscape
+      );
+    };
+  }, [mobile]);
+
+  // ============================================
+  // SIDEBAR HANDLERS
+  // ============================================
+
+  const toggleSidebar = () => {
+    setCollapsed((previous) => !previous);
+  };
+
+  const openMobileSidebar = () => {
+    setMobile(true);
+  };
+
+  const closeMobileSidebar = () => {
+    setMobile(false);
+  };
+
+  // ============================================
+  // RENDER
+  // ============================================
+
   return (
-    <div className={`vw-app ${collapsed ? "vw-collapsed" : ""}`}>
+    <div
+      className="
+        isolate min-h-screen
+        bg-[#f6f8f4]
+        font-sans text-[13px]
+        leading-[1.6] text-[#2e4439]
+      "
+    >
+      {/* ======================================
+          MOBILE SIDEBAR BACKDROP
+      ====================================== */}
+
       {mobile && (
         <button
-          className="vw-sidebar-backdrop"
-          onClick={() => setMobile(false)}
-          aria-label="Close navigation"
+          type="button"
+          aria-label="Close vendor navigation"
+          onClick={closeMobileSidebar}
+          className="
+            fixed inset-0 z-40
+            cursor-default border-0
+            bg-[#1a352b]/40
+            backdrop-blur-[2px]
+            lg:hidden
+          "
         />
       )}
-      <aside
-        className={`vw-sidebar ${mobile ? "vw-sidebar-open" : ""}`}
-        aria-label="Vendor navigation"
+
+      {/* ======================================
+          VENDOR SIDEBAR
+      ====================================== */}
+
+      <VendorSidebar
+        collapsed={collapsed}
+        mobile={mobile}
+        onToggleCollapse={toggleSidebar}
+        onCloseMobile={closeMobileSidebar}
+      />
+
+      {/* ======================================
+          MAIN WORKSPACE
+      ====================================== */}
+
+      <div
+        className={`
+          flex min-h-screen min-w-0
+          flex-col
+
+          transition-[margin-left]
+          duration-200 ease-in-out
+
+          ${
+            collapsed
+              ? "lg:ml-[76px]"
+              : "lg:ml-[280px]"
+          }
+        `}
       >
-        <div className="vw-brand">
-          <Link
-            to="/vendor/dashboard"
-            className="vw-sidebar-logo"
-            aria-label="MarryNest vendor dashboard"
-          >
-            <img
-              className="vw-full-logo"
-              src="/images/marrynest-logo-320.webp"
-              alt="MarryNest"
-              width="160"
-              height="68"
-            />
-            <img
-              className="vw-compact-logo"
-              src={compactLogo}
-              alt="MarryNest"
-              width="44"
-              height="39"
-            />
-          </Link>
-          <button
-            className="vw-icon vw-mobile-close"
-            onClick={() => setMobile(false)}
-            aria-label="Close navigation"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        <nav>
-          {vendorNavigation.map((group) => (
-            <div className="vw-nav-group" key={group.label}>
-              <h2>{group.label}</h2>
-              {group.items.map(([path, label, Icon]) => (
-                <Link
-                  key={path}
-                  title={collapsed ? label : undefined}
-                  to={`/vendor/${path}`}
-                  className={navigationKey === path ? "active" : ""}
-                  aria-current={navigationKey === path ? "page" : undefined}
-                  onClick={() => setMobile(false)}
-                >
-                  <Icon size={17} strokeWidth={1.65} />
-                  <span>{label}</span>
-                  {path === "messages" && user.unreadMessageCount > 0 && (
-                    <em>{user.unreadMessageCount}</em>
-                  )}
-                </Link>
-              ))}
-            </div>
-          ))}
-        </nav>
-      </aside>
-      <div className="vw-main">
-        <header className="vw-topbar">
-          <div className="vw-topbar-left">
-            <button
-              className="vw-icon vw-desktop-toggle"
-              onClick={() => setCollapsed((v) => !v)}
-              aria-label={
-                collapsed ? "Expand navigation" : "Collapse navigation"
-              }
-            >
-              <ChevronsLeft size={19} />
-            </button>
-            <button
-              className="vw-icon vw-mobile-toggle"
-              onClick={() => setMobile(true)}
-              aria-label="Open navigation"
-            >
-              <Menu size={20} />
-            </button>
-            <span>
-              Partner workspace <span>/</span>{" "}
-              <strong>{vendorTitle(current)}</strong>
-            </span>
-          </div>
-          <div className="vw-topbar-right">
-            <div className="vw-search">
-              <Search size={16} />
-              <input
-                aria-label="Find a vendor page"
-                placeholder="Find a page…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              {query && (
-                <div className="vw-search-results">
-                  {matches.length ? (
-                    matches.map(([path, label, Icon]) => (
-                      <Link
-                        key={path}
-                        to={`/vendor/${path}`}
-                        onClick={() => setQuery("")}
-                      >
-                        <Icon size={15} />
-                        {label}
-                      </Link>
-                    ))
-                  ) : (
-                    <span>No matching pages</span>
-                  )}
-                </div>
-              )}
-            </div>
-            <Link
-              to="/vendor/notifications"
-              className="vw-notification-icon"
-              aria-label="Notifications"
-            >
-              <Bell size={19} />
-              {user.unreadNotificationCount > 0 && <i />}
-            </Link>
-            <span className="vw-topbar-divider" />
-            <Link to="/vendor/business/profile" className="vw-owner">
-              <span>{user.firstName?.[0]}</span>
-              <div>
-                <strong>{user.firstName}</strong>
-                <small>Business owner</small>
-              </div>
-              <ChevronDown size={12} />
-            </Link>
-          </div>
-        </header>
-        <main className="vw-content" id="main-content">
+        {/* ======================================
+            VENDOR HEADER
+        ====================================== */}
+
+        <VendorHeader
+          mobile={mobile}
+          onOpenMobile={openMobileSidebar}
+        />
+
+        {/* ======================================
+            DYNAMIC PAGE CONTENT
+        ====================================== */}
+
+        <main
+          id="main-content"
+          className="
+            mx-auto flex w-full
+            max-w-[1700px] min-w-0
+            flex-1 flex-col gap-[23px]
+
+            px-4 py-6
+            sm:px-6
+            lg:px-8 lg:py-7
+
+            [&>*]:min-w-0
+            [&>*]:max-w-full
+          "
+        >
           <Suspense
             fallback={
-              <div className="vw-loading" role="status">
-                Loading your workspace...
+              <div
+                role="status"
+                className="
+                  flex min-h-[220px]
+                  items-center justify-center
+                  rounded-xl
+                  border border-[#e4eade]
+                  bg-white p-8
+                "
+              >
+                <div
+                  className="
+                    flex flex-col items-center
+                    justify-center gap-3
+                    text-center
+                  "
+                >
+                  <div
+                    className="
+                      h-8 w-8 animate-spin
+                      rounded-full
+                      border-[3px]
+                      border-[#e0e7dd]
+                      border-t-[#245c49]
+                    "
+                  />
+
+                  <p
+                    className="
+                      text-[12px]
+                      text-[#89978c]
+                    "
+                  >
+                    Loading your workspace...
+                  </p>
+                </div>
               </div>
             }
           >
             <Outlet />
           </Suspense>
         </main>
-        <footer className="vw-footer">
+
+        {/* ======================================
+            WORKSPACE FOOTER
+        ====================================== */}
+
+        <footer
+          className="
+            flex flex-col items-center
+            justify-between gap-3
+            border-t border-[#e7ece2]
+            bg-white px-5 py-4
+
+            text-center text-[11px]
+            text-[#89978c]
+
+            sm:flex-row sm:text-left
+            lg:px-8
+          "
+        >
           <span>
-            MarryNest <span>·</span> Celebrations begin with you.
+            MarryNest
+            <span className="mx-2 text-[#b9a276]">
+              ·
+            </span>
+            Celebrations begin with you.
           </span>
-          <span>
-            <ShieldCheck size={12} /> Secure partner workspace
+
+          <span
+            className="
+              flex items-center gap-2
+              text-[#89978c]
+            "
+          >
+            <ShieldCheck
+              size={15}
+              strokeWidth={1.7}
+              className="text-[#245c49]"
+            />
+
+            Secure partner workspace
           </span>
         </footer>
       </div>
-      <Link
-        className="vw-mobile-add"
-        to="/vendor/services/new"
-        aria-label="Add service"
-      >
-        <Plus size={23} />
-      </Link>
+
+      {/* ======================================
+          MOBILE ADD SERVICE BUTTON
+      ====================================== */}
+
+      {!mobile && (
+        <Link
+          to="/vendor/services/new"
+          aria-label="Add new service"
+          title="Add new service"
+          className="
+            fixed bottom-5 right-5 z-30
+            flex h-[48px] w-[48px]
+            items-center justify-center
+            rounded-full bg-[#617c4c]
+            text-white shadow-lg
+
+            transition-all duration-200
+
+            hover:-translate-y-1
+            hover:bg-[#245c49]
+            hover:text-white
+
+            active:scale-95
+            lg:hidden
+          "
+        >
+          <Plus size={23} strokeWidth={2} />
+        </Link>
+      )}
     </div>
   );
 }

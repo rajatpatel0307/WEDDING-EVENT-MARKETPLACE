@@ -1,9 +1,13 @@
+import { up as quotationLifecycleUp } from "../migrations/017-quotation-lifecycle.js";
 // Real MSSQL + REST verification. All fixture records and changes are rolled back.
 import assert from "node:assert/strict";
 import { randomUUID, createHmac } from "node:crypto";
 import express from "express";
 import { sequelize } from "../src/config/database.js";
 import { up as serviceManagementUp } from "../migrations/010-service-management.js";
+import { up as lifecycleUp } from "../migrations/015-booking-lifecycle.js";
+import { up as customerWebsiteUp } from "../migrations/016-customer-website.js";
+import { createMarketplaceRouter } from "../src/modules/customers/marketplace.routes.js";
 import { createCustomerRouter } from "../src/modules/customers/workspace.routes.js";
 import { createVendorRouter } from "../src/modules/vendors/workspace.routes.js";
 import {
@@ -12,12 +16,17 @@ import {
 } from "../src/modules/customers/workspace.payments.js";
 const rollback = new Error("ROLLBACK_CUSTOMER_WORKSPACE");
 let passed = false;
+const publicTimings = [];
 const originalEnv = Object.fromEntries(
   ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "RAZORPAY_WEBHOOK_SECRET"].map(
     (k) => [k, process.env[k]],
   ),
 );
 try {
+  const [schema] = await sequelize.query(
+    "SELECT TABLE_NAME,STRING_AGG(CONVERT(nvarchar(max),COLUMN_NAME),', ') AS columns FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME IN('Events','EventGuests','Services','Wishlists','PaymentTransactions') GROUP BY TABLE_NAME",
+  );
+  console.log("Inspected customer schema:", JSON.stringify(schema));
   await sequelize.transaction(async (tx) => {
     const originalQuery = sequelize.query,
       originalTransaction = sequelize.transaction,
@@ -27,13 +36,22 @@ try {
       return originalQuery
         .call(this, sql, { ...options, transaction: tx })
         .catch((e) => {
-          console.error("SQL verification:", e.message);
+          console.error(
+            "SQL verification:",
+            e.message,
+            e.original?.errors?.map((x) => x.message),
+            e.original?.message,
+          );
           throw e;
         });
     };
     sequelize.transaction = async (fn) => fn(tx);
     try {
       await serviceManagementUp(sequelize.getQueryInterface(), tx);
+      await lifecycleUp(sequelize.getQueryInterface(), tx);
+      await customerWebsiteUp(sequelize.getQueryInterface(), tx);
+      await quotationLifecycleUp(sequelize.getQueryInterface(), tx);
+      await customerWebsiteUp(sequelize.getQueryInterface(), tx);
       const owner = randomUUID(),
         customer = randomUUID(),
         other = randomUUID(),
@@ -63,7 +81,7 @@ try {
         { vendor, category: category.CategoryId },
       );
       await query(
-        "INSERT INTO dbo.Services(ServiceId,VendorId,CategoryId,ServiceName,ServiceSlug,PricingType,BasePrice,ApprovalStatus,IsActive) VALUES(:service,:vendor,:category,'Fixture Service',:slug,'Fixed',5000,'Approved',1)",
+        "INSERT INTO dbo.Services(ServiceId,VendorId,CategoryId,ServiceName,ServiceSlug,PricingType,BasePrice,ApprovalStatus,IsActive,IsCustomQuoteAvailable) VALUES(:service,:vendor,:category,'Fixture Service',:slug,'Fixed',5000,'Approved',1,1)",
         {
           service,
           vendor,
@@ -89,6 +107,7 @@ try {
         vendor: { id: vendor, active: true, verificationStatus: "Approved" },
       };
       const app = express();
+      app.use("/api/marketplace", createMarketplaceRouter());
       app.use(
         "/api/customer",
         createCustomerRouter({
@@ -121,6 +140,7 @@ try {
         role,
         expected = 200,
       ) => {
+        const started = performance.now();
         const response = await originalFetch(`${base}${path}`, {
           method,
           headers: {
@@ -133,6 +153,8 @@ try {
           ...(body ? { body: JSON.stringify(body) } : {}),
         });
         const result = await response.json();
+        if (path.startsWith("/api/marketplace"))
+          publicTimings.push(performance.now() - started);
         assert.equal(
           response.status,
           expected,
@@ -155,16 +177,38 @@ try {
         guests: 100,
         budget: 100000,
         description: "Rollback verification",
+        endDate: future,
+        brideName: "Fixture bride",
+        groomName: "Fixture groom",
       });
       await api(`/events/${event.id}`, "GET", null, "other", 404);
+      const exportDenied = await originalFetch(
+        `${base}/api/customer/events/${event.id}/guests/export`,
+        { headers: { "X-Test-Role": "other" } },
+      );
+      assert.equal(exportDenied.status, 404);
       await api(`/events/${event.id}/guests`, "POST", {
         name: "Fixture Guest",
+        group: "Family",
+        invitation: "Sent",
+        attendees: 2,
+        dietary: "Vegetarian",
+        notes: "Private guest note",
         email: "guest@example.invalid",
         phone: "",
         status: "Invited",
       });
       const details = await api(`/events/${event.id}`);
       assert.equal(details.guests.length, 1);
+      assert.equal(details.guests[0].attendees, 2);
+      assert.equal(details.guests[0].group, "Family");
+      assert.equal(details.guestStats.attendees, 2);
+      assert.equal(details.event.brideName, "Fixture bride");
+      assert.equal(
+        (await api(`/events/${event.id}?q=not-found&rsvp=Accepted`)).guests
+          .length,
+        0,
+      );
       await api(`/events/${event.id}/guests/${details.guests[0].id}`, "PUT", {
         name: "Fixture Guest",
         email: "",
@@ -185,6 +229,55 @@ try {
         found.rows.some((r) => r.id.toLowerCase() === service.toLowerCase()),
       );
       await api(`/services/${service}`);
+      const publicList = await request(
+        "/api/marketplace/discover?q=Fixture%20Service&city=Fixture%20City&sort=priceAsc&pageSize=1",
+      );
+      assert.equal(publicList.rows.length, 1);
+      assert.equal(publicList.rows[0].id.toLowerCase(), service.toLowerCase());
+      await request("/api/marketplace/catalog");
+      const combined = await request(
+        `/api/marketplace/discover?q=Fixture%20Service&category=${category.CategoryId}&guests=100&date=${future}&min=100&max=6000&sort=newest`,
+      );
+      assert.ok(
+        combined.rows.some((s) => s.id.toLowerCase() === service.toLowerCase()),
+      );
+      assert.equal(
+        (
+          await request(
+            "/api/marketplace/discover?q=Fixture%20Service&min=6000&max=7000",
+          )
+        ).rows.length,
+        0,
+      );
+      const publicDetail = await request(
+        `/api/marketplace/services/${service}`,
+      );
+      assert.equal(
+        publicDetail.service.id.toLowerCase(),
+        service.toLowerCase(),
+      );
+      const publicVendor = await request(`/api/marketplace/vendors/${vendor}`);
+      assert.ok(!publicVendor.vendor.phone);
+      assert.ok(!publicVendor.vendor.email);
+      assert.ok(!publicVendor.vendor.UserId);
+      const availableDays = await request(
+        `/api/marketplace/services/${service}/availability?from=${future}`,
+      );
+      assert.equal(availableDays.days.length, 31);
+      await request(
+        "/api/marketplace/discover?sort=invalid",
+        "GET",
+        undefined,
+        undefined,
+        400,
+      );
+      await request(
+        "/api/marketplace/services/not-an-id",
+        "GET",
+        undefined,
+        undefined,
+        400,
+      );
       await api(`/vendors/${vendor}`);
       await api("/catalog");
       for (const [type, id] of [
@@ -303,7 +396,9 @@ try {
       const another = await api("/events", "POST", {
         name: "Second fixture event",
         type: "Reception",
-        eventDate: future,
+        eventDate: new Date(new Date(future).getTime() + 86400000)
+          .toISOString()
+          .slice(0, 10),
         city: "Fixture City",
         state: "Test State",
         guests: 100,
@@ -432,11 +527,11 @@ try {
       const order = await api(
         `/bookings/${booking.id}/payment-order`,
         "POST",
-        {},
+        {idempotencyKey:randomUUID(),termsAccepted:true},
       );
       assert.equal(order.amount, 450000);
       assert.equal(
-        (await api(`/bookings/${booking.id}/payment-order`, "POST", {}))
+        (await api(`/bookings/${booking.id}/payment-order`, "POST", {idempotencyKey:randomUUID(),termsAccepted:true}))
           .orderId,
         order.orderId,
       );
@@ -465,6 +560,16 @@ try {
         razorpay_signature: signature,
       });
       assert.equal((await api("/records/payments")).total, 1);
+      const paymentList = await api("/records/payments");
+      const transaction = await api(`/payments/${paymentList.rows[0].id}`);
+      assert.equal(Number(transaction.payment.amount), 4500);
+      await api(
+        `/payments/${paymentList.rows[0].id}`,
+        "GET",
+        null,
+        "other",
+        404,
+      );
       const paid = await api(`/bookings/${booking.id}`);
       assert.equal(Number(paid.booking.PaidAmount), 4500);
       assert.equal(paid.booking.BookingStatus, "Confirmed");
@@ -522,6 +627,27 @@ try {
         "notifications",
       ])
         await api(`/records/${section}`);
+      const archived = await api("/events", "POST", {
+        name: "Archive fixture",
+        type: "Other",
+        eventDate: future,
+        city: "Fixture City",
+        guests: 1,
+        budget: 0,
+      });
+      await api(`/events/${archived.id}/archive`, "POST", {}, "other", 404);
+      await api(`/events/${archived.id}/archive`, "POST", {});
+      assert.equal(
+        (await api(`/events/${archived.id}`)).event.status,
+        "Cancelled",
+      );
+      await api(
+        `/events/${archived.id}/guests`,
+        "POST",
+        { name: "Archived guest" },
+        null,
+        409,
+      );
       const dashboard = await api("/dashboard");
       assert.equal(Number(dashboard.stats.spent), 4500);
       assert.equal(dashboard.stats.events, 2);
@@ -554,6 +680,10 @@ try {
   await sequelize.close();
 }
 assert(passed);
+publicTimings.sort((a, b) => a - b);
+console.log(
+  `Public API fixture checks: ${publicTimings.length} requests; median ${publicTimings[Math.floor(publicTimings.length / 2)].toFixed(1)} ms; p95 ${publicTimings[Math.min(publicTimings.length - 1, Math.ceil(publicTimings.length * 0.95) - 1)].toFixed(1)} ms. Local verification timings, not a production benchmark.`,
+);
 console.log(
   "Customer MSSQL/REST verification passed; all fixtures rolled back.",
 );

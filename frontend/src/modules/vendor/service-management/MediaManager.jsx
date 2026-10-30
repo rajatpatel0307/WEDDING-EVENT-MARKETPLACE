@@ -1,3 +1,4 @@
+import { vendorClasses } from "../styles";
 import { useState } from "react";
 import {
   ImagePlus,
@@ -71,7 +72,7 @@ export default function MediaManager({ id, onChanged, disabled = false }) {
     <div>
       {state.error && <ErrorView error={state.error} retry={state.retry} />}
       <label
-        className={`sm-dropzone ${drag ? "dragging" : ""}`}
+        className={vendorClasses(`sm-dropzone ${drag ? "dragging" : ""}`)}
         onDragOver={(e) => {
           e.preventDefault();
           setDrag(true);
@@ -107,16 +108,35 @@ export default function MediaManager({ id, onChanged, disabled = false }) {
         <span> {progress.done} of {progress.total} images uploaded</span>
       </div>}
       {error && (
-        <p className="sm-error" role="alert">
+        <p className="rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fff0ed] text-[#ab4b3c]" role="alert">
           {error}
         </p>
       )}
-      <div className="sm-media-grid">
+      <div className="
+        grid grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[16px] mt-[20px] [&_figure]:m-[0]
+        [&_figure]:[border-top:1px_solid_var(--sm-border)]
+        [&_figure]:[border-right:1px_solid_var(--sm-border)]
+        [&_figure]:[border-bottom:1px_solid_var(--sm-border)]
+        [&_figure]:[border-left:1px_solid_var(--sm-border)] [&_figure]:rounded-[10px]
+        [&_figure]:overflow-hidden [&_figcaption]:flex [&_figcaption]:items-center
+        [&_figcaption]:justify-between [&_figcaption]:p-[9px] [&_figcaption]:gap-[4px]
+        [&_figcaption_button]:text-[9px] [&_figcaption_button]:flex [&_figcaption_button]:items-center
+        [&_figcaption_button]:gap-[4px] [&_figcaption_button]:[background:none]
+        [&_figcaption_button]:[border-top:0] [&_figcaption_button]:[border-right:0]
+        [&_figcaption_button]:[border-bottom:0] [&_figcaption_button]:[border-left:0]
+        [&_figcaption_button]:text-[#7f9272] [&_figcaption_button]:p-[2px]
+        service-tablet:grid-cols-[repeat(2,_minmax(0,_1fr))] service-mobile:gap-[8px]
+        service-mobile:[&_figcaption]:flex-wrap
+      ">
         {images.map((image, i) => (
           <figure key={image.id}>
             <button
               type="button"
-              className="sm-media-preview"
+              className="
+                relative [border-top:0] [border-right:0] [border-bottom:0] [border-left:0] p-[0] w-[100%] block
+                [&_img]:w-[100%] [&_img]:h-[160px] [&_img]:object-cover [&_>_svg]:absolute [&_>_svg]:right-[10px]
+                [&_>_svg]:bottom-[10px] [&_>_svg]:text-[white] service-mobile:[&_img]:h-[120px]
+              "
               aria-label="Preview image"
               onClick={() => setPreview(image.url)}
             >
@@ -173,7 +193,7 @@ export default function MediaManager({ id, onChanged, disabled = false }) {
       </div>
       {preview && (
         <Modal title="Image preview" close={() => setPreview(null)} wide>
-          <img src={preview} alt="Service preview" className="sm-full-image" />
+          <img src={preview} alt="Service preview" className="max-w-[100%] max-h-[75vh] object-contain block m-[auto]" />
         </Modal>
       )}
     </div>

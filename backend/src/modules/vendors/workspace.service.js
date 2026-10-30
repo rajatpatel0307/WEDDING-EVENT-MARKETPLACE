@@ -63,7 +63,7 @@ const extra = {
     from: "dbo.Notifications t",
     where: "t.UserId=:ownerId",
     fields:
-      "t.NotificationId AS id,t.Title AS title,t.Message AS message,t.IsRead AS isRead,t.CreatedAt AS createdAt",
+      "t.NotificationId AS id,t.Title AS title,t.Message AS message,t.IsRead AS isRead,t.ReferenceType AS referenceType,t.ReferenceId AS referenceId,t.CreatedAt AS createdAt",
   },
 };
 const allowed = new Set([

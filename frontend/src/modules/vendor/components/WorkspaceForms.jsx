@@ -1,3 +1,4 @@
+import QuotationBuilder from "../../quotations/QuotationBuilder";
 import { useEffect, useState } from "react";
 import {
   Link,
@@ -32,12 +33,22 @@ export function ImageUpload({ kind, src, onUploaded, onBusy }) {
     [preview, setPreview] = useState(src);
   useEffect(() => setPreview(src), [src]);
   return (
-    <div className="vw-image-upload">
+    <div className="
+      grid gap-[14px] min-w-[0] [&_>_label]:flex [&_>_label]:items-center [&_>_label]:justify-center
+      [&_>_label]:flex-col [&_>_label]:gap-[6px] [&_>_label]:[border-top:1px_dashed_#d7e3c9]
+      [&_>_label]:[border-right:1px_dashed_#d7e3c9] [&_>_label]:[border-bottom:1px_dashed_#d7e3c9]
+      [&_>_label]:[border-left:1px_dashed_#d7e3c9] [&_>_label]:rounded-[7px]
+      [&_>_label]:[padding:22px_13px] [&_>_label]:text-[#a2b58c] [&_>_label]:[background:#fafcf5]
+      [&_>_label]:relative [&_>_label]:cursor-pointer [&_>_label]:overflow-hidden [&_strong]:text-[10px]
+      [&_strong]:font-medium [&_>_label_>_span]:text-[8px] [&_>_label_>_span]:text-[#bcc8aa]
+      [&_input]:absolute [&_input]:[inset:0] [&_input]:w-[100%] [&_input]:h-[100%] [&_input]:opacity-[0]
+      [&_input]:cursor-pointer
+    ">
       <Image
         key={preview}
         src={preview}
         alt="Service"
-        className="vw-upload-preview"
+        className="w-[100%] max-h-[220px] h-[170px] object-cover rounded-[7px]"
       />
       <label>
         <ImagePlus size={18} />
@@ -74,7 +85,11 @@ export function ImageUpload({ kind, src, onUploaded, onBusy }) {
         />
       </label>
       {error && (
-        <p className="vw-form-error" role="alert">
+        <p className="
+          vw-form-error [background:#fff4ee] [border-top:1px_solid_#f0ddcf] [border-right:1px_solid_#f0ddcf]
+          [border-bottom:1px_solid_#f0ddcf] [border-left:1px_solid_#f0ddcf] text-[#b6836e]! [padding:12px_15px]
+          rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]
+        " role="alert">
           {error}
         </p>
       )}
@@ -87,9 +102,13 @@ export { default as ServiceForm } from "../service-management/ServiceEditor";
 
 function PackageItems({ items, onChange }) {
   return (
-    <div className="vw-line-items">
+    <div className="grid gap-[15px] [&_>_button]:[justify-self:start]">
       {items.map((item, index) => (
-        <div className="vw-item-row" key={index}>
+        <div className="
+          grid grid-cols-[minmax(0,_2fr)_minmax(0,_1fr)_minmax(0,_1fr)_29px] gap-[12px] [align-items:end]
+          vendor-phone:grid-cols-[1fr_1fr] vendor-phone:[&_>_label:first-child]:col-[1/-1]
+          vendor-phone:[&_>_button]:[justify-self:end]
+        " key={index}>
           <Field label={`Item ${index + 1}`}>
             <input
               value={item.name}
@@ -138,7 +157,12 @@ function PackageItems({ items, onChange }) {
           </Field>
           <button
             type="button"
-            className="vw-icon"
+            className="
+              vw-icon inline-flex items-center justify-center shrink-0 w-[29px] h-[29px] text-[#99a38e]
+              [background:none] [border-top:1px_solid_transparent] [border-right:1px_solid_transparent]
+              [border-bottom:1px_solid_transparent] [border-left:1px_solid_transparent] rounded-[5px] p-[0]
+              [&:hover]:[background:#edf3e4] [&:hover]:text-[#608146]
+            "
             aria-label={`Remove item ${index + 1}`}
             onClick={() => onChange(items.filter((_, i) => i !== index))}
           >
@@ -148,7 +172,16 @@ function PackageItems({ items, onChange }) {
       ))}
       <button
         type="button"
-        className="vw-button"
+        className="
+          vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+          [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+          rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+          font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+          [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+          [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+          [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+          [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+        "
         disabled={items.length >= 100}
         onClick={() =>
           onChange([
@@ -203,7 +236,12 @@ export function PackageForm() {
   }, [id]);
   if (catalog.error)
     return <ErrorView error={catalog.error} retry={catalog.retry} />;
-  if (error && !values) return <div className="vw-error">{error}</div>;
+  if (error && !values) return <div className="
+    flex items-start gap-[12px] m-[15px] p-[19px] [border-top:1px_solid_#efdcd0]
+    [border-right:1px_solid_#efdcd0] [border-bottom:1px_solid_#efdcd0] [border-left:1px_solid_#efdcd0]
+    rounded-[8px] [background:#fff9f5] text-[#b78270] text-[12px] [&_>_div]:grid [&_>_div]:gap-[12px]
+    [&_>_div]:[justify-items:start] [&_strong]:font-medium [&_a]:flex [&_a]:items-center [&_a]:gap-[5px]
+  ">{error}</div>;
   if (!values || !catalog.data) return <Loading />;
   const update = (key, value) => setValues((old) => ({ ...old, [key]: value }));
   return (
@@ -213,7 +251,11 @@ export function PackageForm() {
         description="Bundle the details into an experience customers can picture."
       />
       <form
-        className="vw-form"
+        className="
+          min-w-[0] [&_fieldset]:[border-top:0] [&_fieldset]:[border-right:0] [&_fieldset]:[border-bottom:0]
+          [&_fieldset]:[border-left:0] [&_fieldset]:p-[0] [&_fieldset]:m-[0] [&_fieldset]:min-w-[0]
+          [&_>_.vw-panel_+_.vw-panel]:mt-[22px]
+        "
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
@@ -243,9 +285,13 @@ export function PackageForm() {
         }}
       >
         <Panel title="Package details">
-          <div className="vw-form-body">
+          <div className="[padding:0_24px_24px] grid gap-[19px] vendor-mobile:[padding:0_18px_20px]">
             {error && (
-              <p className="vw-form-error" role="alert">
+              <p className="
+                vw-form-error [background:#fff4ee] [border-top:1px_solid_#f0ddcf] [border-right:1px_solid_#f0ddcf]
+                [border-bottom:1px_solid_#f0ddcf] [border-left:1px_solid_#f0ddcf] text-[#b6836e]! [padding:12px_15px]
+                rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]
+              " role="alert">
                 {error}
               </p>
             )}
@@ -303,7 +349,12 @@ export function PackageForm() {
                 </Field>
               ))}
             </div>
-            <div className="vw-package-price">
+            <div className="
+              flex flex-col items-center gap-[7px] [border-top:1px_solid_#dfebd4] [border-right:1px_solid_#dfebd4]
+              [border-bottom:1px_solid_#dfebd4] [border-left:1px_solid_#dfebd4] [background:#f0f6e7] p-[22px]
+              rounded-[7px] text-[#89a070] [&_>_span]:text-[10px] [&_strong]:text-[29px] [&_strong]:text-[#6c8a53]
+              [&_strong]:font-medium [&_small]:text-[8px] [&_small]:text-[#a9bd92]
+            ">
               <span>Final package price</span>
               <strong>
                 {money(
@@ -318,7 +369,10 @@ export function PackageForm() {
                 ["featured", "Mark as featured"],
                 ["active", "Package is active"],
               ].map(([key, label]) => (
-                <label className="vw-check-field" key={key}>
+                <label className="
+                  inline-flex! items-center gap-[8px] text-[10px] text-[#8fa27c] font-normal [&_input]:w-[13px]!
+                  [&_input]:h-[13px] [&_input]:p-[0] [&_input]:[accent-color:#79935d]
+                " key={key}>
                   <input
                     type="checkbox"
                     checked={values[key]}
@@ -334,18 +388,42 @@ export function PackageForm() {
           title="What's included"
           description="List the items and quantities that make this package special."
         >
-          <div className="vw-form-body">
+          <div className="[padding:0_24px_24px] grid gap-[19px] vendor-mobile:[padding:0_18px_20px]">
             <PackageItems
               items={values.items}
               onChange={(items) => update("items", items)}
             />
           </div>
         </Panel>
-        <div className="vw-form-footer">
-          <Link className="vw-button" to="/vendor/packages">
+        <div className="
+          flex items-center justify-between gap-[20px] mt-[23px] [padding:18px_0] [&_>_p]:flex
+          [&_>_p]:items-center [&_>_p]:gap-[7px] [&_>_p]:text-[9px] [&_>_p]:text-[#a0b28e] [&_>_div]:flex
+          [&_>_div]:items-center [&_>_div]:gap-[9px] vendor-mobile:items-start vendor-mobile:flex-col
+          vendor-mobile:[&_>_div]:[align-self:flex-end] vendor-phone:[&_>_p]:text-[8px]
+        ">
+          <Link className="
+            vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+            [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+            rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+            font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+            [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+            [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+            [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+            [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+          " to="/vendor/packages">
             Cancel
           </Link>
-          <button className="vw-button vw-primary" disabled={busy}>
+          <button className="
+            vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+            [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+            rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+            font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+            [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+            [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+            [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+            [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+            vw-primary
+          " disabled={busy}>
             <Save size={15} />
             {busy ? "Saving…" : "Save package"}
           </button>
@@ -356,335 +434,7 @@ export function PackageForm() {
 }
 
 export function QuotationForm() {
-  const { id } = useParams(),
-    [params] = useSearchParams(),
-    navigate = useNavigate(),
-    { notify } = useAuth();
-  const catalog = useVendorData("/catalog"),
-    options = useVendorData("/quotation-options");
-  const [values, setValues] = useState(null),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
-  useEffect(() => {
-    let live = true;
-    setValues(null);
-    setError("");
-    if (!id) {
-      setValues({
-        eventId: params.get("event") || "",
-        validUntil: new Date(Date.now() + 7 * 86400000)
-          .toISOString()
-          .slice(0, 10),
-        message: "",
-        status: "Draft",
-        items: [
-          {
-            serviceId: "",
-            packageId: null,
-            name: "",
-            quantity: 1,
-            price: 0,
-            discount: 0,
-            tax: 0,
-          },
-        ],
-      });
-      return;
-    }
-    vendorRequest(`/quotations/${id}`)
-      .then((v) => {
-        if (live)
-          setValues({
-            ...v,
-            validUntil: v.validUntil?.slice(0, 10) || today(),
-          });
-      })
-      .catch((e) => {
-        if (live) setError(e.message);
-      });
-    return () => {
-      live = false;
-    };
-  }, [id, params]);
-  if (catalog.error || options.error)
-    return (
-      <ErrorView
-        error={catalog.error || options.error}
-        retry={() => {
-          catalog.retry();
-          options.retry();
-        }}
-      />
-    );
-  if (error && !values) return <div className="vw-error">{error}</div>;
-  if (!values || !catalog.data || !options.data) return <Loading />;
-  const update = (key, value) => setValues((old) => ({ ...old, [key]: value }));
-  const itemChange = (index, patch) =>
-    update(
-      "items",
-      values.items.map((item, i) =>
-        i === index ? { ...item, ...patch } : item,
-      ),
-    );
-  const total = values.items.reduce(
-    (sum, row) =>
-      sum +
-      Number(row.quantity) * Number(row.price) -
-      Number(row.discount) +
-      Number(row.tax),
-    0,
-  );
-  return (
-    <>
-      <Heading
-        title={id ? "Edit draft quotation" : "Create a quotation"}
-        description="Turn an enquiry into a clear, considered proposal."
-      />
-      <form
-        className="vw-form"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setBusy(true);
-          setError("");
-          try {
-            const { id: _id, updatedAt, ...body } = values;
-            const result = await save(
-              `/quotations${id ? `/${id}` : ""}`,
-              id ? "PUT" : "POST",
-              {
-                ...body,
-                items: values.items.map((line) => ({
-                  ...line,
-                  quantity: Number(line.quantity),
-                  price: Number(line.price),
-                  discount: Number(line.discount),
-                  tax: Number(line.tax),
-                })),
-                ...(updatedAt ? { expectedUpdatedAt: updatedAt } : {}),
-              },
-            );
-            notify(result.message);
-            navigate(
-              values.status === "Draft"
-                ? "/vendor/quotations/drafts"
-                : "/vendor/quotations/sent",
-            );
-          } catch (err) {
-            setError(err.message);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        <Panel title="Customer & event">
-          <div className="vw-form-body">
-            {error && (
-              <p className="vw-form-error" role="alert">
-                {error}
-              </p>
-            )}
-            {!options.data.events.length && (
-              <p className="vw-form-note">
-                No customer events are available yet. Open a booking enquiry or
-                customer conversation first.
-              </p>
-            )}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Field label="Customer event">
-                <select
-                  value={values.eventId}
-                  required
-                  onChange={(e) => update("eventId", e.target.value)}
-                >
-                  <option value="">Select an event</option>
-                  {options.data.events.map((event) => (
-                    <option key={event.id} value={event.id}>
-                      {event.customer} · {event.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Valid until">
-                <input
-                  type="date"
-                  min={today()}
-                  value={values.validUntil}
-                  required
-                  onChange={(e) => update("validUntil", e.target.value)}
-                />
-              </Field>
-            </div>
-            <Field label="A message for your customer">
-              <textarea
-                rows={3}
-                maxLength={5000}
-                value={values.message}
-                onChange={(e) => update("message", e.target.value)}
-              />
-            </Field>
-          </div>
-        </Panel>
-        <Panel
-          title="Quotation items"
-          description="Select your own services and packages. All amounts are in INR."
-        >
-          <div className="vw-form-body vw-quote-items">
-            {values.items.map((line, index) => (
-              <article key={index}>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <Field label="Service">
-                    <select
-                      value={line.serviceId}
-                      required
-                      onChange={(e) => {
-                        const service = catalog.data.services.find(
-                          (s) => s.id === e.target.value,
-                        );
-                        itemChange(index, {
-                          serviceId: e.target.value,
-                          packageId: null,
-                          name: service?.name || "",
-                          price: Number(service?.price || 0),
-                        });
-                      }}
-                    >
-                      <option value="">Select service</option>
-                      {catalog.data.services.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Package (optional)">
-                    <select
-                      value={line.packageId || ""}
-                      onChange={(e) => {
-                        const p = options.data.packages.find(
-                          (p) => p.id === e.target.value,
-                        );
-                        itemChange(index, {
-                          packageId: p?.id || null,
-                          ...(p
-                            ? { price: Number(p.price), name: p.name }
-                            : {}),
-                        });
-                      }}
-                    >
-                      <option value="">Custom line item</option>
-                      {options.data.packages
-                        .filter((p) => p.serviceId === line.serviceId)
-                        .map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                    </select>
-                  </Field>
-                </div>
-                <Field label="Item name">
-                  <input
-                    value={line.name}
-                    required
-                    maxLength={200}
-                    onChange={(e) =>
-                      itemChange(index, { name: e.target.value })
-                    }
-                  />
-                </Field>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  {[
-                    ["quantity", "Quantity"],
-                    ["price", "Unit price"],
-                    ["discount", "Discount amount"],
-                    ["tax", "Tax amount"],
-                  ].map(([key, label]) => (
-                    <Field key={key} label={label}>
-                      <input
-                        type="number"
-                        value={line[key]}
-                        min={key === "quantity" ? 0.001 : 0}
-                        max={100000000}
-                        step={key === "quantity" ? ".001" : ".01"}
-                        required
-                        onChange={(e) =>
-                          itemChange(index, { [key]: e.target.value })
-                        }
-                      />
-                    </Field>
-                  ))}
-                </div>
-                <button
-                  className="vw-text-link"
-                  type="button"
-                  disabled={values.items.length === 1}
-                  onClick={() =>
-                    update(
-                      "items",
-                      values.items.filter((_, i) => i !== index),
-                    )
-                  }
-                >
-                  <Trash2 size={13} /> Remove item
-                </button>
-              </article>
-            ))}
-            <button
-              className="vw-button"
-              type="button"
-              disabled={values.items.length >= 100}
-              onClick={() =>
-                update("items", [
-                  ...values.items,
-                  {
-                    serviceId: "",
-                    packageId: null,
-                    name: "",
-                    quantity: 1,
-                    price: 0,
-                    discount: 0,
-                    tax: 0,
-                  },
-                ])
-              }
-            >
-              <Plus size={14} /> Add line item
-            </button>
-            <div className="vw-quotation-total">
-              <span>Total quotation</span>
-              <strong>{money(total)}</strong>
-            </div>
-          </div>
-        </Panel>
-        <div className="vw-form-footer">
-          <Field label="Save as">
-            <select
-              value={values.status === "Draft" ? "Draft" : "Sent"}
-              onChange={(e) => update("status", e.target.value)}
-            >
-              <option value="Draft">Draft</option>
-              <option value="Sent">Send to customer</option>
-            </select>
-          </Field>
-          <div>
-            <Link className="vw-button" to="/vendor/quotations/sent">
-              Cancel
-            </Link>
-            <button
-              className="vw-button vw-primary"
-              disabled={busy || !options.data.events.length}
-            >
-              {busy
-                ? "Saving…"
-                : values.status === "Draft"
-                  ? "Save draft"
-                  : "Send quotation"}
-            </button>
-          </div>
-        </div>
-      </form>
-    </>
-  );
+  return <QuotationBuilder />;
 }
 
 const defaults = {
@@ -771,7 +521,11 @@ export function RecordEditor({ kind, row, close, onSaved }) {
       busy={busy}
     >
       <form
-        className="vw-form vw-modal-form"
+        className="
+          min-w-[0] [&_fieldset]:[border-top:0] [&_fieldset]:[border-right:0] [&_fieldset]:[border-bottom:0]
+          [&_fieldset]:[border-left:0] [&_fieldset]:p-[0] [&_fieldset]:m-[0] [&_fieldset]:min-w-[0]
+          [&_>_.vw-panel_+_.vw-panel]:mt-[22px] grid gap-[19px] [padding:22px_24px]
+        "
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
@@ -809,7 +563,11 @@ export function RecordEditor({ kind, row, close, onSaved }) {
         }}
       >
         {error && (
-          <p className="vw-form-error" role="alert">
+          <p className="
+            vw-form-error [background:#fff4ee] [border-top:1px_solid_#f0ddcf] [border-right:1px_solid_#f0ddcf]
+            [border-bottom:1px_solid_#f0ddcf] [border-left:1px_solid_#f0ddcf] text-[#b6836e]! [padding:12px_15px]
+            rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]
+          " role="alert">
             {error}
           </p>
         )}
@@ -844,7 +602,10 @@ export function RecordEditor({ kind, row, close, onSaved }) {
                     maxLength: 20,
                   })}
                 </div>
-                <label className="vw-check-field">
+                <label className="
+                  inline-flex! items-center gap-[8px] text-[10px] text-[#8fa27c] font-normal [&_input]:w-[13px]!
+                  [&_input]:h-[13px] [&_input]:p-[0] [&_input]:[accent-color:#79935d]
+                ">
                   <input
                     type="checkbox"
                     checked={values.primary}
@@ -904,7 +665,10 @@ export function RecordEditor({ kind, row, close, onSaved }) {
                         step: ".01",
                       })}
                     </div>
-                    <label className="vw-check-field">
+                    <label className="
+                      inline-flex! items-center gap-[8px] text-[10px] text-[#8fa27c] font-normal [&_input]:w-[13px]!
+                      [&_input]:h-[13px] [&_input]:p-[0] [&_input]:[accent-color:#79935d]
+                    ">
                       <input
                         type="checkbox"
                         checked={values.included}
@@ -966,7 +730,10 @@ export function RecordEditor({ kind, row, close, onSaved }) {
               </>
             )}
             {kind !== "items" && (
-              <label className="vw-check-field">
+              <label className="
+                inline-flex! items-center gap-[8px] text-[10px] text-[#8fa27c] font-normal [&_input]:w-[13px]!
+                [&_input]:h-[13px] [&_input]:p-[0] [&_input]:[accent-color:#79935d]
+              ">
                 <input
                   type="checkbox"
                   checked={values.active}
@@ -975,16 +742,35 @@ export function RecordEditor({ kind, row, close, onSaved }) {
                 Active
               </label>
             )}
-            <div className="vw-modal-actions">
+            <div className="flex justify-end gap-[9px] pt-[7px]">
               <button
                 type="button"
-                className="vw-button"
+                className="
+                  vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                  [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                  rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                  font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                  [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                  [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                  [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                  [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                "
                 onClick={close}
                 disabled={busy}
               >
                 Cancel
               </button>
-              <button className="vw-button vw-primary" disabled={busy}>
+              <button className="
+                vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
+                [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
+                rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
+                font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
+                [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
+                [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
+                [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
+                [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
+                vw-primary
+              " disabled={busy}>
                 {busy ? "Saving…" : "Save changes"}
               </button>
             </div>

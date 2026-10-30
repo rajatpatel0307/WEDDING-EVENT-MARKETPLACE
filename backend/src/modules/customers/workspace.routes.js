@@ -7,7 +7,9 @@ import * as d from "./workspace.discovery.js";
 import * as o from "./workspace.operations.js";
 import * as m from "./workspace.messaging.js";
 import * as p from "./workspace.payments.js";
+import * as finance from "../payments/customer-finance.js";
 import * as lifecycle from "../bookings/bookings.service.js";
+import * as quotations from "../quotations/quotations.service.js";
 export function createCustomerRouter({
   authenticateRequest = authenticate,
 } = {}) {
@@ -40,6 +42,7 @@ export function createCustomerRouter({
     }
   });
   r.use(json({ limit: "8mb" }));
+  r.use(['/payments','/refund-requests','/bookings/:id/payment-refresh'],rateLimit({windowMs:60000,limit:60,standardHeaders:'draft-8',legacyHeaders:false}));
   const get = (path, fn) =>
     r.get(path, async (req, res) =>
       res.json({ success: true, data: await fn(req) }),
@@ -51,13 +54,34 @@ export function createCustomerRouter({
   get("/dashboard", (q) => w.dashboard(q.ctx));
   get("/catalog", (q) => d.catalog(q.ctx));
   get("/discover", (q) => d.discover(q.query, q.ctx));
-  get("/services/:id", (q) => d.serviceDetails(q.params.id, q.ctx));
+  get("/services/:id", (q) =>
+    d.serviceDetails(q.params.id, q.ctx, true, q.query),
+  );
   get("/vendors/:id", (q) => d.vendorDetails(q.params.id, q.ctx));
   get("/records/:section", (q) => w.records(q.params.section, q.query, q.ctx));
   get("/wishlist", (q) => d.wishlist(q.ctx));
   mut("post", "/wishlist", (q) => d.saveWishlist(q.body, q.ctx));
   mut("delete", "/wishlist/:id", (q) => d.removeWishlist(q.params.id, q.ctx));
-  get("/events/:id", (q) => w.eventDetails(q.params.id, q.ctx));
+  get("/events/:id", (q) => w.eventDetails(q.params.id, q.ctx, q.query));
+  mut("post", "/events/:id/archive", (q) => w.archiveEvent(q.params.id, q.ctx));
+  r.get("/events/:id/guests/export", async (q, res) => {
+    res.set({
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": 'attachment; filename="event-guests.csv"',
+    });
+    res.send(await w.exportGuests(q.params.id, q.ctx));
+  });
+  get("/payments/config", () => ({enabled:p.configured(),gateway:'Razorpay',currency:'INR'}));
+  get("/payments/:id", (q) => w.transactionDetails(q.params.id, q.ctx));
+  r.get('/payments/:id/receipt', async (q,res) => {
+    res.set({'Content-Type':'text/plain; charset=utf-8','Content-Disposition':'attachment; filename="payment-receipt.txt"'});
+    res.send(await finance.receipt(q.params.id,q.ctx));
+  });
+  get('/bookings/:id/refund-eligibility',q=>finance.refundEligibility(q.params.id,q.ctx));
+  get('/bookings/:id/payment-status',q=>finance.status(q.params.id,q.ctx));
+  mut('post','/bookings/:id/payment-refresh',q=>finance.status(q.params.id,q.ctx,true));
+  get('/refund-requests',q=>finance.refunds(q.query,q.ctx));
+  mut('post','/refund-requests',q=>finance.requestRefund(q.body,q.ctx));
   mut("post", "/events", (q) => w.saveEvent(null, q.body, q.ctx));
   mut("put", "/events/:id", (q) => w.saveEvent(q.params.id, q.body, q.ctx));
   mut("post", "/events/:id/guests", (q) =>
@@ -104,19 +128,41 @@ export function createCustomerRouter({
   mut("delete", "/bookings/:id/items/:item", (q) =>
     lifecycle.editOptionalItem(q.params.id, q.params.item, q.body, q.ctx, true),
   );
+  const quotationLimit = rateLimit({
+    windowMs: 60000,
+    limit: 20,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+  });
+  r.use(["/quotation-requests", "/quotations"], (req, res, next) =>
+    ["GET", "HEAD"].includes(req.method)
+      ? next()
+      : quotationLimit(req, res, next),
+  );
   mut("post", "/quotation-requests", (q) => o.requestQuote(q.body, q.ctx));
+  get("/quotation-requests", (q) =>
+    quotations.list(q.query, q.ctx, "Customer", true),
+  );
+  get("/quotation-requests/:id", (q) =>
+    quotations.requestDetail(q.params.id, q.ctx, "Customer"),
+  );
+  mut("post", "/quotation-requests/:id/action", (q) =>
+    quotations.requestAction(q.params.id, q.body, q.ctx, "Customer"),
+  );
+  get("/quotations", (q) => quotations.list(q.query, q.ctx, "Customer"));
+  get("/quotations/statistics", (q) =>
+    quotations.statistics(q.ctx, "Customer"),
+  );
+  mut("post", "/quotations/:id/convert", (q) =>
+    quotations.convert(q.params.id, q.ctx),
+  );
   get("/quotations/:id", (q) => o.quoteDetails(q.params.id, q.ctx));
   mut("post", "/quotations/:id/decision", (q) =>
     o.decideQuote(q.params.id, q.body, q.ctx),
   );
   mut("post", "/reviews", (q) => o.review(q.body, q.ctx));
-  get("/payments/config", () => ({
-    enabled: p.configured(),
-    gateway: "Razorpay",
-    currency: "INR",
-  }));
   mut("post", "/bookings/:id/payment-order", (q) =>
-    p.createOrder(q.params.id, q.ctx),
+    p.createOrder(q.params.id, q.ctx, q.body),
   );
   mut("post", "/payments/verify", (q) => p.verifyPayment(q.body, q.ctx));
   get("/conversations", (q) => m.conversations(q.ctx));

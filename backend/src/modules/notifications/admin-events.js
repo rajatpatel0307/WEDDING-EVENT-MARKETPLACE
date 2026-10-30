@@ -1,5 +1,7 @@
 import { sequelize } from "../../config/database.js";
 const events = {
+  CUSTOMER_REFUND_REQUESTED: "Refund request awaiting review",
+  PAYMENT_RECONCILIATION_REVIEW: "Payment reconciliation requires review",
   PAYOUT_REQUESTED: "Payout requested",
   CUSTOMER_BOOKING_CREATED: "New booking",
   BOOKING_CANCELLED: "Booking cancelled",
