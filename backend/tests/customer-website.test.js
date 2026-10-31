@@ -47,6 +47,7 @@ test("public search binds combined filters, escapes wildcards and uses stable pa
     assert.match(query.sql, /SubCategoryId=:subcategory/);
     assert.match(query.sql, /OFFSET :offset/);
     assert.match(query.sql, /ApprovalStatus='Approved'/);
+    assert.doesNotMatch(query.sql, /availability\.(advanceDays|days)/);
     assert.ok(query.options.replacements.guests === 100);
   } finally {
     sequelize.query = original;
@@ -60,6 +61,31 @@ test("archive, guest export and transaction details authorize before any SQL", a
     () => w.transactionDetails("bad", ctx),
   ])
     await assert.rejects(fn, (e) => e.extensions?.code === "UNAUTHENTICATED");
+});
+
+test("public availability opens future dates but keeps blocks and existing bookings unavailable", async (t) => {
+  const id = "1D375B0C-89D2-F111-8F30-14133304FA5C";
+  t.mock.method(sequelize, "query", async (sql) => {
+    if (sql.includes("s.DetailsJson,")) return [{
+      id,
+      vendorId: id,
+      DetailsJson: JSON.stringify({ availability: {
+        days: [], start: "09:00", end: "20:00", advanceDays: 1, noticeHours: 24,
+      } }),
+    }];
+    if (sql.includes("FROM dbo.VendorAvailability")) return [
+      { date: "2090-01-02", status: "Available" },
+      { date: "2090-01-02", status: "Blocked" },
+    ];
+    if (sql.includes("FROM dbo.Booking b JOIN dbo.BookingItems")) return [{ date: "2090-01-03" }];
+    return [];
+  });
+  const { days } = await d.publicAvailability(id, { from: "2090-01-01" });
+  assert.equal(days.length, 31);
+  for (const day of days) {
+    assert.equal(day.available, !["2090-01-02", "2090-01-03"].includes(day.date));
+    if (!day.available) assert.equal(day.reason, "Unavailable");
+  }
 });
 test("event end dates and guest ranges are validated by the existing event schema", () => {
   const input = {

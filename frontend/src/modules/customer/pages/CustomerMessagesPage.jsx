@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { mergeChatMessages, startChatPolling } from "../../../services/chat-sync";
 import { useSearchParams, Link } from "react-router-dom";
 import {
   CheckCheck,
@@ -45,86 +46,55 @@ export default function CustomerMessagesPage() {
     if (!params.get("conversation") && list.data?.[0])
       setParams({ conversation: list.data[0].id }, { replace: true });
   }, [params, list.data, setParams]);
+  const setConversations = list.setData;
+  const reloadRef = useRef(reload);
   useEffect(() => {
-    const abort = new AbortController();
-    const interval = setInterval(() => {
-      if (document.hidden) return;
-      customerRequest("/conversations", { signal: abort.signal })
-        .then(list.setData)
-        .catch(() => {});
-    }, 10000);
-    return () => {
-      clearInterval(interval);
-      abort.abort();
-    };
-  }, []);
+    reloadRef.current = reload;
+  }, [reload]);
+  useEffect(() => startChatPolling(async (signal) => {
+    const conversations = await customerRequest("/conversations", { signal, cache: "no-store" });
+    if (!signal.aborted) setConversations(conversations);
+  }, { interval: 5000, immediate: false }), [setConversations]);
   useEffect(() => {
     if (!selected) return;
-    const abort = new AbortController();
+    let first = true;
     setLoading(true);
     setMessages([]);
     setAttachment(null);
     setText("");
     setError("");
-    customerRequest(`/conversations/${selected}/messages`, {
-      signal: abort.signal,
-    })
-      .then(async (value) => {
-        setMessages(value.messages);
-        setHasMore(value.hasMore);
-        await save(`/conversations/${selected}/read`, "PATCH", {});
-        list.setData((old) =>
-          old?.map((row) =>
-            row.id === selected ? { ...row, unread: 0 } : row,
-          ),
-        );
-        reload().catch(() => {});
-      })
-      .catch((e) => {
-        if (!abort.signal.aborted) setError(e.message);
-      })
-      .finally(() => {
-        if (!abort.signal.aborted) setLoading(false);
+    return startChatPolling(async (signal) => {
+      const value = await customerRequest(`/conversations/${selected}/messages`, {
+        signal,
+        cache: "no-store",
       });
-    return () => abort.abort();
-  }, [selected]);
-  useEffect(() => {
-    if (!selected) return;
-    const abort = new AbortController();
-    const interval = setInterval(() => {
-      if (document.hidden) return;
-      customerRequest(`/conversations/${selected}/messages`, {
-        signal: abort.signal,
-      })
-        .then((value) => {
-          setMessages((old) => {
-            const merged = new Map(old.map((message) => [message.id, message]));
-            value.messages.forEach((message) =>
-              merged.set(message.id, message),
-            );
-            return [...merged.values()];
-          });
-          if (
-            value.messages.some((message) => !message.mine && !message.isRead)
-          )
-            save(`/conversations/${selected}/read`, "PATCH", {})
-              .then(() => {
-                list.setData((old) =>
-                  old?.map((row) =>
-                    row.id === selected ? { ...row, unread: 0 } : row,
-                  ),
-                );
-                reload().catch(() => {});
-              })
-              .catch(() => {});
-        })
-        .catch(() => {});
-    }, 10000);
-    return () => {
-      clearInterval(interval);
-      abort.abort();
-    };
-  }, [selected, hasMore]);
+      if (signal.aborted) return;
+      const initial = first;
+      setMessages(old => mergeChatMessages(initial ? [] : old, value.messages));
+      const markRead = first || value.messages.some(message => !message.mine && !message.isRead);
+      if (first) {
+        setHasMore(value.hasMore);
+        setError("");
+        setLoading(false);
+        first = false;
+      }
+      if (markRead && !document.hidden) {
+        await customerRequest(`/conversations/${selected}/read`, {
+          method: "PATCH", body: "{}", signal,
+        });
+        if (signal.aborted) return;
+        setConversations(old => old?.map(row => row.id === selected ? { ...row, unread: 0 } : row));
+        reloadRef.current().catch(() => {});
+      }
+    }, {
+      onError: error => {
+        if (first) {
+          setError(error.message);
+          setLoading(false);
+        }
+      },
+    });
+  }, [selected, setConversations]);
   useEffect(() => {
     const container = end.current?.parentElement;
     if (container) container.scrollTop = container.scrollHeight;
@@ -135,7 +105,7 @@ export default function CustomerMessagesPage() {
       const result = await customerRequest(
         `/conversations/${selected}/messages?${new URLSearchParams({ before: messages[0].createdAt, beforeId: messages[0].id })}`,
       );
-      setMessages((old) => [...result.messages, ...old]);
+      setMessages((old) => mergeChatMessages(old, result.messages));
       setHasMore(result.hasMore);
     } catch (e) {
       setError(e.message);
@@ -320,8 +290,7 @@ export default function CustomerMessagesPage() {
                     const result = await customerRequest(
                       `/conversations/${selected}/messages`,
                     );
-                    setMessages(result.messages);
-                    setHasMore(result.hasMore);
+                    setMessages(old => mergeChatMessages(old, result.messages));
                     setVersion((v) => v + 1);
                   } catch (err) {
                     setError(err.message);

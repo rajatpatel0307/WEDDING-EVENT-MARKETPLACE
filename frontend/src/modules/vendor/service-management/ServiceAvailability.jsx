@@ -123,10 +123,7 @@ export default function ServiceAvailability() {
               {Array.from({ length: days }, (_, i) => {
                 const day = `${month}-${String(i + 1).padStart(2, "0")}`,
                   r = rows.find((x) => String(x.date).slice(0, 10) === day),
-                  weekday = new Date(`${day}T12:00:00Z`).getUTCDay(),
-                  status =
-                    r?.status ||
-                    (avail?.days?.includes(weekday) ? "Available" : "Closed");
+                  status = r?.status || "Available";
                 return (
                   <button
                     key={day}

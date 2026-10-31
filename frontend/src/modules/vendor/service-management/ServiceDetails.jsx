@@ -300,7 +300,7 @@ export function ServicePreview({
         · {s.availability?.start}–{s.availability?.end}
       </p>
       <p>
-        Book up to {s.availability?.advanceDays} days ahead ·{" "}
+        Future dates can be requested unless blocked or booked ·{" "}
         {s.availability?.noticeHours} hours’ notice
       </p>
       {s.id && <AvailabilityPreview id={s.id} />}

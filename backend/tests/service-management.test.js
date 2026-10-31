@@ -504,16 +504,14 @@ test("a full service gallery refuses uploads before contacting storage", async (
   assert.equal(countQuery.arguments[1].replacements.serviceId, serviceId);
   assert.ok(!query.mock.calls.some((call) => call.arguments[0].startsWith("INSERT")));
 });
-test("schedule enforces working days, custom timing, advance period and minimum notice", () => {
+test("schedule allows available future dates, including weekends and dates beyond the legacy advance period", () => {
   const doc = document(),
     now = new Date("2026-10-28T00:00:00Z");
   assert.doesNotThrow(() =>
     assertServiceSchedule(doc, "2026-10-30", "10:00", null, now),
   );
-  assert.throws(
-    () => assertServiceSchedule(doc, "2026-10-31", "10:00", null, now),
-    { status: 409 },
-  );
+  for (const day of ["2026-10-31", "2026-11-01", "2026-11-07", "2028-10-30", "2090-01-01"])
+    assert.doesNotThrow(() => assertServiceSchedule(doc, day, "10:00", null, now));
   assert.doesNotThrow(() =>
     assertServiceSchedule(
       doc,
@@ -528,13 +526,22 @@ test("schedule enforces working days, custom timing, advance period and minimum 
     { status: 409 },
   );
   assert.throws(
-    () => assertServiceSchedule(doc, "2028-10-30", "10:00", null, now),
-    { status: 409 },
+    () => assertServiceSchedule(doc, "2026-10-31", "13:00", { StartTime: "09:00", EndTime: "12:00" }, now),
+    /outside service working hours/,
   );
   assert.throws(
     () => assertServiceSchedule(doc, "2026-10-28", "10:00", null, now),
     { status: 409 },
   );
+});
+
+test("schedule rejects past and invalid dates even without a saved weekly schedule", () => {
+  const now = new Date("2026-10-31T00:00:00Z");
+  for (const doc of [null, {}, document()]) {
+    for (const day of ["2026-10-30", "2026-02-30", "not-a-date"])
+      assert.throws(() => assertServiceSchedule(doc, day, null, null, now), /valid upcoming event date/);
+    assert.doesNotThrow(() => assertServiceSchedule(doc, "2090-01-01", "10:00", null, now));
+  }
 });
 test("REST denies anonymous and customer access, validates parameters and enforces mutation origins", async (t) => {
   let auth = null;

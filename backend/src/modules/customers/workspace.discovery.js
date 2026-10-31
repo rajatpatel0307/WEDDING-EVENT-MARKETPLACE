@@ -124,10 +124,8 @@ export async function publicDiscover(input) {
   if (q.date)
     conditions.push(
       "CONVERT(date,:date)>=CONVERT(date,DATEADD(minute,330,SYSUTCDATETIME()))",
-      "(TRY_CONVERT(int,JSON_VALUE(s.DetailsJson,'$.availability.advanceDays')) IS NULL OR DATEDIFF(day,CONVERT(date,DATEADD(minute,330,SYSUTCDATETIME())),CONVERT(date,:date))<=TRY_CONVERT(int,JSON_VALUE(s.DetailsJson,'$.availability.advanceDays')))",
       "NOT EXISTS(SELECT 1 FROM dbo.VendorAvailability va WHERE va.VendorId=v.VendorId AND va.AvailableDate=:date AND va.Status IN('Blocked','Booked') AND (va.ServiceId IS NULL OR va.ServiceId=s.ServiceId))",
       "NOT EXISTS(SELECT 1 FROM dbo.Booking b JOIN dbo.BookingItems bi ON bi.BookingId=b.BookingId WHERE b.VendorId=v.VendorId AND bi.ServiceId=s.ServiceId AND b.BookingDate=:date AND b.BookingStatus IN('Pending','Accepted','PaymentPending','Confirmed','InProgress','Disputed'))",
-      "(JSON_QUERY(s.DetailsJson,'$.availability.days') IS NULL OR EXISTS(SELECT 1 FROM dbo.VendorAvailability ov WHERE ov.VendorId=v.VendorId AND ov.AvailableDate=:date AND ov.Status='Available' AND (ov.ServiceId IS NULL OR ov.ServiceId=s.ServiceId)) OR EXISTS(SELECT 1 FROM OPENJSON(s.DetailsJson,'$.availability.days') wd WHERE TRY_CONVERT(int,wd.value)=DATEDIFF(day,'19000107',CONVERT(date,:date))%7))",
     );
   if (q.type === "offers")
     conditions.push(

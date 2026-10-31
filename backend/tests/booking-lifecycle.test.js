@@ -196,3 +196,23 @@ test("reservation guard requires a transaction and rejects a conflicting booking
     sequelize.query = original;
   }
 });
+
+test("future reservations ignore legacy weekday and advance limits while keeping date blocks and booking holds", async (t) => {
+  let blocked = false, reserved = false;
+  const query = t.mock.method(sequelize, "query", async (sql) => {
+    if (sql.includes("Status IN('Blocked','Booked')")) return blocked ? [{ AvailabilityId: 1 }] : [];
+    if (sql.includes("JOIN dbo.BookingItems")) return reserved ? [{ BookingId: id }] : [];
+    if (sql.startsWith("SELECT s.DetailsJson")) return [{ DetailsJson: JSON.stringify({
+      availability: { days: [], advanceDays: 1, start: "09:00", end: "20:00", noticeHours: 24 },
+    }) }];
+    return [];
+  });
+  const event = { EventDate: "2090-01-01", StartTime: "10:00", EndTime: "12:00", GuestCount: 100 };
+  await assert.doesNotReject(() => assertReservation(id, event, [id], {}));
+  blocked = true;
+  await assert.rejects(() => assertReservation(id, event, [id], {}), /unavailable on the selected date/);
+  blocked = false;
+  reserved = true;
+  await assert.rejects(() => assertReservation(id, event, [id], {}), /reserves this service/);
+  assert.ok(query.mock.calls.every(call => call.arguments[1].transaction));
+});
