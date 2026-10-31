@@ -4,7 +4,6 @@ import { useSearchParams, Link } from "react-router-dom";
 import {
   CheckCheck,
   Download,
-  MessageSquare,
   Paperclip,
   Search,
   Send,
@@ -40,12 +39,8 @@ export default function CustomerMessagesPage() {
     [error, setError] = useState(""),
     [loading, setLoading] = useState(false);
   const end = useRef(null),
-    selected = params.get("conversation") || list.data?.[0]?.id;
+    selected = params.get("conversation") || null;
   const conversation = list.data?.find((c) => c.id === selected);
-  useEffect(() => {
-    if (!params.get("conversation") && list.data?.[0])
-      setParams({ conversation: list.data[0].id }, { replace: true });
-  }, [params, list.data, setParams]);
   const setConversations = list.setData;
   useEffect(() => startChatPolling(async (signal) => {
     const conversations = await customerRequest("/conversations", { signal, cache: "no-store" });
@@ -95,6 +90,19 @@ export default function CustomerMessagesPage() {
     const container = end.current?.parentElement;
     if (container) container.scrollTop = container.scrollHeight;
   }, [selected, messages.at(-1)?.id]);
+  function closeConversation() {
+    setParams(previous => {
+      const next = new URLSearchParams(previous);
+      next.delete("conversation");
+      return next;
+    });
+    setMessages([]);
+    setHasMore(false);
+    setText("");
+    setAttachment(null);
+    setError("");
+    setLoading(false);
+  }
   async function loadEarlier() {
     if (!messages[0]) return;
     try {
@@ -192,7 +200,21 @@ export default function CustomerMessagesPage() {
                       "Your event enquiry"}
                   </p>
                 </div>
-                <MessageSquare size={18} />
+                <button
+                  type="button"
+                  onClick={closeConversation}
+                  disabled={busy || uploading}
+                  aria-label="Close conversation"
+                  title="Close conversation"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[#dfe7d8]
+                    bg-white px-3 py-2 text-[11px] font-medium text-[#738567]
+                    hover:bg-[#f0f5e9] hover:text-[#406b42]
+                    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8aaf94]
+                    disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <X size={16} aria-hidden="true" />
+                  <span>Close chat</span>
+                </button>
               </header>
               <div className="cw-chat-scroll" aria-live="polite">
                 {hasMore && (
