@@ -22,11 +22,19 @@ pages; admin booking review pages are mounted under `/admin/bookings`.
 
 1. An authenticated customer reviews their own accepted, payable booking.
 2. Checkout requires terms acceptance and a GUID idempotency key. The caller
-   selects `advance` or `balance`; the server calculates the amount in paise.
+   selects 10%, 25%, 50%, 75%, 100% of the current outstanding balance, the
+   agreed advance, or a custom INR amount. The server calculates percentages in
+   integer paise and validates custom amounts (at least ₹1, at most the remaining
+   balance, and at most two decimal places). Custom amounts are bound to the
+   checkout key so retries cannot change an existing payment's amount.
    Arbitrary amounts, currencies, identities and statuses are rejected.
 3. The booking is locked. Verified captures must reconcile with its recorded
-   paid balance. A conflicting active installment or a processing refund blocks
-   checkout. Existing active orders are reused instead of creating parallel orders.
+   paid balance. A processing refund or a provider payment awaiting confirmation blocks
+   checkout. Orders with the selected amount are reused. Changing the amount is
+   allowed after checking the older orders and their payments with Razorpay: an
+   unpaid order with no payments or only failed attempts does not block a new
+   installment. Earlier orders remain tracked for late captures. Check server
+   status refreshes every unpaid order, including orders from prior installments.
 4. The backend creates the Razorpay order and returns only public checkout fields.
    An order created remotely before a local transaction failure is never returned
    to checkout. It cannot be paid through an application-issued checkout response.

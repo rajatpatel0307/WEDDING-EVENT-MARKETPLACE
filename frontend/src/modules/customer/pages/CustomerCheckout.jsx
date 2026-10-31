@@ -18,7 +18,7 @@ import {
 } from "../services/workspace.api";
 import RefundRequest from "./CustomerRefunds";
 import { checkout } from "../services/checkout";
-import { paymentScreen } from "../services/checkout-state";
+import { paymentScreen, selectedPaymentMinor } from "../services/checkout-state";
 export default function CustomerCheckout({ transaction = false }) {
   const { id } = useParams();
   return (
@@ -35,6 +35,7 @@ function CheckoutContent({ transaction }) {
     [stage, setStage] = useState("review"),
     [termsAccepted, setTermsAccepted] = useState(false),
     [mode, setMode] = useState("balance"),
+    [customAmount, setCustomAmount] = useState(""),
     [checkoutKey, setCheckoutKey] = useState(() => crypto.randomUUID()),
     [paidBefore, setPaidBefore] = useState(null),
     [error, setError] = useState("");
@@ -134,13 +135,18 @@ function CheckoutContent({ transaction }) {
         b.BookingStatus,
       ) && Number(b.RemainingAmount) > 0;
   const screen = paymentScreen(b, stage);
+  const remainingMinor = Math.round(Number(b.RemainingAmount) * 100);
+  const amountMinor = selectedPaymentMinor(b, mode, customAmount);
+  const validAmount = Number.isSafeInteger(amountMinor) && amountMinor >= 100 && amountMinor <= remainingMinor;
   async function pay() {
+    if (!validAmount) return;
     setPaidBefore(Number(b.PaidAmount));
     setStage("processing");
     setError("");
     try {
       const result = await checkout(id, user, {
         mode,
+        ...(mode === "custom" ? { customAmount } : {}),
         idempotencyKey: checkoutKey,
         termsAccepted,
       });
@@ -304,19 +310,7 @@ function CheckoutContent({ transaction }) {
         </p>
         <p>
           Amount due now:{" "}
-          {eligible
-            ? money(
-                mode === "advance"
-                  ? Math.min(
-                      Number(b.RemainingAmount),
-                      Math.max(
-                        0,
-                        Number(b.AdvanceAmount) - Number(b.PaidAmount),
-                      ),
-                    )
-                  : b.RemainingAmount,
-              )
-            : money(0)}{" "}
+          {money(eligible && validAmount ? amountMinor / 100 : 0)}{" "}
           · INR.
         </p>
         {eligible && (
@@ -328,15 +322,45 @@ function CheckoutContent({ transaction }) {
                 disabled={stage === "processing" || stage === "pending"}
                 onChange={(e) => {
                   setMode(e.target.value);
+                  setError("");
                   setCheckoutKey(crypto.randomUUID());
                 }}
               >
-                <option value="balance">Full outstanding balance</option>
+                {[10, 25, 50, 75].map((percent) => (
+                  <option key={percent} value={String(percent)}>
+                    {percent}% of outstanding balance
+                  </option>
+                ))}
+                <option value="balance">100% — Full outstanding balance</option>
+                <option value="custom">Custom amount</option>
                 {Number(b.AdvanceAmount) > Number(b.PaidAmount) && (
                   <option value="advance">Agreed advance</option>
                 )}
               </select>
             </label>
+            {mode === "custom" && (
+              <label>
+                Custom payment amount (₹){" "}
+                <input
+                  type="number"
+                  min="1"
+                  max={b.RemainingAmount}
+                  step="0.01"
+                  inputMode="decimal"
+                  value={customAmount}
+                  disabled={stage === "processing" || stage === "pending"}
+                  onChange={(e) => {
+                    setCustomAmount(e.target.value);
+                    setCheckoutKey(crypto.randomUUID());
+                    setError("");
+                  }}
+                  aria-describedby="custom-payment-help"
+                />
+                <span id="custom-payment-help">
+                  Enter ₹1.00 to {money(b.RemainingAmount)}.
+                </span>
+              </label>
+            )}
             <label className="cw-checkbox">
               <input
                 type="checkbox"
@@ -368,6 +392,7 @@ function CheckoutContent({ transaction }) {
               onClick={pay}
               disabled={
                 !eligible ||
+                !validAmount ||
                 !termsAccepted ||
                 !config.data?.enabled ||
                 stage === "processing" ||
@@ -378,7 +403,7 @@ function CheckoutContent({ transaction }) {
                 ? "Waiting for secure checkout…"
                 : stage === "pending"
                   ? "Retry secure checkout"
-                  : `Pay ${money(b.RemainingAmount)}`}
+                  : `Pay ${money(validAmount ? amountMinor / 100 : 0)}`}
             </button>
             <button
               className="cw-button"

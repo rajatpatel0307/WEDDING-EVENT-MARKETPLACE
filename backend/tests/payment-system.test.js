@@ -200,6 +200,29 @@ test("installments use the remaining backend balance and subtract previously cap
   assert.throws(() => payableMinor({ ...booking, PaidAmount: 300 }, "advance"));
   assert.throws(() => payableMinor({ ...booking, BookingStatus: "Cancelled" }));
 });
+
+test("percentage and custom installments use the current remaining balance and enforce bounds", () => {
+  const booking = { BookingStatus: "Accepted", RemainingAmount: "1000.25", AdvanceAmount: "250.25", PaidAmount: "100.10" };
+  for (const [mode, expected] of [["10",10003], ["25",25006], ["50",50013], ["75",75019], ["100",100025]]) {
+    assert.equal(payableMinor(booking, mode), expected);
+    assert.ok(checkoutInput.safeParse({ idempotencyKey: randomUUID(), termsAccepted: true, mode }).success);
+  }
+  assert.equal(payableMinor(booking, "custom", "123.45"), 12345);
+  assert.equal(payableMinor(booking, "custom", "1000.25"), 100025);
+  assert.equal(payableMinor({ ...booking, RemainingAmount: "500" }, "25"), 12500);
+  for (const amount of ["", "0", "-1", "0.99", "1000.26", "1.001", "1e2"])
+    assert.throws(() => payableMinor(booking, "custom", amount));
+  assert.throws(() => payableMinor(booking, "invalid"));
+  assert.throws(() => payableMinor({ ...booking, BookingStatus: "Cancelled" }, "custom", "10"));
+  const base = { idempotencyKey: randomUUID(), termsAccepted: true };
+  assert.ok(checkoutInput.safeParse({ ...base, mode: "custom", customAmount: "123.45" }).success);
+  for (const input of [
+    { mode: "custom" }, { mode: "custom", customAmount: 10 },
+    { mode: "custom", customAmount: "1.001" }, { mode: "custom", customAmount: "-1" },
+    { mode: "25", customAmount: "10" }, { mode: "balance", customAmount: "10" },
+    { mode: "custom", customAmount: "10", amount: 1 },
+  ]) assert.equal(checkoutInput.safeParse({ ...base, ...input }).success, false);
+});
 test("customer partial refund requests reject nonpositive money, excess precision and identity/status injection", () => {
   const base = {
     bookingId: randomUUID(),

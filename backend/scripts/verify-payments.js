@@ -198,8 +198,17 @@ try {
       process.env.RAZORPAY_KEY_ID = "rzp_test_fixture";
       process.env.RAZORPAY_KEY_SECRET = "fixture";
       process.env.RAZORPAY_WEBHOOK_SECRET = "fixture";
-      let creates = 0;
+      let creates = 0, inFlight = false;
       globalThis.fetch = async (url, options) => {
+        if (options.method === "GET") {
+          const providerId = new URL(url).pathname.split("/")[3];
+          const [order] = await sql("SELECT * FROM dbo.CustomerPaymentOrders WHERE GatewayOrderId=:provider", { provider: providerId });
+          assert.ok(order);
+          const data = url.endsWith("/payments")
+            ? { count: inFlight ? 1 : 0, items: inFlight ? [{ order_id: providerId, amount: Number(order.AmountMinor), currency: order.Currency, status: "authorized" }] : [] }
+            : { id: providerId, amount: Number(order.AmountMinor), currency: order.Currency, amount_paid: 0, status: "created" };
+          return { ok: true, json: async () => data };
+        }
         assert.equal(url, "https://api.razorpay.com/v1/orders");
         creates++;
         const body = JSON.parse(options.body);
@@ -226,6 +235,19 @@ try {
       console.log(
         "PASS server-priced advance checkout, ownership and idempotency",
       );
+      inFlight = true;
+      const customInput = { idempotencyKey: randomUUID(), termsAccepted: true, mode: "custom", customAmount: "100" };
+      await assert.rejects(() => createOrder(booking, ctx, customInput), (e) => e.status === 409);
+      assert.equal(creates, 1);
+      inFlight = false;
+      const custom = await createOrder(booking, ctx, customInput);
+      assert.equal(custom.amount, 10000);
+      assert.equal((await createOrder(booking, ctx, customInput)).orderId, custom.orderId);
+      assert.equal((await createOrder(booking, ctx, { ...input, idempotencyKey: randomUUID() })).orderId, first.orderId);
+      const [openCount] = await sql("SELECT COUNT(*) AS total FROM dbo.CustomerPaymentOrders WHERE BookingId=:booking AND Status='Created'", { booking });
+      assert.equal(openCount.total, 2);
+      assert.equal(creates, 2);
+      console.log("PASS SQL installment changes retain unpaid orders, reuse matching amounts and block authorized payments");
       const payment = {
         id: "pay_Fixture1",
         order_id: first.orderId,

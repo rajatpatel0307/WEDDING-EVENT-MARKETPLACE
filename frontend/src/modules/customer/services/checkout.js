@@ -1,31 +1,11 @@
 import { save } from "./workspace.api";
-let checkoutScript;
-function loadCheckout() {
-  if (window.Razorpay) return Promise.resolve();
-  if (!checkoutScript)
-    checkoutScript = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () =>
-        window.Razorpay
-          ? resolve()
-          : reject(new Error("Checkout could not load."));
-      script.onerror = () => {
-        checkoutScript = null;
-        script.remove();
-        reject(
-          new Error("Could not load secure checkout. Check your connection."),
-        );
-      };
-      document.head.appendChild(script);
-    });
-  return checkoutScript;
-}
+import { loadCheckout } from "./checkout-loader";
 export async function checkout(bookingId, user, options = {}) {
   await loadCheckout();
   const order = await save(`/bookings/${bookingId}/payment-order`, "POST", {
     idempotencyKey: options.idempotencyKey || crypto.randomUUID(),
     mode: options.mode || 'balance', termsAccepted: options.termsAccepted === true,
+    ...(options.mode === "custom" ? { customAmount: options.customAmount } : {}),
   });
   if(order.alreadyPaid) return order;
   return new Promise((resolve, reject) => {

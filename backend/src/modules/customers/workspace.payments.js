@@ -97,22 +97,66 @@ export function paymentEligible(booking) {
 export const checkoutInput = z
   .object({
     idempotencyKey: z.guid(),
-    mode: z.enum(["advance", "balance"]).default("balance"),
+    mode: z.enum(["advance", "balance", "10", "25", "50", "75", "100", "custom"]).default("balance"),
+    customAmount: z.string().regex(/^\d{1,14}(\.\d{1,2})?$/).optional(),
     termsAccepted: z.literal(true),
   })
-  .strict();
-export function payableMinor(booking, mode = "balance") {
+  .strict()
+  .refine((input) => input.mode === "custom" ? input.customAmount !== undefined : input.customAmount === undefined, {
+    message: "A custom amount is required only for custom payments.",
+    path: ["customAmount"],
+  });
+export function payableMinor(booking, mode = "balance", customAmount) {
   paymentEligible(booking);
   const remaining = minor(booking.RemainingAmount);
   const advance = Math.max(
     0,
     minor(booking.AdvanceAmount) - minor(booking.PaidAmount),
   );
-  const amount = mode === "advance" ? Math.min(advance, remaining) : remaining;
-  if (!amount)
+  let amount;
+  if (mode === "advance") amount = Math.min(advance, remaining);
+  else if (["balance", "100"].includes(mode)) amount = remaining;
+  else if (["10", "25", "50", "75"].includes(mode))
+    amount = Number((BigInt(remaining) * BigInt(mode) + 50n) / 100n);
+  else if (mode === "custom" && typeof customAmount === "string" && /^\d{1,14}(\.\d{1,2})?$/.test(customAmount))
+    amount = minor(customAmount);
+  else fail("Invalid payment installment.", 400);
+  if (!amount && mode === "advance")
     fail("No advance installment remains. Pay the outstanding balance.", 409);
+  if (amount < 100) fail("The payment amount must be at least ₹1.00.", 400);
+  if (!Number.isSafeInteger(amount) || amount > remaining)
+    fail("The payment amount cannot exceed the outstanding balance.", 400);
   return amount;
 }
+
+// An unpaid order can outlive a dismissed checkout. Keep it for late provider
+// events, but do not let it pin the customer to that installment forever.
+export async function checkInstallmentChange(order, { request = gateway } = {}) {
+  const remote = await request(`/orders/${order.GatewayOrderId}`);
+  if (
+    remote.id !== order.GatewayOrderId ||
+    remote.amount !== Number(order.AmountMinor) ||
+    remote.currency !== order.Currency ||
+    !Number.isSafeInteger(remote.amount_paid) || remote.amount_paid < 0
+  ) fail("Could not verify the previous checkout. Check server status before retrying.", 409);
+  if (remote.amount_paid > 0 || remote.status === "paid")
+    fail("An earlier payment needs verification. Select Check server status to update your balance before paying again.", 409);
+  if (!["created", "attempted"].includes(remote.status))
+    fail("The previous checkout is awaiting confirmation. Check server status before paying again.", 409);
+  const payments = await request(`/orders/${order.GatewayOrderId}/payments`);
+  if (!Array.isArray(payments.items) || payments.count !== payments.items.length)
+    fail("Could not verify the previous checkout. Check server status before retrying.", 409);
+  for (const payment of payments.items) {
+    if (
+      payment.order_id !== order.GatewayOrderId ||
+      payment.amount !== Number(order.AmountMinor) ||
+      payment.currency !== order.Currency
+    ) fail("Could not verify the previous checkout. Check server status before retrying.", 409);
+    if (payment.status !== "failed")
+      fail("An earlier payment is still being confirmed. Select Check server status and wait for confirmation before changing the payment amount.", 409);
+  }
+}
+
 export async function createOrder(recordId, ctx, input) {
   const { id } = scope(ctx);
   if (!configured())
@@ -132,7 +176,8 @@ export async function createOrder(recordId, ctx, input) {
       replay &&
       (replay.BookingId.toLowerCase() !== recordId.toLowerCase() ||
         replay.CustomerId.toLowerCase() !== id.toLowerCase() ||
-        replay.PaymentMode !== body.mode)
+        replay.PaymentMode !== body.mode ||
+        (body.mode === "custom" && Number(replay.AmountMinor) !== minor(body.customAmount)))
     )
       fail("Idempotency key belongs to another checkout.", 409);
     if (replay?.Status === "Paid")
@@ -156,19 +201,19 @@ export async function createOrder(recordId, ctx, input) {
       )
     )
       fail("A refund is in progress.", 409);
-    const amount = payableMinor(booking, body.mode);
+    const amount = payableMinor(booking, body.mode, body.customAmount);
     if (!Number.isSafeInteger(amount) || amount <= 0)
       fail("Invalid booking balance.", 409);
-    const [existing] = await repo.select(
-      "SELECT TOP(1) * FROM dbo.CustomerPaymentOrders WITH(UPDLOCK,HOLDLOCK) WHERE BookingId=:booking AND Status='Created' ORDER BY CreatedAt DESC",
-      { booking: recordId, amount },
+    const openOrders = await repo.select(
+      "SELECT * FROM dbo.CustomerPaymentOrders WITH(UPDLOCK,HOLDLOCK) WHERE BookingId=:booking AND Status='Created' ORDER BY CreatedAt DESC,OrderId",
+      { booking: recordId },
       tx,
     );
-    if (existing && Number(existing.AmountMinor) !== amount)
-      fail(
-        "Another checkout is active. Contact support to reconcile it before changing installments.",
-        409,
-      );
+    for (const previous of openOrders) {
+      if (Number(previous.AmountMinor) !== amount)
+        await checkInstallmentChange(previous);
+    }
+    const existing = openOrders.find((previous) => Number(previous.AmountMinor) === amount);
     let order = replay || existing;
     if (order && Number(order.AmountMinor) !== amount)
       fail("Booking balance changed. Refresh checkout.", 409);

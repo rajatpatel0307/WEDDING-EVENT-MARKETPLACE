@@ -176,7 +176,12 @@ export async function status(id, ctx, refresh = false) {
     "SELECT OrderId AS id,GatewayOrderId AS reference,AmountMinor AS amountMinor,Currency AS currency,Status AS status,CreatedAt AS createdAt FROM dbo.CustomerPaymentOrders WHERE BookingId=:id ORDER BY CreatedAt DESC,OrderId",
     { id },
   );
-  if (refresh && rows.length) await refreshOrder(rows[0].id);
+  if (refresh) {
+    // A dismissed checkout can be followed by a different installment. Older
+    // unpaid orders must also be checked for late captures.
+    for (const order of rows.filter((row) => row.status === "Created"))
+      await refreshOrder(order.id);
+  }
   const booking = await owned("bookings", id, customer, undefined, false);
   const latest = refresh
     ? await repo.select(
