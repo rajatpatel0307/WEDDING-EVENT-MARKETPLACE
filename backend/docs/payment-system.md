@@ -176,8 +176,10 @@ continue to reconcile against the authoritative payment/refund/payout tables.
 
 ## Operating configuration and verification
 
-No complete Razorpay credential configuration was present. Online payments remain
-disabled. Configure secrets securely on the backend, never in React or chat:
+Checkout requires both Razorpay API credentials. The webhook secret is required
+separately for accepting signed webhook notifications; its absence does not disable
+checkout, server-side payment verification, or API reconciliation. Configure secrets
+securely on the backend, never in React or chat:
 
 ```
 RAZORPAY_KEY_ID=<provider public key ID>
@@ -198,6 +200,13 @@ processes refunds. If background booking jobs are disabled, schedule
 `node scripts/process-booking-jobs.js` instead. Failed business validations enter
 review; administrators can investigate and queue a retry. No automatic balancing
 entry repairs an unexplained difference.
+
+Razorpay also enforces the account's per-order amount limit, including in test
+mode. An `Amount exceeds maximum amount allowed` response is returned to checkout
+as an actionable limit rejection (HTTP 422). Request an account limit increase
+through Razorpay for the agreed booking amount; the application does not reduce
+booking totals or silently split orders. Rejections before checkout opens remain
+retryable. Only an unresolved verification after checkout reports a pending payment.
 
 Provider reference documentation:
 [webhook validation and ordering](https://github.com/razorpay/markdown-docs/blob/master/webhooks/validate-test.md),

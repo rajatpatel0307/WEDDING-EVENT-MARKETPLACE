@@ -53,6 +53,8 @@ export async function checkout(bookingId, user, options = {}) {
           });
           resolve(r);
         } catch (e) {
+          // Checkout completed, but server confirmation is still unresolved.
+          e.paymentPending = true;
           reject(e);
         }
       },

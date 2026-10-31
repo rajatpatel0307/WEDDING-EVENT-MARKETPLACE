@@ -27,10 +27,11 @@ import {
   notifyBusiness,
 } from "./workspace.common.js";
 export const configured = () =>
+  // Checkout and API reconciliation use API credentials. The webhook endpoint
+  // separately requires its own signing secret before accepting any event.
   !!(
-    process.env.RAZORPAY_KEY_ID &&
-    process.env.RAZORPAY_KEY_SECRET &&
-    process.env.RAZORPAY_WEBHOOK_SECRET
+    process.env.RAZORPAY_KEY_ID?.trim() &&
+    process.env.RAZORPAY_KEY_SECRET?.trim()
   );
 export function validSignature(text, signature, secret) {
   if (
@@ -59,12 +60,28 @@ export async function gateway(path, body) {
   }).catch(() =>
     fail("Payment provider is unavailable. Try again shortly.", 502),
   );
-  const data = await response.json();
-  if (!response.ok)
+  const data = await response.json().catch(() =>
+    fail("Payment provider returned an invalid response. Try again shortly.", 502),
+  );
+  if (!response.ok) {
+    // Map known provider failures to safe messages; never expose raw payloads.
+    if (
+      response.status === 400 &&
+      /amount exceeds (?:the )?maximum amount allowed/i.test(data?.error?.description || "")
+    )
+      fail(
+        "This payment exceeds the Razorpay account's per-order limit. Contact support to request a higher limit before paying this booking.",
+        422,
+      );
+    if ([401, 403].includes(response.status))
+      fail("The payment provider could not authorize checkout. Contact support to check the payment account configuration.", 503);
+    if (response.status === 429)
+      fail("The payment provider is busy. Wait a moment and try again.", 503);
     fail(
       "Payment provider could not process this request. Try again or contact support.",
       502,
     );
+  }
   return data;
 }
 export function paymentEligible(booking) {

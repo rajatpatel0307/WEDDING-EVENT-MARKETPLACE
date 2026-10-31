@@ -42,7 +42,7 @@ function CheckoutContent({ transaction }) {
       transaction ? `/payments/${id}` : `/bookings/${id}`,
       version,
     ),
-    config = useCustomerData("/payments/config");
+    config = useCustomerData("/payments/config", version);
   useEffect(() => {
     if (stage !== "pending" || r.data?.booking?.PaymentStatus === "Paid")
       return;
@@ -158,7 +158,7 @@ function CheckoutContent({ transaction }) {
       setVersion((v) => v + 1);
     } catch (e) {
       setError(e.message);
-      setStage(e.paymentFailed ? "failed" : "pending");
+      setStage(e.paymentPending ? "pending" : "failed");
       setVersion((v) => v + 1);
     }
   }
@@ -337,14 +337,16 @@ function CheckoutContent({ transaction }) {
                 )}
               </select>
             </label>
-            <label className="cw-record-line">
+            <label className="cw-checkbox">
               <input
                 type="checkbox"
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
               />{" "}
-              I have reviewed and accept the booking, cancellation and refund
-              terms.
+              <span>
+                I have reviewed and accept the booking, cancellation and refund
+                terms.
+              </span>
             </label>
           </>
         )}
@@ -402,7 +404,7 @@ function CheckoutContent({ transaction }) {
             booking is payable.
           </p>
         )}
-        {!config.loading && !config.data?.enabled && !paid && (
+        {!config.loading && !config.error && !config.data?.enabled && !paid && (
           <p>
             Online payments are not configured. Contact support to arrange the
             next step.

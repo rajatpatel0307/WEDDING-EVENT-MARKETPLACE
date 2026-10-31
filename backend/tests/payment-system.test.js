@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { randomUUID, createHmac } from "node:crypto";
 import express from "express";
 import {
+  configured,
+  gateway,
   checkoutInput,
   payableMinor,
   webhook,
@@ -24,6 +26,86 @@ import {
 } from "../src/modules/payments/commission-rules.js";
 import { minor } from "../src/modules/admin/booking-finance.js";
 import { reconcileRefund } from "../src/modules/admin/booking-refunds.service.js";
+function checkoutEnvironment(t) {
+  const values = {
+    RAZORPAY_KEY_ID: "rzp_test_checkout",
+    RAZORPAY_KEY_SECRET: "test-api-secret",
+    RAZORPAY_WEBHOOK_SECRET: "",
+  };
+  for (const [key, value] of Object.entries(values)) {
+    const saved = process.env[key];
+    t.after(() => {
+      if (saved === undefined) delete process.env[key];
+      else process.env[key] = saved;
+    });
+    process.env[key] = value;
+  }
+}
+test("checkout API access works without a webhook secret but requires both API credentials", async (t) => {
+  checkoutEnvironment(t);
+  const provider = t.mock.method(globalThis, "fetch", async () => ({
+    ok: true,
+    json: async () => ({ id: "pay_Test", status: "captured" }),
+  }));
+  assert.equal(configured(), true);
+  assert.equal((await gateway("/payments/pay_Test")).status, "captured");
+  assert.equal(provider.mock.callCount(), 1);
+  for (const key of ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"]) {
+    const saved = process.env[key];
+    for (const value of ["", "   "]) {
+      process.env[key] = value;
+      assert.equal(configured(), false);
+      await assert.rejects(() => gateway("/payments/pay_Test"), (e) => e.status === 503);
+    }
+    process.env[key] = saved;
+  }
+  assert.equal(provider.mock.callCount(), 1);
+});
+
+test("webhooks remain unavailable without a signing secret even when checkout is configured", async (t) => {
+  checkoutEnvironment(t);
+  let status;
+  const res = {
+    status(code) { status = code; return this; },
+    json(body) { return body; },
+  };
+  assert.equal(configured(), true);
+  const result = await webhook({ body: Buffer.from("{}") }, res);
+  assert.equal(status, 503);
+  assert.equal(result.success, false);
+});
+
+test("provider order limits return an actionable rejection without exposing provider payloads", async (t) => {
+  checkoutEnvironment(t);
+  t.mock.method(globalThis, "fetch", async () => ({
+    ok: false,
+    status: 400,
+    json: async () => ({ error: { description: "Amount exceeds maximum amount allowed.", sensitive: "private-provider-data" } }),
+  }));
+  await assert.rejects(
+    () => gateway("/orders", { amount: 90900000, currency: "INR" }),
+    (e) => e.status === 422 && /per-order limit/.test(e.message) && !/private-provider-data/.test(e.message),
+  );
+});
+
+test("provider authentication, throttling and invalid responses are safe and retryable", async (t) => {
+  checkoutEnvironment(t);
+  for (const status of [401, 403, 429, 500]) {
+    const mocked = t.mock.method(globalThis, "fetch", async () => ({
+      ok: false, status,
+      json: async () => ({ error: { description: "private-provider-data" } }),
+    }));
+    await assert.rejects(() => gateway("/orders", {}), (e) =>
+      e.status === (status === 500 ? 502 : 503) && !e.message.includes("private-provider-data"));
+    mocked.mock.restore();
+  }
+  t.mock.method(globalThis, "fetch", async () => ({
+    ok: false, status: 502,
+    json: async () => { throw new SyntaxError("private-response"); },
+  }));
+  await assert.rejects(() => gateway("/orders", {}), (e) => e.status === 502 && /invalid response/.test(e.message));
+});
+
 test("refund confirmation before a local payment exists remains retryable", async (t) => {
   t.mock.method(sequelize, "query", async () => []);
   await assert.rejects(
