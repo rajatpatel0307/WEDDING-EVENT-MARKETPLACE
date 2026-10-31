@@ -10,6 +10,7 @@ import * as p from "./workspace.payments.js";
 import * as finance from "../payments/customer-finance.js";
 import * as lifecycle from "../bookings/bookings.service.js";
 import * as quotations from "../quotations/quotations.service.js";
+import { communicationCounts } from "../notifications/communications.service.js";
 export function createCustomerRouter({
   authenticateRequest = authenticate,
 } = {}) {
@@ -51,6 +52,7 @@ export function createCustomerRouter({
     r[method](path, async (req, res) =>
       res.json({ success: true, ...(await fn(req)) }),
     );
+  get("/communications/counts", (q) => communicationCounts(q.ctx));
   get("/dashboard", (q) => w.dashboard(q.ctx));
   get("/catalog", (q) => d.catalog(q.ctx));
   get("/discover", (q) => d.discover(q.query, q.ctx));

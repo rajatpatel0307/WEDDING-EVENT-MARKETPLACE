@@ -329,7 +329,7 @@ export default function VendorSidebar({
                             ? label
                             : undefined
                         }
-                        aria-label={label}
+                        aria-label={showUnread ? `${label}: ${unreadMessages} profiles with unread messages` : label}
                         aria-current={
                           active
                             ? "page"

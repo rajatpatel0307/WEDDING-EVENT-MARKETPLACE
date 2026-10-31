@@ -122,6 +122,24 @@ test("a temporary network failure retries automatically and recovers", async () 
   stop();
 });
 
+test("reading a conversation refreshes sidebar counters immediately and cleans up the listener", async () => {
+  const env = environment();
+  let calls = 0;
+  const stop = startChatPolling(async () => { calls++; }, {
+    ...env.options, interval: 5000, events: ["focus", "online", "chat:read"],
+  });
+  await settle();
+  assert.equal(calls, 1);
+  env.host.dispatchEvent(new Event("chat:read"));
+  await settle();
+  assert.equal(calls, 2);
+  assert.equal(env.timers.size, 1);
+  stop();
+  env.host.dispatchEvent(new Event("chat:read"));
+  assert.equal(calls, 2);
+  assert.equal(env.timers.size, 0);
+});
+
 test("live updates retain earlier history, order new messages, and preserve read receipts", () => {
   const history = message("old", "2026-10-30T09:00:00Z");
   const recent = message("recent", "2026-10-31T10:00:00Z", { isRead: true });

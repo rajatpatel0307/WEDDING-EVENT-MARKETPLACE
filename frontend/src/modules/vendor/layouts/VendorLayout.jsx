@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../../context/AuthContext";
+import { useCommunicationCounts } from "../../../hooks/useCommunicationCounts";
+import { vendorRequest } from "../services/workspace.api";
 
 import VendorHeader from "./VendorHeader";
 import VendorSidebar from "./VendorSidebar";
@@ -26,6 +28,7 @@ import VendorSidebar from "./VendorSidebar";
 // ============================================
 
 export default function VendorLayout() {
+  useCommunicationCounts(vendorRequest);
   const { reload } = useAuth();
   const location = useLocation();
 

@@ -61,7 +61,7 @@ const extra = {
   },
   notifications: {
     from: "dbo.Notifications t",
-    where: "t.UserId=:ownerId",
+    where: "t.UserId=:ownerId AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation')",
     fields:
       "t.NotificationId AS id,t.Title AS title,t.Message AS message,t.IsRead AS isRead,t.ReferenceType AS referenceType,t.ReferenceId AS referenceId,t.CreatedAt AS createdAt",
   },

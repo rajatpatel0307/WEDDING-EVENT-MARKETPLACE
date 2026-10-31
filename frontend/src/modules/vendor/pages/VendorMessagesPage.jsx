@@ -28,7 +28,7 @@ import {
 } from "../services/workspace.api";
 export default function VendorMessagesPage() {
   const [params, setParams] = useSearchParams(),
-    { notify, reload } = useAuth(),
+    { notify } = useAuth(),
     [version, setVersion] = useState(0),
     list = useVendorData("/conversations", version);
   const [query, setQuery] = useState(""),
@@ -48,10 +48,6 @@ export default function VendorMessagesPage() {
       setParams({ conversation: list.data[0].id }, { replace: true });
   }, [params, list.data, setParams]);
   const setConversations = list.setData;
-  const reloadRef = useRef(reload);
-  useEffect(() => {
-    reloadRef.current = reload;
-  }, [reload]);
   useEffect(() => startChatPolling(async (signal) => {
     const conversations = await vendorRequest("/conversations", { signal, cache: "no-store" });
     if (!signal.aborted) setConversations(conversations);
@@ -85,7 +81,7 @@ export default function VendorMessagesPage() {
         });
         if (signal.aborted) return;
         setConversations(old => old?.map(row => row.id === selected ? { ...row, unread: 0 } : row));
-        reloadRef.current().catch(() => {});
+        window.dispatchEvent(new Event("chat:read"));
       }
     }, {
       onError: error => {

@@ -57,8 +57,8 @@ export async function dashboard(input, ctx) {
     (SELECT COALESCE(SUM(p.Amount),0) FROM dbo.Payments p JOIN dbo.Booking b ON b.BookingId=p.BookingId WHERE b.VendorId=:id AND p.PaymentStatus='Success' AND p.Currency='INR') AS totalRevenue,
     (SELECT COALESCE(SUM(NetAmount),0) FROM dbo.VendorPayouts WHERE VendorId=:id AND PayoutStatus IN ('Pending','Processing')) AS pendingPayout,
     (SELECT AVG(CAST(Rating AS decimal(6,2))) FROM dbo.Reviews WHERE VendorId=:id AND IsPublished=1) AS averageRating,
-    (SELECT COUNT(*) FROM dbo.Notifications WHERE UserId=:owner AND IsRead=0) AS unreadNotifications,
-    (SELECT COUNT(*) FROM dbo.Messages m JOIN dbo.Conversations c ON c.ConversationId=m.ConversationId WHERE c.VendorId=:id AND m.SenderUserId<> :owner AND m.IsRead=0) AS unreadMessages,
+    (SELECT COUNT(*) FROM dbo.Notifications WHERE UserId=:owner AND IsRead=0 AND (ReferenceType IS NULL OR ReferenceType<>'Conversation')) AS unreadNotifications,
+    (SELECT COUNT(DISTINCT m.SenderUserId) FROM dbo.Messages m JOIN dbo.Conversations c ON c.ConversationId=m.ConversationId WHERE c.VendorId=:id AND c.IsActive=1 AND m.SenderUserId<> :owner AND m.IsRead=0) AS unreadMessages,
     (SELECT COUNT(*) FROM dbo.Booking WHERE VendorId=:id AND BookingStatus='Pending') AS bookingRequests`,
     params,
   );

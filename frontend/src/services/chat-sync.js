@@ -3,6 +3,7 @@
 export function startChatPolling(task, {
   interval = 2000,
   immediate = true,
+  events = ["focus", "online"],
   onError = () => {},
   page = document,
   host = window,
@@ -35,8 +36,7 @@ export function startChatPolling(task, {
     }
   }
 
-  host.addEventListener("focus", refresh);
-  host.addEventListener("online", refresh);
+  events.forEach(event => host.addEventListener(event, refresh));
   page.addEventListener("visibilitychange", refresh);
   if (immediate) refresh();
   else schedule();
@@ -44,8 +44,7 @@ export function startChatPolling(task, {
   return () => {
     controller.abort();
     clearTimer(timer);
-    host.removeEventListener("focus", refresh);
-    host.removeEventListener("online", refresh);
+    events.forEach(event => host.removeEventListener(event, refresh));
     page.removeEventListener("visibilitychange", refresh);
   };
 }

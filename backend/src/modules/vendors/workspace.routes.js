@@ -14,6 +14,7 @@ import { dashboard } from "./workspace.analytics.js";
 import * as lifecycle from "../bookings/bookings.service.js";
 import * as quotations from "../quotations/quotations.service.js";
 import { earnings } from "../payments/finance-reports.js";
+import { communicationCounts } from "../notifications/communications.service.js";
 
 // Service drafts are available to signed-in vendors; other tools require approval.
 export function createVendorRouter({
@@ -327,6 +328,7 @@ export function createVendorRouter({
   mutation("put", "/availability", (req) =>
     operations.setAvailability(req.body, req.vendorContext),
   );
+  get("/communications/counts", (req) => communicationCounts(req.vendorContext));
   get("/conversations", (req) => messaging.conversations(req.vendorContext));
   mutation("post", "/conversations", (req) =>
     messaging.startConversation(req.body, req.vendorContext),

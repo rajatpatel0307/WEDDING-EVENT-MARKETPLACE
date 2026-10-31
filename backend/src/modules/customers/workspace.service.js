@@ -79,7 +79,7 @@ const extra = {
   },
   notifications: {
     from: "dbo.Notifications t",
-    where: "t.UserId=:id",
+    where: "t.UserId=:id AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation')",
     fields:
       "t.NotificationId AS id,t.Title AS title,t.Message AS message,t.IsRead AS isRead,t.ReferenceType AS referenceType,t.ReferenceId AS referenceId,t.CreatedAt AS createdAt",
   },
@@ -144,7 +144,7 @@ export async function records(section, input, ctx) {
 export async function dashboard(ctx) {
   const { id } = scope(ctx);
   const [stats] = await repo.select(
-    `SELECT (SELECT COUNT(*) FROM dbo.Events WHERE CustomerId=:id AND Status IN('Planning','Confirmed')) AS events,(SELECT COUNT(*) FROM dbo.Booking WHERE CustomerId=:id AND BookingDate>=:today AND BookingStatus NOT IN('Cancelled','Rejected','Refunded','Completed')) AS bookings,(SELECT COUNT(*) FROM dbo.Quotations WHERE CustomerId=:id AND Status IN('Sent','Viewed') AND (ValidUntil IS NULL OR ValidUntil>=SYSUTCDATETIME())) +(SELECT COUNT(*) FROM dbo.QuotationRequests WHERE CustomerId=:id AND Status='Pending') AS quotations,(SELECT COUNT(*) FROM dbo.Wishlists WHERE CustomerId=:id) AS wishlist,(SELECT COALESCE(SUM(p.Amount),0) FROM dbo.Payments p JOIN dbo.Booking b ON b.BookingId=p.BookingId WHERE b.CustomerId=:id AND p.Currency='INR' AND p.PaymentStatus='Success') AS spent,(SELECT COUNT(*) FROM dbo.Notifications WHERE UserId=:id AND IsRead=0) AS unread`,
+    `SELECT (SELECT COUNT(*) FROM dbo.Events WHERE CustomerId=:id AND Status IN('Planning','Confirmed')) AS events,(SELECT COUNT(*) FROM dbo.Booking WHERE CustomerId=:id AND BookingDate>=:today AND BookingStatus NOT IN('Cancelled','Rejected','Refunded','Completed')) AS bookings,(SELECT COUNT(*) FROM dbo.Quotations WHERE CustomerId=:id AND Status IN('Sent','Viewed') AND (ValidUntil IS NULL OR ValidUntil>=SYSUTCDATETIME())) +(SELECT COUNT(*) FROM dbo.QuotationRequests WHERE CustomerId=:id AND Status='Pending') AS quotations,(SELECT COUNT(*) FROM dbo.Wishlists WHERE CustomerId=:id) AS wishlist,(SELECT COALESCE(SUM(p.Amount),0) FROM dbo.Payments p JOIN dbo.Booking b ON b.BookingId=p.BookingId WHERE b.CustomerId=:id AND p.Currency='INR' AND p.PaymentStatus='Success') AS spent,(SELECT COUNT(*) FROM dbo.Notifications WHERE UserId=:id AND IsRead=0 AND (ReferenceType IS NULL OR ReferenceType<>'Conversation')) AS unread`,
     { id, today: localDay() },
   );
   const [event] = await repo.select(

@@ -28,6 +28,8 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useCommunicationCounts } from "../../hooks/useCommunicationCounts";
+import { customerRequest } from "./services/workspace.api";
 import "./customer.css";
 const navigation = [
   ["dashboard", "Dashboard", LayoutDashboard],
@@ -54,6 +56,7 @@ const top = [
   ["My Events", "/customer/events"],
 ];
 export default function CustomerLayout() {
+  useCommunicationCounts(customerRequest);
   const { user, logout, notify } = useAuth(),
     [open, setOpen] = useState(false),
     [profile, setProfile] = useState(false),
@@ -238,7 +241,7 @@ export default function CustomerLayout() {
                   <NavLink
                     key={path}
                     to={`/customer/${path}`}
-                    aria-label={label}
+                    aria-label={path === "messages" && count > 0 ? `${label}: ${count} profiles with unread messages` : label}
                     title={collapsed ? label : undefined}
                     className={({ isActive }) => (isActive ? "active" : "")}
                     onClick={() => setOpen(false)}

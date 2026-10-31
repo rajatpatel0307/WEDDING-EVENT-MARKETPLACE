@@ -8,7 +8,6 @@ import {
   owned,
   fail,
   audit,
-  notifyCustomer,
 } from "./workspace.common.js";
 
 export async function conversations(ctx) {
@@ -202,14 +201,6 @@ export async function sendMessage(recordId, input, ctx) {
     await repo.select(
       "UPDATE dbo.Conversations SET LastMessageAt=SYSUTCDATETIME() WHERE ConversationId=:conversation AND VendorId=:id",
       { conversation: recordId, id },
-      tx,
-    );
-    await notifyCustomer(
-      conversation.CustomerId,
-      "New message from your vendor",
-      body.text ? body.text.slice(0, 300) : "Your vendor shared a file.",
-      "Conversation",
-      conversation.ConversationId,
       tx,
     );
     await audit(
