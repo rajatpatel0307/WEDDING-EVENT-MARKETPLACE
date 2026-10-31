@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
 import { sequelize } from "../src/config/database.js";
+import { Limit } from '../src/models/index.js';
 import { communicationCounts } from "../src/modules/notifications/communications.service.js";
 import { navbarCounts, layoutUserResolvers } from "../src/graphql/layout.resolvers.js";
 import * as vendorChat from "../src/modules/vendors/workspace.messaging.js";
@@ -53,22 +54,24 @@ test("communication counts reject anonymous and foreign identities before databa
 });
 
 for (const role of ["VENDOR", "CUSTOMER"]) {
-  test(`${role} chat sends messages without creating notification records`, async t => {
-    t.mock.method(sequelize, "transaction", async fn => fn({ test: true }));
+  test(`${role} chat persists a message and notification in the same transaction`, async t => {
+    const tx={id:'fixture-event',afterCommit:()=>{}};
+    t.mock.method(sequelize, "transaction", async (...args) => args.at(-1)(tx));
+    t.mock.method(Limit,'findByPk',async()=>({count:0,expiresAt:new Date(Date.now()+60000),save:async()=>{}}));
     const query = t.mock.method(sequelize, "query", async sql => {
-      if (sql.includes("FROM dbo.[Conversations]")) return [{
-        ConversationId: conversationId, CustomerId: customerId, VendorId: vendorId, IsActive: true,
+      if (sql.includes("SELECT c.*")) return [{
+        ConversationId: conversationId, CustomerId: customerId, VendorId: vendorId, VendorUserId:ownerId, IsActive: true,
       }];
-      if (sql.startsWith("INSERT INTO dbo.[Messages]")) return [{ id: messageId }];
       return [];
     });
     const chat = role === "VENDOR" ? vendorChat : customerChat;
     const result = await chat.sendMessage(conversationId, { text: "Hello" }, contextFor(role));
-    assert.equal(result.id, messageId);
+    assert.match(result.id,/^[a-f\d-]{36}$/i);
     const statements = query.mock.calls.map(call => call.arguments[0]);
-    assert.ok(statements.some(sql => sql.startsWith("INSERT INTO dbo.[Messages]")));
+    assert.ok(statements.some(sql => sql.startsWith("INSERT dbo.Messages")));
     assert.ok(statements.some(sql => sql.startsWith("UPDATE dbo.Conversations SET LastMessageAt")));
-    assert.ok(!statements.some(sql => /INSERT INTO dbo\.\[?Notifications/.test(sql)));
+    assert.ok(statements.some(sql => /INSERT INTO dbo\.\[?Notifications/.test(sql)));
+    for(const call of query.mock.calls)assert.equal(call.arguments[1].transaction,tx);
   });
 
   test(`${role} notification lists hide existing chat alerts in both rows and totals`, async t => {

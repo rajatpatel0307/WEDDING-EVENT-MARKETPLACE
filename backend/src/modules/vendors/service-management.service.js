@@ -254,6 +254,16 @@ export async function saveService(serviceId, input, ctx) {
     body = serviceSchema.parse(input);
   return repo.transaction(async (tx) => {
     const old = serviceId ? await lock(serviceId, ctx, tx) : null;
+    if (body.location.vendorLocationIds.length) {
+      const rows = await repo.select(
+        "SELECT VendorLocationId FROM dbo.VendorLocations WHERE VendorId=:id AND VendorLocationId IN(:ids) AND IsActive=1",
+        { id, ids: body.location.vendorLocationIds },
+        tx,
+      );
+      if (rows.length !== new Set(body.location.vendorLocationIds).size)
+        fail("Choose active business locations belonging to this vendor.", 400);
+    }
+
     if (old) {
       editable(old);
       version(old, body.expectedUpdatedAt);

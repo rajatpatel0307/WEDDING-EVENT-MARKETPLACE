@@ -43,7 +43,6 @@ const tabs = [
   ["payments", "Payments"],
   ["reviews", "Reviews"],
   ["wishlist", "Wishlist"],
-  ["messages", "Messages"],
   ["addresses", "Addresses"],
   ["audit", "Audit History"],
 ];

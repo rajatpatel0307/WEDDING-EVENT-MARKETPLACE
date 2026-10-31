@@ -39,6 +39,59 @@ const vendors = resource(
   },
 );
 export const resources = {
+  "customer-addresses": resource(
+    "Addresses",
+    "AddressId",
+    {
+      name: "t.FullName",
+      customer: "CONCAT(u.FirstName,' ',u.LastName)",
+      type: "t.AddressType",
+      address: "t.AddressLine1",
+      city: "t.City",
+      state: "t.State",
+      postalCode: "t.PostalCode",
+      isDefault: "t.IsDefault",
+    },
+    { joins: "JOIN dbo.Users u ON u.UserId=t.UserId" },
+  ),
+  "vendor-locations": resource(
+    "VendorLocations",
+    "VendorLocationId",
+    {
+      name: "t.LocationName",
+      vendor: "v.BusinessName",
+      type: "t.LocationType",
+      address: "t.AddressLine1",
+      city: "t.City",
+      state: "t.State",
+      isPrimary: "t.IsPrimary",
+      status: "CASE WHEN t.IsActive=1 THEN 'Active' ELSE 'Inactive' END",
+    },
+    { joins: "JOIN dbo.Vendors v ON v.VendorId=t.VendorId" },
+  ),
+  "service-locations": resource(
+    "Services",
+    "ServiceId",
+    {
+      name: "t.ServiceName",
+      vendor: "v.BusinessName",
+      city: "JSON_VALUE(t.DetailsJson,'$.location.city')",
+      mode: "JSON_VALUE(t.DetailsJson,'$.location.mode')",
+      coverage: "JSON_QUERY(t.DetailsJson,'$.location.cities')",
+      travelCharge: "JSON_VALUE(t.DetailsJson,'$.location.travelCharge')",
+      status:
+        "CASE WHEN JSON_VALUE(t.DetailsJson,'$.location.city') IS NULL THEN 'Missing configuration' ELSE 'Configured' END",
+    },
+    { joins: "JOIN dbo.Vendors v ON v.VendorId=t.VendorId" },
+  ),
+  "event-locations": resource("Events", "EventId", {
+    name: "t.EventName",
+    city: "t.City",
+    state: "t.State",
+    venue: "JSON_VALUE(t.LocationJson,'$.venue')",
+    address: "JSON_VALUE(t.LocationJson,'$.line1')",
+    instructions: "JSON_VALUE(t.LocationJson,'$.instructions')",
+  }),
   customers: resource(
     "Users",
     "UserId",
@@ -465,6 +518,8 @@ export const resources = {
   ),
 };
 export function getResource(name) {
+  if (name === 'messages' || name === 'conversations')
+    throw Object.assign(new Error('Private communication is restricted to participants.'), { status: 403 });
   if (!Object.hasOwn(resources, name))
     throw Object.assign(new Error("Resource not found."), { status: 404 });
   return resources[name];

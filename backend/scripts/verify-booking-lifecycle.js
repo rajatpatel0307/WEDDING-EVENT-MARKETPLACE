@@ -167,6 +167,7 @@ try {
         items: [{ id: item.id, quantity: 2 }],
         requirements: "Pastel flowers",
       };
+      await sql('UPDATE dbo.Events SET LocationJson=:location WHERE CustomerId=:customer AND LocationJson IS NULL',{customer,location:JSON.stringify({line1:'Fixture hall',city:'Jaipur',state:'Rajasthan',postalCode:'302001',country:'India'})});
       const preview = await http("customer", "/bookings/preview", body);
       assert.equal(preview.total, 1200);
       assert.equal(preview.advance, 300);
@@ -423,6 +424,7 @@ try {
         "INSERT INTO dbo.Events(EventId,CustomerId,EventName,EventType,EventDate,City,GuestCount,Budget) VALUES(:event,:customer,'Seasonal fixture','Wedding','2090-01-10','Jaipur',100,100000)",
         { event: seasonalEvent, customer },
       );
+      await sql('UPDATE dbo.Events SET LocationJson=:location WHERE EventId=:event',{event:seasonalEvent,location:JSON.stringify({line1:'Fixture hall',city:'Jaipur',state:'Rajasthan',postalCode:'302001',country:'India'})});
       const priced = await book(
         { eventId: seasonalEvent, serviceId: service, coupon: couponCode },
         c,

@@ -131,15 +131,15 @@ export async function inbox(ctx, input = {}) {
     })
     .parse(input);
   const [count] = await repo.select(
-    "SELECT COUNT(*) AS unread FROM dbo.Notifications WHERE UserId=:user AND IsRead=0",
+    "SELECT COUNT(*) AS unread FROM dbo.Notifications WHERE UserId=:user AND IsRead=0 AND DismissedAt IS NULL",
     { user: user.id },
   );
   const [total] = await repo.select(
-    "SELECT COUNT(*) AS total FROM dbo.Notifications WHERE UserId=:user",
+    "SELECT COUNT(*) AS total FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL",
     { user: user.id },
   );
   const rows = await repo.select(
-    "SELECT NotificationId AS id,Title AS title,Message AS message,ReferenceType AS referenceType,ReferenceId AS referenceId,IsRead AS [read],CreatedAt AS createdAt FROM dbo.Notifications WHERE UserId=:user ORDER BY CreatedAt DESC,NotificationId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY",
+    "SELECT NotificationId AS id,Title AS title,Message AS message,ReferenceType AS referenceType,ReferenceId AS referenceId,IsRead AS [read],CreatedAt AS createdAt FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL ORDER BY CreatedAt DESC,NotificationId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY",
     {
       user: user.id,
       offset: (query.page - 1) * query.pageSize,

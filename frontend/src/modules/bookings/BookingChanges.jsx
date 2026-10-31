@@ -1,3 +1,7 @@
+import {
+  LocationFields,
+  addressKeys,
+} from "../customer/components/LocationFields";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { CalendarClock, Ban } from "lucide-react";
@@ -35,7 +39,10 @@ export default function BookingChanges({
   saved,
 }) {
   const [kind, setKind] = useState(""),
-    [today] = useState(()=>new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Kolkata"})),
+    [changeVenue, setChangeVenue] = useState(false),
+    [today] = useState(() =>
+      new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }),
+    ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   async function submit(e) {
@@ -57,6 +64,13 @@ export default function BookingChanges({
                   reason: values.reason,
                   ...(kind === "Reschedule"
                     ? {
+                        ...(changeVenue
+                          ? {
+                              location: Object.fromEntries(
+                                addressKeys.map((k) => [k, values[k] ?? ""]),
+                              ),
+                            }
+                          : {}),
                         date: values.date,
                         start: values.start || null,
                         end: values.end || null,
@@ -157,6 +171,21 @@ export default function BookingChanges({
                     />
                   </label>
                 </div>
+                <label className="flex gap-2">
+                  <input
+                    type="checkbox"
+                    checked={changeVenue}
+                    onChange={(e) => setChangeVenue(e.target.checked)}
+                  />
+                  Propose a different event venue
+                </label>
+                {changeVenue && (
+                  <div className="grid gap-3 [&_input]:block [&_input]:w-full [&_input]:rounded [&_input]:border [&_input]:p-2">
+                    <LocationFields
+                      value={data.checkout?.event?.location || {}}
+                    />
+                  </div>
+                )}
                 <p className="text-sm">
                   Your original reservation stays in place until approval. Price
                   changes require a revised quotation.
@@ -208,10 +237,29 @@ export default function BookingChanges({
                 {r.start ? String(r.start).slice(0, 5) : ""}
               </p>
             )}
+            {r.location && (
+              <p className="text-sm">
+                <strong>Proposed venue: </strong>
+                {[
+                  r.location.line1,
+                  r.location.line2,
+                  r.location.city,
+                  r.location.state,
+                  r.location.postalCode,
+                  r.location.country,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </p>
+            )}
             {r.decisionReason && (
               <p className="text-sm">Decision: {r.decisionReason}</p>
             )}
-            {role === "Vendor" && r.status === "Pending" && r.canDecide === false && <p className="text-sm">Awaiting administrator review.</p>}
+            {role === "Vendor" &&
+              r.status === "Pending" &&
+              r.canDecide === false && (
+                <p className="text-sm">Awaiting administrator review.</p>
+              )}
             {role !== "Customer" &&
               r.status === "Pending" &&
               r.canDecide !== false && (

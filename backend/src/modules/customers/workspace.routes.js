@@ -1,3 +1,5 @@
+import * as locations from "../addresses/locations.service.js";
+import { z } from "zod";
 import { Router, json } from "express";
 import { rateLimit } from "express-rate-limit";
 import { authenticate } from "../auth/token.service.js";
@@ -43,7 +45,15 @@ export function createCustomerRouter({
     }
   });
   r.use(json({ limit: "8mb" }));
-  r.use(['/payments','/refund-requests','/bookings/:id/payment-refresh'],rateLimit({windowMs:60000,limit:60,standardHeaders:'draft-8',legacyHeaders:false}));
+  r.use(
+    ["/payments", "/refund-requests", "/bookings/:id/payment-refresh"],
+    rateLimit({
+      windowMs: 60000,
+      limit: 60,
+      standardHeaders: "draft-8",
+      legacyHeaders: false,
+    }),
+  );
   const get = (path, fn) =>
     r.get(path, async (req, res) =>
       res.json({ success: true, data: await fn(req) }),
@@ -73,17 +83,30 @@ export function createCustomerRouter({
     });
     res.send(await w.exportGuests(q.params.id, q.ctx));
   });
-  get("/payments/config", () => ({enabled:p.configured(),gateway:'Razorpay',currency:'INR'}));
+  get("/payments/config", () => ({
+    enabled: p.configured(),
+    gateway: "Razorpay",
+    currency: "INR",
+  }));
   get("/payments/:id", (q) => w.transactionDetails(q.params.id, q.ctx));
-  r.get('/payments/:id/receipt', async (q,res) => {
-    res.set({'Content-Type':'text/plain; charset=utf-8','Content-Disposition':'attachment; filename="payment-receipt.txt"'});
-    res.send(await finance.receipt(q.params.id,q.ctx));
+  r.get("/payments/:id/receipt", async (q, res) => {
+    res.set({
+      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Disposition": 'attachment; filename="payment-receipt.txt"',
+    });
+    res.send(await finance.receipt(q.params.id, q.ctx));
   });
-  get('/bookings/:id/refund-eligibility',q=>finance.refundEligibility(q.params.id,q.ctx));
-  get('/bookings/:id/payment-status',q=>finance.status(q.params.id,q.ctx));
-  mut('post','/bookings/:id/payment-refresh',q=>finance.status(q.params.id,q.ctx,true));
-  get('/refund-requests',q=>finance.refunds(q.query,q.ctx));
-  mut('post','/refund-requests',q=>finance.requestRefund(q.body,q.ctx));
+  get("/bookings/:id/refund-eligibility", (q) =>
+    finance.refundEligibility(q.params.id, q.ctx),
+  );
+  get("/bookings/:id/payment-status", (q) =>
+    finance.status(q.params.id, q.ctx),
+  );
+  mut("post", "/bookings/:id/payment-refresh", (q) =>
+    finance.status(q.params.id, q.ctx, true),
+  );
+  get("/refund-requests", (q) => finance.refunds(q.query, q.ctx));
+  mut("post", "/refund-requests", (q) => finance.requestRefund(q.body, q.ctx));
   mut("post", "/events", (q) => w.saveEvent(null, q.body, q.ctx));
   mut("put", "/events/:id", (q) => w.saveEvent(q.params.id, q.body, q.ctx));
   mut("post", "/events/:id/guests", (q) =>
@@ -97,6 +120,70 @@ export function createCustomerRouter({
   );
   get("/profile", (q) => w.profile(q.ctx));
   mut("put", "/profile", (q) => w.saveProfile(q.body, q.ctx));
+  get("/addresses", (q) => w.records("addresses", q.query, q.ctx));
+  get("/addresses/:id", async (q) =>
+    (await import("./workspace.common.js")).owned(
+      "addresses",
+      q.params.id,
+      q.ctx.auth.user.id,
+      undefined,
+      false,
+    ),
+  );
+  mut("patch", "/addresses/:id/default", async (q) => {
+    z.object({}).strict().parse(q.body);
+    const { scope, repo, owned, audit } = await import("./workspace.common.js");
+    const { id } = scope(q.ctx);
+    return repo.transaction(async (tx) => {
+      await repo.select(
+        "SELECT UserId FROM dbo.Users WITH(UPDLOCK,HOLDLOCK) WHERE UserId=:id",
+        { id },
+        tx,
+      );
+      await owned("addresses", q.params.id, id, tx);
+      await repo.select(
+        "UPDATE dbo.Addresses SET IsDefault=0,UpdatedAt=SYSUTCDATETIME() WHERE UserId=:id",
+        { id },
+        tx,
+      );
+      await repo.select(
+        "UPDATE dbo.Addresses SET IsDefault=1,UpdatedAt=SYSUTCDATETIME() WHERE UserId=:id AND AddressId=:address",
+        { id, address: q.params.id },
+        tx,
+      );
+      await audit(
+        q.ctx,
+        "DEFAULT_ADDRESS_CHANGED",
+        "Addresses",
+        q.params.id,
+        null,
+        null,
+        tx,
+      );
+      return { message: "Default address updated." };
+    });
+  });
+  get("/events/:id/location", (q) =>
+    locations.eventLocation(q.params.id, q.ctx),
+  );
+  mut("post", "/events/:id/location", (q) =>
+    locations.saveEventLocation(q.params.id, q.body, q.ctx),
+  );
+  mut("put", "/events/:id/location", (q) =>
+    locations.saveEventLocation(q.params.id, q.body, q.ctx),
+  );
+  mut("delete", "/events/:id/location", (q) =>
+    locations.saveEventLocation(q.params.id, {}, q.ctx, true),
+  );
+  get("/wishlist/counts", async (q) => {
+    const rows = await d.wishlist(q.ctx);
+    return {
+      vendors: rows.filter((r) => r.type === "Vendor").length,
+      services: rows.filter((r) => r.type === "Service").length,
+      packages: rows.filter((r) => r.type === "Package").length,
+      total: rows.length,
+    };
+  });
   mut("post", "/addresses", (q) => w.saveAddress(null, q.body, q.ctx));
   mut("put", "/addresses/:id", (q) =>
     w.saveAddress(q.params.id, q.body, q.ctx),

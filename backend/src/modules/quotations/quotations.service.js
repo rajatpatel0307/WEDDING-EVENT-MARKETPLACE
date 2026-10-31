@@ -1,3 +1,4 @@
+import { validateCoverage } from "../addresses/locations.service.js";
 import { randomUUID, createHash } from "node:crypto";
 import { z } from "zod";
 import * as repo from "../admin/admin.repository.js";
@@ -17,7 +18,7 @@ import {
 import { assertVersion } from "../vendors/workspace.common.js";
 import { assertEventTime, dayOf, clockOf } from "../bookings/reservations.js";
 import { commissionRate, policySchema } from "../admin/booking-finance.js";
-import {ruleForServices} from '../payments/commission-rules.js';
+import { ruleForServices } from "../payments/commission-rules.js";
 import {
   quoteInput,
   requestInput,
@@ -155,6 +156,8 @@ async function inform(row, title, message, tx) {
 }
 function eventSnapshot(e) {
   return {
+    LocationJson: e.LocationJson || null,
+    location: e.LocationJson ? JSON.parse(e.LocationJson) : null,
     EventId: e.EventId,
     CustomerId: e.CustomerId,
     EventName: e.EventName,
@@ -197,6 +200,12 @@ export async function request(input, ctx) {
         selection.packageId,
         tx,
       );
+      if (!event.LocationJson)
+        fail("Add a full event location before requesting a quotation.", 409);
+      const coverage = JSON.parse(s.DetailsJson || "{}").location;
+      if (coverage?.active === false)
+        fail("This service location is inactive.", 409);
+      validateCoverage(coverage, JSON.parse(event.LocationJson));
       if (!s.IsCustomQuoteAvailable)
         fail(
           "This service does not accept customized quotation requests. Contact the vendor or use its booking options.",
@@ -418,7 +427,10 @@ async function bookingPolicy(lines, tx) {
           }
         : null,
     commissionRate: await commissionRate(tx),
-    commissionRule: await ruleForServices(lines.map(l=>l.serviceId).filter(Boolean),tx),
+    commissionRule: await ruleForServices(
+      lines.map((l) => l.serviceId).filter(Boolean),
+      tx,
+    ),
     capturedAt: new Date().toISOString(),
   };
 }

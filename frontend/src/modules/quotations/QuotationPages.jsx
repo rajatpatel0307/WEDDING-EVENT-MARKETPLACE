@@ -345,7 +345,7 @@ export function RequestDetails({ role = "Customer" }) {
       const body =
         role === "Vendor"
           ? { requestId: id }
-          : { vendorId: r.VendorId, eventId: r.EventId };
+          : { vendorId: r.VendorId, eventId: r.EventId, requestId: id };
       const result = await mutateQuote(role, "/conversations", body);
       navigate(`${base}/messages?conversation=${result.id}`);
     } catch (err) {
@@ -647,7 +647,7 @@ export function QuotationDetails({ role = "Customer" }) {
                 const body =
                   role === "Vendor"
                     ? { quotationId: id }
-                    : { vendorId: q.VendorId, eventId: q.EventId };
+                    : { vendorId: q.VendorId, eventId: q.EventId, quotationId: id };
                 const r = await mutateQuote(role, "/conversations", body);
                 navigate(`${base}/messages?conversation=${r.id}`);
               } catch (err) {

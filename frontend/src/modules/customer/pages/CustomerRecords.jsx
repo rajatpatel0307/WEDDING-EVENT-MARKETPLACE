@@ -1,3 +1,4 @@
+import { LocationFields, MapLink } from "../components/LocationFields";
 import { useEffect, useState } from "react";
 import {
   Link,
@@ -112,6 +113,7 @@ export default function CustomerRecords({ section: explicit }) {
   const location = useLocation(),
     section = explicit || location.pathname.split("/")[2],
     [page, setPage] = useState(1),
+    [search, setSearch] = useState(""),
     [version, setVersion] = useState(0),
     [edit, setEdit] = useState(null),
     [remove, setRemove] = useState(null),
@@ -120,7 +122,7 @@ export default function CustomerRecords({ section: explicit }) {
     r = useCustomerData(
       section === "wishlist"
         ? "/wishlist"
-        : `/records/${section}?${new URLSearchParams({ page, status: section === "bookings" ? filterParams.get("status") || "" : "" })}`,
+        : `/records/${section}?${new URLSearchParams({ page, q: search, status: section === "bookings" ? filterParams.get("status") || "" : "" })}`,
       version,
     );
   useEffect(() => {
@@ -156,6 +158,18 @@ export default function CustomerRecords({ section: explicit }) {
           </Link>
         ) : null}
       </Heading>
+      {section === "addresses" && (
+        <input
+          className="border rounded-lg p-3 mb-4 w-full"
+          aria-label="Search addresses"
+          placeholder="Search addresses by contact, city, postal code or street"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+        />
+      )}
       {section === "bookings" && (
         <nav className="cw-inline-tabs" aria-label="Booking status">
           {[
@@ -202,8 +216,8 @@ export default function CustomerRecords({ section: explicit }) {
           <p>
             Payments are made securely through Razorpay after your vendor
             accepts the booking.{" "}
-            <Link to="/customer/bookings">Go to your bookings →</Link>
-            {' '}<Link to="/customer/refunds">Refund requests</Link>
+            <Link to="/customer/bookings">Go to your bookings →</Link>{" "}
+            <Link to="/customer/refunds">Refund requests</Link>
           </p>
         </section>
       )}
@@ -260,6 +274,9 @@ export default function CustomerRecords({ section: explicit }) {
                 {a.isDefault && <Badge>Default</Badge>}
               </div>
               <p>
+                {a.fullName} {a.phone}
+              </p>
+              <p>
                 {a.line1}
                 <br />
                 {a.line2}
@@ -269,6 +286,27 @@ export default function CustomerRecords({ section: explicit }) {
                 {a.country}
               </p>
               <div className="cw-detail-actions">
+                <MapLink value={a} />
+                {!a.isDefault && (
+                  <button
+                    className="cw-button"
+                    disabled={busy}
+                    onClick={async () => {
+                      setBusy(true);
+                      try {
+                        await save(`/addresses/${a.id}/default`, "PATCH", {});
+                        refresh();
+                        notify("Default address updated.");
+                      } catch (e) {
+                        notify(e.message);
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                  >
+                    Set as default
+                  </button>
+                )}
                 <button className="cw-button" onClick={() => setEdit(a)}>
                   <Pencil size={14} /> Edit
                 </button>
@@ -456,24 +494,19 @@ function AddressForm({ address, close, done }) {
             ))}
           </select>
         </Field>
-        {[
-          ["line1", "Address line 1", true, 300],
-          ["line2", "Address line 2", false, 300],
-          ["landmark", "Landmark", false, 200],
-          ["city", "City", true, 100],
-          ["state", "State", true, 100],
-          ["postalCode", "Postal code", true, 20],
-          ["country", "Country", true, 100],
-        ].map(([k, label, required, max]) => (
-          <Field label={label} key={k}>
+        {["fullName", "phone"].map((k) => (
+          <Field
+            key={k}
+            label={k === "fullName" ? "Contact name" : "Phone number"}
+          >
             <input
               name={k}
-              defaultValue={address?.[k] || (k === "country" ? "India" : "")}
-              required={required}
-              maxLength={max}
+              maxLength={k === "phone" ? 30 : 200}
+              defaultValue={address?.[k] || ""}
             />
           </Field>
         ))}
+        <LocationFields value={address || {}} />
         <label className="cw-checkbox">
           <input
             name="isDefault"
@@ -514,7 +547,7 @@ export function CustomerRecordDetails({ quote = false }) {
       const c = await save("/conversations", "POST", {
         vendorId: b.VendorId,
         eventId: b.EventId,
-        ...(!quote ? { bookingId: b.BookingId } : {}),
+        ...(!quote ? { bookingId: b.BookingId } : { quotationId: b.QuotationId }),
       });
       navigate(`/customer/messages?conversation=${c.id}`);
     } catch (e) {

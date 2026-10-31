@@ -1,4 +1,5 @@
 import { sequelize } from "../../config/database.js";
+import { publishInsertedNotifications } from './notification-broadcast.js';
 const events = {
   CUSTOMER_REFUND_REQUESTED: "Refund request awaiting review",
   PAYMENT_RECONCILIATION_REVIEW: "Payment reconciliation requires review",
@@ -22,8 +23,8 @@ const events = {
 };
 export async function notifyAdmins(action, entity, id, transaction) {
   if (!events[action] || !/^[a-f\d-]{36}$/i.test(String(id))) return;
-  await sequelize.query(
-    "INSERT INTO dbo.Notifications(UserId,NotificationType,Title,Message,ReferenceType,ReferenceId) SELECT u.UserId,'AdminEvent',:title,:message,:entity,:id FROM dbo.Users u WHERE u.IsActive=1 AND u.IsBlocked=0 AND EXISTS(SELECT 1 FROM dbo.UserRoles ur JOIN dbo.Roles r ON r.RoleId=ur.RoleId WHERE ur.UserId=u.UserId AND r.RoleCode='ADMIN' AND r.IsActive=1)",
+  const [rows]=await sequelize.query(
+    "INSERT INTO dbo.Notifications(UserId,NotificationType,Title,Message,ReferenceType,ReferenceId) OUTPUT inserted.UserId AS notificationUserId SELECT u.UserId,'AdminEvent',:title,:message,:entity,:id FROM dbo.Users u WHERE u.IsActive=1 AND u.IsBlocked=0 AND EXISTS(SELECT 1 FROM dbo.UserRoles ur JOIN dbo.Roles r ON r.RoleId=ur.RoleId WHERE ur.UserId=u.UserId AND r.RoleCode='ADMIN' AND r.IsActive=1)",
     {
       replacements: {
         title: events[action],
@@ -34,10 +35,12 @@ export async function notifyAdmins(action, entity, id, transaction) {
       transaction,
     },
   );
+  publishInsertedNotifications(rows,transaction);
 }
 export async function notifySignup(userId, transaction) {
-  await sequelize.query(
-    "INSERT INTO dbo.Notifications(UserId,NotificationType,Title,Message,ReferenceType,ReferenceId) SELECT u.UserId,'AdminEvent',CASE WHEN v.VendorId IS NULL THEN 'New customer registration' ELSE 'New vendor application' END,'A new account was registered. Review the account details.',CASE WHEN v.VendorId IS NULL THEN 'AdminCustomer' ELSE 'AdminVendor' END,COALESCE(v.VendorId,:user) FROM dbo.Users u OUTER APPLY(SELECT VendorId FROM dbo.Vendors WHERE UserId=:user) v WHERE u.IsActive=1 AND u.IsBlocked=0 AND EXISTS(SELECT 1 FROM dbo.UserRoles ur JOIN dbo.Roles r ON r.RoleId=ur.RoleId WHERE ur.UserId=u.UserId AND r.RoleCode='ADMIN' AND r.IsActive=1)",
+  const [rows]=await sequelize.query(
+    "INSERT INTO dbo.Notifications(UserId,NotificationType,Title,Message,ReferenceType,ReferenceId) OUTPUT inserted.UserId AS notificationUserId SELECT u.UserId,'AdminEvent',CASE WHEN v.VendorId IS NULL THEN 'New customer registration' ELSE 'New vendor application' END,'A new account was registered. Review the account details.',CASE WHEN v.VendorId IS NULL THEN 'AdminCustomer' ELSE 'AdminVendor' END,COALESCE(v.VendorId,:user) FROM dbo.Users u OUTER APPLY(SELECT VendorId FROM dbo.Vendors WHERE UserId=:user) v WHERE u.IsActive=1 AND u.IsBlocked=0 AND EXISTS(SELECT 1 FROM dbo.UserRoles ur JOIN dbo.Roles r ON r.RoleId=ur.RoleId WHERE ur.UserId=u.UserId AND r.RoleCode='ADMIN' AND r.IsActive=1)",
     { replacements: { user: userId }, transaction },
   );
+  publishInsertedNotifications(rows,transaction);
 }

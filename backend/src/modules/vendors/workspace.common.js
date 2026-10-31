@@ -1,3 +1,4 @@
+import { createNotification } from '../notifications/notification-center.service.js';
 import { z } from "zod";
 import { requireApprovedVendor } from "../../middleware/auth.middleware.js";
 import * as repo from "../admin/admin.repository.js";
@@ -59,15 +60,5 @@ export async function notifyCustomer(
   referenceId,
   tx,
 ) {
-  await repo.select(
-    "INSERT INTO dbo.Notifications(UserId,NotificationType,Title,Message,ReferenceType,ReferenceId) VALUES(:user,'VendorUpdate',:title,:message,:type,:id)",
-    {
-      user: customerId,
-      title,
-      message: message.slice(0, 2000),
-      type: referenceType,
-      id: referenceId,
-    },
-    tx,
-  );
+  return createNotification({userId:customerId,title,message,referenceType,referenceId,essential:!/reminder|about to expire|expires soon/i.test(title)},tx);
 }

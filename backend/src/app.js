@@ -17,6 +17,8 @@ import { limit } from "./modules/auth/security.service.js";
 import { securityValidation } from "./graphql/security.validation.js";
 import adminRoutes from "./modules/admin/admin.routes.js";
 import vendorRoutes from "./modules/vendors/workspace.routes.js";
+import communicationRoutes from "./modules/messaging/communication.routes.js";
+import { attachCommunicationServer } from "./modules/messaging/socket-server.js";
 export async function createApp() {
   const app = express(),
     httpServer = createServer(app);
@@ -43,6 +45,8 @@ export async function createApp() {
   );
   app.use("/api/customer", customerRoutes);
   app.use("/api/marketplace", marketplaceRoutes);
+  app.use("/api/communication", communicationRoutes);
+  const io = attachCommunicationServer(httpServer);
   const apollo = new ApolloServer({
     typeDefs,
     resolvers,
@@ -122,5 +126,5 @@ export async function createApp() {
           : "Unable to process request.",
     });
   });
-  return { app, httpServer, apollo };
+  return { app, httpServer, apollo, io };
 }

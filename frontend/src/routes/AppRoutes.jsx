@@ -15,6 +15,15 @@ import {
   AccountLayout,
   VendorStatusPage,
 } from "../modules/auth/pages/AccountPages";
+const NotificationCenter=lazy(()=>import('../modules/communication/Notifications'));
+const NotificationSettings=lazy(()=>import('../modules/communication/Notifications').then(m=>({default:m.NotificationSettings})));
+const CommunicationOverview=lazy(()=>import('../modules/communication/CommunicationOverview'));
+const BusinessLocations = lazy(
+  () => import("../modules/vendor/pages/BusinessLocations"),
+);
+const CustomerWishlist = lazy(
+  () => import("../modules/customer/pages/CustomerWishlist"),
+);
 const VendorBookingDetails = lazy(
   () => import("../modules/vendor/pages/VendorBookingsPage"),
 );
@@ -87,8 +96,14 @@ const CustomerProfile = lazy(() =>
 const CustomerCheckout = lazy(
   () => import("../modules/customer/pages/CustomerCheckout"),
 );
-const CustomerRefundHistory = lazy(()=>import('../modules/customer/pages/CustomerRefunds').then(m=>({default:m.RefundHistory})));
-const PaymentManagementPage = lazy(()=>import('../modules/admin/pages/PaymentManagementPage'));
+const CustomerRefundHistory = lazy(() =>
+  import("../modules/customer/pages/CustomerRefunds").then((m) => ({
+    default: m.RefundHistory,
+  })),
+);
+const PaymentManagementPage = lazy(
+  () => import("../modules/admin/pages/PaymentManagementPage"),
+);
 const CustomerMessages = lazy(
   () => import("../modules/customer/pages/CustomerMessagesPage"),
 );
@@ -442,18 +457,25 @@ export default function AppRoutes() {
               element={<QuotationList role="Customer" />}
             />
             <Route path="messages" element={<CustomerMessages />} />
+            <Route path="notifications" element={<NotificationCenter role="Customer" />} />
+            <Route path="notification-settings" element={<NotificationSettings role="Customer" />} />
             {[
               "bookings",
               "wishlist",
               "payments",
               "reviews",
               "addresses",
-              "notifications",
             ].map((section) => (
               <Route
                 key={section}
                 path={section}
-                element={<CustomerRecords section={section} />}
+                element={
+                  section === "wishlist" ? (
+                    <CustomerWishlist />
+                  ) : (
+                    <CustomerRecords section={section} />
+                  )
+                }
               />
             ))}
             <Route
@@ -546,6 +568,8 @@ export default function AppRoutes() {
                 element={<VendorCalendarPage filter="available" />}
               />
               <Route path="messages" element={<VendorMessagesPage />} />
+              <Route path="notifications" element={<NotificationCenter role="Vendor" />} />
+              <Route path="notification-settings" element={<NotificationSettings role="Vendor" />} />
               <Route path="earnings" element={<VendorEarningsPage />} />
               {[
                 "packages",
@@ -558,25 +582,28 @@ export default function AppRoutes() {
                 "reviews",
                 "offers",
                 "coupons",
-                "notifications",
-              ].map((section) => (
+                ].map((section) => (
                 <Route
                   key={section}
                   path={section}
                   element={
-                    <VendorResourcesPage
-                      key={section}
-                      section={section}
-                      title={
-                        section === "services"
-                          ? "My services"
-                          : section === "items"
-                            ? "Service items"
-                            : section === "packages"
-                              ? "Service packages"
-                              : undefined
-                      }
-                    />
+                    section === "locations" ? (
+                      <BusinessLocations />
+                    ) : (
+                      <VendorResourcesPage
+                        key={section}
+                        section={section}
+                        title={
+                          section === "services"
+                            ? "My services"
+                            : section === "items"
+                              ? "Service items"
+                              : section === "packages"
+                                ? "Service packages"
+                                : undefined
+                        }
+                      />
+                    )
                   }
                 />
               ))}
@@ -667,12 +694,41 @@ export default function AppRoutes() {
             <Route path="profile" element={<ProfilePage />} />
             <Route path="finance/:kind/:id" element={<FinancialDetails />} />
             <Route path="bookings" element={<BookingsManagementPage />} />
-            <Route path="bookings/:bookingId" element={<BookingDetailsPage />} />
-            <Route path="payments" element={<PaymentManagementPage key="transactions" section="transactions" />} />
-            <Route path="payment-overview" element={<PaymentManagementPage key="overview" />} />
-            <Route path="refund-requests" element={<PaymentManagementPage key="refunds" section="refunds" />} />
-            <Route path="payment-reconciliation" element={<PaymentManagementPage key="reconciliation" section="reconciliation" />} />
+            <Route
+              path="bookings/:bookingId"
+              element={<BookingDetailsPage />}
+            />
+            <Route
+              path="payments"
+              element={
+                <PaymentManagementPage
+                  key="transactions"
+                  section="transactions"
+                />
+              }
+            />
+            <Route
+              path="payment-overview"
+              element={<PaymentManagementPage key="overview" />}
+            />
+            <Route
+              path="refund-requests"
+              element={
+                <PaymentManagementPage key="refunds" section="refunds" />
+              }
+            />
+            <Route
+              path="payment-reconciliation"
+              element={
+                <PaymentManagementPage
+                  key="reconciliation"
+                  section="reconciliation"
+                />
+              }
+            />
             <Route path="notifications" element={<AdminInbox />} />
+            <Route path="communication-overview" element={<CommunicationOverview />} />
+            <Route path="notification-settings" element={<NotificationSettings role="Admin" />} />
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route
               path="dashboard"

@@ -1,3 +1,7 @@
+import {
+  locationFields,
+  validLocation,
+} from "../addresses/location.validation.js";
 import { z } from "zod";
 import {
   scope,
@@ -79,7 +83,8 @@ const extra = {
   },
   notifications: {
     from: "dbo.Notifications t",
-    where: "t.UserId=:id AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation')",
+    where:
+      "t.UserId=:id AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation')",
     fields:
       "t.NotificationId AS id,t.Title AS title,t.Message AS message,t.IsRead AS isRead,t.ReferenceType AS referenceType,t.ReferenceId AS referenceId,t.CreatedAt AS createdAt",
   },
@@ -99,6 +104,7 @@ export async function records(section, input, ctx) {
   if (!allowed.has(section)) fail("Page not found.", 404);
   const q = pageInput
       .extend({
+        q: z.string().trim().max(150).default(""),
         status: z
           .enum([
             "",
@@ -112,7 +118,12 @@ export async function records(section, input, ctx) {
       })
       .parse(input),
     c = extra[section] || customerReadCollections[section],
-    p = { id, offset: (q.page - 1) * q.pageSize, size: q.pageSize };
+    p = {
+      id,
+      search: `%${q.q.replace(/[\[\]%_]/g, (c) => `[${c}]`)}%`,
+      offset: (q.page - 1) * q.pageSize,
+      size: q.pageSize,
+    };
   const bookingFilters = {
     Pending: "t.BookingStatus IN('Pending','Accepted','PaymentPending')",
     Confirmed: "t.BookingStatus='Confirmed'",
@@ -123,6 +134,9 @@ export async function records(section, input, ctx) {
   };
   const where =
     c.where +
+    (section === "addresses" && q.q
+      ? " AND (t.AddressLine1 LIKE :search OR t.City LIKE :search OR t.State LIKE :search OR t.FullName LIKE :search OR t.PostalCode LIKE :search)"
+      : "") +
     (section === "bookings" && q.status
       ? ` AND (${bookingFilters[q.status]})`
       : section === "events" && q.status === "Upcoming"
@@ -182,6 +196,7 @@ export async function saveEvent(recordId, input, ctx) {
         n.n &&
         (dayOf(old.EventDate) !== b.eventDate ||
           old.City !== b.city ||
+          old.State !== b.state ||
           Number(old.GuestCount) !== b.guests ||
           clockOf(old.StartTime) !== (b.startTime || null) ||
           clockOf(old.EndTime) !== (b.endTime || null))
@@ -515,17 +530,21 @@ export async function saveProfile(input, ctx) {
 }
 export const addressInput = z
   .object({
+    ...locationFields,
     type: z.enum(["Home", "Work", "Billing", "Other"]),
-    line1: z.string().trim().min(3).max(300),
-    line2: z.string().trim().max(300).default(""),
-    landmark: z.string().trim().max(200).default(""),
-    city: z.string().trim().min(2).max(100),
-    state: z.string().trim().min(2).max(100),
-    postalCode: z.string().trim().min(3).max(20),
-    country: z.string().trim().min(2).max(100).default("India"),
+    fullName: z.string().trim().max(200).default(""),
+    phone: z
+      .string()
+      .trim()
+      .regex(/^(?:[+\d][\d ()-]{6,24})?$/)
+      .default(""),
     isDefault: z.boolean().default(false),
   })
-  .strict();
+  .strict()
+  .refine(validLocation, {
+    message:
+      "Enter a valid postal code and both coordinates, or leave both blank.",
+  });
 export async function saveAddress(recordId, input, ctx, remove = false) {
   const { id } = scope(ctx);
   const b = remove ? null : addressInput.parse(input);
@@ -535,22 +554,50 @@ export async function saveAddress(recordId, input, ctx, remove = false) {
       { id },
       tx,
     );
-    if (recordId) await owned("addresses", recordId, id, tx);
+    const existingAddress = recordId
+      ? await owned("addresses", recordId, id, tx)
+      : null;
     if (remove) {
       await repo.select(
         "DELETE FROM dbo.Addresses WHERE AddressId=:recordId AND UserId=:id",
         { recordId, id },
         tx,
       );
+      await repo.select(
+        "UPDATE dbo.Addresses SET IsDefault=1,UpdatedAt=SYSUTCDATETIME() WHERE AddressId=(SELECT TOP(1) AddressId FROM dbo.Addresses WHERE UserId=:id AND NOT EXISTS(SELECT 1 FROM dbo.Addresses WHERE UserId=:id AND IsDefault=1) ORDER BY CreatedAt,AddressId)",
+        { id },
+        tx,
+      );
+      await audit(
+        ctx,
+        "ADDRESS_REMOVED",
+        "Addresses",
+        recordId,
+        null,
+        null,
+        tx,
+      );
       return { message: "Address removed." };
     }
-    if (b.isDefault)
+    const [defaults] = await repo.select(
+      "SELECT COUNT(*) AS n FROM dbo.Addresses WHERE UserId=:id AND IsDefault=1",
+      { id },
+      tx,
+    );
+    const makeDefault =
+      b.isDefault || !defaults.n || !!existingAddress?.IsDefault;
+    if (makeDefault)
       await repo.select(
         "UPDATE dbo.Addresses SET IsDefault=0,UpdatedAt=SYSUTCDATETIME() WHERE UserId=:id",
         { id },
         tx,
       );
     const v = {
+      FullName: b.fullName || null,
+      Phone: b.phone || null,
+      District: b.district || null,
+      Latitude: b.latitude,
+      Longitude: b.longitude,
       AddressType: b.type,
       AddressLine1: b.line1,
       AddressLine2: b.line2 || null,
@@ -559,7 +606,7 @@ export async function saveAddress(recordId, input, ctx, remove = false) {
       State: b.state,
       PostalCode: b.postalCode,
       Country: b.country,
-      IsDefault: b.isDefault,
+      IsDefault: makeDefault,
       UpdatedAt: new Date(),
     };
     if (recordId)

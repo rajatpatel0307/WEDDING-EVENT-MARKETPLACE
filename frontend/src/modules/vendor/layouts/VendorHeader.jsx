@@ -1,3 +1,4 @@
+import { NotificationBell } from '../../communication/Notifications';
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -594,47 +595,7 @@ export default function VendorHeader({
             NOTIFICATIONS
         ==================================== */}
 
-        <Link
-          to="/vendor/notifications"
-          aria-label={
-            unreadNotifications > 0
-              ? `${unreadNotifications} unread notifications`
-              : "Notifications"
-          }
-          title="Notifications"
-          className="
-            relative flex h-10 w-10 shrink-0
-            items-center justify-center
-            rounded-xl text-slate-600
-            transition-colors
-            hover:bg-slate-100
-            hover:text-[#273e35]
-            focus-visible:outline-2
-            focus-visible:outline-[#956d67]
-          "
-        >
-          <Bell
-            size={20}
-            strokeWidth={1.8}
-          />
-
-          {unreadNotifications > 0 && (
-            <span
-              className="
-                absolute -right-1 -top-1
-                flex h-[19px] min-w-[19px]
-                items-center justify-center
-                rounded-full bg-red-500
-                px-1 text-[10px]
-                font-bold text-white
-              "
-            >
-              {unreadNotifications > 99
-                ? "99+"
-                : unreadNotifications}
-            </span>
-          )}
-        </Link>
+        <NotificationBell role="Vendor" />
 
         {/* ====================================
             PROFILE DROPDOWN

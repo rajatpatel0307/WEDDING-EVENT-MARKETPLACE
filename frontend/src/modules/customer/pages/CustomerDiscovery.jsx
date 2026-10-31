@@ -1,3 +1,5 @@
+import WishlistButton from "../components/WishlistButton";
+import EventLocationPanel from "../components/EventLocationPanel";
 import { useState } from "react";
 import {
   Link,
@@ -31,9 +33,17 @@ import { save, money } from "../services/workspace.api";
 export default function CustomerDiscovery() {
   return <BrowsePage embedded />;
 }
-function ServiceAction({ service, packages, items = [], mode, close }) {
+function ServiceAction({
+  service,
+  packages,
+  items = [],
+  mode,
+  close,
+  coverage = {},
+}) {
   const related = useCustomerData(`/vendors/${service.vendorId}`),
     events = useCustomerData("/records/events?status=Upcoming&pageSize=50"),
+    addresses = useCustomerData("/addresses?pageSize=50"),
     { notify } = useAuth(),
     navigate = useNavigate(),
     [busy, setBusy] = useState(false),
@@ -41,6 +51,7 @@ function ServiceAction({ service, packages, items = [], mode, close }) {
     [preview, setPreview] = useState(null),
     [reviewBody, setReviewBody] = useState(null),
     [quoteDraft, setQuoteDraft] = useState(null),
+    [locationEvent, setLocationEvent] = useState(""),
     [params] = useSearchParams();
   return (
     <Modal
@@ -119,6 +130,32 @@ function ServiceAction({ service, packages, items = [], mode, close }) {
               {i.name} × {i.quantity} · {money(i.total)}
             </p>
           ))}
+          {preview.event.location && (
+            <p>
+              <strong>Event venue: </strong>
+              {[
+                preview.event.location.venue,
+                preview.event.location.line1,
+                preview.event.location.city,
+                preview.event.location.state,
+                preview.event.location.postalCode,
+              ]
+                .filter(Boolean)
+                .join(", ")}
+            </p>
+          )}
+          {preview.event.billingAddress && (
+            <p>
+              <strong>Billing address: </strong>
+              {[
+                preview.event.billingAddress.line1,
+                preview.event.billingAddress.city,
+                preview.event.billingAddress.postalCode,
+              ]
+                .filter(Boolean)
+                .join(", ")}
+            </p>
+          )}
           <p className="my-2">
             Subtotal {money(preview.subtotal)} · Discount{" "}
             {money(preview.discount)} · Tax {money(preview.tax)}
@@ -194,222 +231,297 @@ function ServiceAction({ service, packages, items = [], mode, close }) {
           }
         />
       ) : (
-        <form
-          hidden={!!preview || !!quoteDraft}
-          style={preview || quoteDraft ? { display: "none" } : undefined}
-          className="cw-form"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const fields = new FormData(e.currentTarget);
-            const f = Object.fromEntries(fields);
-            setBusy(true);
-            setError("");
-            try {
-              const b = {
-                eventId: f.eventId,
-                serviceId: service.id,
-                ...(f.packageId ? { packageId: f.packageId } : {}),
-                ...(mode === "book"
-                  ? {
-                      quantity: Number(f.quantity),
-                      requirements: f.requirements,
-                      coupon: f.coupon,
-                      items: items
-                        .filter(
-                          (i) => !i.included && Number(f[`item-${i.id}`]) > 0,
-                        )
-                        .map((i) => ({
-                          id: i.id,
-                          quantity: Number(f[`item-${i.id}`]),
-                        })),
-                    }
-                  : {
-                      message: f.message,
-                      services: fields
-                        .getAll("additionalService")
-                        .map((serviceId) => ({ serviceId })),
-                      items: items
-                        .filter((i) => Number(f[`request-item-${i.id}`]) > 0)
-                        .map((i) => ({
-                          serviceId: service.id,
-                          id: i.id,
-                          quantity: Number(f[`request-item-${i.id}`]),
-                        })),
-                    }),
-              };
-              if (mode === "quote") {
-                setQuoteDraft(b);
-                return;
+        <>
+          {(locationEvent || events.data.rows[0]?.id) && (
+            <EventLocationPanel
+              eventId={locationEvent || events.data.rows[0].id}
+              onChange={() => {
+                setPreview(null);
+                setQuoteDraft(null);
+              }}
+            />
+          )}
+          <form
+            hidden={!!preview || !!quoteDraft}
+            style={preview || quoteDraft ? { display: "none" } : undefined}
+            className="cw-form"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const fields = new FormData(e.currentTarget);
+              const f = Object.fromEntries(fields);
+              setBusy(true);
+              setError("");
+              try {
+                const b = {
+                  eventId: f.eventId,
+                  serviceId: service.id,
+                  ...(f.packageId ? { packageId: f.packageId } : {}),
+                  ...(mode === "book"
+                    ? {
+                        ...(f.locationMode
+                          ? { locationMode: f.locationMode }
+                          : {}),
+                        ...(f.vendorLocationId
+                          ? { vendorLocationId: f.vendorLocationId }
+                          : {}),
+                        ...(f.billingAddressId
+                          ? { billingAddressId: f.billingAddressId }
+                          : {}),
+                        quantity: Number(f.quantity),
+                        requirements: f.requirements,
+                        coupon: f.coupon,
+                        items: items
+                          .filter(
+                            (i) => !i.included && Number(f[`item-${i.id}`]) > 0,
+                          )
+                          .map((i) => ({
+                            id: i.id,
+                            quantity: Number(f[`item-${i.id}`]),
+                          })),
+                      }
+                    : {
+                        message: f.message,
+                        services: fields
+                          .getAll("additionalService")
+                          .map((serviceId) => ({ serviceId })),
+                        items: items
+                          .filter((i) => Number(f[`request-item-${i.id}`]) > 0)
+                          .map((i) => ({
+                            serviceId: service.id,
+                            id: i.id,
+                            quantity: Number(f[`request-item-${i.id}`]),
+                          })),
+                      }),
+                };
+                if (mode === "quote") {
+                  setQuoteDraft(b);
+                  return;
+                }
+                const r = await save(
+                  mode === "book" ? "/bookings/preview" : "/quotation-requests",
+                  "POST",
+                  b,
+                );
+                if (mode === "book") {
+                  setPreview(r);
+                  setReviewBody({ ...b, reviewToken: r.reviewToken });
+                  return;
+                }
+                notify(r.message);
+                close();
+                navigate(
+                  mode === "book"
+                    ? `/customer/bookings/${r.id}`
+                    : "/customer/quotations",
+                );
+              } catch (err) {
+                setError(err.message);
+              } finally {
+                setBusy(false);
               }
-              const r = await save(
-                mode === "book" ? "/bookings/preview" : "/quotation-requests",
-                "POST",
-                b,
-              );
-              if (mode === "book") {
-                setPreview(r);
-                setReviewBody({ ...b, reviewToken: r.reviewToken });
-                return;
-              }
-              notify(r.message);
-              close();
-              navigate(
-                mode === "book"
-                  ? `/customer/bookings/${r.id}`
-                  : "/customer/quotations",
-              );
-            } catch (err) {
-              setError(err.message);
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          <Field label="Your event">
-            <select name="eventId" required>
-              {events.data.rows
-                .filter((e) => ["Planning", "Confirmed"].includes(e.status))
-                .map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.name} · {String(e.eventDate).slice(0, 10)}
+            }}
+          >
+            <Field label="Your event">
+              <select
+                name="eventId"
+                required
+                onChange={(e) => setLocationEvent(e.target.value)}
+              >
+                {events.data.rows
+                  .filter((e) => ["Planning", "Confirmed"].includes(e.status))
+                  .map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name} · {String(e.eventDate).slice(0, 10)}
+                    </option>
+                  ))}
+              </select>
+            </Field>
+            {mode === "book" && (
+              <>
+                <Field label="Service delivery">
+                  <select name="locationMode">
+                    {(coverage.mode === "Vendor location"
+                      ? ["Vendor location"]
+                      : coverage.mode === "Both"
+                        ? ["Customer location", "Vendor location"]
+                        : ["Customer location"]
+                    ).map((m) => (
+                      <option key={m}>{m}</option>
+                    ))}
+                  </select>
+                </Field>
+                {coverage.vendorLocationIds?.length > 0 && (
+                  <Field label="Business location (for visits to the vendor)">
+                    <select name="vendorLocationId">
+                      <option value="">Choose when visiting the vendor</option>
+                      {coverage.vendorLocationIds.map((id, i) => (
+                        <option key={id} value={id}>
+                          {coverage.businessLocations?.find((l) => l.id === id)
+                            ?.name ||
+                            coverage.businessLocations?.find((l) => l.id === id)
+                              ?.address ||
+                            `Business location ${i + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
+              </>
+            )}
+            {mode === "book" && (
+              <Field label="Billing address (optional, separate from event venue)">
+                <select name="billingAddressId">
+                  <option value="">No billing address selected</option>
+                  {addresses.data?.rows?.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.type}: {a.line1}, {a.city}
+                    </option>
+                  ))}
+                </select>
+                <Link to="/customer/addresses">Manage billing addresses</Link>
+              </Field>
+            )}
+            <Field label="Service or package">
+              <select
+                name="packageId"
+                defaultValue={
+                  packages.find(
+                    (p) =>
+                      p.id.toLowerCase() ===
+                      params.get("package")?.toLowerCase(),
+                  )?.id || ""
+                }
+              >
+                <option value="">
+                  {service.name} ·{" "}
+                  {service.price ? money(service.price) : "Custom quote"}
+                </option>
+                {packages.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} · {money(p.price)}
                   </option>
                 ))}
-            </select>
-          </Field>
-          <Field label="Service or package">
-            <select
-              name="packageId"
-              defaultValue={
-                packages.find(
-                  (p) =>
-                    p.id.toLowerCase() === params.get("package")?.toLowerCase(),
-                )?.id || ""
-              }
-            >
-              <option value="">
-                {service.name} ·{" "}
-                {service.price ? money(service.price) : "Custom quote"}
-              </option>
-              {packages.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} · {money(p.price)}
-                </option>
-              ))}
-            </select>
-          </Field>
-          {mode === "book" ? (
-            <Field
-              label={`Quantity (${service.pricingType === "PerPerson" ? "people" : service.pricingType === "PerHour" ? "hours" : service.pricingType === "PerDay" ? "days" : "units"})`}
-            >
-              <input
-                type="number"
-                name="quantity"
-                min="1"
-                max="100000"
-                defaultValue="1"
-                required
-              />
+              </select>
             </Field>
-          ) : (
-            <Field label="Tell the vendor what you have in mind">
-              <textarea
-                name="message"
-                minLength="5"
-                maxLength="2000"
-                rows="4"
-                required
-                placeholder="Your requirements, preferred style and anything else that matters…"
-              />
-            </Field>
-          )}
-          {mode === "quote" && (
-            <fieldset>
-              <legend>Requested services and items</legend>
-              <p>
-                The event supplies the date, time, location, guest count and
-                estimated budget. Edit your event first if these need changing.
-              </p>
-              {related.loading ? (
-                <p role="status">Loading this vendor's services...</p>
-              ) : related.error ? (
-                <ErrorView error={related.error} retry={related.retry} />
-              ) : (
-                related.data?.services
-                  .filter(
-                    (s) =>
-                      s.customQuote &&
-                      s.id.toLowerCase() !== service.id.toLowerCase(),
-                  )
-                  .map((s) => (
-                    <label key={s.id}>
-                      <input
-                        type="checkbox"
-                        name="additionalService"
-                        value={s.id}
-                      />
-                      {s.name}
-                    </label>
-                  ))
-              )}
-              {items.map((i) => (
-                <Field
-                  key={i.id}
-                  label={`Requested ${i.name} quantity (optional)`}
-                >
-                  <input
-                    type="number"
-                    name={`request-item-${i.id}`}
-                    min={0}
-                    max={100000}
-                    defaultValue={0}
-                  />
-                </Field>
-              ))}
-              <p>
-                Share reference attachments securely through the vendor
-                conversation after submitting.
-              </p>
-            </fieldset>
-          )}
-          {mode === "book" && (
-            <>
-              <Field label="Coupon (base service or package only)">
-                <input name="coupon" maxLength={50} pattern="[A-Za-z0-9_-]*" />
+            {mode === "book" ? (
+              <Field
+                label={`Quantity (${service.pricingType === "PerPerson" ? "people" : service.pricingType === "PerHour" ? "hours" : service.pricingType === "PerDay" ? "days" : "units"})`}
+              >
+                <input
+                  type="number"
+                  name="quantity"
+                  min="1"
+                  max="100000"
+                  defaultValue="1"
+                  required
+                />
               </Field>
-              <Field label="Special requirements">
-                <textarea name="requirements" maxLength={2000} rows={3} />
+            ) : (
+              <Field label="Tell the vendor what you have in mind">
+                <textarea
+                  name="message"
+                  minLength="5"
+                  maxLength="2000"
+                  rows="4"
+                  required
+                  placeholder="Your requirements, preferred style and anything else that matters…"
+                />
               </Field>
-              {items
-                .filter((i) => !i.included)
-                .map((i) => (
+            )}
+            {mode === "quote" && (
+              <fieldset>
+                <legend>Requested services and items</legend>
+                <p>
+                  The event supplies the date, time, location, guest count and
+                  estimated budget. Edit your event first if these need
+                  changing.
+                </p>
+                {related.loading ? (
+                  <p role="status">Loading this vendor's services...</p>
+                ) : related.error ? (
+                  <ErrorView error={related.error} retry={related.retry} />
+                ) : (
+                  related.data?.services
+                    .filter(
+                      (s) =>
+                        s.customQuote &&
+                        s.id.toLowerCase() !== service.id.toLowerCase(),
+                    )
+                    .map((s) => (
+                      <label key={s.id}>
+                        <input
+                          type="checkbox"
+                          name="additionalService"
+                          value={s.id}
+                        />
+                        {s.name}
+                      </label>
+                    ))
+                )}
+                {items.map((i) => (
                   <Field
-                    label={`${i.name} · ${money(i.price)} each (optional)`}
                     key={i.id}
+                    label={`Requested ${i.name} quantity (optional)`}
                   >
                     <input
                       type="number"
-                      name={`item-${i.id}`}
+                      name={`request-item-${i.id}`}
                       min={0}
                       max={100000}
                       defaultValue={0}
                     />
                   </Field>
                 ))}
-            </>
-          )}
-          {error && (
-            <p className="cw-form-error" role="alert">
-              {error}
-            </p>
-          )}
-          <button disabled={busy} className="cw-button cw-primary">
-            {busy
-              ? "Sending…"
-              : mode === "book"
-                ? "Review booking"
-                : "Review quotation request"}
-          </button>
-        </form>
+                <p>
+                  Share reference attachments securely through the vendor
+                  conversation after submitting.
+                </p>
+              </fieldset>
+            )}
+            {mode === "book" && (
+              <>
+                <Field label="Coupon (base service or package only)">
+                  <input
+                    name="coupon"
+                    maxLength={50}
+                    pattern="[A-Za-z0-9_-]*"
+                  />
+                </Field>
+                <Field label="Special requirements">
+                  <textarea name="requirements" maxLength={2000} rows={3} />
+                </Field>
+                {items
+                  .filter((i) => !i.included)
+                  .map((i) => (
+                    <Field
+                      label={`${i.name} · ${money(i.price)} each (optional)`}
+                      key={i.id}
+                    >
+                      <input
+                        type="number"
+                        name={`item-${i.id}`}
+                        min={0}
+                        max={100000}
+                        defaultValue={0}
+                      />
+                    </Field>
+                  ))}
+              </>
+            )}
+            {error && (
+              <p className="cw-form-error" role="alert">
+                {error}
+              </p>
+            )}
+            <button disabled={busy} className="cw-button cw-primary">
+              {busy
+                ? "Sending…"
+                : mode === "book"
+                  ? "Review booking"
+                  : "Review quotation request"}
+            </button>
+          </form>
+        </>
       )}
     </Modal>
   );
@@ -434,6 +546,8 @@ export function CustomerServiceDetails({ vendor = false }) {
     try {
       const c = await save("/conversations", "POST", {
         vendorId: vendor ? item.id : item.vendorId,
+        ...(!vendor ? { serviceId: item.id } : {}),
+        ...(!vendor && detailParams.get('package') ? {packageId:detailParams.get('package')} : {}),
       });
       navigate(`/customer/messages?conversation=${c.id}`);
     } catch (e) {
@@ -486,27 +600,7 @@ export function CustomerServiceDetails({ vendor = false }) {
             <button className="cw-button" disabled={busy} onClick={message}>
               <MessagesSquare size={16} /> Message vendor
             </button>
-            <button
-              className="cw-button"
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                try {
-                  const result = await save("/wishlist", "POST", {
-                    type: vendor ? "Vendor" : "Service",
-                    id: item.id,
-                  });
-                  notify(result.message);
-                  await reload();
-                } catch (e) {
-                  notify(e.message);
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              <Heart size={16} /> Save
-            </button>
+            <WishlistButton type={vendor ? "Vendor" : "Service"} id={item.id} />
           </div>
         </div>
       </section>
@@ -595,7 +689,13 @@ export function CustomerServiceDetails({ vendor = false }) {
               r.data.packages.map((p) => (
                 <div className="cw-package-option" key={p.id}>
                   <h3>{p.name}</h3>
+                  <WishlistButton type="Package" id={p.id} />
                   <p>{p.description}</p>
+                  {p.inclusions?.map((i, n) => (
+                    <p key={n}>
+                      {i.quantity} {i.unit} {i.name} {i.description}
+                    </p>
+                  ))}
                   <strong>{money(p.price)}</strong>
                   {Number(p.discount) > 0 && (
                     <small>
@@ -662,6 +762,10 @@ export function CustomerServiceDetails({ vendor = false }) {
       {mode && (
         <ServiceAction
           service={item}
+          coverage={{
+            ...r.data.coverage,
+            businessLocations: r.data.businessLocations || [],
+          }}
           packages={r.data.packages}
           items={r.data.items}
           mode={mode}

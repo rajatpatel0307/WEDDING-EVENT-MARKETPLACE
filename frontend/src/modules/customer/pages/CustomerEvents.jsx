@@ -1,3 +1,4 @@
+import EventLocationPanel from "../components/EventLocationPanel";
 import { useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
@@ -455,6 +456,7 @@ export function CustomerEventDetails() {
           Find services <Plus size={15} />
         </Link>
       </Heading>
+      <EventLocationPanel eventId={id} />
       <p>
         {e.brideName && e.groomName
           ? `${e.brideName} & ${e.groomName}`

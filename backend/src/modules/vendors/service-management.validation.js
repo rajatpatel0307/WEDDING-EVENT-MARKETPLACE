@@ -99,8 +99,23 @@ export const locationSchema = z
     zip: text(20),
     latitude: z.number().min(-90).max(90).nullable().default(null),
     longitude: z.number().min(-180).max(180).nullable().default(null),
+    vendorLocationIds: z.array(z.guid()).max(50).default([]),
+    cities: z.array(z.string().trim().min(2).max(100)).max(100).default([]),
+    postalCodes: z
+      .array(
+        z
+          .string()
+          .trim()
+          .regex(/^[A-Za-z0-9 -]{3,20}$/),
+      )
+      .max(500)
+      .default([]),
+    radiusKm: z.number().positive().max(20000).nullable().default(null),
+    travelCharge: z.number().min(0).max(1e7).default(0),
+    minimumOrderValue: z.number().min(0).max(1e8).default(0),
+    active: z.boolean().default(true),
     mode: z
-      .enum(["Vendor location", "Customer location", "Both"])
+      .enum(["Vendor location", "Customer location", "Both", "Service area"])
       .default("Both"),
   })
   .strict();

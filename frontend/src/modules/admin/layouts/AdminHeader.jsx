@@ -1,3 +1,4 @@
+import { useCommunicationSocket } from '../../communication/useCommunicationSocket';
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -307,6 +308,14 @@ export default function AdminHeader({
   // REFS
   // ------------------------------------------
 
+  const communicationSocket=useCommunicationSocket();
+  const [communicationRevision,setCommunicationRevision]=useState(0);
+  useEffect(()=>{
+    const refresh=()=>setCommunicationRevision(v=>v+1);
+    const events=['new_notification','notification_read','notification_count_updated','connect'];
+    events.forEach(e=>communicationSocket?.on(e,refresh));
+    return()=>events.forEach(e=>communicationSocket?.off(e,refresh));
+  },[communicationSocket]);
   const desktopSearchRef = useRef(null);
   const mobileSearchRef = useRef(null);
   const profileRef = useRef(null);
@@ -420,7 +429,7 @@ export default function AdminHeader({
       });
 
     return () => abort.abort();
-  }, [notificationsOpen, location.pathname]);
+  }, [notificationsOpen, location.pathname, communicationRevision]);
 
   // ==========================================
   // CURRENT DATE

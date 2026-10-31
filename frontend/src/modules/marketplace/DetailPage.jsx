@@ -1,3 +1,4 @@
+import WishlistButton from "../customer/components/WishlistButton";
 import { useState } from "react";
 import {
   Link,
@@ -9,7 +10,6 @@ import {
 import {
   MapPin,
   Star,
-  Heart,
   Share2,
   MessageSquare,
   ShieldCheck,
@@ -104,6 +104,8 @@ export default function DetailPage() {
     try {
       const result = await save("/conversations", "POST", {
         vendorId: vendor ? item.id : item.vendorId,
+        ...(!vendor ? { serviceId: item.id } : {}),
+        ...(pack ? { packageId:id } : {}),
       });
       navigate(`/customer/messages?conversation=${result.id}`);
     } catch (e) {
@@ -176,33 +178,17 @@ export default function DetailPage() {
           <MessageSquare size={16} />
           Message vendor
         </button>
-        <button
-          onClick={async () => {
-            if (!user) {
-              navigate(
-                `/auth/login?redirect=${encodeURIComponent(privatePath)}`,
-              );
-              return;
-            }
-            setBusy(true);
-            try {
-              await save("/wishlist", "POST", {
-                type: vendor ? "Vendor" : "Service",
-                id: item.id,
-              });
-              notify("Saved to your wishlist.");
-              await reload();
-            } catch (e) {
-              notify(e.message);
-            } finally {
-              setBusy(false);
-            }
-          }}
-          disabled={busy}
-        >
-          <Heart size={16} />
-          Save to wishlist
-        </button>
+        <WishlistButton
+          type={
+            vendor
+              ? "Vendor"
+              : pack || params.get("package")
+                ? "Package"
+                : "Service"
+          }
+          id={pack ? id : params.get("package") || item.id}
+          className="cm-button"
+        />
         <button
           onClick={async () => {
             try {

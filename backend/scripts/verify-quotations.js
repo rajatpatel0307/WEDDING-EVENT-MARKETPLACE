@@ -208,6 +208,7 @@ try {
         budget: 100000,
       });
       const service2 = randomUUID();
+      await query('UPDATE dbo.Events SET LocationJson=:location WHERE EventId=:id',{id:event.id,location:JSON.stringify({line1:'Fixture hall',city:'Fixture City',state:'Fixture State',postalCode:'100001',country:'India'})});
       await query(
         "INSERT INTO dbo.Services(ServiceId,VendorId,CategoryId,ServiceName,ServiceSlug,PricingType,BasePrice,ApprovalStatus,IsActive,IsCustomQuoteAvailable) VALUES(:id,:vendor,:category,'Second quoted service',:slug,'Fixed',2000,'Approved',1,1)",
         {
@@ -456,6 +457,7 @@ try {
         guests: 10,
         budget: 10000,
       });
+      await query('UPDATE dbo.Events SET LocationJson=:location WHERE EventId=:id',{id:later.id,location:JSON.stringify({line1:'Fixture hall',city:'Fixture City',state:'Fixture State',postalCode:'100001',country:'India'})});
       const laterReq = await api("/quotation-requests", "POST", {
         eventId: later.id,
         serviceId: service,
@@ -504,6 +506,7 @@ try {
       const sameChat = await api("/conversations", "POST", {
         vendorId: vendor,
         eventId: event.id,
+        quotationId: revision.id,
       });
       assert.equal(sameChat.id.toLowerCase(), chat.id.toLowerCase());
       const adminList = await request("/api/admin/quotations?q=" + revision.id);

@@ -1,3 +1,4 @@
+import * as vendorLocations from "../addresses/vendor-locations.service.js";
 import { Router, json } from "express";
 import { rateLimit } from "express-rate-limit";
 import { authenticate } from "../auth/token.service.js";
@@ -61,7 +62,7 @@ export function createVendorRouter({
       const result = await fn(req);
       res.json({ success: true, ...result });
     });
-  get('/earnings',req=>earnings(req.vendorContext));
+  get("/earnings", (req) => earnings(req.vendorContext));
   get("/bookings/:id", (req) =>
     lifecycle.details(req.params.id, req.vendorContext, "Vendor"),
   );
@@ -249,6 +250,13 @@ export function createVendorRouter({
       req.vendorContext,
     ),
   );
+  get("/locations", (q) => vendorLocations.list(q.vendorContext));
+  mutation("patch", "/locations/:id/primary", (q) =>
+    vendorLocations.action(q.params.id, q.body, q.vendorContext),
+  );
+  mutation("delete", "/locations/:id", (q) =>
+    vendorLocations.action(q.params.id, q.body, q.vendorContext, true),
+  );
   for (const kind of ["locations", "offers", "coupons", "items"]) {
     get(`/${kind}/:id`, (req) =>
       workspace.simpleDetails(kind, req.params.id, req.vendorContext),
@@ -328,7 +336,9 @@ export function createVendorRouter({
   mutation("put", "/availability", (req) =>
     operations.setAvailability(req.body, req.vendorContext),
   );
-  get("/communications/counts", (req) => communicationCounts(req.vendorContext));
+  get("/communications/counts", (req) =>
+    communicationCounts(req.vendorContext),
+  );
   get("/conversations", (req) => messaging.conversations(req.vendorContext));
   mutation("post", "/conversations", (req) =>
     messaging.startConversation(req.body, req.vendorContext),

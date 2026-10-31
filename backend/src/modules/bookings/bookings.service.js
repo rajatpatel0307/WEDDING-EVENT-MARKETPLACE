@@ -1,3 +1,5 @@
+import { validateCoverage } from "../addresses/locations.service.js";
+import { eventLocationInput } from "../addresses/location.validation.js";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import * as repo from "../admin/admin.repository.js";
@@ -81,7 +83,7 @@ export async function details(id, ctx, role) {
       { id },
     ),
     repo.select(
-      "SELECT RequestId AS id,RequestedBy AS requestedBy,Kind AS kind,Status AS status,Reason AS reason,OriginalDate AS originalDate,RequestedDate AS date,CONVERT(char(5),RequestedStart,108) AS start,CONVERT(char(5),RequestedEnd,108) AS [end],DecisionReason AS decisionReason,CreatedAt AS createdAt,DecidedAt AS decidedAt FROM dbo.BookingChangeRequests WHERE BookingId=:id ORDER BY CreatedAt,RequestId",
+      "SELECT RequestedLocationJson AS requestedLocationJson,OriginalLocationJson AS originalLocationJson,RequestId AS id,RequestedBy AS requestedBy,Kind AS kind,Status AS status,Reason AS reason,OriginalDate AS originalDate,RequestedDate AS date,CONVERT(char(5),RequestedStart,108) AS start,CONVERT(char(5),RequestedEnd,108) AS [end],DecisionReason AS decisionReason,CreatedAt AS createdAt,DecidedAt AS decidedAt FROM dbo.BookingChangeRequests WHERE BookingId=:id ORDER BY CreatedAt,RequestId",
       { id },
     ),
     repo.select(
@@ -115,6 +117,12 @@ export async function details(id, ctx, role) {
     items,
     history: historyRows,
     requests: requests.map((r) => ({
+      location: r.requestedLocationJson
+        ? JSON.parse(r.requestedLocationJson)
+        : null,
+      originalLocation: r.originalLocationJson
+        ? JSON.parse(r.originalLocationJson)
+        : null,
       ...r,
       canDecide:
         role === "Admin" ||
@@ -153,6 +161,7 @@ export async function requestChange(id, input, ctx, role = "Customer") {
     if (pending) fail("A change request is already pending.");
     if (body.kind === "Reschedule") {
       if (
+        !body.location &&
         body.date === dayOf(row.BookingDate) &&
         body.start === clockOf(row.StartTime) &&
         body.end === clockOf(row.EndTime)
@@ -175,6 +184,14 @@ export async function requestChange(id, input, ctx, role = "Customer") {
         RequestedDate: body.date || null,
         RequestedStart: body.start,
         RequestedEnd: body.end,
+        RequestedLocationJson: body.location
+          ? JSON.stringify(body.location)
+          : null,
+        OriginalLocationJson: body.location
+          ? JSON.stringify(
+              JSON.parse(row.EventSnapshotJson || "{}").location || null,
+            )
+          : null,
       },
       tx,
     );
@@ -202,6 +219,40 @@ export async function requestChange(id, input, ctx, role = "Customer") {
 }
 async function validateReschedule(row, body, tx) {
   const event = JSON.parse(row.EventSnapshotJson || "{}");
+  if (body.location) {
+    const destination = eventLocationInput.parse(body.location);
+    const price = JSON.parse(row.PriceSnapshotJson || "{}");
+    const configurations = await repo.select(
+      "SELECT DISTINCT s.ServiceId,s.DetailsJson FROM dbo.Services s JOIN dbo.BookingItems i ON i.ServiceId=s.ServiceId WHERE i.BookingId=:id",
+      { id: row.BookingId },
+      tx,
+    );
+    for (const service of configurations) {
+      const document = JSON.parse(service.DetailsJson || "{}"),
+        coverage = document.location;
+      validateCoverage(
+        coverage
+          ? { ...coverage, mode: event.serviceLocation?.mode || coverage.mode }
+          : null,
+        destination,
+        Number(row.SubTotal) - Number(row.DiscountAmount || 0),
+      );
+      const original =
+        price.location?.service?.travelCharge ??
+        price.policies?.travelCharges ??
+        0;
+      const current =
+        coverage?.travelCharge ?? document.policies?.travelCharges ?? 0;
+      if (
+        event.serviceLocation?.mode !== "Vendor location" &&
+        Number(original) !== Number(current)
+      )
+        fail(
+          "The new venue requires revised travel pricing. Request a replacement quotation before changing this booking.",
+          409,
+        );
+    }
+  }
   const services = await repo.select(
     "SELECT DISTINCT ServiceId FROM dbo.BookingItems WHERE BookingId=:id",
     { id: row.BookingId },
@@ -213,7 +264,7 @@ async function validateReschedule(row, body, tx) {
       EventDate: body.date,
       StartTime: body.start,
       EndTime: body.end,
-      City: event.city,
+      City: body.location?.city || event.city,
       GuestCount: event.guests,
     },
     services.map((s) => s.ServiceId),
@@ -275,14 +326,42 @@ export async function decideChange(id, requestId, input, ctx, role) {
     if (approved && request.Kind === "Reschedule") {
       const next = {
         date: dayOf(request.RequestedDate),
+        ...(request.RequestedLocationJson
+          ? {
+              location: eventLocationInput.parse(
+                JSON.parse(request.RequestedLocationJson),
+              ),
+            }
+          : {}),
         start: clockOf(request.RequestedStart),
         end: clockOf(request.RequestedEnd),
       };
+      if (
+        next.location &&
+        request.OriginalLocationJson !==
+          JSON.stringify(
+            JSON.parse(row.EventSnapshotJson || "{}").location || null,
+          )
+      )
+        fail(
+          "The agreed booking location changed. Submit a fresh request.",
+          409,
+        );
       await validateReschedule(row, next, tx);
       await repo.update(
         { table: "Booking", id: "BookingId" },
         id,
         {
+          ...(next.location
+            ? {
+                EventSnapshotJson: JSON.stringify({
+                  ...JSON.parse(row.EventSnapshotJson || "{}"),
+                  city: next.location.city,
+                  state: next.location.state,
+                  location: next.location,
+                }),
+              }
+            : {}),
           BookingDate: next.date,
           StartTime: next.start,
           EndTime: next.end,

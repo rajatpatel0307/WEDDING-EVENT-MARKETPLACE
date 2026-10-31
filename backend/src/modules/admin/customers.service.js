@@ -130,7 +130,7 @@ export const customerReadCollections = {
     from: "dbo.Addresses t",
     where: "t.UserId=:id",
     fields:
-      "t.AddressId AS id,t.AddressType AS type,t.AddressLine1 AS line1,t.AddressLine2 AS line2,t.Landmark AS landmark,t.City AS city,t.State AS state,t.PostalCode AS postalCode,t.Country AS country,t.IsDefault AS isDefault,t.CreatedAt AS createdAt",
+      "t.AddressId AS id,t.FullName AS fullName,t.Phone AS phone,t.District AS district,t.Latitude AS latitude,t.Longitude AS longitude,t.Landmark AS landmark,t.AddressType AS type,t.AddressLine1 AS line1,t.AddressLine2 AS line2,t.Landmark AS landmark,t.City AS city,t.State AS state,t.PostalCode AS postalCode,t.Country AS country,t.IsDefault AS isDefault,t.CreatedAt AS createdAt",
   },
   audit: {
     from: "dbo.AuditLogs t LEFT JOIN dbo.Users u ON u.UserId=t.UserId",
@@ -151,6 +151,7 @@ export const customerPageQuery = z.object({
 });
 export async function customerRecords(id, section, input, ctx) {
   requireRole(ctx, "ADMIN");
+  if (section === 'messages') throw Object.assign(new Error('Private communication is restricted to participants.'), {status:403});
   if (!Object.hasOwn(customerReadCollections, section))
     throw Object.assign(new Error("Customer section not found."), {
       status: 404,

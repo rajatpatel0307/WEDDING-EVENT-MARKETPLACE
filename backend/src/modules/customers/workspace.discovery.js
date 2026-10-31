@@ -16,6 +16,7 @@ export const discoveryInput = pageInput
     category: z.coerce.number().int().nonnegative().default(0),
     subcategory: z.coerce.number().int().nonnegative().default(0),
     city: z.string().trim().max(100).default(""),
+    postalCode: z.string().trim().max(20).default(""),
     min: z.coerce.number().min(0).max(1e8).default(0),
     max: z.coerce.number().min(0).max(1e8).default(1e8),
     rating: z.coerce.number().min(0).max(5).default(0),
@@ -40,7 +41,7 @@ const serviceRatings =
   "OUTER APPLY(SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS rating,COUNT_BIG(*) AS reviews FROM dbo.Reviews r WHERE r.IsPublished=1 AND EXISTS(SELECT 1 FROM dbo.BookingItems ri WHERE ri.BookingId=r.BookingId AND ri.ServiceId=s.ServiceId)) sr";
 const source = `dbo.Services s JOIN dbo.Vendors v ON v.VendorId=s.VendorId JOIN dbo.Users u ON u.UserId=v.UserId JOIN dbo.Categories c ON c.CategoryId=s.CategoryId LEFT JOIN dbo.SubCategories sc ON sc.SubCategoryId=s.SubCategoryId ${location} ${serviceRatings}`;
 const image = `OUTER APPLY(SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityId=s.ServiceId AND LOWER(EntityType)='service' AND MediaType='Image' ORDER BY IsPrimary DESC,SortOrder,CreatedAt) m`;
-const fields = `s.ServiceId AS serviceId,v.VendorId AS vendorId,v.BusinessName AS vendor,c.CategoryName AS category,c.CategoryId AS categoryId,sc.SubCategoryName AS subcategory,l.City AS city,COALESCE(sr.rating,0) AS rating,COALESCE(sr.reviews,0) AS reviews,m.MediaUrl AS image`;
+const fields = `s.ServiceId AS serviceId,v.VendorId AS vendorId,v.BusinessName AS vendor,c.CategoryName AS category,c.CategoryId AS categoryId,sc.SubCategoryName AS subcategory,COALESCE(NULLIF(JSON_VALUE(s.DetailsJson,'$.location.city'),''),l.City) AS city,COALESCE(sr.rating,0) AS rating,COALESCE(sr.reviews,0) AS reviews,m.MediaUrl AS image`;
 const escapeLike = (value) =>
   `%${value.replace(/[\[\]%_]/g, (c) => `[${c}]`)}%`;
 export async function catalog(ctx) {
@@ -106,7 +107,8 @@ export async function publicDiscover(input) {
     "(:category =0 OR s.CategoryId=:category)",
     "(:subcategory =0 OR s.SubCategoryId=:subcategory)",
     `(s.ServiceName LIKE :q OR v.BusinessName LIKE :q ${packages ? "OR p.PackageName LIKE :q" : ""})`,
-    city,
+    `(:city ='%%' OR EXISTS(SELECT 1 FROM OPENJSON(s.DetailsJson,'$.location.cities') WHERE value LIKE :city) OR JSON_VALUE(s.DetailsJson,'$.location.city') LIKE :city OR (NULLIF(JSON_VALUE(s.DetailsJson,'$.location.city'),'') IS NULL AND ${city}))`,
+    "(:postalCode ='' OR JSON_VALUE(s.DetailsJson,'$.location.zip')=:postalCode OR EXISTS(SELECT 1 FROM OPENJSON(s.DetailsJson,'$.location.postalCodes') WHERE value=:postalCode))",
     `(${price} BETWEEN :min AND :max OR (${price} IS NULL AND :min =0))`,
     "COALESCE(sr.rating,0)>=:rating",
   ];
@@ -191,9 +193,26 @@ export async function publicServiceDetails(id, track = true, query = {}) {
   return {
     service,
     items,
-    packages,
+    packages: await Promise.all(
+      packages.map(async (p) => ({
+        ...p,
+        inclusions: await repo.select(
+          "SELECT ItemName AS name,Description AS description,Quantity AS quantity,Unit AS unit FROM dbo.PackageItems WHERE PackageId=:id ORDER BY SortOrder,PackageItemId",
+          { id: p.id },
+        ),
+      })),
+    ),
     gallery,
     reviews,
+    businessLocations: document.location?.vendorLocationIds?.length
+      ? await repo.select(
+          "SELECT VendorLocationId AS id,LocationName AS name,AddressLine1 AS address,City AS city,State AS state FROM dbo.VendorLocations WHERE VendorId=:vendor AND VendorLocationId IN(:ids) AND IsActive=1",
+          {
+            vendor: service.vendorId,
+            ids: document.location.vendorLocationIds,
+          },
+        )
+      : [],
     policies: document.policies || {},
     coverage: document.location || {},
     schedule: document.availability || null,
@@ -290,7 +309,7 @@ export async function publicPackage(id) {
 export async function wishlist(ctx) {
   const { id } = scope(ctx);
   return repo.select(
-    `SELECT w.WishlistId AS id,w.ServiceId AS savedServiceId,w.PackageId AS packageId,COALESCE(s.ServiceId,ps.ServiceId) AS serviceId,v.VendorId AS vendorId,COALESCE(p.PackageName,s.ServiceName,v.BusinessName) AS name,v.BusinessName AS vendor,l.City AS city,v.AverageRating AS rating,COALESCE(p.FinalPrice,s.BasePrice) AS price,COALESCE(m.MediaUrl,v.LogoUrl) AS image,CASE WHEN w.PackageId IS NOT NULL THEN 'Package' WHEN w.ServiceId IS NOT NULL THEN 'Service' ELSE 'Vendor' END AS type,CASE WHEN ${eligibleVendor} AND (COALESCE(s.IsActive,ps.IsActive,1)=1) AND COALESCE(s.ApprovalStatus,ps.ApprovalStatus,'Approved')='Approved' AND COALESCE(p.IsActive,1)=1 AND (COALESCE(s.CategoryId,ps.CategoryId) IS NULL OR EXISTS(SELECT 1 FROM dbo.Categories ac WHERE ac.CategoryId=COALESCE(s.CategoryId,ps.CategoryId) AND ac.IsActive=1)) THEN 1 ELSE 0 END AS available FROM dbo.Wishlists w LEFT JOIN dbo.Services s ON s.ServiceId=w.ServiceId LEFT JOIN dbo.ServicePackages p ON p.PackageId=w.PackageId LEFT JOIN dbo.Services ps ON ps.ServiceId=p.ServiceId JOIN dbo.Vendors v ON v.VendorId=COALESCE(w.VendorId,s.VendorId,ps.VendorId) JOIN dbo.Users u ON u.UserId=v.UserId ${location} OUTER APPLY(SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityId=COALESCE(s.ServiceId,ps.ServiceId) AND LOWER(EntityType)='service' AND MediaType='Image' ORDER BY IsPrimary DESC,SortOrder) m WHERE w.CustomerId=:id ORDER BY w.CreatedAt DESC`,
+    `SELECT w.WishlistId AS id,w.CreatedAt AS savedAt,COALESCE(p.Description,s.Description,ps.Description,v.BusinessDescription) AS description,COALESCE(s.PricingType,ps.PricingType) AS pricingType,COALESCE(s.CategoryId,ps.CategoryId) AS categoryId,COALESCE((SELECT CategoryName FROM dbo.Categories WHERE CategoryId=COALESCE(s.CategoryId,ps.CategoryId)),(SELECT STRING_AGG(CONVERT(nvarchar(max),c.CategoryName),', ') FROM dbo.VendorCategories vc JOIN dbo.Categories c ON c.CategoryId=vc.CategoryId WHERE vc.VendorId=v.VendorId)) AS category,v.TotalReviews AS reviews,v.VerificationStatus AS verificationStatus,(SELECT COUNT(*) FROM dbo.Services vs WHERE vs.VendorId=v.VendorId AND vs.IsActive=1 AND vs.ApprovalStatus='Approved') AS serviceCount,v.CoverImageUrl AS cover,w.ServiceId AS savedServiceId,w.PackageId AS packageId,COALESCE(s.ServiceId,ps.ServiceId) AS serviceId,v.VendorId AS vendorId,COALESCE(p.PackageName,s.ServiceName,v.BusinessName) AS name,v.BusinessName AS vendor,l.City AS city,v.AverageRating AS rating,COALESCE(p.FinalPrice,s.BasePrice) AS price,COALESCE(m.MediaUrl,v.LogoUrl) AS image,CASE WHEN w.PackageId IS NOT NULL THEN 'Package' WHEN w.ServiceId IS NOT NULL THEN 'Service' ELSE 'Vendor' END AS type,CASE WHEN ${eligibleVendor} AND (COALESCE(s.IsActive,ps.IsActive,1)=1) AND COALESCE(s.ApprovalStatus,ps.ApprovalStatus,'Approved')='Approved' AND COALESCE(p.IsActive,1)=1 AND (COALESCE(s.CategoryId,ps.CategoryId) IS NULL OR EXISTS(SELECT 1 FROM dbo.Categories ac WHERE ac.CategoryId=COALESCE(s.CategoryId,ps.CategoryId) AND ac.IsActive=1)) THEN 1 ELSE 0 END AS available FROM dbo.Wishlists w LEFT JOIN dbo.Services s ON s.ServiceId=w.ServiceId LEFT JOIN dbo.ServicePackages p ON p.PackageId=w.PackageId LEFT JOIN dbo.Services ps ON ps.ServiceId=p.ServiceId JOIN dbo.Vendors v ON v.VendorId=COALESCE(w.VendorId,s.VendorId,ps.VendorId) JOIN dbo.Users u ON u.UserId=v.UserId ${location} OUTER APPLY(SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityId=COALESCE(s.ServiceId,ps.ServiceId) AND LOWER(EntityType)='service' AND MediaType='Image' ORDER BY IsPrimary DESC,SortOrder) m WHERE w.CustomerId=:id ORDER BY w.CreatedAt DESC`,
     { id },
   );
 }
@@ -316,6 +335,16 @@ export async function saveWishlist(input, ctx) {
     await serviceDetails(p.ServiceId, ctx, false);
   }
   return repo.transaction(async (tx) => {
+    const eligibilitySource =
+      b.type === "Vendor"
+        ? `dbo.Vendors v WITH(UPDLOCK,HOLDLOCK) JOIN dbo.Users u ON u.UserId=v.UserId`
+        : `dbo.Services s WITH(UPDLOCK,HOLDLOCK) JOIN dbo.Vendors v ON v.VendorId=s.VendorId JOIN dbo.Users u ON u.UserId=v.UserId JOIN dbo.Categories c ON c.CategoryId=s.CategoryId ${b.type === "Package" ? "JOIN dbo.ServicePackages p ON p.ServiceId=s.ServiceId" : ""}`;
+    const [eligible] = await repo.select(
+      `SELECT v.VendorId FROM ${eligibilitySource} WHERE ${eligibleVendor} AND ${b.type === "Vendor" ? "v.VendorId=:target" : `s.IsActive=1 AND s.ApprovalStatus='Approved' AND c.IsActive=1 AND ${b.type === "Package" ? "p.PackageId=:target AND p.IsActive=1" : "s.ServiceId=:target"}`}`,
+      { target: b.id },
+      tx,
+    );
+    if (!eligible) fail("This item is no longer available for saving.", 409);
     const [old] = await repo.select(
       `SELECT WishlistId AS id FROM dbo.Wishlists WITH(UPDLOCK,HOLDLOCK) WHERE CustomerId=:id AND [${column}]=:target`,
       { id, target: b.id },

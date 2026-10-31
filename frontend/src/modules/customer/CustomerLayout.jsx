@@ -1,3 +1,4 @@
+import { NotificationBell } from '../communication/Notifications';
 import { useEffect, useState } from "react";
 import {
   Link,
@@ -131,9 +132,7 @@ export default function CustomerLayout() {
           <Link to="/customer/messages" aria-label="Messages">
             <MessagesSquare size={19} />
           </Link>
-          <Link to="/customer/notifications" aria-label="Notifications">
-            <Bell size={19} />
-          </Link>
+          <NotificationBell role="Customer" />
           <div className="cw-profile-menu">
             <button
               onClick={() => setProfile(!profile)}

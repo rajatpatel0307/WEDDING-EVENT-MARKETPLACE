@@ -12,11 +12,12 @@ export async function communicationCounts(ctx) {
         (SELECT COUNT(*) FROM dbo.Wishlists WHERE CustomerId=:userId) AS wishlistCount,
         (SELECT COUNT(*) FROM dbo.Notifications
           WHERE UserId=:userId AND IsRead=0
+            AND DismissedAt IS NULL
             AND (ReferenceType IS NULL OR ReferenceType<>'Conversation')) AS unreadNotificationCount,
         (SELECT COUNT(DISTINCT m.SenderUserId) FROM dbo.Messages m
           JOIN dbo.Conversations c ON c.ConversationId=m.ConversationId
           JOIN dbo.Vendors v ON v.VendorId=c.VendorId
-          WHERE c.IsActive=1 AND m.IsRead=0 AND m.SenderUserId<>:userId
+          WHERE c.IsActive=1 AND m.IsRead=0 AND m.SenderUserId<>:userId AND m.DeletedAt IS NULL
             AND (c.CustomerId=:userId OR v.UserId=:userId)) AS unreadMessageCount`, {
       replacements: { userId: user.id },
       type: QueryTypes.SELECT,

@@ -33,7 +33,8 @@ export function ImageUpload({ kind, src, onUploaded, onBusy }) {
     [preview, setPreview] = useState(src);
   useEffect(() => setPreview(src), [src]);
   return (
-    <div className="
+    <div
+      className="
       grid gap-[14px] min-w-[0] [&_>_label]:flex [&_>_label]:items-center [&_>_label]:justify-center
       [&_>_label]:flex-col [&_>_label]:gap-[6px] [&_>_label]:[border-top:1px_dashed_#d7e3c9]
       [&_>_label]:[border-right:1px_dashed_#d7e3c9] [&_>_label]:[border-bottom:1px_dashed_#d7e3c9]
@@ -43,7 +44,8 @@ export function ImageUpload({ kind, src, onUploaded, onBusy }) {
       [&_strong]:font-medium [&_>_label_>_span]:text-[8px] [&_>_label_>_span]:text-[#bcc8aa]
       [&_input]:absolute [&_input]:[inset:0] [&_input]:w-[100%] [&_input]:h-[100%] [&_input]:opacity-[0]
       [&_input]:cursor-pointer
-    ">
+    "
+    >
       <Image
         key={preview}
         src={preview}
@@ -85,11 +87,14 @@ export function ImageUpload({ kind, src, onUploaded, onBusy }) {
         />
       </label>
       {error && (
-        <p className="
+        <p
+          className="
           vw-form-error [background:#fff4ee] [border-top:1px_solid_#f0ddcf] [border-right:1px_solid_#f0ddcf]
           [border-bottom:1px_solid_#f0ddcf] [border-left:1px_solid_#f0ddcf] text-[#b6836e]! [padding:12px_15px]
           rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]
-        " role="alert">
+        "
+          role="alert"
+        >
           {error}
         </p>
       )}
@@ -104,11 +109,14 @@ function PackageItems({ items, onChange }) {
   return (
     <div className="grid gap-[15px] [&_>_button]:[justify-self:start]">
       {items.map((item, index) => (
-        <div className="
+        <div
+          className="
           grid grid-cols-[minmax(0,_2fr)_minmax(0,_1fr)_minmax(0,_1fr)_29px] gap-[12px] [align-items:end]
           vendor-phone:grid-cols-[1fr_1fr] vendor-phone:[&_>_label:first-child]:col-[1/-1]
           vendor-phone:[&_>_button]:[justify-self:end]
-        " key={index}>
+        "
+          key={index}
+        >
           <Field label={`Item ${index + 1}`}>
             <input
               value={item.name}
@@ -236,12 +244,19 @@ export function PackageForm() {
   }, [id]);
   if (catalog.error)
     return <ErrorView error={catalog.error} retry={catalog.retry} />;
-  if (error && !values) return <div className="
+  if (error && !values)
+    return (
+      <div
+        className="
     flex items-start gap-[12px] m-[15px] p-[19px] [border-top:1px_solid_#efdcd0]
     [border-right:1px_solid_#efdcd0] [border-bottom:1px_solid_#efdcd0] [border-left:1px_solid_#efdcd0]
     rounded-[8px] [background:#fff9f5] text-[#b78270] text-[12px] [&_>_div]:grid [&_>_div]:gap-[12px]
     [&_>_div]:[justify-items:start] [&_strong]:font-medium [&_a]:flex [&_a]:items-center [&_a]:gap-[5px]
-  ">{error}</div>;
+  "
+      >
+        {error}
+      </div>
+    );
   if (!values || !catalog.data) return <Loading />;
   const update = (key, value) => setValues((old) => ({ ...old, [key]: value }));
   return (
@@ -287,11 +302,14 @@ export function PackageForm() {
         <Panel title="Package details">
           <div className="[padding:0_24px_24px] grid gap-[19px] vendor-mobile:[padding:0_18px_20px]">
             {error && (
-              <p className="
+              <p
+                className="
                 vw-form-error [background:#fff4ee] [border-top:1px_solid_#f0ddcf] [border-right:1px_solid_#f0ddcf]
                 [border-bottom:1px_solid_#f0ddcf] [border-left:1px_solid_#f0ddcf] text-[#b6836e]! [padding:12px_15px]
                 rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]
-              " role="alert">
+              "
+                role="alert"
+              >
                 {error}
               </p>
             )}
@@ -349,12 +367,14 @@ export function PackageForm() {
                 </Field>
               ))}
             </div>
-            <div className="
+            <div
+              className="
               flex flex-col items-center gap-[7px] [border-top:1px_solid_#dfebd4] [border-right:1px_solid_#dfebd4]
               [border-bottom:1px_solid_#dfebd4] [border-left:1px_solid_#dfebd4] [background:#f0f6e7] p-[22px]
               rounded-[7px] text-[#89a070] [&_>_span]:text-[10px] [&_strong]:text-[29px] [&_strong]:text-[#6c8a53]
               [&_strong]:font-medium [&_small]:text-[8px] [&_small]:text-[#a9bd92]
-            ">
+            "
+            >
               <span>Final package price</span>
               <strong>
                 {money(
@@ -369,10 +389,13 @@ export function PackageForm() {
                 ["featured", "Mark as featured"],
                 ["active", "Package is active"],
               ].map(([key, label]) => (
-                <label className="
+                <label
+                  className="
                   inline-flex! items-center gap-[8px] text-[10px] text-[#8fa27c] font-normal [&_input]:w-[13px]!
                   [&_input]:h-[13px] [&_input]:p-[0] [&_input]:[accent-color:#79935d]
-                " key={key}>
+                "
+                  key={key}
+                >
                   <input
                     type="checkbox"
                     checked={values[key]}
@@ -395,13 +418,16 @@ export function PackageForm() {
             />
           </div>
         </Panel>
-        <div className="
+        <div
+          className="
           flex items-center justify-between gap-[20px] mt-[23px] [padding:18px_0] [&_>_p]:flex
           [&_>_p]:items-center [&_>_p]:gap-[7px] [&_>_p]:text-[9px] [&_>_p]:text-[#a0b28e] [&_>_div]:flex
           [&_>_div]:items-center [&_>_div]:gap-[9px] vendor-mobile:items-start vendor-mobile:flex-col
           vendor-mobile:[&_>_div]:[align-self:flex-end] vendor-phone:[&_>_p]:text-[8px]
-        ">
-          <Link className="
+        "
+        >
+          <Link
+            className="
             vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
             [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
             rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
@@ -410,10 +436,13 @@ export function PackageForm() {
             [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
             [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
             [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
-          " to="/vendor/packages">
+          "
+            to="/vendor/packages"
+          >
             Cancel
           </Link>
-          <button className="
+          <button
+            className="
             vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
             [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
             rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
@@ -423,7 +452,9 @@ export function PackageForm() {
             [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
             [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
             vw-primary
-          " disabled={busy}>
+          "
+            disabled={busy}
+          >
             <Save size={15} />
             {busy ? "Saving…" : "Save package"}
           </button>
@@ -439,6 +470,12 @@ export function QuotationForm() {
 
 const defaults = {
   locations: {
+    name: "",
+    type: "Business Location",
+    district: "",
+    contactNumber: "",
+    latitude: null,
+    longitude: null,
     address: "",
     line2: "",
     city: "",
@@ -538,6 +575,8 @@ export function RecordEditor({ kind, row, close, onSaved }) {
               "quantity",
               "price",
               "discountValue",
+              "latitude",
+              "longitude",
               "minimumAmount",
               "maximumDiscount",
               "usageLimit",
@@ -563,11 +602,14 @@ export function RecordEditor({ kind, row, close, onSaved }) {
         }}
       >
         {error && (
-          <p className="
+          <p
+            className="
             vw-form-error [background:#fff4ee] [border-top:1px_solid_#f0ddcf] [border-right:1px_solid_#f0ddcf]
             [border-bottom:1px_solid_#f0ddcf] [border-left:1px_solid_#f0ddcf] text-[#b6836e]! [padding:12px_15px]
             rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]
-          " role="alert">
+          "
+            role="alert"
+          >
             {error}
           </p>
         )}
@@ -580,6 +622,39 @@ export function RecordEditor({ kind, row, close, onSaved }) {
           <>
             {kind === "locations" ? (
               <>
+                {field("name", "Location name", "text", { maxLength: 200 })}
+                <Field label="Location type">
+                  <select
+                    value={values.type || "Business Location"}
+                    onChange={(e) => change("type", e.target.value)}
+                  >
+                    {[
+                      "Main Office",
+                      "Branch Office",
+                      "Store",
+                      "Warehouse",
+                      "Studio",
+                      "Workshop",
+                      "Business Location",
+                    ].map((t) => (
+                      <option key={t}>{t}</option>
+                    ))}
+                  </select>
+                </Field>
+                {field("district", "District", "text", { maxLength: 100 })}
+                {field("contactNumber", "Contact number", "tel", {
+                  maxLength: 30,
+                })}
+                {field("latitude", "Latitude (optional)", "number", {
+                  min: -90,
+                  max: 90,
+                  step: "any",
+                })}
+                {field("longitude", "Longitude (optional)", "number", {
+                  min: -180,
+                  max: 180,
+                  step: "any",
+                })}
                 {field("address", "Address", "text", {
                   required: true,
                   maxLength: 300,
@@ -602,10 +677,12 @@ export function RecordEditor({ kind, row, close, onSaved }) {
                     maxLength: 20,
                   })}
                 </div>
-                <label className="
+                <label
+                  className="
                   inline-flex! items-center gap-[8px] text-[10px] text-[#8fa27c] font-normal [&_input]:w-[13px]!
                   [&_input]:h-[13px] [&_input]:p-[0] [&_input]:[accent-color:#79935d]
-                ">
+                "
+                >
                   <input
                     type="checkbox"
                     checked={values.primary}
@@ -665,10 +742,12 @@ export function RecordEditor({ kind, row, close, onSaved }) {
                         step: ".01",
                       })}
                     </div>
-                    <label className="
+                    <label
+                      className="
                       inline-flex! items-center gap-[8px] text-[10px] text-[#8fa27c] font-normal [&_input]:w-[13px]!
                       [&_input]:h-[13px] [&_input]:p-[0] [&_input]:[accent-color:#79935d]
-                    ">
+                    "
+                    >
                       <input
                         type="checkbox"
                         checked={values.included}
@@ -730,10 +809,12 @@ export function RecordEditor({ kind, row, close, onSaved }) {
               </>
             )}
             {kind !== "items" && (
-              <label className="
+              <label
+                className="
                 inline-flex! items-center gap-[8px] text-[10px] text-[#8fa27c] font-normal [&_input]:w-[13px]!
                 [&_input]:h-[13px] [&_input]:p-[0] [&_input]:[accent-color:#79935d]
-              ">
+              "
+              >
                 <input
                   type="checkbox"
                   checked={values.active}
@@ -760,7 +841,8 @@ export function RecordEditor({ kind, row, close, onSaved }) {
               >
                 Cancel
               </button>
-              <button className="
+              <button
+                className="
                 vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
                 [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
                 rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
@@ -770,7 +852,9 @@ export function RecordEditor({ kind, row, close, onSaved }) {
                 [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
                 [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
                 vw-primary
-              " disabled={busy}>
+              "
+                disabled={busy}
+              >
                 {busy ? "Saving…" : "Save changes"}
               </button>
             </div>

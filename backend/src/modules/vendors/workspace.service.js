@@ -61,7 +61,8 @@ const extra = {
   },
   notifications: {
     from: "dbo.Notifications t",
-    where: "t.UserId=:ownerId AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation')",
+    where:
+      "t.UserId=:ownerId AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation')",
     fields:
       "t.NotificationId AS id,t.Title AS title,t.Message AS message,t.IsRead AS isRead,t.ReferenceType AS referenceType,t.ReferenceId AS referenceId,t.CreatedAt AS createdAt",
   },
@@ -543,6 +544,19 @@ export async function setActive(kind, recordId, input, ctx) {
   return repo.transaction(async (tx) => {
     const old = await owned(kind, recordId, id, tx);
     assertVersion(old, body.expectedUpdatedAt);
+    if (kind === "locations" && !body.active) {
+      const [assigned] = await repo.select(
+        "SELECT TOP(1) s.ServiceId FROM dbo.Services s WHERE s.VendorId=:id AND s.IsActive=1 AND EXISTS(SELECT 1 FROM OPENJSON(s.DetailsJson,'$.location.vendorLocationIds') WHERE LOWER(value)=LOWER(CONVERT(varchar(36),:recordId)))",
+        { id, recordId },
+        tx,
+      );
+      if (assigned)
+        fail(
+          "Reassign active services before deactivating their business location.",
+          409,
+        );
+    }
+
     if (kind === "services" && body.active && old.ApprovalStatus !== "Approved")
       fail("Service approval is required to activate.", 409);
     if (kind === "packages") {
@@ -569,6 +583,7 @@ export async function setActive(kind, recordId, input, ctx) {
       recordId,
       {
         IsActive: body.active ? 1 : 0,
+        ...(kind === "locations" && !body.active ? { IsPrimary: 0 } : {}),
         ...(!r.noDate ? { UpdatedAt: new Date() } : {}),
       },
       tx,
@@ -599,6 +614,12 @@ export async function saveSimple(kind, recordId, input, ctx) {
         : promotionInput
   ).parse(input);
   return repo.transaction(async (tx) => {
+    if (kind === "locations")
+      await repo.select(
+        "SELECT VendorId FROM dbo.Vendors WITH(UPDLOCK,HOLDLOCK) WHERE VendorId=:id",
+        { id },
+        tx,
+      );
     const old = recordId ? await owned(kind, recordId, id, tx) : null;
     if (old) assertVersion(old, body.expectedUpdatedAt);
     if (body.serviceId) {
@@ -626,6 +647,13 @@ export async function saveSimple(kind, recordId, input, ctx) {
     const r = targets[kind];
     let values;
     if (kind === "locations") {
+      await repo.select(
+        "SELECT VendorId FROM dbo.Vendors WITH(UPDLOCK,HOLDLOCK) WHERE VendorId=:id",
+        { id },
+        tx,
+      );
+      if (body.primary && !body.active)
+        fail("The primary business location must be active.", 409);
       if (body.primary)
         await repo.select(
           "UPDATE dbo.VendorLocations SET IsPrimary=0,UpdatedAt=SYSUTCDATETIME() WHERE VendorId=:id",
@@ -634,6 +662,12 @@ export async function saveSimple(kind, recordId, input, ctx) {
         );
       values = {
         VendorId: id,
+        LocationName: body.name,
+        LocationType: body.type,
+        District: body.district,
+        ContactNumber: body.contactNumber,
+        Latitude: body.latitude,
+        Longitude: body.longitude,
         AddressLine1: body.address,
         AddressLine2: body.line2,
         City: body.city,
@@ -704,6 +738,12 @@ export async function simpleDetails(kind, recordId, ctx) {
   const r = await owned(kind, recordId, id, undefined, false);
   if (kind === "locations")
     return {
+      name: r.LocationName || "",
+      type: r.LocationType || "Business Location",
+      district: r.District || "",
+      contactNumber: r.ContactNumber || "",
+      latitude: r.Latitude == null ? null : Number(r.Latitude),
+      longitude: r.Longitude == null ? null : Number(r.Longitude),
       address: r.AddressLine1,
       line2: r.AddressLine2 || "",
       city: r.City,

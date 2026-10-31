@@ -1,3 +1,5 @@
+import { up as bookingLocationsUp } from "../migrations/022-booking-location-changes.js";
+import { up as locationsUp } from "../migrations/021-wishlist-locations.js";
 import { up as quotationLifecycleUp } from "../migrations/017-quotation-lifecycle.js";
 // Real MSSQL + REST verification. All fixture records and changes are rolled back.
 import assert from "node:assert/strict";
@@ -52,6 +54,8 @@ try {
       await customerWebsiteUp(sequelize.getQueryInterface(), tx);
       await quotationLifecycleUp(sequelize.getQueryInterface(), tx);
       await customerWebsiteUp(sequelize.getQueryInterface(), tx);
+      await locationsUp(sequelize.getQueryInterface(), tx);
+      await bookingLocationsUp(sequelize.getQueryInterface(), tx);
       const owner = randomUUID(),
         customer = randomUUID(),
         other = randomUUID(),
@@ -182,6 +186,31 @@ try {
         groomName: "Fixture groom",
       });
       await api(`/events/${event.id}`, "GET", null, "other", 404);
+      const venue = {
+        line1: "Fixture venue road",
+        city: "Fixture City",
+        state: "Test State",
+        country: "India",
+        postalCode: "100001",
+        venue: "Fixture hall",
+        latitude: 19,
+        longitude: 73,
+        instructions: "Use the north entrance",
+      };
+      await api(`/events/${event.id}/location`, "PUT", venue, "other", 404);
+      await api(
+        `/events/${event.id}/location`,
+        "PUT",
+        { ...venue, latitude: 100 },
+        null,
+        400,
+      );
+      await api(`/events/${event.id}/location`, "PUT", venue);
+      assert.equal(
+        (await api(`/events/${event.id}/location`)).venue,
+        "Fixture hall",
+      );
+
       const exportDenied = await originalFetch(
         `${base}/api/customer/events/${event.id}/guests/export`,
         { headers: { "X-Test-Role": "other" } },
@@ -289,6 +318,12 @@ try {
         await api("/wishlist", "POST", { type, id });
       }
       assert.equal((await api("/wishlist")).length, 3);
+      assert.deepEqual(await api("/wishlist/counts"), {
+        vendors: 1,
+        services: 1,
+        packages: 1,
+        total: 3,
+      });
       assert.equal((await api("/wishlist", "GET", null, "other")).length, 0);
       const wish = (await api("/wishlist"))[0];
       await api(`/wishlist/${wish.id}`, "DELETE", {});
@@ -411,16 +446,83 @@ try {
         null,
         400,
       );
+      await api(`/events/${another.id}/location`, "PUT", venue);
       const direct = await api("/bookings", "POST", {
         eventId: another.id,
         serviceId: service,
         quantity: 2,
       });
+      await api(
+        `/events/${another.id}/location`,
+        "PUT",
+        { ...venue, line1: "A changed venue road" },
+        null,
+        409,
+      );
+      const directSnapshot = JSON.parse(
+        (await api(`/bookings/${direct.id}`)).booking.EventSnapshotJson,
+      );
+      assert.equal(directSnapshot.location.line1, venue.line1);
+      const locationRows = await request("/api/vendor/locations");
+      assert.ok(locationRows.length);
+      await request(
+        `/api/vendor/locations/${locationRows[0].id}/primary`,
+        "PATCH",
+        {},
+      );
+      assert.equal(
+        (await request("/api/vendor/locations")).filter((l) => l.primary)
+          .length,
+        1,
+      );
       assert.equal(
         Number((await api(`/bookings/${direct.id}`)).booking.TotalAmount),
         10000,
       );
       await api(`/bookings/${direct.id}/payment-order`, "POST", {}, null, 503);
+      await request(`/api/vendor/bookings/${direct.id}/decision`, "POST", {
+        action: "Accept",
+      });
+      const movedVenue = { ...venue, line1: "New agreed venue road" };
+      const change = await api(
+        `/bookings/${direct.id}/change-requests`,
+        "POST",
+        {
+          kind: "Reschedule",
+          date: new Date(new Date(future).getTime() + 86400000)
+            .toISOString()
+            .slice(0, 10),
+          reason: "Move venue with vendor approval",
+          location: movedVenue,
+        },
+      );
+      assert.equal(
+        JSON.parse(
+          (await api(`/bookings/${direct.id}`)).booking.EventSnapshotJson,
+        ).location.line1,
+        venue.line1,
+      );
+      await request(
+        `/api/vendor/bookings/${direct.id}/change-requests/${change.id}/decision`,
+        "POST",
+        { action: "Approve", reason: "New venue approved" },
+      );
+      const amended = await api(`/bookings/${direct.id}`);
+      assert.equal(
+        JSON.parse(amended.booking.EventSnapshotJson).location.line1,
+        movedVenue.line1,
+      );
+      assert.equal(
+        amended.requests.find(
+          (r) => r.id.toLowerCase() === change.id.toLowerCase(),
+        ).originalLocation.line1,
+        venue.line1,
+      );
+      assert.equal(
+        (await api(`/events/${another.id}/location`)).line1,
+        venue.line1,
+      );
+
       const booking = await api(`/quotations/${quote.id}/decision`, "POST", {
         action: "Accept",
         message: "Looks good",
@@ -487,6 +589,37 @@ try {
       });
       const addresses = await api("/records/addresses");
       assert.equal(addresses.rows.length, 1);
+      await api(
+        `/addresses/${addresses.rows[0].id}/default`,
+        "PATCH",
+        {},
+        "other",
+        404,
+      );
+      await api("/addresses", "POST", {
+        type: "Work",
+        line1: "Second fixture address",
+        city: "Fixture City",
+        state: "Test State",
+        postalCode: "100002",
+        isDefault: true,
+        fullName: "Fixture contact",
+        phone: "+919999999999",
+      });
+      const updatedAddresses = await api("/addresses");
+      assert.equal(updatedAddresses.rows.filter((a) => a.isDefault).length, 1);
+      await api(`/addresses/${addresses.rows[0].id}/default`, "PATCH", {});
+      assert.equal(
+        (await api("/addresses")).rows.find(
+          (a) => a.id === addresses.rows[0].id,
+        ).isDefault,
+        true,
+      );
+      const second = updatedAddresses.rows.find(
+        (a) => a.id !== addresses.rows[0].id,
+      );
+      await api(`/addresses/${second.id}`, "DELETE", {});
+
       await api(`/addresses/${addresses.rows[0].id}`, "DELETE", {});
       const profile = await api("/profile");
       await api("/profile", "PUT", {
@@ -524,15 +657,18 @@ try {
           });
         return originalFetch(url, options);
       };
-      const order = await api(
-        `/bookings/${booking.id}/payment-order`,
-        "POST",
-        {idempotencyKey:randomUUID(),termsAccepted:true},
-      );
+      const order = await api(`/bookings/${booking.id}/payment-order`, "POST", {
+        idempotencyKey: randomUUID(),
+        termsAccepted: true,
+      });
       assert.equal(order.amount, 450000);
       assert.equal(
-        (await api(`/bookings/${booking.id}/payment-order`, "POST", {idempotencyKey:randomUUID(),termsAccepted:true}))
-          .orderId,
+        (
+          await api(`/bookings/${booking.id}/payment-order`, "POST", {
+            idempotencyKey: randomUUID(),
+            termsAccepted: true,
+          })
+        ).orderId,
         order.orderId,
       );
       await api(

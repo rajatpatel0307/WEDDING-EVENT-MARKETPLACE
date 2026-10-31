@@ -1,3 +1,4 @@
+import { createNotification } from '../notifications/notification-center.service.js';
 import { notifyAdmins } from "../notifications/admin-events.js";
 import { z } from "zod";
 import * as repo from "./admin.repository.js";
@@ -89,18 +90,8 @@ export async function milestone(
     { id: row.BookingId, key },
     tx,
   );
-  await repo.select(
-    "INSERT INTO dbo.Notifications(UserId,NotificationType,Title,Message,ReferenceType,ReferenceId) SELECT target.UserId,'BookingUpdate',:title,:message,'Booking',:id FROM (SELECT :customer AS UserId UNION SELECT UserId FROM dbo.Vendors WHERE VendorId=:vendor AND :customerOnly = 0) target",
-    {
-      customer: row.CustomerId,
-      vendor: row.VendorId,
-      customerOnly: recipient === "customer" ? 1 : 0,
-      title,
-      message: message.slice(0, 2000),
-      id: row.BookingId,
-    },
-    tx,
-  );
+  const targets = [{UserId:row.CustomerId}, ...(recipient==='customer'?[]:await repo.select('SELECT UserId FROM dbo.Vendors WHERE VendorId=:id',{id:row.VendorId},tx))];
+  for(const target of targets) await createNotification({userId:target.UserId,title,message,referenceType:'Booking',referenceId:row.BookingId,eventKey:'booking:'+row.BookingId+':'+key,essential:!/reminder/i.test(title)},tx);
 }
 export async function history(
   row,

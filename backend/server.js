@@ -60,7 +60,9 @@ try {
     );
   const [paymentMigration] = await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='020-financial-controls'");
   if(!paymentMigration.length) throw new Error('Payment integrity migration is missing. Run npm run db:migrate before starting the API.');
-  const { httpServer, apollo } = await createApp();
+  const [communicationMigration] = await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='023-communication'");
+  if (!communicationMigration.length) throw new Error('Communication migration missing. Run npm run db:migrate.');
+  const { httpServer, apollo, io } = await createApp();
   httpServer.listen(Number(process.env.PORT || 5000), () =>
     console.log("Wedding marketplace API started."),
   );
@@ -70,6 +72,7 @@ try {
       : startBookingJobs();
   const stop = async () => {
     await stopJobs();
+    await new Promise(resolve => io.close(resolve));
     await apollo.stop();
     await sequelize.close();
   };

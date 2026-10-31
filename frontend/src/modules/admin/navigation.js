@@ -53,10 +53,7 @@ const navigationGroups = [
     label: "BOOKINGS",
     items: [
       ["bookings", "All Bookings", CalendarCheck],
-      ...[
-
-      ]
-      .map((s) => [
+      ...[].map((s) => [
         `bookings?status=${s}`,
         s === "InProgress" ? "In Progress" : s,
         CalendarCheck,
@@ -82,7 +79,7 @@ const navigationGroups = [
     items: [
       ["reviews", "Reviews", Star],
       ["wishlists", "Wishlists", Heart],
-      ["messages", "Messages", MessagesSquare],
+      ["communication-overview", "Communication Overview", MessagesSquare],
       ["notifications", "Notifications", Bell],
       ["coupons", "Coupons", TicketPercent],
       ["offers", "Offers", BadgePercent],
@@ -92,6 +89,10 @@ const navigationGroups = [
     label: "SYSTEM",
     items: [
       ["events", "Events", CalendarDays],
+      ["customer-addresses", "Customer Addresses", CalendarDays],
+      ["vendor-locations", "Vendor Locations", CalendarDays],
+      ["service-locations", "Service Coverage", CalendarDays],
+      ["event-locations", "Event Locations", CalendarDays],
       ["guests", "Event Guests", ContactRound],
       ["media", "Media", Image],
       ["audit-logs", "Audit Logs", ScrollText],

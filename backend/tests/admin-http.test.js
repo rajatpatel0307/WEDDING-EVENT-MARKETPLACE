@@ -62,7 +62,7 @@ test("customer profile routes enforce admin access and validate IDs before query
   ]) {
     assert.equal((await request(null, path)).status, 401);
     assert.equal((await request(user("CUSTOMER"), path)).status, 403);
-    assert.equal((await request(user("ADMIN"), path)).status, 400);
+    assert.equal((await request(user("ADMIN"), path)).status, path.endsWith('/messages')?403:400);
   }
   const response = await request(
     user("ADMIN"),

@@ -93,7 +93,6 @@ test("every vendor collection binds its owner and vendor IDs with bounded pagina
     "payouts",
     "reviews",
     "offers",
-    "messages",
     "audit",
   ]) {
     const result = await vendorRecords(
@@ -111,6 +110,7 @@ test("every vendor collection binds its owner and vendor IDs with bounded pagina
     assert.equal(options.replacements.offset, 20);
     assert.equal(options.replacements.size, 20);
   }
+  await assert.rejects(()=>vendorRecords(id,'messages',{},ctx),/restricted to participants/);
 });
 test("deactivation preserves verification, revokes sessions and atomically audits and notifies", async (t) => {
   const tx = {};

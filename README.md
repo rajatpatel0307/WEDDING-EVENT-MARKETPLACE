@@ -27,3 +27,5 @@ The role-based authentication implementation, environment setup, database mappin
 Run `npm test` in each project and `npm run build` in `frontend`. Configure MSSQL, SMTP and signing secrets before running the backend. Do not apply database migrations until the existing database has been inspected and backed up.
 
 Quotation lifecycle, API map, migration rollout and verification: [backend/docs/quotation-system.md](backend/docs/quotation-system.md).
+
+Wishlist, addresses, business locations, service coverage and approved booking venue changes: [implementation and verification report](backend/docs/wishlist-and-locations.md).

@@ -35,7 +35,7 @@ export async function customerRequest(path, options = {}, retry = true) {
   }
   if (options.download) return response.blob();
   const body = await response.json();
-  return body.data ?? body;
+  return Object.hasOwn(body, "data") ? body.data : body;
 }
 export const save = (path, method, body) =>
   customerRequest(path, { method, body: JSON.stringify(body) });

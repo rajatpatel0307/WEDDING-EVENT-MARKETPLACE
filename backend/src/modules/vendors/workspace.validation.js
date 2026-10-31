@@ -1,3 +1,4 @@
+import { coordinate } from "../addresses/location.validation.js";
 import { z } from "zod";
 import { serviceTemplates } from "./service-templates.js";
 export const amount = z
@@ -172,6 +173,26 @@ export const packageInput = z
   );
 export const locationInput = z
   .object({
+    name: z.string().trim().max(200).default(""),
+    type: z
+      .enum([
+        "Main Office",
+        "Branch Office",
+        "Store",
+        "Warehouse",
+        "Studio",
+        "Workshop",
+        "Business Location",
+      ])
+      .default("Business Location"),
+    district: z.string().trim().max(100).default(""),
+    contactNumber: z
+      .string()
+      .trim()
+      .regex(/^(?:[+\d][\d ()-]{6,24})?$/)
+      .default(""),
+    latitude: coordinate(90),
+    longitude: coordinate(180),
     address: z.string().trim().min(2).max(300),
     line2: z.string().trim().max(300).default(""),
     city: z.string().trim().min(1).max(100),
@@ -182,7 +203,17 @@ export const locationInput = z
     active: z.boolean(),
     expectedUpdatedAt: version,
   })
-  .strict();
+  .strict()
+  .refine((v) => (v.latitude == null) === (v.longitude == null), {
+    message: "Supply both coordinates or leave both blank.",
+  })
+  .refine(
+    (v) =>
+      !v.postalCode ||
+      v.country.toLowerCase() !== "india" ||
+      /^[1-9]\d{5}$/.test(v.postalCode),
+    { message: "Enter a valid Indian postal code." },
+  );
 export const promotionInput = z
   .object({
     name: z.string().trim().min(2).max(200),

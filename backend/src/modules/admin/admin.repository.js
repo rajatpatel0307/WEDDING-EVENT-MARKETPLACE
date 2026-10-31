@@ -1,4 +1,5 @@
 import { notifyAdmins } from "../notifications/admin-events.js";
+import { publishInsertedNotifications } from '../notifications/notification-broadcast.js';
 import { QueryTypes } from "sequelize";
 import { sequelize } from "../../config/database.js";
 import { getResource } from "./admin.resources.js";
@@ -12,12 +13,18 @@ const sqlValues = (values) =>
         : value,
     ]),
   );
-export const select = (sql, replacements = {}, transaction) =>
-  sequelize.query(sql, {
+export const select = async (sql, replacements = {}, transaction) => {
+  const notificationInsert=/^(INSERT INTO dbo.Notifications\([^)]*\))\s+(VALUES|SELECT)/i;
+  const notifying=notificationInsert.test(sql);
+  if(notifying)sql=sql.replace(notificationInsert,'$1 OUTPUT inserted.UserId AS notificationUserId $2');
+  const rows=await sequelize.query(sql, {
     replacements: sqlValues(replacements),
     type: QueryTypes.SELECT,
     transaction,
   });
+  if(notifying)publishInsertedNotifications(rows,transaction);
+  return rows;
+};
 export const transaction = (fn) => sequelize.transaction(fn);
 export async function list(name, query) {
   const r = getResource(name),
@@ -156,8 +163,8 @@ export async function notifyVendor(userId, vendorId, status, reason, tx) {
   const label =
     status === "UnderReview" ? "under review" : status.toLowerCase();
   const message = reason || `Your application has been ${label}.`;
-  await sequelize.query(
-    "INSERT INTO dbo.Notifications(UserId,NotificationType,Title,Message,ReferenceType,ReferenceId) VALUES(:user,'VendorVerification',:title,:message,'Vendor',:id)",
+  const [rows]=await sequelize.query(
+    "INSERT INTO dbo.Notifications(UserId,NotificationType,Title,Message,ReferenceType,ReferenceId) OUTPUT inserted.UserId AS notificationUserId VALUES(:user,'VendorVerification',:title,:message,'Vendor',:id)",
     {
       replacements: {
         user: userId,
@@ -169,4 +176,5 @@ export async function notifyVendor(userId, vendorId, status, reason, tx) {
       transaction: tx,
     },
   );
+  publishInsertedNotifications(rows,tx);
 }

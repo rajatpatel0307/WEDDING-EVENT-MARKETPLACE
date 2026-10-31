@@ -1,7 +1,11 @@
+import { eventLocationInput } from "../addresses/location.validation.js";
 import { z } from "zod";
 export const bookingInput = z
   .object({
     eventId: z.guid(),
+    billingAddressId: z.guid().optional(),
+    locationMode: z.enum(["Vendor location", "Customer location"]).optional(),
+    vendorLocationId: z.guid().optional(),
     serviceId: z.guid(),
     packageId: z.guid().optional(),
     quantity: z.coerce.number().int().min(1).max(100000).default(1),
@@ -40,6 +44,7 @@ const clock = z
 export const requestInput = z
   .object({
     kind: z.enum(["Cancellation", "Reschedule"]),
+    location: eventLocationInput.optional(),
     reason: z.string().trim().min(3).max(1000),
     date: z.iso.date().optional(),
     start: clock,
@@ -58,7 +63,7 @@ export const requestInput = z
         code: "custom",
         message: "Provide a valid start and end time on the same day.",
       });
-    if (b.kind === "Cancellation" && (b.date || b.start || b.end))
+    if (b.kind === "Cancellation" && (b.date || b.start || b.end || b.location))
       ctx.addIssue({
         code: "custom",
         message: "Cancellation cannot change event dates.",

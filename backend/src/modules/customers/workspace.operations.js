@@ -1,3 +1,4 @@
+import { validateCoverage } from "../addresses/locations.service.js";
 import {
   capturePolicy,
   milestone as bookingMilestone,
@@ -69,6 +70,37 @@ export async function createBooking(
     items.map((i) => i.ServiceId),
     tx,
   );
+  if (!event.LocationJson)
+    fail("Add a full event location before booking.", 409);
+  const destination = JSON.parse(event.LocationJson);
+  for (const serviceId of new Set(items.map((i) => i.ServiceId))) {
+    const [row] = await repo.select(
+      "SELECT DetailsJson FROM dbo.Services WHERE ServiceId=:serviceId",
+      { serviceId },
+      tx,
+    );
+    const coverage = JSON.parse(row?.DetailsJson || "{}").location;
+    if (coverage?.active === false)
+      fail("This service location is inactive.", 409);
+    validateCoverage(
+      coverage
+        ? {
+            ...coverage,
+            mode: snapshot?.location?.service?.mode || coverage.mode,
+          }
+        : null,
+      destination,
+      items
+        .filter((i) => i.ServiceId === serviceId)
+        .reduce(
+          (n, i) =>
+            n +
+            Number(i.UnitPrice) * Number(i.Quantity) -
+            Number(i.DiscountAmount || 0),
+          0,
+        ),
+    );
+  }
   const bookingId = randomUUID(),
     number = `BK-${Date.now().toString(36).toUpperCase()}-${bookingId.slice(0, 6).toUpperCase()}`;
   const total = items.reduce(
@@ -113,6 +145,9 @@ export async function createBooking(
         state: event.State,
         guests: event.GuestCount,
         requirements: snapshot?.requirements || event.Description || "",
+        location: event.LocationJson ? JSON.parse(event.LocationJson) : null,
+        serviceLocation: snapshot?.location?.service || null,
+        billingAddress: snapshot?.billingAddress || null,
       }),
       StartTime: event.StartTime,
       EndTime: event.EndTime,
@@ -315,7 +350,83 @@ async function prepareBooking(input, ctx, tx) {
       UnitPrice: Number(item.UnitPrice),
     });
   }
-  const travel = Number(document?.policies?.travelCharges || 0);
+  const eventLocation = event.LocationJson
+    ? JSON.parse(event.LocationJson)
+    : null;
+  const configuredLocation = document?.location || null;
+  const selectedMode =
+    b.locationMode ||
+    (configuredLocation?.mode === "Vendor location"
+      ? "Vendor location"
+      : "Customer location");
+  if (
+    configuredLocation?.mode &&
+    !["Both", "Service area", selectedMode].includes(configuredLocation.mode)
+  )
+    fail("This delivery mode is not supported by the service.", 409);
+  if (
+    configuredLocation?.mode === "Service area" &&
+    selectedMode === "Vendor location"
+  )
+    fail("This service is delivered at your location.", 409);
+  let selectedBusinessLocation = null;
+  if (b.vendorLocationId) {
+    const [row] = await repo.select(
+      "SELECT VendorLocationId,AddressLine1,AddressLine2,City,State,Country,PostalCode,Latitude,Longitude FROM dbo.VendorLocations WHERE VendorLocationId=:location AND VendorId=:vendor AND IsActive=1",
+      { location: b.vendorLocationId, vendor: s.VendorId },
+      tx,
+    );
+    if (
+      !row ||
+      !configuredLocation?.vendorLocationIds?.some(
+        (id) => id.toLowerCase() === b.vendorLocationId.toLowerCase(),
+      )
+    )
+      fail("Choose an assigned active business location.", 409);
+    selectedBusinessLocation = row;
+  }
+  if (
+    selectedMode === "Vendor location" &&
+    configuredLocation?.vendorLocationIds?.length &&
+    !selectedBusinessLocation
+  )
+    fail("Choose a business location for this service.", 409);
+  const serviceLocation = configuredLocation
+    ? { ...configuredLocation, mode: selectedMode, selectedBusinessLocation }
+    : null;
+  if (serviceLocation?.active === false)
+    fail("This service location is inactive.", 409);
+  if (!eventLocation)
+    fail("Add a full event location before requesting a booking.", 409);
+  const delivery = validateCoverage(
+    serviceLocation,
+    eventLocation,
+    items.reduce(
+      (n, i) =>
+        n +
+        Number(i.UnitPrice) * Number(i.Quantity) -
+        Number(i.DiscountAmount || 0),
+      0,
+    ),
+  );
+  if (serviceLocation?.vendorLocationIds?.length) {
+    const valid = await repo.select(
+      "SELECT VendorLocationId FROM dbo.VendorLocations WHERE VendorId=:vendor AND VendorLocationId IN(:ids) AND IsActive=1",
+      { vendor: s.VendorId, ids: serviceLocation.vendorLocationIds },
+      tx,
+    );
+    if (valid.length !== serviceLocation.vendorLocationIds.length)
+      fail("A configured service location is unavailable.", 409);
+  }
+  const travel =
+    selectedMode === "Vendor location"
+      ? 0
+      : Number(
+          serviceLocation?.travelCharge ??
+            document?.policies?.travelCharges ??
+            delivery.travel ??
+            0,
+        );
   if (travel > 0 && document?.location?.mode !== "Vendor location")
     items.push({
       ServiceId: s.ServiceId,
@@ -343,8 +454,24 @@ async function prepareBooking(input, ctx, tx) {
   const percentage = document?.policies?.advanceRequired
     ? Number(document.policies.advancePercentage || 0)
     : 0;
+  const billingAddress = b.billingAddressId
+    ? await owned("addresses", b.billingAddressId, id, tx)
+    : null;
   const snapshot = {
+    billingAddress: billingAddress
+      ? {
+          fullName: billingAddress.FullName,
+          phone: billingAddress.Phone,
+          line1: billingAddress.AddressLine1,
+          line2: billingAddress.AddressLine2,
+          city: billingAddress.City,
+          state: billingAddress.State,
+          country: billingAddress.Country,
+          postalCode: billingAddress.PostalCode,
+        }
+      : null,
     source: "Service",
+    location: { event: eventLocation, service: serviceLocation },
     serviceId: s.ServiceId,
     packageId: pack?.PackageId || null,
     pricing: flexible ? document.pricing : null,
@@ -374,6 +501,11 @@ export async function previewBooking(input, ctx) {
       service: p.s.ServiceName,
       vendor: p.s.BusinessName,
       event: {
+        location: p.event.LocationJson
+          ? JSON.parse(p.event.LocationJson)
+          : null,
+        serviceLocation: p.snapshot.location?.service || null,
+        billingAddress: p.snapshot.billingAddress,
         name: p.event.EventName,
         date: dayOf(p.event.EventDate),
         city: p.event.City,
@@ -430,9 +562,11 @@ export async function book(input, ctx) {
     return result;
   });
 }
-export const requestQuote=(input,ctx)=>quotations.request(input,ctx);
-export const quoteDetails=(id,ctx)=>quotations.details(id,ctx,'Customer');
-export const decideQuote=(id,input,ctx)=>quotations.decide(id,input,ctx);
+export const requestQuote = (input, ctx) => quotations.request(input, ctx);
+export const quoteDetails = (id, ctx) =>
+  quotations.details(id, ctx, "Customer");
+export const decideQuote = (id, input, ctx) =>
+  quotations.decide(id, input, ctx);
 export async function bookingDetails(recordId, ctx) {
   scope(ctx);
   return lifecycleDetails(recordId, ctx, "Customer");

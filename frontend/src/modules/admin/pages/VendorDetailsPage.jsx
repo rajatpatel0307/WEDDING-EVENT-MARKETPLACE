@@ -57,7 +57,6 @@ const tabs = [
   ["offers", "Offers"],
   ["coupons", "Coupons"],
   ["history", "Approval History"],
-  ["messages", "Messages"],
   ["audit", "Audit Logs"],
 ];
 const columns = {

@@ -1,3 +1,4 @@
+import { createNotification } from '../notifications/notification-center.service.js';
 import { z } from "zod";
 import { requireRole } from "../../middleware/auth.middleware.js";
 import * as repo from "../admin/admin.repository.js";
@@ -32,19 +33,7 @@ export async function owned(kind, recordId, id, tx, lock = true) {
   return row;
 }
 export async function notify(user, title, message, type, id, tx) {
-  await repo.insert(
-    { table: "Notifications", id: "NotificationId" },
-    {
-      UserId: user,
-      NotificationType: "CustomerUpdate",
-      Title: title,
-      Message: message.slice(0, 2000),
-      ReferenceType: type,
-      ReferenceId: id,
-      IsRead: 0,
-    },
-    tx,
-  );
+  return createNotification({userId:user,title,message,referenceType:type,referenceId:id,essential:!/reminder|about to expire|expires soon/i.test(title)},tx);
 }
 export async function notifyBusiness(vendor, title, message, type, id, tx) {
   const [v] = await repo.select(

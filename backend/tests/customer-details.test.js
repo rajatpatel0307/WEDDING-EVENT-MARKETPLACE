@@ -87,7 +87,6 @@ test("each collection uses a bound customer predicate and bounded pagination", a
     "payments",
     "reviews",
     "wishlist",
-    "messages",
     "addresses",
     "audit",
   ]) {
@@ -106,6 +105,7 @@ test("each collection uses a bound customer predicate and bounded pagination", a
     assert.ok(!call.sql.includes(id));
   }
   assert.throws(() => customerPageQuery.parse({ pageSize: 10000 }));
+  await assert.rejects(()=>customerRecords(id,'messages',{},ctx),/restricted to participants/);
 });
 test("status changes reject stale state and protect admin accounts", async (t) => {
   t.mock.method(sequelize, "transaction", async (fn) => fn({}));

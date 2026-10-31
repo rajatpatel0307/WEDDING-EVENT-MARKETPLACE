@@ -1,3 +1,4 @@
+import { useWishlist } from "../customer/services/wishlist";
 import { useEffect, useState, useRef, useCallback } from "react";
 import {
   Link,
@@ -16,7 +17,6 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { save } from "../customer/services/workspace.api";
 import { useMarketplace, money } from "./api";
 import "./marketplace.css";
 export function ReadState({ state }) {
@@ -35,8 +35,9 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
   const { user, notify, reload } = useAuth(),
     navigate = useNavigate(),
     [busy, setBusy] = useState(false),
-    [saved, setSaved] = useState(false),
     [failed, setFailed] = useState(false);
+  const wishState = useWishlist(),
+    saved = !!wishState.find(item.type || "Service", item.id);
   const path =
     item.type === "Vendor"
       ? `/vendors/${item.vendorId || item.id}`
@@ -48,12 +49,8 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
     }
     setBusy(true);
     try {
-      await save("/wishlist", "POST", {
-        type: item.type || "Service",
-        id: item.id,
-      });
-      setSaved(true);
-      notify("Saved to your wishlist.");
+      const result = await wishState.toggle(item.type || "Service", item.id);
+      notify(result.message);
       await reload();
     } catch (e) {
       notify(e.message);
@@ -110,8 +107,8 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
           </Link>
           <button
             onClick={wish}
-            disabled={busy || saved}
-            aria-label={`Save ${item.name}`}
+            disabled={busy}
+            aria-label={`${saved ? "Remove" : "Save"} ${item.name}`}
           >
             <Heart size={16} fill={saved ? "currentColor" : "none"} />
             {saved ? "Saved" : "Save"}
@@ -274,6 +271,14 @@ export default function BrowsePage({ embedded = false }) {
           ),
         )}
       {select("city", "Location", catalog.data?.cities || [])}
+      <label>
+        Postal code
+        <input
+          value={params.get("postalCode") || ""}
+          maxLength={20}
+          onChange={(e) => filter("postalCode", e.target.value)}
+        />
+      </label>
       {select("rating", "Rating", [
         { id: 4, name: "4 stars and above" },
         { id: 3, name: "3 stars and above" },

@@ -181,6 +181,39 @@ function CheckoutContent({ transaction }) {
         }
         description={b.BookingNumber}
       />
+      {r.data.checkout?.event?.location && (
+        <section className="cw-panel cw-prose">
+          <h2>Agreed event location</h2>
+          <p>
+            {[
+              r.data.checkout.event.location.venue,
+              r.data.checkout.event.location.line1,
+              r.data.checkout.event.location.city,
+              r.data.checkout.event.location.state,
+              r.data.checkout.event.location.postalCode,
+              r.data.checkout.event.location.country,
+            ]
+              .filter(Boolean)
+              .join(", ")}
+          </p>
+          <p>{r.data.checkout.event.location.instructions}</p>
+          <p>This is the location agreed when this booking was created.</p>
+          {r.data.checkout.event.billingAddress && (
+            <>
+              <h3>Billing address</h3>
+              <p>
+                {[
+                  r.data.checkout.event.billingAddress.line1,
+                  r.data.checkout.event.billingAddress.city,
+                  r.data.checkout.event.billingAddress.postalCode,
+                ]
+                  .filter(Boolean)
+                  .join(", ")}
+              </p>
+            </>
+          )}
+        </section>
+      )}
       <section className="cw-panel cw-prose">
         <div className="cw-detail-actions">
           {paid ? (

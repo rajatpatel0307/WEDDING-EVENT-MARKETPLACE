@@ -24,10 +24,7 @@ export function validateService(data, { submit = false, imageCount = 0 } = {}) {
     (!Number.isInteger(data.subcategoryId) || data.subcategoryId < 1)
   )
     return { step: 0, message: "Choose a valid subcategory." };
-  if (
-    data.shortDescription.length > 500 ||
-    data.description.length > 10000
-  )
+  if (data.shortDescription.length > 500 || data.description.length > 10000)
     return { step: 0, message: "Descriptions exceed their allowed length." };
   if (
     !["On site", "Rental", "Sale", "Digital", "Hybrid"].includes(
@@ -52,25 +49,54 @@ export function validateService(data, { submit = false, imageCount = 0 } = {}) {
     return { step: 7, message: "SEO fields exceed their allowed length." };
 
   const pricing = data.pricing;
-  if (pricing.type != null && !["Fixed", "PerPerson", "PerHour", "PerDay", "PerItem", "CustomQuote"].includes(pricing.type))
+  if (
+    pricing.type != null &&
+    ![
+      "Fixed",
+      "PerPerson",
+      "PerHour",
+      "PerDay",
+      "PerItem",
+      "CustomQuote",
+    ].includes(pricing.type)
+  )
     return { step: 2, message: "Choose a valid pricing type." };
   for (const key of ["minimumPrice", "maximumPrice"])
     if (pricing[key] != null && !amountIsValid(pricing[key]))
-      return { step: 2, message: "Price limits must be valid non-negative amounts." };
-  if (pricing.minimumPrice != null && pricing.maximumPrice != null && pricing.maximumPrice < pricing.minimumPrice)
-    return { step: 2, message: "Maximum price must be at least minimum price." };
+      return {
+        step: 2,
+        message: "Price limits must be valid non-negative amounts.",
+      };
+  if (
+    pricing.minimumPrice != null &&
+    pricing.maximumPrice != null &&
+    pricing.maximumPrice < pricing.minimumPrice
+  )
+    return {
+      step: 2,
+      message: "Maximum price must be at least minimum price.",
+    };
   for (const key of ["basePrice", "unitPrice", "additionalCharges"])
     if (!amountIsValid(pricing[key]))
-      return { step: 2, message: "Enter valid prices with no more than 2 decimal places." };
+      return {
+        step: 2,
+        message: "Enter valid prices with no more than 2 decimal places.",
+      };
   for (const key of ["specialPrice", "weekendPrice", "seasonalPrice"])
     if (pricing[key] !== null && !amountIsValid(pricing[key]))
-      return { step: 2, message: "Optional prices must be valid non-negative amounts." };
+      return {
+        step: 2,
+        message: "Optional prices must be valid non-negative amounts.",
+      };
   if (
     !numberIsValid(pricing.minimumQuantity) ||
     !numberIsValid(pricing.maximumQuantity) ||
     pricing.maximumQuantity < pricing.minimumQuantity
   )
-    return { step: 2, message: "Maximum quantity must be at least the minimum." };
+    return {
+      step: 2,
+      message: "Maximum quantity must be at least the minimum.",
+    };
   if (!amountIsValid(pricing.discount, 100))
     return { step: 2, message: "Discount must be between 0 and 100." };
   if (!amountIsValid(pricing.taxRate ?? 0, 100))
@@ -89,7 +115,8 @@ export function validateService(data, { submit = false, imageCount = 0 } = {}) {
   if (!seasonalEmpty && !seasonalComplete)
     return {
       step: 2,
-      message: "Complete the seasonal date range and price, or clear all three.",
+      message:
+        "Complete the seasonal date range and price, or clear all three.",
     };
   if (
     ![
@@ -116,13 +143,18 @@ export function validateService(data, { submit = false, imageCount = 0 } = {}) {
   if (
     !Array.isArray(availability.days) ||
     availability.days.length > 7 ||
-    availability.days.some((day) => !Number.isInteger(day) || day < 0 || day > 6) ||
+    availability.days.some(
+      (day) => !Number.isInteger(day) || day < 0 || day > 6,
+    ) ||
     !numberIsValid(availability.advanceDays, 730) ||
     !Number.isInteger(availability.advanceDays) ||
     !numberIsValid(availability.noticeHours, 8760) ||
     !Number.isInteger(availability.noticeHours)
   )
-    return { step: 6, message: "Enter valid booking notice and advance limits." };
+    return {
+      step: 6,
+      message: "Enter valid booking notice and advance limits.",
+    };
   const location = data.location;
   if (
     location.address.length > 300 ||
@@ -138,7 +170,9 @@ export function validateService(data, { submit = false, imageCount = 0 } = {}) {
       (!Number.isFinite(location.longitude) ||
         location.longitude < -180 ||
         location.longitude > 180)) ||
-    !["Vendor location", "Customer location", "Both"].includes(location.mode)
+    !["Vendor location", "Customer location", "Both", "Service area"].includes(
+      location.mode,
+    )
   )
     return { step: 5, message: "Check the location details and coordinates." };
   if (

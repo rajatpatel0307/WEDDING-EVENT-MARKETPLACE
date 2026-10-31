@@ -268,6 +268,7 @@ export async function vendorRecords(id, section, input, ctx) {
   return loadVendorRecords(id, section, input);
 }
 export async function loadVendorRecords(id, section, input) {
+  if (section === 'messages') throw Object.assign(new Error('Private communication is restricted to participants.'), {status:403});
   if (!Object.hasOwn(collections, section))
     error("Vendor section not found.", 404);
   const query = vendorPageQuery.parse(input);
