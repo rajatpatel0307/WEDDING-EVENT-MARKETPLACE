@@ -1,3 +1,4 @@
+import { ReviewForm as CompleteReviewForm } from '../../reviews/Reviews';
 import { LocationFields, MapLink } from "../components/LocationFields";
 import { useEffect, useState } from "react";
 import {
@@ -919,65 +920,9 @@ export function CustomerRecordDetails({ quote = false }) {
     </>
   );
 }
-function ReviewForm({ bookingId, close }) {
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
-    { notify } = useAuth();
-  return (
-    <Modal title="Share your experience" close={close} busy={busy}>
-      <form
-        className="cw-form min-w-0 [&_fieldset]:[border-top-width:0] [&_fieldset]:[border-top-style:none] [&_fieldset]:[border-top-color:currentColor] [&_fieldset]:[border-right-width:0] [&_fieldset]:[border-right-style:none] [&_fieldset]:[border-right-color:currentColor] [&_fieldset]:[border-bottom-width:0] [&_fieldset]:[border-bottom-style:none] [&_fieldset]:[border-bottom-color:currentColor] [&_fieldset]:[border-left-width:0] [&_fieldset]:[border-left-style:none] [&_fieldset]:[border-left-color:currentColor] [&_fieldset]:pt-[0] [&_fieldset]:pr-[0] [&_fieldset]:pb-[0] [&_fieldset]:pl-[0] [&_fieldset]:mt-[0] [&_fieldset]:mr-[0] [&_fieldset]:mb-[0] [&_fieldset]:ml-[0] [&_fieldset]:min-w-0 [&_>_.cw-panel_+_.cw-panel]:mt-[22px]"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setBusy(true);
-          const f = Object.fromEntries(new FormData(e.currentTarget));
-          try {
-            const r = await save("/reviews", "POST", {
-              bookingId,
-              ...f,
-              rating: Number(f.rating),
-            });
-            notify(r.message);
-            close();
-          } catch (e) {
-            setError(e.message);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        <Field label="Rating">
-          <select name="rating">
-            {[5, 4, 3, 2, 1].map((n) => (
-              <option key={n} value={n}>
-                {n} stars
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Title (optional)">
-          <input name="title" maxLength="200" />
-        </Field>
-        <Field label="Your review">
-          <textarea
-            name="text"
-            minLength="5"
-            maxLength="5000"
-            rows="5"
-            required
-          />
-        </Field>
-        {error && (
-          <p className="cw-form-error [background:#fff4ee] [border-top-width:1px] [border-top-style:solid] [border-top-color:#f0ddcf] [border-right-width:1px] [border-right-style:solid] [border-right-color:#f0ddcf] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#f0ddcf] [border-left-width:1px] [border-left-style:solid] [border-left-color:#f0ddcf] text-[#b6836e]! pt-[12px] pr-[15px] pb-[12px] pl-[15px] rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]" role="alert">
-            {error}
-          </p>
-        )}
-        <button className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" disabled={busy}>
-          {busy ? "Publishing…" : "Publish review"}
-        </button>
-      </form>
-    </Modal>
-  );
+function ReviewForm({bookingId,close}) {
+ const {notify}=useAuth();
+ return <div className="rr-module"><CompleteReviewForm bookingId={bookingId} close={close} done={message=>{notify(message);close();}} /></div>;
 }
 export function CustomerProfile({ settings = false }) {
   const { user, setUser, reload, notify } = useAuth(),

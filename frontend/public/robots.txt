@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /admin
+Disallow: /customer
+Disallow: /vendor/
+Disallow: /vendor$
+Disallow: /account
+Disallow: /auth
+Disallow: /api

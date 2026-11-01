@@ -1,0 +1,48 @@
+.mm-module {
+  min-width: 0;
+  color: #354b3b;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.mm-module .mm-dialog {
+  width: min(850px, calc(100% - 32px));
+  max-height: 90dvh;
+  overflow: auto;
+  border: 1px solid #dce5d7;
+  border-radius: 16px;
+  padding: 24px;
+  background: white;
+  color: #354b3b;
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  z-index: 2100;
+}
+.mm-module .mm-dialog::backdrop {
+  background: #14271cb3;
+}
+.mm-module :focus-visible {
+  outline: 2px solid #6f916b;
+  outline-offset: 3px;
+}
+.mm-module .mm-image {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  background: #f3f5ee;
+}
+.mm-module .mm-full {
+  width: 100%;
+  max-height: 65dvh;
+  object-fit: contain;
+  background: #f3f5ee;
+}
+@media (max-width: 600px) {
+  .mm-module .mm-dialog {
+    padding: 16px;
+  }
+  .mm-module .mm-image {
+    aspect-ratio: 1/1;
+  }
+}

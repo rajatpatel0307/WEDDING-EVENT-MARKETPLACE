@@ -47,6 +47,7 @@ const navigation = [
   ["reviews", "Reviews", Star],
   ["addresses", "Addresses", MapPin],
   ["settings", "Settings", Settings],
+  ["legal", "Legal & Privacy", FileText],
 ];
 
 // ============================================

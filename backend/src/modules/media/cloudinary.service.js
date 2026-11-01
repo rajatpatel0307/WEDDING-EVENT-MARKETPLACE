@@ -41,13 +41,17 @@ export function validateFile(base64, photo = false) {
     ? "png"
     : bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
       ? "jpg"
-      : bytes.subarray(0, 5).toString() === "%PDF-"
-        ? "pdf"
-        : null;
+      : photo &&
+          bytes.subarray(0, 4).toString() === "RIFF" &&
+          bytes.subarray(8, 12).toString() === "WEBP"
+        ? "webp"
+        : bytes.subarray(0, 5).toString() === "%PDF-"
+          ? "pdf"
+          : null;
   if (!extension || (photo && extension === "pdf"))
     fail(
       photo
-        ? "Choose a PNG or JPEG photo."
+        ? "Choose a PNG or JPEG photo (WebP is also supported)."
         : "Choose a PDF, PNG or JPEG document.",
     );
   return {
@@ -59,16 +63,30 @@ export function validateFile(base64, photo = false) {
         : `image/${extension === "jpg" ? "jpeg" : "png"}`,
   };
 }
-export async function uploadAsset(base64, photo = false) {
-  const file = validateFile(base64, photo);
+export async function uploadAsset(base64, photo = false, options = {}) {
+  const file = options.file || validateFile(base64, photo);
   const { cloud, apiKey, secret } = config();
   const resource = photo ? "image" : "raw";
   const params = {
-    public_id: `marrynest/${photo ? "profiles" : "documents"}/${randomUUID()}${photo ? "" : `.${file.extension}`}`,
+    public_id:
+      options.publicId ||
+      `marrynest/${photo ? "profiles" : "documents"}/${randomUUID()}${photo ? "" : `.${file.extension}`}`,
     timestamp: String(Math.floor(Date.now() / 1000)),
-    type: photo ? "upload" : "authenticated",
+    type: options.authenticated
+      ? "authenticated"
+      : photo
+        ? "upload"
+        : "authenticated",
     overwrite: "false",
   };
+  if (
+    options.publicId &&
+    !/^wedding-marketplace\/(vendors|services|packages|reviews|admin)\/[a-z-]+\/[a-f0-9-]{36}$/.test(
+      options.publicId,
+    )
+  )
+    fail("Invalid media storage name.");
+  if (options.eager) params.eager = options.eager;
   const body = new FormData();
   for (const [key, value] of Object.entries(params)) body.set(key, value);
   body.set(
@@ -100,6 +118,8 @@ export async function uploadAsset(base64, photo = false) {
   return {
     key: `cloudinary:${resource}:${params.type}:${result.public_id}`,
     url: result.secure_url,
+    publicId: result.public_id,
+    eager: result.eager || [],
   };
 }
 export async function downloadAsset(key) {

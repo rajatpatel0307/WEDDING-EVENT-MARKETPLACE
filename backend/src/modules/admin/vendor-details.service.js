@@ -1,3 +1,4 @@
+import { publicPredicate } from '../reviews/reviews.policy.js';
 import { z } from "zod";
 import { requireRole } from "../../middleware/auth.middleware.js";
 import { downloadDocument } from "../vendors/documents.service.js";
@@ -83,7 +84,7 @@ export async function loadVendorDetails(id) {
     (SELECT COUNT(*) FROM dbo.Booking WHERE VendorId=:id AND BookingStatus='Completed') AS completed,
     (SELECT COUNT(*) FROM dbo.Booking WHERE VendorId=:id AND BookingStatus='Cancelled') AS cancelled,
     (SELECT COUNT(*) FROM dbo.Reviews WHERE VendorId=:id) AS reviews,
-    (SELECT AVG(CAST(Rating AS decimal(6,2))) FROM dbo.Reviews WHERE VendorId=:id AND IsPublished=1) AS rating,
+    (SELECT AVG(CAST(r.Rating AS decimal(6,2))) FROM dbo.Reviews r WHERE r.VendorId=:id AND r.BookingItemId IS NULL AND ${publicPredicate()}) AS rating,
     (SELECT COUNT(*) FROM dbo.VendorDocuments WHERE VendorId=:id AND VerificationStatus='Pending') AS pendingDocuments,
     (SELECT COUNT(*) FROM dbo.VendorDocuments WHERE VendorId=:id AND VerificationStatus='Rejected') AS rejectedDocuments,
     (SELECT COUNT(*) FROM dbo.VendorDocuments WHERE VendorId=:id) AS documents,

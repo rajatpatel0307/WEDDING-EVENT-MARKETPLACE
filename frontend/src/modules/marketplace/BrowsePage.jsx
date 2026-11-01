@@ -1,3 +1,4 @@
+import { optimizedMediaUrl } from '../media/api';
 import { useWishlist } from "../customer/services/wishlist";
 import { useEffect, useState, useRef, useCallback } from "react";
 import {
@@ -63,7 +64,7 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
       <Link to={path} className="cm-photo" aria-label={`View ${item.name}`}>
         {item.image && !failed ? (
           <img
-            src={item.image}
+            src={optimizedMediaUrl(item.image,'card')}
             alt={item.name}
             loading="lazy"
             onError={() => setFailed(true)}

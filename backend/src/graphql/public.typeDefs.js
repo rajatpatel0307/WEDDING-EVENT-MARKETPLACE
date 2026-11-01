@@ -12,7 +12,7 @@ export const publicTypeDefs = `#graphql
   type TermsSection { id: ID!, title: String!, paragraphs: [String!]! }
   type PublicTerms { published: Boolean!, lastUpdated: String, sections: [TermsSection!]! }
   type PublicCompany { contactIsPlaceholder: Boolean!, name: String!, legalName: String, email: String, phone: String, address: String, supportHours: String, mapUrl: String, directionsUrl: String, terms: PublicTerms! }
-  input ContactMessageInput { firstName: String!, lastName: String!, email: String!, phone: String, subject: String!, category: String!, message: String!, consent: Boolean! }
+  input ContactMessageInput { firstName: String!, lastName: String!, email: String!, phone: String, subject: String!, category: String!, message: String!, consent: Boolean!, requestKey: ID }
   type ContactMessageResult { success: Boolean!, message: String!, reference: ID! }
   extend type Query {
     popularServices: [PublicService!]

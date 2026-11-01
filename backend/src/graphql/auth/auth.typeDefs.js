@@ -9,10 +9,10 @@ export const typeDefs = `#graphql
   type UploadedPhoto { uploadToken: String!, url: String! }
   input UploadPhotoInput { email: String, base64: String! }
   type DownloadedDocument { name: String!, mimeType: String!, base64: String! }
-  input CustomerInput { profilePhotoToken: String, firstName: String!, lastName: String!, email: String!, phone: String!, password: String!, confirmPassword: String!, terms: Boolean!, privacy: Boolean! }
+  input CustomerInput { profilePhotoToken: String, firstName: String!, lastName: String!, email: String!, phone: String!, password: String!, confirmPassword: String!, terms: Boolean!, privacy: Boolean!, termsVersionId: ID, privacyVersionId: ID }
   input LocationInput { address: String!, city: String!, state: String!, country: String!, postalCode: String!, latitude: Float, longitude: Float }
   input DocumentInput { type: String!, uploadToken: String! }
-  input VendorInput { profilePhotoToken: String, firstName: String!, lastName: String!, email: String!, phone: String!, password: String!, confirmPassword: String!, terms: Boolean!, privacy: Boolean!, businessName: String!, businessDescription: String!, businessEmail: String!, businessPhone: String!, categories: [String!]!, location: LocationInput!, documents: [DocumentInput!]! }
+  input VendorInput { profilePhotoToken: String, firstName: String!, lastName: String!, email: String!, phone: String!, password: String!, confirmPassword: String!, terms: Boolean!, privacy: Boolean!, termsVersionId: ID, privacyVersionId: ID, businessName: String!, businessDescription: String!, businessEmail: String!, businessPhone: String!, categories: [String!]!, location: LocationInput!, documents: [DocumentInput!]! }
   input LoginInput { identifier: String!, password: String! }
   input EmailOtpInput { email: String!, code: String! }
   input EmailInput { email: String! }

@@ -1,6 +1,6 @@
+import { publicPredicate } from '../reviews/reviews.policy.js';
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { sign, verify } from "../../config/jwt.js";
 import { uploadAsset } from "../media/cloudinary.service.js";
 import { downloadDocument } from "./documents.service.js";
 import {
@@ -158,7 +158,7 @@ export async function records(section, input, ctx) {
   if (section === "bookings") fields += ",t.EventId AS eventId";
   if (section === "services")
     fields +=
-      ",t.UpdatedAt AS updatedAt,(SELECT AVG(CAST(r.Rating AS decimal(6,2))) FROM dbo.Reviews r WHERE r.IsPublished=1 AND r.VendorId=:id AND EXISTS(SELECT 1 FROM dbo.BookingItems bi WHERE bi.BookingId=r.BookingId AND bi.ServiceId=t.ServiceId)) AS rating";
+      `,t.UpdatedAt AS updatedAt,(SELECT AVG(CAST(r.Rating AS decimal(6,2))) FROM dbo.Reviews r WHERE ${publicPredicate()} AND r.VendorId=:id AND r.ServiceId=t.ServiceId) AS rating`;
   if (
     section === "packages" ||
     section === "locations" ||
@@ -192,43 +192,8 @@ export async function business(ctx) {
   const { id } = scope(ctx);
   return loadVendorDetails(id);
 }
-export async function imageUpload(input, ctx) {
-  const { id } = scope(ctx);
-  const body = z
-    .object({
-      kind: z.enum(["service", "logo", "cover"]),
-      base64: z.string().max(7 * 1024 * 1024),
-    })
-    .strict()
-    .parse(input);
-  const asset = await uploadAsset(body.base64, true);
-  return {
-    url: asset.url,
-    token: sign(
-      {
-        purpose: "vendor-image",
-        vendorId: id,
-        kind: body.kind,
-        url: asset.url,
-      },
-      "24h",
-    ),
-  };
-}
-function imageUrl(token, id, kind) {
-  try {
-    const claims = verify(token);
-    if (
-      claims.purpose !== "vendor-image" ||
-      claims.vendorId !== id ||
-      claims.kind !== kind ||
-      !claims.url?.startsWith("https://res.cloudinary.com/")
-    )
-      throw Error();
-    return claims.url;
-  } catch {
-    fail("Image upload expired. Upload the image again.");
-  }
+export async function imageUpload(_input,ctx) {
+ scope(ctx);fail('Use the Media Library to upload and moderate business images.',409);
 }
 export async function saveBusiness(input, ctx) {
   const { id } = scope(ctx);
@@ -253,6 +218,7 @@ export async function saveBusiness(input, ctx) {
       tx,
     );
     assertVersion(row, body.expectedUpdatedAt);
+    if(body.logoToken||body.coverToken)fail('Manage business images through the Media Library.',409);
     const values = {
       BusinessName: body.name,
       BusinessDescription: body.description,
@@ -261,12 +227,6 @@ export async function saveBusiness(input, ctx) {
       GSTNumber: body.gst || null,
       PANNumber: body.pan || null,
       UpdatedAt: new Date(),
-      ...(body.logoToken
-        ? { LogoUrl: imageUrl(body.logoToken, id, "logo") }
-        : {}),
-      ...(body.coverToken
-        ? { CoverImageUrl: imageUrl(body.coverToken, id, "cover") }
-        : {}),
     };
     await repo.update({ table: "Vendors", id: "VendorId" }, id, values, tx);
     await audit(
@@ -285,7 +245,7 @@ export async function serviceDetails(recordId, ctx) {
   const { id } = scope(ctx),
     row = await owned("services", recordId, id, undefined, false);
   const [media] = await repo.select(
-    "SELECT TOP(1) MediaUrl AS url FROM dbo.Media WHERE EntityType='Service' AND EntityId=:service ORDER BY IsPrimary DESC,SortOrder",
+    "SELECT TOP(1) MediaUrl AS url FROM dbo.Media WHERE EntityType='Service' AND EntityId=:service AND DeletedAt IS NULL AND UploadStatus='Ready' ORDER BY IsPrimary DESC,SortOrder",
     { service: row.ServiceId },
   );
   return {
@@ -367,25 +327,7 @@ export async function saveService(recordId, input, ctx) {
         },
         tx,
       );
-    if (body.imageToken) {
-      const url = imageUrl(body.imageToken, id, "service");
-      await repo.select(
-        "UPDATE dbo.Media SET IsPrimary=0 WHERE EntityType='Service' AND EntityId=:service",
-        { service: serviceId },
-        tx,
-      );
-      await repo.insert(
-        { table: "Media", id: "MediaId" },
-        {
-          EntityType: "Service",
-          EntityId: serviceId,
-          MediaType: "Image",
-          MediaUrl: url,
-          IsPrimary: 1,
-        },
-        tx,
-      );
-    }
+    if (body.imageToken) fail("Save the service and use its Media Library to add images.",409);
     await audit(
       ctx,
       old ? "SERVICE_UPDATED" : "SERVICE_CREATED",
@@ -401,41 +343,10 @@ export async function saveService(recordId, input, ctx) {
     };
   });
 }
-export async function duplicateService(recordId, ctx) {
-  const { id } = scope(ctx);
-  return repo.transaction(async (tx) => {
-    const old = await owned("services", recordId, id, tx),
-      next = randomUUID();
-    await repo.select(
-      "INSERT INTO dbo.Services(ServiceId,VendorId,CategoryId,ServiceName,ServiceSlug,Description,PricingType,BasePrice,MinimumPrice,MaximumPrice,MinimumGuests,MaximumGuests,DurationMinutes,AttributesJson,ApprovalStatus,IsActive) SELECT :next,VendorId,CategoryId,LEFT(ServiceName,190)+' (copy)',:next,Description,PricingType,BasePrice,MinimumPrice,MaximumPrice,MinimumGuests,MaximumGuests,DurationMinutes,AttributesJson,'Pending',0 FROM dbo.Services WHERE ServiceId=:previous AND VendorId=:vendor",
-      { next, previous: old.ServiceId, vendor: id },
-      tx,
-    );
-    await repo.select(
-      "INSERT INTO dbo.ServiceItems(ServiceId,ItemName,Description,Quantity,Unit,UnitPrice,IsIncluded,SortOrder) SELECT :next,ItemName,Description,Quantity,Unit,UnitPrice,IsIncluded,SortOrder FROM dbo.ServiceItems WHERE ServiceId=:previous",
-      { next, previous: old.ServiceId },
-      tx,
-    );
-    await repo.select(
-      "INSERT INTO dbo.Media(EntityType,EntityId,MediaType,MediaUrl,IsPrimary) SELECT TOP(1) 'Service',:next,'Image',MediaUrl,1 FROM dbo.Media WHERE EntityType='Service' AND EntityId=:previous ORDER BY IsPrimary DESC,SortOrder",
-      { next, previous: old.ServiceId },
-      tx,
-    );
-    await audit(
-      ctx,
-      "SERVICE_DUPLICATED",
-      "Services",
-      next,
-      null,
-      { source: old.ServiceId, status: "Pending", active: false },
-      tx,
-    );
-    return {
-      id: next,
-      message: "Service duplicated as an inactive copy awaiting approval.",
-    };
-  });
+export async function duplicateService(recordId,ctx) {
+ const {duplicate}=await import('./service-management.service.js');return duplicate(recordId,ctx);
 }
+
 export async function packageDetails(recordId, ctx) {
   const { id } = scope(ctx),
     row = await owned("packages", recordId, id, undefined, false);

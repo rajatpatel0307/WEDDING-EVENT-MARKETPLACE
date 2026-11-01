@@ -223,7 +223,7 @@ export async function packageMutation(
       const body = packageInput.parse({ ...core, serviceId });
       for (const image of images) {
         const [match] = await repo.select(
-          "SELECT MediaId FROM dbo.Media WHERE EntityType='Service' AND EntityId=:serviceId AND MediaId=:image",
+          "SELECT MediaId FROM dbo.Media WHERE EntityType='Service' AND EntityId=:serviceId AND MediaId=:image AND DeletedAt IS NULL AND UploadStatus='Ready'",
           { serviceId, image },
           tx,
         );

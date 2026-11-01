@@ -36,6 +36,7 @@ export async function reviewVendor(
 }
 export async function action(name, id, input, ctx) {
   requireRole(ctx, "ADMIN");
+  if(name==='reviews') error('Use the audited review moderation endpoints.');
   const r = getResource(name);
   validId(r, id);
   const body = actionInput.parse(input);

@@ -1,3 +1,6 @@
+import { MediaGallery } from '../media/MediaLibrary';
+import { PublicReviews } from '../reviews/Reviews';
+import { useReviews } from '../reviews/api';
 import WishlistButton from "../customer/components/WishlistButton";
 import { useState } from "react";
 import {
@@ -66,6 +69,7 @@ export default function DetailPage() {
     vendor = location.pathname.startsWith("/vendors"),
     pack = location.pathname.startsWith("/packages"),
     packageRoute = useMarketplace(pack ? `/packages/${id}` : null);
+  const packageRating = useReviews(pack ? `/packages/${id}/rating-summary` : null);
   const serviceId = pack ? packageRoute.data?.serviceId : id;
   const state = useMarketplace(
       serviceId
@@ -139,7 +143,7 @@ export default function DetailPage() {
       <p className="cm-meta">
         <MapPin size={16} />
         {item.city || "Location on request"} <Star size={16} />
-        {Number(item.rating || 0).toFixed(1)} · {item.reviews || 0} reviews{" "}
+        {Number((pack ? packageRating.data?.averageRating : item.rating) || 0).toFixed(1)} · {(pack ? packageRating.data?.totalReviews : item.reviews) || 0} reviews{" "}
         {vendor && (
           <>
             <ShieldCheck size={16} />
@@ -204,27 +208,9 @@ export default function DetailPage() {
         </button>
         <span role="status">{shareNotice}</span>
       </div>
-      <div className="cm-gallery">
-        {vendor
-          ? (item.cover || item.image) && (
-              <img src={item.cover || item.image} alt={item.name} />
-            )
-          : d.gallery.map((m, i) => (
-              <a
-                key={m.id}
-                href={m.url}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`Open photo ${i + 1}`}
-              >
-                <img
-                  src={m.url}
-                  alt={`${item.name}, photo ${i + 1}`}
-                  loading={i ? "lazy" : "eager"}
-                />
-              </a>
-            ))}
-      </div>
+      {vendor && (item.cover||item.image) && <div className="cm-gallery"><img src={item.cover||item.image} alt={item.name}/></div>}
+      <MediaGallery key={`${vendor?'vendors':pack?'packages':'services'}:${id}`} type={vendor?'vendors':pack?'packages':'services'} id={id}/>
+
       <div className="cm-detail">
         <div>
           <section className="cm-panel">
@@ -326,42 +312,7 @@ export default function DetailPage() {
               </section>
             </>
           )}
-          <section className="cm-panel">
-            <h2>Customer experiences</h2>
-            {!vendor && (
-              <label>
-                Sort reviews
-                <select
-                  value={params.get("reviewSort") || "newest"}
-                  onChange={(e) =>
-                    setParams((p) => {
-                      const n = new URLSearchParams(p);
-                      n.set("reviewSort", e.target.value);
-                      return n;
-                    })
-                  }
-                >
-                  <option value="newest">Newest</option>
-                  <option value="highest">Highest rated</option>
-                  <option value="lowest">Lowest rated</option>
-                </select>
-              </label>
-            )}
-            {d.reviews.length ? (
-              d.reviews.map((r) => (
-                <article className="cm-review" key={r.id}>
-                  <strong>
-                    {r.customer} · {r.rating}/5
-                  </strong>
-                  <p>{r.verified ? "Verified booking" : ""}</p>
-                  <h3>{r.title}</h3>
-                  <p>{r.text}</p>
-                </article>
-              ))
-            ) : (
-              <p>No published reviews yet.</p>
-            )}
-          </section>
+          <PublicReviews key={`${vendor ? 'vendors' : pack ? 'packages' : 'services'}:${id}`} type={vendor ? 'vendors' : pack ? 'packages' : 'services'} id={id} />
         </div>
         <aside className="cm-sticky cm-panel">
           <p className="cm-kicker">YOUR CELEBRATION, BEAUTIFULLY PLANNED</p>

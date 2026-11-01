@@ -1,3 +1,5 @@
+import { MediaGallery } from '../../media/MediaLibrary';
+import { PublicReviews } from '../../reviews/Reviews';
 import WishlistButton from "../components/WishlistButton";
 import EventLocationPanel from "../components/EventLocationPanel";
 import { useState } from "react";
@@ -605,13 +607,7 @@ export function CustomerServiceDetails({ vendor = false }) {
       </section>
       {!vendor && (
         <div className="customer-marketplace cm-embedded">
-          <div className="cm-gallery">
-            {r.data.gallery?.map((m) => (
-              <a href={m.url} target="_blank" rel="noreferrer" key={m.id}>
-                <img src={m.url} alt={item.name} loading="lazy" />
-              </a>
-            ))}
-          </div>
+          <MediaGallery type="services" id={id} />
           <AvailabilityCalendar id={id} />
           <section className="cm-panel">
             <h2>Booking policies</h2>
@@ -743,21 +739,11 @@ export function CustomerServiceDetails({ vendor = false }) {
         </section>
       ) : (
         <section className="cw-panel cw-prose [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4eade] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4eade] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4eade] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4eade] rounded-[10px] min-w-0 overflow-x-hidden overflow-y-hidden pt-[25px] [@media(width<=520px)]:pt-[23px] pr-[28px] [@media(width<=520px)]:pr-[20px] pb-[25px] [@media(width<=520px)]:pb-[23px] pl-[28px] [@media(width<=520px)]:pl-[20px] mb-[24px] [&_>_h2]:mb-[20px] [&_>_h3]:mt-[24px] [&_p]:[white-space:pre-line]">
-          <h2>Customer experiences</h2>
-          {r.data.reviews.length ? (
-            r.data.reviews.map((r, i) => (
-              <div key={i} className="cw-review [border-top-width:1px] [border-top-style:solid] [border-top-color:#eee4db] pt-[20px] pr-[0] pb-[20px] pl-[0] [&_strong]:text-[12px]">
-                <strong>
-                  {r.customer} · {r.rating}/5
-                </strong>
-                <p>{r.text}</p>
-              </div>
-            ))
-          ) : (
-            <p>No published reviews yet.</p>
-          )}
+          <PublicReviews key={id} type="services" id={id} />
         </section>
       )}
+      {vendor && <MediaGallery type="vendors" id={id} />}
+      {vendor && <PublicReviews key={id} type="vendors" id={id} />}
       {mode && (
         <ServiceAction
           service={item}

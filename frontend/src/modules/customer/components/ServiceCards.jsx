@@ -1,3 +1,4 @@
+import { optimizedMediaUrl } from '../../media/api';
 import { useWishlist } from "../services/wishlist";
 import { Link } from "react-router-dom";
 import { Heart, MapPin, Star, Image as ImageIcon } from "lucide-react";
@@ -40,7 +41,7 @@ export function ServiceCard({ item, saved: savedProp = false, onChange }) {
       <div className="cw-service-photo relative h-[168px] [@media(width<=1050px)]:h-[190px] [@media(1050px<width<=1250px)]:h-[145px] [background:#efe7df] overflow-x-hidden overflow-y-hidden [&_>_img]:w-full [&_>_img]:h-full [&_>_img]:object-cover [&_>_img]:[transition:transform_0.4s] motion-reduce:[&_>_img]:[transition:none]">
         {(item.image || (item.type === "Vendor" && item.cover)) && !failed ? (
           <img
-            src={item.type === "Vendor" && item.cover ? item.cover : item.image}
+            src={optimizedMediaUrl(item.type === 'Vendor' && item.cover ? item.cover : item.image,'card')}
             onError={() => setFailed(true)}
             alt={item.name}
             loading="lazy"
@@ -56,7 +57,7 @@ export function ServiceCard({ item, saved: savedProp = false, onChange }) {
         {item.type === "Vendor" && item.cover && item.image && (
           <img
             className="absolute bottom-3 left-3 h-12 w-12 rounded-full border-2 border-white object-cover"
-            src={item.image}
+            src={optimizedMediaUrl(item.image,'card')}
             alt={`${item.name} logo`}
             loading="lazy"
           />

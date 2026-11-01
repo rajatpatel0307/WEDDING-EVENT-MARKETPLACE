@@ -1,14 +1,6 @@
 import { z } from "zod";
-export const contactCategories = [
-  "GENERAL",
-  "BOOKING",
-  "VENDOR",
-  "PAYMENT",
-  "CANCELLATION",
-  "TECHNICAL",
-  "PARTNERSHIP",
-  "OTHER",
-];
+import { inquiryTypes } from "../cms/support.validation.js";
+export const contactCategories = inquiryTypes;
 export const contactInput = z.object({
   firstName: z.string().trim().min(1, "Enter your first name.").max(100),
   lastName: z.string().trim().min(1, "Enter your last name.").max(100),

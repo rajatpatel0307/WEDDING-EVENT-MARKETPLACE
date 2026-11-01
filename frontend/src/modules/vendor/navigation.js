@@ -36,6 +36,7 @@ export const vendorNavigation = [
       ["business/details", "Vendor Details", ContactRound],
       ["locations", "Locations", MapPin],
       ["documents", "Documents", Files],
+      ["media", "Media Library", Files],
       ["verification", "Verification Status", ShieldCheck],
     ],
   },
@@ -79,7 +80,7 @@ export const vendorNavigation = [
     ],
   },
   { label: "CUSTOMERS", items: [["customers", "Customers", Users]] },
-  { label: "ACCOUNT", items: [["settings", "Settings", ContactRound]] },
+  { label: "ACCOUNT", items: [["settings", "Settings", ContactRound], ["legal", "Legal & Privacy", Files]] },
   {
     label: "PAYMENTS",
     items: [

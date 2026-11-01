@@ -1,3 +1,4 @@
+import { publicPredicate } from '../reviews/reviews.policy.js';
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireRole } from "../../middleware/auth.middleware.js";
@@ -12,7 +13,6 @@ import {
 } from "../vendors/service-management.validation.js";
 import { amount, validateAttributes } from "../vendors/workspace.validation.js";
 import { templateFor, templatesFor } from "../vendors/service-templates.js";
-import { uploadAsset } from "../media/cloudinary.service.js";
 import { assertVersion } from "../vendors/workspace.common.js";
 import { dateBounds } from "./admin.validation.js";
 
@@ -76,7 +76,7 @@ export const querySchema = z
   );
 const joins = `FROM dbo.Services s JOIN dbo.Vendors v ON v.VendorId=s.VendorId JOIN dbo.Categories c ON c.CategoryId=s.CategoryId LEFT JOIN dbo.SubCategories sc ON sc.SubCategoryId=s.SubCategoryId
  OUTER APPLY(SELECT COUNT(DISTINCT bi.BookingId) AS bookings,COALESCE(SUM(CASE WHEN bk.BookingStatus='Completed' THEN bi.LineTotal ELSE 0 END),0) AS revenue FROM dbo.BookingItems bi JOIN dbo.Booking bk ON bk.BookingId=bi.BookingId WHERE bi.ServiceId=s.ServiceId) b
- OUTER APPLY(SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS rating,COUNT_BIG(*) AS reviews FROM dbo.Reviews r WHERE r.IsPublished=1 AND EXISTS(SELECT 1 FROM dbo.BookingItems bi WHERE bi.BookingId=r.BookingId AND bi.ServiceId=s.ServiceId)) r`;
+ OUTER APPLY(SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS rating,COUNT_BIG(*) AS reviews FROM dbo.Reviews r WHERE ${publicPredicate()} AND r.ServiceId=s.ServiceId) r`;
 const like = (s) => `%${s.replace(/[\[\]%_]/g, (x) => `[${x}]`)}%`;
 export function listFilter(q) {
   const p = {
@@ -168,7 +168,7 @@ export async function list(input, ctx) {
   const rows = await repo.select(
     `SELECT s.ServiceId AS id,s.ServiceName AS name,JSON_VALUE(s.DetailsJson,'$.shortDescription') AS shortDescription,s.VendorId AS vendorId,v.BusinessName AS vendor,v.LogoUrl AS vendorLogo,c.CategoryName AS category,sc.SubCategoryName AS subcategory,s.BasePrice AS price,JSON_VALUE(s.DetailsJson,'$.location.city') AS location,s.ApprovalStatus AS status,s.IsActive AS active,b.bookings,r.rating,s.CreatedAt AS createdAt,s.UpdatedAt AS updatedAt,
    CASE WHEN EXISTS(SELECT 1 FROM dbo.BookingItems WHERE ServiceId=s.ServiceId) OR EXISTS(SELECT 1 FROM dbo.QuotationItems WHERE ServiceId=s.ServiceId OR PackageId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=s.ServiceId)) OR EXISTS(SELECT 1 FROM dbo.QuotationRequests WHERE ServiceId=s.ServiceId) OR EXISTS(SELECT 1 FROM dbo.Offers WHERE ServiceId=s.ServiceId) THEN 1 ELSE 0 END AS hasHistory,
-   (SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityType='Service' AND EntityId=s.ServiceId AND MediaType='Image' ORDER BY IsPrimary DESC,SortOrder,MediaId) AS image ${source} ORDER BY ${sort} ${q.direction === "asc" ? "ASC" : "DESC"},s.ServiceId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
+   (SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityType='Service' AND EntityId=s.ServiceId AND MediaType='Image' AND DeletedAt IS NULL AND UploadStatus='Ready' ORDER BY IsPrimary DESC,SortOrder,MediaId) AS image ${source} ORDER BY ${sort} ${q.direction === "asc" ? "ASC" : "DESC"},s.ServiceId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
     p,
   );
   return {
@@ -441,7 +441,7 @@ export async function submit(id, input, ctx) {
       items: [],
     });
     const [media] = await repo.select(
-      "SELECT COUNT(*) AS total FROM dbo.Media WHERE EntityType='Service' AND EntityId=:id AND MediaType='Image'",
+      "SELECT COUNT(*) AS total FROM dbo.Media WHERE EntityType='Service' AND EntityId=:id AND MediaType='Image' AND DeletedAt IS NULL AND UploadStatus='Ready' AND ModerationStatus NOT IN('Hidden','Rejected')",
       { id },
       tx,
     );
@@ -513,7 +513,7 @@ export async function duplicate(id, input, ctx) {
       tx,
     );
     const sourceImages = await repo.select(
-        "SELECT * FROM dbo.Media WHERE EntityType='Service' AND EntityId=:id AND MediaType='Image'",
+        "SELECT * FROM dbo.Media WHERE EntityType='Service' AND EntityId=:id AND MediaType='Image' AND DeletedAt IS NULL AND UploadStatus='Ready'",
         { id },
         tx,
       ),
@@ -528,7 +528,8 @@ export async function duplicate(id, input, ctx) {
           EntityType: "Service",
           EntityId: next,
           MediaType: "Image",
-          MediaUrl: image.MediaUrl,
+          MediaUrl: image.StorageKey ? (await import('../media/media.service.js')).mediaUrl(nextImage) : image.MediaUrl,
+          OwnerId: image.OwnerId || null, UploadedBy: ctx.auth.user.id, VendorId:row.VendorId,MediaCategory:'Service',Purpose:image.Purpose||'Gallery',PublicId:image.PublicId||null,StorageKey:image.StorageKey||null,SecureUrl:image.SecureUrl||null,ResourceType:image.ResourceType||'image',DeliveryType:image.DeliveryType||'upload',MimeType:image.MimeType||null,FileName:image.FileName||null,FileSize:image.FileSize||null,Width:image.Width||null,Height:image.Height||null,VariantsJson:image.VariantsJson||null,ModerationStatus:'Pending',
           IsPrimary: image.IsPrimary,
           SortOrder: image.SortOrder,
         },
@@ -590,8 +591,8 @@ export async function remove(id, input, ctx) {
         409,
       );
     await repo.select(
-      "DELETE FROM dbo.Wishlists WHERE ServiceId=:id OR PackageId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:id); DELETE FROM dbo.PackageItems WHERE PackageId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:id); DELETE FROM dbo.ServicePackages WHERE ServiceId=:id; DELETE FROM dbo.ServiceItems WHERE ServiceId=:id; DELETE FROM dbo.VendorAvailability WHERE ServiceId=:id; DELETE FROM dbo.ServiceDailyMetrics WHERE ServiceId=:id; DELETE FROM dbo.Media WHERE EntityType='Service' AND EntityId=:id; DELETE FROM dbo.Services WHERE ServiceId=:id",
-      { id },
+      "UPDATE dbo.Media SET DeletedAt=SYSUTCDATETIME(),IsPrimary=0,CleanupStatus='Pending',NextCleanupAt=:cleanupAt WHERE EntityType='Package' AND EntityId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:id); DELETE FROM dbo.Wishlists WHERE ServiceId=:id OR PackageId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:id); DELETE FROM dbo.PackageItems WHERE PackageId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:id); DELETE FROM dbo.ServicePackages WHERE ServiceId=:id; DELETE FROM dbo.ServiceItems WHERE ServiceId=:id; DELETE FROM dbo.VendorAvailability WHERE ServiceId=:id; DELETE FROM dbo.ServiceDailyMetrics WHERE ServiceId=:id; UPDATE dbo.Media SET DeletedAt=SYSUTCDATETIME(),IsPrimary=0,CleanupStatus='Pending',NextCleanupAt=:cleanupAt WHERE EntityType='Service' AND EntityId=:id; DELETE FROM dbo.Services WHERE ServiceId=:id",
+      { id, cleanupAt:(await import('../media/media.service.js')).retentionDate() },
       tx,
     );
     await repo.auditAdmin(
@@ -771,69 +772,8 @@ export async function imageMutation(id, imageId, input, ctx) {
       tx,
     );
     if (!old) fail("Image not found in this service.", 404);
-    const affectedPackages = [];
-    if (body.action === "delete") {
-      await repo.select(
-        "DELETE FROM dbo.Media WHERE MediaId=:imageId AND EntityId=:id AND EntityType='Service'",
-        { imageId, id },
-        tx,
-      );
-      const packages = await repo.select(
-        "SELECT PackageId,DetailsJson FROM dbo.ServicePackages WHERE ServiceId=:id",
-        { id },
-        tx,
-      );
-      for (const pack of packages) {
-        const details = JSON.parse(pack.DetailsJson || "{}");
-        if (
-          !Array.isArray(details.images) ||
-          !details.images.some(
-            (value) => String(value).toLowerCase() === imageId.toLowerCase(),
-          )
-        )
-          continue;
-        affectedPackages.push({
-          id: pack.PackageId,
-          previousImages: details.images,
-        });
-        details.images = details.images.filter(
-          (value) => String(value).toLowerCase() !== imageId.toLowerCase(),
-        );
-        await repo.update(
-          { table: "ServicePackages", id: "PackageId" },
-          pack.PackageId,
-          { DetailsJson: JSON.stringify(details), UpdatedAt: new Date() },
-          tx,
-        );
-      }
-    } else
-      await repo.select(
-        "UPDATE dbo.Media SET IsPrimary=CASE WHEN MediaId=:imageId THEN 1 ELSE 0 END WHERE EntityId=:id AND EntityType='Service' AND MediaType='Image'",
-        { imageId, id },
-        tx,
-      );
-    await repo.select(
-      "IF NOT EXISTS(SELECT 1 FROM dbo.Media WHERE EntityId=:id AND EntityType='Service' AND MediaType='Image' AND IsPrimary=1) UPDATE dbo.Media SET IsPrimary=1 WHERE MediaId=(SELECT TOP(1) MediaId FROM dbo.Media WHERE EntityId=:id AND EntityType='Service' AND MediaType='Image' ORDER BY SortOrder,MediaId)",
-      { id },
-      tx,
-    );
-    // Moderating inappropriate media can only reduce exposure, including listings under review or suspension.
-    await touch(
-      row,
-      ctx,
-      "ADMIN_SERVICE_IMAGE_CHANGED",
-      {
-        imageId,
-        action: body.action,
-        previous: { url: old.MediaUrl, primary: old.IsPrimary },
-        affectedPackages,
-      },
-      tx,
-      true,
-    );
-    return {
-      message: "Image updated. Approved listings require review again.",
-    };
+    const {mutate}=await import('../media/media.service.js');
+    return mutate(imageId,body.action==='delete'?'delete':'primary',{},ctx,tx);
   });
 }
 export async function uploadImage(id, input, ctx) {
@@ -853,46 +793,10 @@ export async function uploadImage(id, input, ctx) {
   if (!initial) fail("Service not found.", 404);
   assertVersion(initial, body.expectedUpdatedAt);
   editable(initial);
-  const asset = await uploadAsset(body.base64, true);
-  return repo.transaction(async (tx) => {
-    const row = await lock(
-      id,
-      { expectedUpdatedAt: body.expectedUpdatedAt },
-      ctx,
-      tx,
-    );
-    editable(row);
-    const [count] = await repo.select(
-      "SELECT COUNT(*) AS total FROM dbo.Media WHERE EntityId=:id AND EntityType='Service' AND MediaType='Image'",
-      { id },
-      tx,
-    );
-    if (count.total >= 30) fail("A service can have at most 30 images.");
-    await repo.insert(
-      { table: "Media", id: "MediaId" },
-      {
-        MediaId: randomUUID(),
-        EntityType: "Service",
-        EntityId: id,
-        MediaType: "Image",
-        MediaUrl: asset.url,
-        IsPrimary: count.total ? 0 : 1,
-        SortOrder: count.total,
-      },
-      tx,
-    );
-    await touch(
-      row,
-      ctx,
-      "ADMIN_SERVICE_IMAGE_UPLOADED",
-      { url: asset.url },
-      tx,
-    );
-    return {
-      message: "Image uploaded. Approved content requires review again.",
-    };
-  });
+  const {serviceImages}=await import('../media/media.legacy.js');
+  return serviceImages(id,body,ctx);
 }
+
 export async function records(id, kind, input, ctx) {
   requireRole(ctx, "ADMIN");
   z.guid().parse(id);
@@ -950,7 +854,7 @@ export async function performance(id, ctx) {
     { id },
   );
   const [rating] = await repo.select(
-    "SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS rating,COUNT_BIG(*) AS reviews FROM dbo.Reviews r WHERE r.IsPublished=1 AND EXISTS(SELECT 1 FROM dbo.BookingItems bi WHERE bi.BookingId=r.BookingId AND bi.ServiceId=:id)",
+    `SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS rating,COUNT_BIG(*) AS reviews FROM dbo.Reviews r WHERE ${publicPredicate()} AND r.ServiceId=:id`,
     { id },
   );
   const series = await repo.select(

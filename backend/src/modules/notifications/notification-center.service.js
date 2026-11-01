@@ -36,6 +36,9 @@ export const categoryFor = (type) =>
 export function notificationUrl(row, role) {
   const root = `/${role.toLowerCase()}`;
   const id = row.ReferenceId;
+  if(row.ReferenceType==='PrivacyRequest'||row.ReferenceType==='AdminPrivacyRequest')return role==='Admin'?'/admin/privacy-requests':`/${role.toLowerCase()}/legal`;
+  if(row.ReferenceType==='AdminContactInquiry')return '/admin/contact-inquiries';
+  if (['Review','Reviews','AdminReviews'].includes(row.ReferenceType)) return `${root}/reviews`;
   if (!id) return `${root}/notifications`;
   if (row.ReferenceType === "Conversation" && role !== "Admin")
     return `${root}/messages?conversation=${id}`;

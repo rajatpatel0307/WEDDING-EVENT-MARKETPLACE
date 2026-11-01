@@ -356,14 +356,12 @@ export const resources = {
       vendor: "v.BusinessName",
       rating: "t.Rating",
       description: "t.ReviewText",
-      status: "CASE WHEN t.IsPublished=1 THEN 'Published' ELSE 'Hidden' END",
+      status: "t.ModerationStatus",
     },
     {
       joins: "JOIN dbo.Vendors v ON v.VendorId=t.VendorId",
-      statusColumn: "IsPublished",
-      statuses: ["Published", "Hidden"],
-      statusValues: { Published: 1, Hidden: 0 },
-      actions: ["Published", "Hidden"],
+      statuses: ["Pending", "Approved", "Rejected", "Hidden", "Flagged"],
+      actions: [],
     },
   ),
   wishlists: resource(

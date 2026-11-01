@@ -1,3 +1,4 @@
+import { publicPredicate } from '../reviews/reviews.policy.js';
 import { z } from "zod";
 import { assertServiceSchedule } from "../vendors/service-schedule.js";
 import { recordServiceMetric } from "../vendors/service-metrics.js";
@@ -38,9 +39,9 @@ export const discoveryInput = pageInput
 const location =
   "OUTER APPLY(SELECT TOP(1) City,State FROM dbo.VendorLocations WHERE VendorId=v.VendorId AND IsActive=1 ORDER BY IsPrimary DESC,CreatedAt) l";
 const serviceRatings =
-  "OUTER APPLY(SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS rating,COUNT_BIG(*) AS reviews FROM dbo.Reviews r WHERE r.IsPublished=1 AND EXISTS(SELECT 1 FROM dbo.BookingItems ri WHERE ri.BookingId=r.BookingId AND ri.ServiceId=s.ServiceId)) sr";
+  `OUTER APPLY(SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS rating,COUNT_BIG(*) AS reviews FROM dbo.Reviews r WHERE ${publicPredicate()} AND r.ServiceId=s.ServiceId) sr`;
 const source = `dbo.Services s JOIN dbo.Vendors v ON v.VendorId=s.VendorId JOIN dbo.Users u ON u.UserId=v.UserId JOIN dbo.Categories c ON c.CategoryId=s.CategoryId LEFT JOIN dbo.SubCategories sc ON sc.SubCategoryId=s.SubCategoryId ${location} ${serviceRatings}`;
-const image = `OUTER APPLY(SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityId=s.ServiceId AND LOWER(EntityType)='service' AND MediaType='Image' ORDER BY IsPrimary DESC,SortOrder,CreatedAt) m`;
+const image = `OUTER APPLY(SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityId=s.ServiceId AND LOWER(EntityType)='service' AND MediaType='Image' AND ModerationStatus='Approved' AND UploadStatus='Ready' AND DeletedAt IS NULL ORDER BY IsPrimary DESC,SortOrder,CreatedAt) m`;
 const fields = `s.ServiceId AS serviceId,v.VendorId AS vendorId,v.BusinessName AS vendor,c.CategoryName AS category,c.CategoryId AS categoryId,sc.SubCategoryName AS subcategory,COALESCE(NULLIF(JSON_VALUE(s.DetailsJson,'$.location.city'),''),l.City) AS city,COALESCE(sr.rating,0) AS rating,COALESCE(sr.reviews,0) AS reviews,m.MediaUrl AS image`;
 const escapeLike = (value) =>
   `%${value.replace(/[\[\]%_]/g, (c) => `[${c}]`)}%`;
@@ -134,7 +135,9 @@ export async function publicDiscover(input) {
       "EXISTS(SELECT 1 FROM dbo.Offers o WHERE o.VendorId=v.VendorId AND o.IsActive=1 AND o.StartDate<=SYSUTCDATETIME() AND o.EndDate>=SYSUTCDATETIME())",
     );
   const where = conditions.join(" AND "),
-    from = `${source} ${packages ? "JOIN dbo.ServicePackages p ON p.ServiceId=s.ServiceId" : ""}`;
+    from = packages
+      ? `${source.replace(serviceRatings,'')} JOIN dbo.ServicePackages p ON p.ServiceId=s.ServiceId ${serviceRatings.replace('r.ServiceId=s.ServiceId','r.PackageId=p.PackageId')}`
+      : source;
   const [count] = await repo.select(
     `SELECT COUNT(*) AS total FROM ${from} WHERE ${where}`,
     p,
@@ -150,7 +153,7 @@ export async function publicDiscover(input) {
     ...q,
     total: Number(count.total),
     rows: await repo.select(
-      `SELECT ${packages ? "p.PackageId" : "s.ServiceId"} AS id,${packages ? "p.PackageName" : "s.ServiceName"} AS name,${price} AS price,s.PricingType AS pricingType,s.MinimumGuests AS minGuests,s.MaximumGuests AS maxGuests,'${packages ? "Package" : "Service"}' AS type,${fields} FROM ${from} ${image} WHERE ${where} ORDER BY ${order},s.ServiceId ${packages ? ",p.PackageId" : ""} OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
+      `SELECT ${packages ? "p.PackageId" : "s.ServiceId"} AS id,${packages ? "p.PackageName" : "s.ServiceName"} AS name,${price} AS price,s.PricingType AS pricingType,s.MinimumGuests AS minGuests,s.MaximumGuests AS maxGuests,'${packages ? "Package" : "Service"}' AS type,${fields} FROM ${from} ${packages ? image.replace("EntityId=s.ServiceId AND LOWER(EntityType)='service'","((EntityId=p.PackageId AND EntityType='Package') OR (EntityId=s.ServiceId AND LOWER(EntityType)='service'))").replace('ORDER BY IsPrimary DESC',"ORDER BY CASE WHEN EntityType='Package' THEN 0 ELSE 1 END,IsPrimary DESC") : image} WHERE ${where} ORDER BY ${order},s.ServiceId ${packages ? ",p.PackageId" : ""} OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
       p,
     ),
   };
@@ -182,11 +185,11 @@ export async function publicServiceDetails(id, track = true, query = {}) {
       { id },
     ),
     repo.select(
-      "SELECT MediaId AS id,MediaUrl AS url FROM dbo.Media WHERE EntityId=:id AND LOWER(EntityType)='service' AND MediaType='Image' ORDER BY IsPrimary DESC,SortOrder,MediaId",
+      "SELECT MediaId AS id,MediaUrl AS url FROM dbo.Media WHERE EntityId=:id AND LOWER(EntityType)='service' AND MediaType='Image' AND ModerationStatus='Approved' AND UploadStatus='Ready' AND DeletedAt IS NULL ORDER BY IsPrimary DESC,SortOrder,MediaId",
       { id },
     ),
     repo.select(
-      `SELECT TOP(20) r.ReviewId AS id,CONCAT(u.FirstName,' ',LEFT(u.LastName,1)) AS customer,r.Rating AS rating,r.ReviewTitle AS title,r.ReviewText AS text,r.IsVerified AS verified,r.CreatedAt AS createdAt FROM dbo.Reviews r JOIN dbo.Users u ON u.UserId=r.CustomerId WHERE r.IsPublished=1 AND EXISTS(SELECT 1 FROM dbo.BookingItems bi WHERE bi.BookingId=r.BookingId AND bi.ServiceId=:id) ORDER BY ${sort === "highest" ? "r.Rating DESC," : sort === "lowest" ? "r.Rating ASC," : ""}r.CreatedAt DESC,r.ReviewId`,
+      `SELECT TOP(20) r.ReviewId AS id,CONCAT(u.FirstName,' ',LEFT(u.LastName,1)) AS customer,r.Rating AS rating,r.ReviewTitle AS title,r.ReviewText AS text,r.IsVerified AS verified,r.CreatedAt AS createdAt FROM dbo.Reviews r JOIN dbo.Users u ON u.UserId=r.CustomerId WHERE ${publicPredicate()} AND r.ServiceId=:id ORDER BY ${sort === "highest" ? "r.Rating DESC," : sort === "lowest" ? "r.Rating ASC," : ""}r.CreatedAt DESC,r.ReviewId`,
       { id },
     ),
   ]);
@@ -243,7 +246,7 @@ export async function publicVendorDetails(id) {
       { id },
     ),
     repo.select(
-      "SELECT TOP(20) r.ReviewId AS id,CONCAT(u.FirstName,' ',LEFT(u.LastName,1)) AS customer,r.Rating AS rating,r.ReviewText AS text,r.IsVerified AS verified FROM dbo.Reviews r JOIN dbo.Users u ON u.UserId=r.CustomerId WHERE r.VendorId=:id AND r.IsPublished=1 ORDER BY r.CreatedAt DESC,r.ReviewId",
+      `SELECT TOP(20) r.ReviewId AS id,CONCAT(u.FirstName,' ',LEFT(u.LastName,1)) AS customer,r.Rating AS rating,r.ReviewText AS text,r.IsVerified AS verified FROM dbo.Reviews r JOIN dbo.Users u ON u.UserId=r.CustomerId WHERE r.VendorId=:id AND r.BookingItemId IS NULL AND ${publicPredicate()} ORDER BY r.CreatedAt DESC,r.ReviewId`,
       { id },
     ),
   ]);
@@ -309,7 +312,7 @@ export async function publicPackage(id) {
 export async function wishlist(ctx) {
   const { id } = scope(ctx);
   return repo.select(
-    `SELECT w.WishlistId AS id,w.CreatedAt AS savedAt,COALESCE(p.Description,s.Description,ps.Description,v.BusinessDescription) AS description,COALESCE(s.PricingType,ps.PricingType) AS pricingType,COALESCE(s.CategoryId,ps.CategoryId) AS categoryId,COALESCE((SELECT CategoryName FROM dbo.Categories WHERE CategoryId=COALESCE(s.CategoryId,ps.CategoryId)),(SELECT STRING_AGG(CONVERT(nvarchar(max),c.CategoryName),', ') FROM dbo.VendorCategories vc JOIN dbo.Categories c ON c.CategoryId=vc.CategoryId WHERE vc.VendorId=v.VendorId)) AS category,v.TotalReviews AS reviews,v.VerificationStatus AS verificationStatus,(SELECT COUNT(*) FROM dbo.Services vs WHERE vs.VendorId=v.VendorId AND vs.IsActive=1 AND vs.ApprovalStatus='Approved') AS serviceCount,v.CoverImageUrl AS cover,w.ServiceId AS savedServiceId,w.PackageId AS packageId,COALESCE(s.ServiceId,ps.ServiceId) AS serviceId,v.VendorId AS vendorId,COALESCE(p.PackageName,s.ServiceName,v.BusinessName) AS name,v.BusinessName AS vendor,l.City AS city,v.AverageRating AS rating,COALESCE(p.FinalPrice,s.BasePrice) AS price,COALESCE(m.MediaUrl,v.LogoUrl) AS image,CASE WHEN w.PackageId IS NOT NULL THEN 'Package' WHEN w.ServiceId IS NOT NULL THEN 'Service' ELSE 'Vendor' END AS type,CASE WHEN ${eligibleVendor} AND (COALESCE(s.IsActive,ps.IsActive,1)=1) AND COALESCE(s.ApprovalStatus,ps.ApprovalStatus,'Approved')='Approved' AND COALESCE(p.IsActive,1)=1 AND (COALESCE(s.CategoryId,ps.CategoryId) IS NULL OR EXISTS(SELECT 1 FROM dbo.Categories ac WHERE ac.CategoryId=COALESCE(s.CategoryId,ps.CategoryId) AND ac.IsActive=1)) THEN 1 ELSE 0 END AS available FROM dbo.Wishlists w LEFT JOIN dbo.Services s ON s.ServiceId=w.ServiceId LEFT JOIN dbo.ServicePackages p ON p.PackageId=w.PackageId LEFT JOIN dbo.Services ps ON ps.ServiceId=p.ServiceId JOIN dbo.Vendors v ON v.VendorId=COALESCE(w.VendorId,s.VendorId,ps.VendorId) JOIN dbo.Users u ON u.UserId=v.UserId ${location} OUTER APPLY(SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityId=COALESCE(s.ServiceId,ps.ServiceId) AND LOWER(EntityType)='service' AND MediaType='Image' ORDER BY IsPrimary DESC,SortOrder) m WHERE w.CustomerId=:id ORDER BY w.CreatedAt DESC`,
+    `SELECT w.WishlistId AS id,w.CreatedAt AS savedAt,COALESCE(p.Description,s.Description,ps.Description,v.BusinessDescription) AS description,COALESCE(s.PricingType,ps.PricingType) AS pricingType,COALESCE(s.CategoryId,ps.CategoryId) AS categoryId,COALESCE((SELECT CategoryName FROM dbo.Categories WHERE CategoryId=COALESCE(s.CategoryId,ps.CategoryId)),(SELECT STRING_AGG(CONVERT(nvarchar(max),c.CategoryName),', ') FROM dbo.VendorCategories vc JOIN dbo.Categories c ON c.CategoryId=vc.CategoryId WHERE vc.VendorId=v.VendorId)) AS category,CASE WHEN w.ServiceId IS NOT NULL OR w.PackageId IS NOT NULL THEN wr.reviews ELSE v.TotalReviews END AS reviews,v.VerificationStatus AS verificationStatus,(SELECT COUNT(*) FROM dbo.Services vs WHERE vs.VendorId=v.VendorId AND vs.IsActive=1 AND vs.ApprovalStatus='Approved') AS serviceCount,v.CoverImageUrl AS cover,w.ServiceId AS savedServiceId,w.PackageId AS packageId,COALESCE(s.ServiceId,ps.ServiceId) AS serviceId,v.VendorId AS vendorId,COALESCE(p.PackageName,s.ServiceName,v.BusinessName) AS name,v.BusinessName AS vendor,l.City AS city,CASE WHEN w.ServiceId IS NOT NULL OR w.PackageId IS NOT NULL THEN COALESCE(wr.rating,0) ELSE v.AverageRating END AS rating,COALESCE(p.FinalPrice,s.BasePrice) AS price,COALESCE(m.MediaUrl,v.LogoUrl) AS image,CASE WHEN w.PackageId IS NOT NULL THEN 'Package' WHEN w.ServiceId IS NOT NULL THEN 'Service' ELSE 'Vendor' END AS type,CASE WHEN ${eligibleVendor} AND (COALESCE(s.IsActive,ps.IsActive,1)=1) AND COALESCE(s.ApprovalStatus,ps.ApprovalStatus,'Approved')='Approved' AND COALESCE(p.IsActive,1)=1 AND (COALESCE(s.CategoryId,ps.CategoryId) IS NULL OR EXISTS(SELECT 1 FROM dbo.Categories ac WHERE ac.CategoryId=COALESCE(s.CategoryId,ps.CategoryId) AND ac.IsActive=1)) THEN 1 ELSE 0 END AS available FROM dbo.Wishlists w LEFT JOIN dbo.Services s ON s.ServiceId=w.ServiceId LEFT JOIN dbo.ServicePackages p ON p.PackageId=w.PackageId LEFT JOIN dbo.Services ps ON ps.ServiceId=p.ServiceId JOIN dbo.Vendors v ON v.VendorId=COALESCE(w.VendorId,s.VendorId,ps.VendorId) JOIN dbo.Users u ON u.UserId=v.UserId ${location} OUTER APPLY(SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityId=COALESCE(s.ServiceId,ps.ServiceId) AND LOWER(EntityType)='service' AND MediaType='Image' AND ModerationStatus='Approved' AND UploadStatus='Ready' AND DeletedAt IS NULL ORDER BY IsPrimary DESC,SortOrder) m OUTER APPLY(SELECT AVG(CAST(r.Rating AS decimal(10,2))) AS rating,COUNT_BIG(*) AS reviews FROM dbo.Reviews r WHERE ${publicPredicate()} AND ((w.PackageId IS NOT NULL AND r.PackageId=w.PackageId) OR (w.PackageId IS NULL AND w.ServiceId IS NOT NULL AND r.ServiceId=w.ServiceId))) wr WHERE w.CustomerId=:id ORDER BY w.CreatedAt DESC`,
     { id },
   );
 }

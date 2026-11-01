@@ -1,3 +1,4 @@
+import { useContent } from "../../content/api";
 import { useQuery } from "@apollo/client/react";
 import { CATEGORIES } from "../../../services/public";
 import { useRef, useState } from "react";
@@ -67,6 +68,17 @@ const documentTypes = [
   "Other Supporting Document",
 ];
 export default function RegisterPage() {
+  const legalVersions = useContent("/legal/current"),
+    [acceptedVersions, setAcceptedVersions] = useState({});
+  const acceptDocument = (type, checked) => {
+    update(type, checked);
+    setAcceptedVersions((old) => ({
+      ...old,
+      [type]: checked
+        ? legalVersions.data?.find((v) => v.type === type)?.id
+        : null,
+    }));
+  };
   const [params] = useSearchParams(),
     [role, setRole] = useState(
       params.get("role") === "vendor" ? "Vendor" : "Customer",
@@ -209,6 +221,10 @@ export default function RegisterPage() {
             })),
           }
         : account;
+      if (data.terms && acceptedVersions.terms)
+        input.termsVersionId = acceptedVersions.terms;
+      if (data.privacy && acceptedVersions.privacy)
+        input.privacyVersionId = acceptedVersions.privacy;
       const result = await mutate(
         vendor ? "registerVendor" : "registerCustomer",
         input,
@@ -339,7 +355,7 @@ export default function RegisterPage() {
                   type="checkbox"
                   required
                   checked={data.terms}
-                  onChange={(e) => update("terms", e.target.checked)}
+                  onChange={(e) => acceptDocument("terms", e.target.checked)}
                 />
                 <span>
                   I agree to the{" "}
@@ -353,7 +369,7 @@ export default function RegisterPage() {
                   type="checkbox"
                   required
                   checked={data.privacy}
-                  onChange={(e) => update("privacy", e.target.checked)}
+                  onChange={(e) => acceptDocument("privacy", e.target.checked)}
                 />
                 <span>
                   I agree to the{" "}

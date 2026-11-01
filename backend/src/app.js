@@ -1,4 +1,8 @@
 import customerRoutes from "./modules/customers/workspace.routes.js";
+import reviewRoutes from './modules/reviews/reviews.routes.js';
+import mediaRoutes from './modules/media/media.routes.js';
+import cmsRoutes from './modules/cms/cms.routes.js';
+import { sitemap } from './modules/cms/sitemap.js';
 import marketplaceRoutes from "./modules/customers/marketplace.routes.js";
 import { webhook } from "./modules/customers/workspace.payments.js";
 import express from "express";
@@ -36,6 +40,10 @@ export async function createApp() {
   app.get("/api/health", (_, res) =>
     res.json({ success: true, message: "Wedding marketplace API" }),
   );
+  app.use('/api', cmsRoutes);
+  app.get('/sitemap.xml', sitemap);
+  app.use('/api', mediaRoutes);
+  app.use('/api', reviewRoutes);
   app.use("/api/admin", adminRoutes);
   app.use("/api/vendor", vendorRoutes);
   app.post(

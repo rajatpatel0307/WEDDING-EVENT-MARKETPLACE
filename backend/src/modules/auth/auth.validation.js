@@ -44,6 +44,8 @@ export const account = z
     phone,
     password,
     confirmPassword: z.string(),
+    termsVersionId:z.guid().optional(),
+    privacyVersionId:z.guid().optional(),
     terms: z.literal(true),
     privacy: z.literal(true),
   })

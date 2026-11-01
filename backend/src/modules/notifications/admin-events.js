@@ -1,6 +1,11 @@
 import { sequelize } from "../../config/database.js";
 import { publishInsertedNotifications } from './notification-broadcast.js';
 const events = {
+  CONTACT_INQUIRY_CREATED:'New contact inquiry',
+  PRIVACY_REQUEST_CREATED:'New privacy request',
+  REVIEW_SUBMITTED: 'Review awaiting moderation',
+  REVIEW_EDITED: 'Updated review awaiting moderation',
+  REVIEW_REPORTED: 'Review content reported',
   CUSTOMER_REFUND_REQUESTED: "Refund request awaiting review",
   PAYMENT_RECONCILIATION_REVIEW: "Payment reconciliation requires review",
   PAYOUT_REQUESTED: "Payout requested",

@@ -1,31 +1,16 @@
 import { randomInt, createHmac } from "node:crypto";
 import { TableHints } from "sequelize";
-import nodemailer from "nodemailer";
+import { createMailTransport } from "./mail.service.js";
 import { sequelize } from "../../config/database.js";
 import { Otp, User } from "../../models/index.js";
 import { digest, fail, limit } from "./security.service.js";
-import { required, production } from "../../config/environment.js";
+import { required } from "../../config/environment.js";
 const hash = (id, code) =>
   createHmac("sha256", required("OTP_SECRET"))
     .update(`${id}:${code}`)
     .digest("hex");
 export async function sendOtp(user, purpose) {
-  const port = Number(process.env.SMTP_PORT || 587);
-  const transport = nodemailer.createTransport({
-    host: required("SMTP_HOST"),
-    port,
-    secure: process.env.SMTP_SECURE
-      ? process.env.SMTP_SECURE === "true"
-      : port === 465,
-    requireTLS: production,
-    auth: process.env.SMTP_USER
-      ? { user: process.env.SMTP_USER, pass: required("SMTP_PASSWORD") }
-      : undefined,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-    tls: { rejectUnauthorized: true },
-  });
+  const transport=createMailTransport();
   const from = required("SMTP_FROM");
   const id = digest(`${user.id}:${purpose}`),
     code = String(randomInt(100000, 1000000));

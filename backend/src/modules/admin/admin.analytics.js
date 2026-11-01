@@ -1,3 +1,4 @@
+import { publicPredicate } from '../reviews/reviews.policy.js';
 import { requireRole } from "../../middleware/auth.middleware.js";
 import { z } from "zod";
 import { select } from "./admin.repository.js";
@@ -156,7 +157,7 @@ export async function dashboard(input, ctx) {
     (SELECT COUNT(*) FROM dbo.Services s WHERE s.CategoryId=c.CategoryId) AS services,
     (SELECT COUNT(DISTINCT bi.BookingId) FROM dbo.BookingItems bi JOIN dbo.Services s ON s.ServiceId=bi.ServiceId JOIN dbo.Booking b ON b.BookingId=bi.BookingId WHERE s.CategoryId=c.CategoryId AND b.CreatedAt>=:start AND b.CreatedAt< :end) AS bookings,
     COALESCE((SELECT SUM(bi.LineTotal) FROM dbo.BookingItems bi JOIN dbo.Services s ON s.ServiceId=bi.ServiceId JOIN dbo.Booking b ON b.BookingId=bi.BookingId WHERE s.CategoryId=c.CategoryId AND b.CreatedAt>=:start AND b.CreatedAt< :end AND b.PaymentStatus='Paid' AND b.BookingStatus NOT IN ('Cancelled','Refunded')),0) AS revenue,
-    (SELECT AVG(CAST(r.Rating AS decimal(5,2))) FROM dbo.Reviews r WHERE r.IsPublished=1 AND EXISTS (SELECT 1 FROM dbo.BookingItems bi JOIN dbo.Services s ON s.ServiceId=bi.ServiceId WHERE bi.BookingId=r.BookingId AND s.CategoryId=c.CategoryId)) AS rating
+    (SELECT AVG(CAST(r.Rating AS decimal(5,2))) FROM dbo.Reviews r WHERE ${publicPredicate()} AND EXISTS (SELECT 1 FROM dbo.Services s WHERE s.ServiceId=r.ServiceId AND s.CategoryId=c.CategoryId)) AS rating
     FROM dbo.Categories c WHERE c.IsActive=1 ORDER BY c.SortOrder,c.CategoryId`,
     params,
   );

@@ -1,3 +1,4 @@
+import { signupAcceptances } from '../cms/cms.service.js';
 import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { Op, TableHints } from "sequelize";
@@ -151,6 +152,7 @@ export async function register(input, role, ctx) {
         { transaction },
       );
     }
+    try { await signupAcceptances(user.id,data,transaction); } catch(error) { if(error.status===409)fail(error.message);throw error; }
     await audit("SIGNUP", ctx, user.id, null, transaction);
     return user;
   });

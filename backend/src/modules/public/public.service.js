@@ -2,7 +2,6 @@ import { QueryTypes } from "sequelize";
 import { GraphQLError } from "graphql";
 import { sequelize } from "../../config/database.js";
 import { limit } from "../auth/security.service.js";
-import { ContactMessage } from "./contact.model.js";
 import { contactInput, listingInput } from "./public.validation.js";
 
 export const eligibleVendor = `v.IsActive = 1 AND v.VerificationStatus = 'Approved'
@@ -12,7 +11,7 @@ const locationSql = `OUTER APPLY (SELECT TOP (1) l.City, l.State FROM dbo.Vendor
 const imageSql = (
   entity,
 ) => `OUTER APPLY (SELECT TOP (1) MediaUrl FROM dbo.Media m
-  WHERE m.EntityId = ${entity} AND m.MediaType = 'Image' AND LOWER(m.EntityType) = 'service'
+  WHERE m.EntityId = ${entity} AND m.MediaType = 'Image' AND LOWER(m.EntityType) = 'service' AND m.ModerationStatus='Approved' AND m.UploadStatus='Ready' AND m.DeletedAt IS NULL
   ORDER BY m.IsPrimary DESC, m.SortOrder, m.MediaId) img`;
 const select = (sql, replacements = {}) =>
   sequelize.query(sql, { type: QueryTypes.SELECT, replacements });
@@ -141,17 +140,22 @@ export async function submitContactMessage(_, { input }, ctx) {
         ),
       },
     });
-  await limit(`contact:${ctx.req.ip}`, 5, 3600);
-  const { consent, ...fields } = parsed.data;
-  const result = await ContactMessage.create({
-    ...fields,
-    phone: fields.phone || null,
-    consentedAt: new Date(),
-  });
+  const { submit } = await import("../cms/support.service.js");
   return {
     success: true,
-    reference: result.id,
-    message:
-      "Your message has been received. Keep your reference number for follow-up.",
+    ...(await submit(
+      {
+        fullName: `${parsed.data.firstName} ${parsed.data.lastName}`,
+        email: parsed.data.email,
+        phone: parsed.data.phone || "",
+        subject: parsed.data.subject,
+        category: parsed.data.category,
+        message: parsed.data.message,
+        consent: parsed.data.consent,
+        requestKey: input.requestKey || crypto.randomUUID(),
+        website: "",
+      },
+      ctx,
+    )),
   };
 }

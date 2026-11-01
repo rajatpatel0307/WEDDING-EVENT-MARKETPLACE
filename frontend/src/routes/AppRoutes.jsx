@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, Link, useParams } from "react-router-dom";
+import { Routes, Route, Navigate, Link } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import GuestRoute from "./GuestRoute";
 import ProtectedRoute from "./ProtectedRoute";
@@ -10,14 +10,41 @@ import RegisterPage from "../modules/auth/pages/RegisterPage";
 import ForgotPasswordPage from "../modules/auth/pages/ForgotPasswordPage";
 import OtpPage from "../modules/auth/pages/OtpPage";
 import ResetPasswordPage from "../modules/auth/pages/ResetPasswordPage";
-import {
-  Dashboard,
-  AccountLayout,
-  VendorStatusPage,
-} from "../modules/auth/pages/AccountPages";
-const NotificationCenter=lazy(()=>import('../modules/communication/Notifications'));
-const NotificationSettings=lazy(()=>import('../modules/communication/Notifications').then(m=>({default:m.NotificationSettings})));
-const CommunicationOverview=lazy(()=>import('../modules/communication/CommunicationOverview'));
+import { VendorStatusPage } from "../modules/auth/pages/AccountPages";
+const AdminContent = lazy(() => import("../modules/content/AdminContent"));
+const ContactManagement = lazy(() =>
+  import("../modules/content/AdminContent").then((m) => ({
+    default: m.ContactManagement,
+  })),
+);
+const PrivacyManagement = lazy(() =>
+  import("../modules/content/AdminContent").then((m) => ({
+    default: m.PrivacyManagement,
+  })),
+);
+const LegalPage = lazy(() =>
+  import("../modules/content/InfoPages").then((m) => ({
+    default: m.LegalPage,
+  })),
+);
+const LegalCenterPage = lazy(() =>
+  import("../modules/content/InfoPages").then((m) => ({
+    default: m.LegalCenterPage,
+  })),
+);
+const MediaLibrary = lazy(() => import("../modules/media/MediaLibrary"));
+const ReviewsWorkspace = lazy(() => import("../modules/reviews/Reviews"));
+const NotificationCenter = lazy(
+  () => import("../modules/communication/Notifications"),
+);
+const NotificationSettings = lazy(() =>
+  import("../modules/communication/Notifications").then((m) => ({
+    default: m.NotificationSettings,
+  })),
+);
+const CommunicationOverview = lazy(
+  () => import("../modules/communication/CommunicationOverview"),
+);
 const BusinessLocations = lazy(
   () => import("../modules/vendor/pages/BusinessLocations"),
 );
@@ -199,112 +226,6 @@ function PublicPage({ children }) {
     </Suspense>
   );
 }
-function Legal({ privacy = false }) {
-  return (
-    <main
-      id="main-content"
-      className="legal-page max-w-[780px] [margin:60px_auto] [padding:0_25px_60px] [&_>_.eyebrow]:mt-[30px] [&_h1]:text-[42px] [&_h1]:[margin:15px_0_25px] [&_h2]:text-[27px] [&_h2]:[margin:30px_0_12px] [&_p]:text-[14px] [&_p]:leading-[1.9] max-[480.001px]:mt-[25px]"
-    >
-      <Link
-        className="back-link inline-flex gap-[8px] items-center [color:#8d6a72] text-[12px] mt-[25px]"
-        to="/auth/signup"
-      >
-        ← Back to registration
-      </Link>
-      <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full">
-        MARRYNEST
-      </span>
-      <h1>{privacy ? "Privacy Policy" : "Terms & Conditions"}</h1>
-      <div className="info-box [border:1px_solid_#eaddd2] [background:#fcf8f2] rounded-[7px] [padding:15px] text-[12px] [color:#96785c] [margin:18px_0] [&_p]:mt-[6px]">
-        Policy preview. The marketplace operator must review and publish its
-        approved legal policies before accepting public registrations.
-      </div>
-      {privacy ? (
-        <>
-          <h2>Information used for your account</h2>
-          <p>
-            Registration collects your name, email address, phone number and
-            encrypted password credentials. Vendor applications also include
-            business details, service categories, locations and verification
-            documents.
-          </p>
-          <h2>Why this information is used</h2>
-          <p>
-            Account information supports sign-in, email verification, password
-            recovery and vendor review. Security events are recorded to help
-            protect accounts. Verification documents are restricted to
-            authorized administrators.
-          </p>
-          <h2>Questions and requests</h2>
-          <p>
-            Contact the marketplace operator for information about retention,
-            access, correction and deletion. The operator must publish verified
-            contact details, retention periods and applicable rights before
-            launch.
-          </p>
-        </>
-      ) : (
-        <>
-          <h2>Your account</h2>
-          <p>
-            Provide accurate registration details and protect your password. Do
-            not share verification codes. You are responsible for activity
-            carried out through your account.
-          </p>
-          <h2>Vendor review</h2>
-          <p>
-            Vendor registration does not guarantee approval. Access to vendor
-            tools requires email verification and administrative approval.
-            Administrators may reject or suspend an application and provide a
-            review note.
-          </p>
-          <h2>Marketplace services</h2>
-          <p>
-            Booking, payment, cancellation, refund and dispute terms must be
-            published by the operator before those features launch. These
-            account terms do not define those business policies.
-          </p>
-        </>
-      )}
-    </main>
-  );
-}
-function AccountFeaturePage() {
-  const { section } = useParams();
-  const name = {
-    quotations: "Quotations",
-    profile: "My profile",
-    wishlist: "Wishlist",
-    bookings: "Bookings",
-    messages: "Messages",
-    notifications: "Notifications",
-    services: "Services",
-    availability: "Availability",
-    reviews: "Reviews",
-    payments: "Payments",
-    reports: "Reports",
-    users: "Users",
-  }[section];
-  return (
-    <AccountLayout>
-      <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full">
-        YOUR MARRYNEST ACCOUNT
-      </span>
-      <h1>{name || "Page not found"}</h1>
-      <p className="dashboard-intro mt-[12px] text-[14px]">
-        {name
-          ? "This workspace is being prepared. Your account is ready; live marketplace tools will appear here as they become available."
-          : "This page is not available."}
-      </p>
-      <Link
-        className="text-link [color:#8c414e] font-medium inline-flex items-center gap-[7px] [&:hover]:underline"
-        to="/auth/change-password"
-      >
-        Manage account security
-      </Link>
-    </AccountLayout>
-  );
-}
 export default function AppRoutes() {
   return (
     <Routes>
@@ -340,7 +261,14 @@ export default function AppRoutes() {
           </PublicPage>
         }
       />
-      <Route path="/privacy-policy" element={<Legal privacy />} />
+      <Route
+        path="/privacy-policy"
+        element={
+          <Suspense fallback={<div role="status">Loading policy...</div>}>
+            <LegalPage documentKey="privacy" />
+          </Suspense>
+        }
+      />
       {["services", "venues", "vendors", "packages", "search", "offers"].map(
         (path) => (
           <Route
@@ -456,28 +384,34 @@ export default function AppRoutes() {
               path="quotations"
               element={<QuotationList role="Customer" />}
             />
+            <Route path="legal" element={<LegalCenterPage />} />
+            <Route path="media" element={<MediaLibrary role="Customer" />} />
             <Route path="messages" element={<CustomerMessages />} />
-            <Route path="notifications" element={<NotificationCenter role="Customer" />} />
-            <Route path="notification-settings" element={<NotificationSettings role="Customer" />} />
-            {[
-              "bookings",
-              "wishlist",
-              "payments",
-              "reviews",
-              "addresses",
-            ].map((section) => (
-              <Route
-                key={section}
-                path={section}
-                element={
-                  section === "wishlist" ? (
-                    <CustomerWishlist />
-                  ) : (
-                    <CustomerRecords section={section} />
-                  )
-                }
-              />
-            ))}
+            <Route
+              path="notifications"
+              element={<NotificationCenter role="Customer" />}
+            />
+            <Route
+              path="notification-settings"
+              element={<NotificationSettings role="Customer" />}
+            />
+            {["bookings", "wishlist", "payments", "reviews", "addresses"].map(
+              (section) => (
+                <Route
+                  key={section}
+                  path={section}
+                  element={
+                    section === "reviews" ? (
+                      <ReviewsWorkspace role="Customer" />
+                    ) : section === "wishlist" ? (
+                      <CustomerWishlist />
+                    ) : (
+                      <CustomerRecords section={section} />
+                    )
+                  }
+                />
+              ),
+            )}
             <Route
               path="*"
               element={<Navigate to="/customer/dashboard" replace />}
@@ -505,6 +439,8 @@ export default function AppRoutes() {
                 </Suspense>
               }
             >
+              <Route path="legal" element={<LegalCenterPage />} />
+              <Route path="media" element={<MediaLibrary role="Vendor" />} />
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<VendorDashboardPage />} />
               <Route
@@ -568,8 +504,14 @@ export default function AppRoutes() {
                 element={<VendorCalendarPage filter="available" />}
               />
               <Route path="messages" element={<VendorMessagesPage />} />
-              <Route path="notifications" element={<NotificationCenter role="Vendor" />} />
-              <Route path="notification-settings" element={<NotificationSettings role="Vendor" />} />
+              <Route
+                path="notifications"
+                element={<NotificationCenter role="Vendor" />}
+              />
+              <Route
+                path="notification-settings"
+                element={<NotificationSettings role="Vendor" />}
+              />
               <Route path="earnings" element={<VendorEarningsPage />} />
               {[
                 "packages",
@@ -582,12 +524,14 @@ export default function AppRoutes() {
                 "reviews",
                 "offers",
                 "coupons",
-                ].map((section) => (
+              ].map((section) => (
                 <Route
                   key={section}
                   path={section}
                   element={
-                    section === "locations" ? (
+                    section === "reviews" ? (
+                      <ReviewsWorkspace role="Vendor" />
+                    ) : section === "locations" ? (
                       <BusinessLocations />
                     ) : (
                       <VendorResourcesPage
@@ -692,6 +636,54 @@ export default function AppRoutes() {
             }
           >
             <Route path="profile" element={<ProfilePage />} />
+            <Route
+              path="reviews"
+              element={
+                <Suspense fallback={<div role="status">Loading reviews…</div>}>
+                  <ReviewsWorkspace role="Admin" />
+                </Suspense>
+              }
+            />
+            <Route
+              path="review-reports"
+              element={
+                <Suspense fallback={<div role="status">Loading reports…</div>}>
+                  <ReviewsWorkspace role="Admin" />
+                </Suspense>
+              }
+            />
+            <Route
+              path="content"
+              element={
+                <Suspense fallback={<div role="status">Loading...</div>}>
+                  <AdminContent />
+                </Suspense>
+              }
+            />
+            <Route
+              path="contact-inquiries"
+              element={
+                <Suspense fallback={<div role="status">Loading...</div>}>
+                  <ContactManagement />
+                </Suspense>
+              }
+            />
+            <Route
+              path="privacy-requests"
+              element={
+                <Suspense fallback={<div role="status">Loading...</div>}>
+                  <PrivacyManagement />
+                </Suspense>
+              }
+            />
+            <Route
+              path="media"
+              element={
+                <Suspense fallback={<div role="status">Loading media?</div>}>
+                  <MediaLibrary role="Admin" />
+                </Suspense>
+              }
+            />
             <Route path="finance/:kind/:id" element={<FinancialDetails />} />
             <Route path="bookings" element={<BookingsManagementPage />} />
             <Route
@@ -727,8 +719,14 @@ export default function AppRoutes() {
               }
             />
             <Route path="notifications" element={<AdminInbox />} />
-            <Route path="communication-overview" element={<CommunicationOverview />} />
-            <Route path="notification-settings" element={<NotificationSettings role="Admin" />} />
+            <Route
+              path="communication-overview"
+              element={<CommunicationOverview />}
+            />
+            <Route
+              path="notification-settings"
+              element={<NotificationSettings role="Admin" />}
+            />
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route
               path="dashboard"
@@ -937,7 +935,10 @@ export default function AppRoutes() {
         path="/terms"
         element={<Navigate to="/terms-and-conditions" replace />}
       />
-      <Route path="/privacy" element={<Legal privacy />} />
+      <Route
+        path="/privacy"
+        element={<Navigate to="/privacy-policy" replace />}
+      />
       <Route
         path="*"
         element={

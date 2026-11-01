@@ -6,14 +6,13 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { ArrowLeft, Check, ImagePlus, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, Plus, Save, Trash2 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import {
   Empty,
   ErrorView,
   Field,
   Heading,
-  Image,
   Loading,
   Modal,
   Panel,
@@ -21,85 +20,13 @@ import {
 } from "./WorkspaceUI";
 import {
   money,
-  readFile,
   save,
   today,
   vendorRequest,
 } from "../services/workspace.api";
 
-export function ImageUpload({ kind, src, onUploaded, onBusy }) {
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
-    [preview, setPreview] = useState(src);
-  useEffect(() => setPreview(src), [src]);
-  return (
-    <div
-      className="
-      grid gap-[14px] min-w-[0] [&_>_label]:flex [&_>_label]:items-center [&_>_label]:justify-center
-      [&_>_label]:flex-col [&_>_label]:gap-[6px] [&_>_label]:[border-top:1px_dashed_#d7e3c9]
-      [&_>_label]:[border-right:1px_dashed_#d7e3c9] [&_>_label]:[border-bottom:1px_dashed_#d7e3c9]
-      [&_>_label]:[border-left:1px_dashed_#d7e3c9] [&_>_label]:rounded-[7px]
-      [&_>_label]:[padding:22px_13px] [&_>_label]:text-[#a2b58c] [&_>_label]:[background:#fafcf5]
-      [&_>_label]:relative [&_>_label]:cursor-pointer [&_>_label]:overflow-hidden [&_strong]:text-[10px]
-      [&_strong]:font-medium [&_>_label_>_span]:text-[8px] [&_>_label_>_span]:text-[#bcc8aa]
-      [&_input]:absolute [&_input]:[inset:0] [&_input]:w-[100%] [&_input]:h-[100%] [&_input]:opacity-[0]
-      [&_input]:cursor-pointer
-    "
-    >
-      <Image
-        key={preview}
-        src={preview}
-        alt="Service"
-        className="w-[100%] max-h-[220px] h-[170px] object-cover rounded-[7px]"
-      />
-      <label>
-        <ImagePlus size={18} />
-        <strong>{busy ? "Uploading image…" : "Choose an image"}</strong>
-        <span>PNG or JPEG · Up to 5 MB</span>
-        <input
-          type="file"
-          accept="image/png,image/jpeg"
-          disabled={busy}
-          onChange={async (e) => {
-            const input = e.target,
-              file = input.files?.[0];
-            if (!file) return;
-            setBusy(true);
-            onBusy?.(true);
-            setError("");
-            try {
-              if (!["image/png", "image/jpeg"].includes(file.type))
-                throw new Error("Choose a PNG or JPEG image.");
-              const result = await save("/images", "POST", {
-                kind,
-                base64: await readFile(file),
-              });
-              setPreview(result.url);
-              onUploaded(result);
-            } catch (err) {
-              setError(err.message);
-            } finally {
-              setBusy(false);
-              onBusy?.(false);
-              input.value = "";
-            }
-          }}
-        />
-      </label>
-      {error && (
-        <p
-          className="
-          vw-form-error [background:#fff4ee] [border-top:1px_solid_#f0ddcf] [border-right:1px_solid_#f0ddcf]
-          [border-bottom:1px_solid_#f0ddcf] [border-left:1px_solid_#f0ddcf] text-[#b6836e]! [padding:12px_15px]
-          rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]
-        "
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
-    </div>
-  );
+export function ImageUpload({kind,src}) {
+ return <div className="grid gap-3">{src&&<img src={src} alt={`${kind} image`} className="max-h-44 w-full rounded-lg object-cover"/>}<Link to="/vendor/media?category=Vendor" className="rounded-lg border border-[#dce5d7] px-3 py-2 text-center text-sm">Manage images in your Media Library</Link><p className="text-xs text-[#77866f]">New images are published after moderation.</p></div>;
 }
 const inputNumber = (value) =>
   value === "" || value === null || value === undefined ? null : Number(value);

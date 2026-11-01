@@ -1,4 +1,6 @@
 import { startBookingJobs } from "./src/modules/admin/booking-jobs.js";
+import { startMediaJobs } from "./src/modules/media/media.jobs.js";
+import { startSupportJobs } from './src/modules/cms/support.jobs.js';
 import { validateEnvironment } from "./src/config/environment.js";
 import { sequelize } from "./src/config/database.js";
 import { createApp } from "./src/app.js";
@@ -58,10 +60,25 @@ try {
     throw new Error(
       "Quotation lifecycle migration is missing. Run npm run db:migrate before starting the API.",
     );
-  const [paymentMigration] = await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='020-financial-controls'");
-  if(!paymentMigration.length) throw new Error('Payment integrity migration is missing. Run npm run db:migrate before starting the API.');
-  const [communicationMigration] = await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='023-communication'");
-  if (!communicationMigration.length) throw new Error('Communication migration missing. Run npm run db:migrate.');
+  const [paymentMigration] = await sequelize.query(
+    "SELECT Name FROM dbo.AuthMigrations WHERE Name='020-financial-controls'",
+  );
+  if (!paymentMigration.length)
+    throw new Error(
+      "Payment integrity migration is missing. Run npm run db:migrate before starting the API.",
+    );
+  const [communicationMigration] = await sequelize.query(
+    "SELECT Name FROM dbo.AuthMigrations WHERE Name='023-communication'",
+  );
+  if (!communicationMigration.length)
+    throw new Error("Communication migration missing. Run npm run db:migrate.");
+  const [mediaMigration] = await sequelize.query(
+    "SELECT Name FROM dbo.AuthMigrations WHERE Name='025-media'",
+  );
+  if (!mediaMigration.length)
+    throw new Error("Media migration missing. Run npm run db:migrate.");
+  const [contentMigration]=await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='026-content-support'");
+  if(!contentMigration.length)throw new Error('Content/support migration missing. Run npm run db:migrate.');
   const { httpServer, apollo, io } = await createApp();
   httpServer.listen(Number(process.env.PORT || 5000), () =>
     console.log("Wedding marketplace API started."),
@@ -72,10 +89,17 @@ try {
       : startBookingJobs();
   const stop = async () => {
     await stopJobs();
-    await new Promise(resolve => io.close(resolve));
+    await stopMedia();
+    await stopSupport();
+    await new Promise((resolve) => io.close(resolve));
     await apollo.stop();
     await sequelize.close();
   };
+  const stopMedia =
+    process.env.MEDIA_CLEANUP_ENABLED === "false"
+      ? async () => {}
+      : startMediaJobs();
+  const stopSupport=process.env.SUPPORT_MAIL_JOBS_ENABLED==='false'?async()=>{}:startSupportJobs();
   process.once("SIGTERM", stop);
   process.once("SIGINT", stop);
 } catch (error) {
