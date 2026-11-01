@@ -2,7 +2,9 @@ import CommissionConfiguration from "../components/CommissionConfiguration";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ShieldCheck, Save, LoaderCircle } from "lucide-react";
-import { resourceTitle, adminNavigation } from "../navigation";
+import { resourceTitle, adminNavigation, paymentNavigation } from "../navigation";
+import PaymentTabs from "../components/PaymentTabs";
+import FinanceCards from "../components/FinanceCards";
 import { adminRequest } from "../api";
 import { useAuth } from "../../../context/AuthContext";
 import AdminTable, { ErrorState, Skeleton } from "../components/AdminTable";
@@ -118,9 +120,10 @@ function Settings() {
 export default function AdminManagement() {
   const { resource } = useParams(),
     [params] = useSearchParams();
+  const [financeRevision, setFinanceRevision] = useState(0);
   const valid = adminNavigation
     .flatMap((g) => g.items)
-    .some((i) => i[0] === resource);
+    .some((i) => i[0] === resource) || paymentNavigation.some(([path]) => path === resource);
   return (
     <>
       <div className="ad-page-heading flex items-center [@media(width<=1000px)]:items-start justify-between gap-[20px] [@media(width<=767px)]:gap-[14px] [@media(width<=767px)]:flex-col [@media(width<=767px)]:[&_p]:text-[11px]">
@@ -139,6 +142,8 @@ export default function AdminManagement() {
           <ShieldCheck size={14} /> Admin workspace
         </span>
       </div>
+      {["refunds", "payouts", "commission"].includes(resource) && <FinanceCards key={resource} section={resource} revision={financeRevision} />}
+      {paymentNavigation.some(([path]) => path === resource) && <PaymentTabs />}
       {resource === "commission" && <CommissionConfiguration />}
       {!valid ? (
         <div className="ad-panel ad-empty [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden] [padding:42px_20px] flex items-center justify-center flex-col gap-[8px] text-center text-[#a5b19b] min-h-[160px] [&_strong]:text-[12px] [&_strong]:font-[500] [&_strong]:text-[#7d8d72] [&_p]:text-[10px] [&_p]:max-w-[320px]">
@@ -152,6 +157,7 @@ export default function AdminManagement() {
           resource={resource}
           initialStatus={params.get("status") || ""}
           initialQuery={params.get("q") || ""}
+          onChange={() => setFinanceRevision((value) => value + 1)}
         />
       )}
     </>

@@ -89,6 +89,21 @@ const allowed = new Set([
   "coupons",
   "notifications",
 ]);
+const bookingFilters = {
+  requests: "t.BookingStatus='Pending'",
+  upcoming: "t.BookingStatus IN ('Accepted','PaymentPending','Confirmed') AND t.BookingDate>=CONVERT(date,DATEADD(minute,330,SYSUTCDATETIME()))",
+  active: "t.BookingStatus IN ('Accepted','PaymentPending','Confirmed','InProgress')",
+  completed: "t.BookingStatus='Completed'",
+  cancelled: "t.BookingStatus IN ('Cancelled','Rejected','Refunded')",
+  cancellations: "EXISTS(SELECT 1 FROM dbo.BookingChangeRequests cr WHERE cr.BookingId=t.BookingId AND cr.Kind='Cancellation' AND cr.Status='Pending')",
+  reschedules: "EXISTS(SELECT 1 FROM dbo.BookingChangeRequests cr WHERE cr.BookingId=t.BookingId AND cr.Kind='Reschedule' AND cr.Status='Pending')",
+};
+export async function bookingStatistics(ctx) {
+  const { id } = scope(ctx);
+  const metrics = [["total", "1=1"], ...Object.entries(bookingFilters)];
+  const [row] = await repo.select(`SELECT ${metrics.map(([key, predicate]) => `(SELECT COUNT_BIG(*) FROM dbo.Booking t WHERE t.VendorId=:id AND (${predicate})) AS [${key}]`).join(",")}`, { id });
+  return Object.fromEntries(Object.entries(row).map(([key, value]) => [key, Number(value)]));
+}
 export async function records(section, input, ctx) {
   const { id, user } = scope(ctx);
   if (!allowed.has(section)) fail("Vendor section not found.", 404);
@@ -106,19 +121,7 @@ export async function records(section, input, ctx) {
   };
   let condition = c.where;
   const filters = {
-    bookings: {
-      requests: "t.BookingStatus='Pending'",
-      upcoming:
-        "t.BookingStatus IN ('Accepted','PaymentPending','Confirmed') AND t.BookingDate>=CONVERT(date,DATEADD(minute,330,SYSUTCDATETIME()))",
-      active:
-        "t.BookingStatus IN ('Accepted','PaymentPending','Confirmed','InProgress')",
-      completed: "t.BookingStatus='Completed'",
-      cancelled: "t.BookingStatus IN ('Cancelled','Rejected','Refunded')",
-      cancellations:
-        "EXISTS(SELECT 1 FROM dbo.BookingChangeRequests cr WHERE cr.BookingId=t.BookingId AND cr.Kind='Cancellation' AND cr.Status='Pending')",
-      reschedules:
-        "EXISTS(SELECT 1 FROM dbo.BookingChangeRequests cr WHERE cr.BookingId=t.BookingId AND cr.Kind='Reschedule' AND cr.Status='Pending')",
-    },
+    bookings: bookingFilters,
     quotations: {
       sent: "t.Status IN ('Sent','Viewed')",
       accepted: "t.Status='Accepted'",

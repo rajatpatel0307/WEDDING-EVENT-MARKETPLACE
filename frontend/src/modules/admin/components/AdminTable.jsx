@@ -6,15 +6,18 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search, SlidersHorizontal, Download, ChevronLeft, ChevronRight,
   ArrowUpDown, Inbox, Eye, Check, X, Plus, Pencil,
-  FileDown, LoaderCircle,
+  FileDown, LoaderCircle, Tags, CircleCheck, CircleX, Users, ShieldBan, Store, Clock, SearchCheck, BadgeCheck, CreditCard, RefreshCw, RotateCcw,
 } from "lucide-react";
 import { adminRequest, saveBlob, date, money, number } from "../api";
 import { columnLabels } from "../navigation";
 import { useAuth } from "../../../context/AuthContext";
 import AdminDialog from "./AdminDialog";
 import RecordPicker from "./RecordPicker";
+import CategoryImageUpload from "./CategoryImageUpload";
+import { categoryImages } from "../../../components/home/categoryImages";
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
+const categoryImage = (row) => row?.image || categoryImages[row?.name] || categoryImages["Venue & Location"];
 const label = (key) =>
   columnLabels[key] || String(key).replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
 
@@ -114,6 +117,7 @@ export function Empty({
 }
 
 function display(key, value, row = {}) {
+  if (key === "image" && value) return <img src={value} alt={row.name || "Category"} className="size-12 rounded-lg object-cover" />;
   if (value === null || value === undefined || value === "") return "—";
   if (key === "status") return <Badge>{value}</Badge>;
   if (/At$|Date$|^validUntil$/.test(key)) return date(value);
@@ -150,7 +154,7 @@ function VendorCategories({ value, vendorId }) {
 
 export default function AdminTable({
   resource, compact = false, onChange, version = 0,
-  initialStatus = "", initialQuery = "",
+  initialStatus = "", initialQuery = "", beforeTable = null,
 }) {
   const { notify } = useAuth();
   const navigate = useNavigate();
@@ -303,6 +307,7 @@ export default function AdminTable({
       let result;
       if (["create", "edit"].includes(dialog.action)) {
         const values = { ...fields };
+        if ("removeImage" in values) values.removeImage = values.removeImage === "true";
         for (const key of ["discountValue", "categoryId", "usageLimit", "sortOrder"]) {
           if (key in values) values[key] = values[key] === "" ? null : Number(values[key]);
         }
@@ -372,6 +377,44 @@ export default function AdminTable({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
+    <>
+      {["categories", "customers", "vendors", "payments"].includes(resource) && !compact && (
+        <div className={`mb-6 grid grid-cols-1 gap-4 ${["vendors", "payments"].includes(resource) ? "sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6" : resource === "customers" ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-3"}`} aria-label={resource === "payments" ? "Payment statistics" : resource === "vendors" ? "Vendor statistics" : resource === "customers" ? "Customer statistics" : "Category statistics"} aria-busy={loading}>
+          {(resource === "payments" ? [
+            ["total", "All Payments", CreditCard, "bg-[#e7f0ed] text-[#176b60]"],
+            ["pending", "Pending", Clock, "bg-[#faf3df] text-[#ac8a39]"],
+            ["processing", "Processing", RefreshCw, "bg-[#eaf0fa] text-[#5c7fa8]"],
+            ["success", "Success", CircleCheck, "bg-[#edf5e7] text-[#568447]"],
+            ["failed", "Failed", CircleX, "bg-[#fae8e8] text-[#b65555]"],
+            ["refunded", "Refunded", RotateCcw, "bg-[#f3eaf7] text-[#9568a6]"],
+          ] : resource === "vendors" ? [
+            ["total", "All Vendors", Store, "bg-[#e7f0ed] text-[#176b60]"],
+            ["pending", "Pending", Clock, "bg-[#faf3df] text-[#ac8a39]"],
+            ["underReview", "Under Review", SearchCheck, "bg-[#eaf0fa] text-[#5c7fa8]"],
+            ["approved", "Approved", BadgeCheck, "bg-[#edf5e7] text-[#568447]"],
+            ["rejected", "Rejected", CircleX, "bg-[#fae8e8] text-[#b65555]"],
+            ["suspended", "Suspended", ShieldBan, "bg-[#f3eaf7] text-[#9568a6]"],
+          ] : resource === "customers" ? [
+            ["total", "All Customers", Users, "bg-[#e7f0ed] text-[#176b60]"],
+            ["active", "Active", CircleCheck, "bg-[#edf5e7] text-[#568447]"],
+            ["inactive", "Inactive", CircleX, "bg-[#fbefea] text-[#b87c66]"],
+            ["blocked", "Blocked", ShieldBan, "bg-[#fae8e8] text-[#b65555]"],
+          ] : [
+            ["total", "Total Categories", Tags, "bg-[#e7f0ed] text-[#176b60]"],
+            ["active", "Active", CircleCheck, "bg-[#edf5e7] text-[#568447]"],
+            ["inactive", "Inactive", CircleX, "bg-[#fbefea] text-[#b87c66]"],
+          ]).map(([key, title, Icon, color]) => (
+            <article key={key} className="flex items-center justify-between gap-4 rounded-xl border border-[#e0e8e2] bg-white p-5 shadow-[0_3px_8px_#263f2d02]">
+              <div>
+                <span className="text-xs font-medium text-[#819189]">{title}</span>
+                <strong className="mt-2 block text-[28px] font-semibold leading-tight text-[#294b40]" aria-live="polite">{loading ? <span className="block h-8 w-14 animate-pulse rounded bg-[#edf2ed]" aria-label="Loading count" /> : error || !data?.summary ? "—" : number(data.summary[key])}</strong>
+              </div>
+              <span className={`grid size-12 shrink-0 place-items-center rounded-xl ${color}`}><Icon size={23} strokeWidth={1.7} aria-hidden="true" /></span>
+            </article>
+          ))}
+        </div>
+      )}
+      {beforeTable && <div className="mb-6">{beforeTable}</div>}
     <section className="ad-panel ad-data-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden] [@media(width<=1200px)]:[&_.ad-table_th:last-child]:w-[95px] [@media(width<=767px)]:[&_.ad-panel-heading_.ad-text-link]:text-[9px]" aria-label={`${resource} records`}>
       {compact && (
         <div className="ad-panel-heading flex items-center justify-between gap-[15px] [padding:21px_22px_17px] [@media(width<=767px)]:[padding:18px_16px] [@media(767px<width<=1200px)]:[padding:17px_16px] [&_p]:text-[10px] [@media(width<=1200px)]:[&_p]:text-[9px] [&_p]:mt-[4px] [@media(width<=767px)]:[&_h2]:text-[14px] [@media(767px<width<=1200px)]:[&_h2]:text-[13px] [@media(width<=767px)]:flex-wrap">
@@ -524,7 +567,7 @@ export default function AdminTable({
                         <button type="button" className="ad-record-name flex items-center gap-[9px] [border-top-width:0] [border-top-style:none] [border-top-color:currentColor] [border-right-width:0] [border-right-style:none] [border-right-color:currentColor] [border-bottom-width:0] [border-bottom-style:none] [border-bottom-color:currentColor] [border-left-width:0] [border-left-style:none] [border-left-color:currentColor] [background:none] text-left text-[#4c6554] p-[0] text-[10px] [@media(width<=767px)]:text-[12px] [@media(767px<width<=1200px)]:text-[9px] leading-[1.6] font-[500] max-w-full [&_>_span:last-child]:[overflow-wrap:anywhere] [&_>_span:last-child]:min-w-0 [@media(width<=767px)]:[&_.ad-avatar]:inline-flex [@media(767px<width<=1200px)]:[&_.ad-avatar]:hidden"
                           onClick={() => open(row, "view")}>
                           <span className="ad-avatar ad-avatar-small w-[28px] h-[28px] inline-flex items-center justify-center [background:#f3f5ef] text-[#98916e] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dae6df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dae6df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dae6df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dae6df] rounded-[7px] text-[10px] shrink-0">
-                            {String(row?.name || "?").slice(0, 1)}
+                            {resource === "categories" ? <img src={categoryImage(row)} alt={`${row.name} category`} className="size-full rounded-[6px] object-cover" /> : String(row?.name || "?").slice(0, 1)}
                           </span>
                           <span>
                             {display(key, row?.[key], row)}
@@ -662,7 +705,9 @@ export default function AdminTable({
           ) : (
             <form onSubmit={submit} className="ad-form flex flex-col gap-[17px] [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] [&_label]:text-[11px] [&_label]:text-[#7c8e76] [&_input]:w-full [&_input]:text-[12px]! [&_textarea]:w-full [&_textarea]:text-[12px]! [&_select]:w-full [&_select]:text-[12px]! [&_textarea]:min-h-[90px] [&_textarea]:[resize:vertical] [&_p]:text-[12px] [&_p]:text-[#86977d] [&_p]:leading-[1.7]">
               {["create", "edit"].includes(dialog.action) ? (
-                editable.map((key) => (
+                <>
+                {resource === "categories" && <CategoryImageUpload key={dialog.row?.id || "new"} image={dialog.row ? categoryImage(dialog.row) : ""} onReadingChange={setBusy} />}
+                {editable.map((key) => (
                   <label key={key}>
                     {label(key)}
                     {key === "categoryId" ? (
@@ -688,7 +733,8 @@ export default function AdminTable({
                           : dialog.row?.[key] ?? ""} />
                     )}
                   </label>
-                ))
+                ))}
+                </>
               ) : (
                 <>
                   <div className="ad-confirm-summary flex flex-col gap-[5px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4ebdc] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4ebdc] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4ebdc] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4ebdc] [background:#f8faf4] rounded-[8px] p-[15px] items-start [&_>_span:not(.ad-badge)]:text-[11px] [&_>_span:not(.ad-badge)]:text-[#91a081]">
@@ -726,5 +772,6 @@ export default function AdminTable({
         </AdminDialog>
       )}
     </section>
+    </>
   );
 }

@@ -77,7 +77,17 @@ export async function list(name, query) {
       )}${r.updated === false ? "" : ["Payments", "Refunds", "VendorPayouts", "PlatformCommission", "Wishlists", "Messages", "Notifications", "Coupons", "Offers", "Media", "AuditLogs"].includes(r.table) ? "" : ", t.UpdatedAt AS updatedAt"} ${source} ORDER BY [${sort}] ${query.direction === "asc" ? "ASC" : "DESC"},t.[${r.id}] OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
     replacements,
   );
+  const summary = name === "categories" ? (await select(
+    "SELECT COUNT_BIG(*) AS total,COALESCE(SUM(CASE WHEN IsActive=1 THEN 1 ELSE 0 END),0) AS active,COALESCE(SUM(CASE WHEN IsActive=0 THEN 1 ELSE 0 END),0) AS inactive FROM dbo.Categories",
+  ))[0] : name === "customers" ? (await select(
+    `SELECT COUNT_BIG(*) AS total,COALESCE(SUM(CASE WHEN t.IsActive=1 AND t.IsBlocked=0 THEN 1 ELSE 0 END),0) AS active,COALESCE(SUM(CASE WHEN t.IsActive=0 AND t.IsBlocked=0 THEN 1 ELSE 0 END),0) AS inactive,COALESCE(SUM(CASE WHEN t.IsBlocked=1 THEN 1 ELSE 0 END),0) AS blocked FROM dbo.Users t WHERE ${r.where}`,
+  ))[0] : name === "vendors" ? (await select(
+    "SELECT COUNT_BIG(*) AS total,COALESCE(SUM(CASE WHEN t.VerificationStatus='Pending' THEN 1 ELSE 0 END),0) AS pending,COALESCE(SUM(CASE WHEN t.VerificationStatus='UnderReview' THEN 1 ELSE 0 END),0) AS underReview,COALESCE(SUM(CASE WHEN t.VerificationStatus='Approved' THEN 1 ELSE 0 END),0) AS approved,COALESCE(SUM(CASE WHEN t.VerificationStatus='Rejected' THEN 1 ELSE 0 END),0) AS rejected,COALESCE(SUM(CASE WHEN t.VerificationStatus='Suspended' THEN 1 ELSE 0 END),0) AS suspended FROM dbo.Vendors t JOIN dbo.Users u ON u.UserId=t.UserId",
+  ))[0] : name === "payments" ? (await select(
+    `SELECT COUNT_BIG(*) AS total,COALESCE(SUM(CASE WHEN t.PaymentStatus='Pending' THEN 1 ELSE 0 END),0) AS pending,COALESCE(SUM(CASE WHEN t.PaymentStatus='Processing' THEN 1 ELSE 0 END),0) AS processing,COALESCE(SUM(CASE WHEN t.PaymentStatus='Success' THEN 1 ELSE 0 END),0) AS success,COALESCE(SUM(CASE WHEN t.PaymentStatus='Failed' THEN 1 ELSE 0 END),0) AS failed,COALESCE(SUM(CASE WHEN t.PaymentStatus='Refunded' THEN 1 ELSE 0 END),0) AS refunded FROM dbo.Payments t ${r.joins}`,
+  ))[0] : undefined;
   return {
+    ...(summary ? { summary: Object.fromEntries(Object.entries(summary).map(([key, value]) => [key, Number(value)])) } : {}),
     gatewayOptions:
       name === "payments"
         ? (

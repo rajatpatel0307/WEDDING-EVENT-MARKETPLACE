@@ -1,4 +1,6 @@
 import { changeStatus as changeBookingStatus } from "./bookings-management.service.js";
+import { uploadAsset, validateFile } from "../media/cloudinary.service.js";
+import { randomUUID } from "node:crypto";
 import { decide as decideService } from "./service-approval.service.js";
 import { decideVendor } from "./vendor-verification.service.js";
 import { z } from "zod";
@@ -145,6 +147,10 @@ export async function save(name, id, input, ctx) {
   if (!r.editable) error("Editing is not available for this resource.");
   if (id) validId(r, id);
   const body = recordInput.parse(input);
+  if (name !== "categories" && (body.imageBase64 || body.removeImage !== undefined))
+    error("Image uploads are only supported for categories.");
+  if (body.imageBase64 && body.removeImage) error("Choose an image or remove the existing one.");
+  if (body.imageBase64) validateFile(body.imageBase64, true);
   if (["categories", "sub-categories"].includes(name) && !body.code)
     error("A category code is required.");
   if (name === "sub-categories" && !body.categoryId)
@@ -217,6 +223,15 @@ export async function save(name, id, input, ctx) {
         .filter(([key]) => body[key] !== undefined)
         .map(([key, column]) => [column, body[key]]),
     );
+    if (name === "categories") {
+      if (body.removeImage) values.ImageUrl = null;
+      else if (body.imageBase64) {
+        const asset = await uploadAsset(body.imageBase64, true, {
+          publicId: `wedding-marketplace/admin/categories/${randomUUID()}`,
+        });
+        values.ImageUrl = asset.url;
+      }
+    }
     if (old) {
       if (old.UpdatedAt) values.UpdatedAt = new Date();
       await repo.update(r, id, values, tx);
@@ -230,7 +245,7 @@ export async function save(name, id, input, ctx) {
       r.table,
       id,
       null,
-      body,
+      { ...body, imageBase64: undefined, ...(values.ImageUrl !== undefined ? { image: values.ImageUrl } : {}) },
       tx,
     );
     return { id, message: "Changes saved." };

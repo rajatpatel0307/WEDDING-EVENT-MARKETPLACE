@@ -55,6 +55,7 @@ const VendorBookingDetails = lazy(
   () => import("../modules/vendor/pages/VendorBookingsPage"),
 );
 const VendorBookingsList = lazy(() => import("../modules/vendor/pages/VendorBookingsList"));
+const VendorQuotationsList = lazy(() => import("../modules/vendor/pages/VendorQuotationsList"));
 const BookingsManagementPage = lazy(
   () => import("../modules/admin/pages/BookingsManagementPage"),
 );
@@ -479,7 +480,7 @@ export default function AppRoutes() {
               />
               <Route
                 path="requests"
-                element={<QuotationList role="Vendor" requests />}
+                element={<VendorQuotationsList category="requests" />}
               />
               <Route
                 path="requests/:id"
@@ -589,9 +590,10 @@ export default function AppRoutes() {
               ))}
               <Route
                 path="quotations"
-                element={<Navigate to="/vendor/quotations/sent" replace />}
+                element={<Navigate to="/vendor/quotations/all" replace />}
               />
               {Object.entries({
+                all: "",
                 drafts: "Draft",
                 sent: "Sent",
                 accepted: "Accepted",
@@ -599,12 +601,12 @@ export default function AppRoutes() {
                 expired: "Expired",
                 negotiations: "Negotiation",
                 converted: "Converted",
-              }).map(([path, status]) => (
+              }).map(([path]) => (
                 <Route
                   key={path}
                   path={`quotations/${path}`}
                   element={
-                    <QuotationList key={path} role="Vendor" filter={status} />
+                    <VendorQuotationsList key={path} category={path} />
                   }
                 />
               ))}

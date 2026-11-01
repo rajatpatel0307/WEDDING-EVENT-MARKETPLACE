@@ -1,5 +1,6 @@
 import * as commission from "./commission.service.js";
 import * as finance from "../payments/finance-reports.js";
+import { financeStatistics } from "./finance-statistics.service.js";
 import * as refundReview from "../payments/refund-review.js";
 import * as commissionRules from '../payments/commission-rules.js';
 import * as operations from "./operations.service.js";
@@ -70,7 +71,7 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
       ),
   );
   router.use((req, res, next) =>
-    (req.path.endsWith("/images/upload") ? uploadJson : standardJson)(
+    (req.path.endsWith("/images/upload") || /^\/categories(?:\/\d+)?$/.test(req.path) ? uploadJson : standardJson)(
       req,
       res,
       next,
@@ -80,6 +81,7 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
     res.json(await commission.configuration(req.admin)),
   );
   router.get('/payment-overview',async(q,res)=>res.json(await finance.overview(q.query,q.admin)));
+  router.get('/finance-statistics/:section', async (req, res) => res.json(await financeStatistics(req.params.section, req.admin)));
   router.get('/commission/rules',async(q,res)=>res.json(await commissionRules.list(q.admin)));
   router.post('/commission/rules',async(q,res)=>res.json(await commissionRules.create(q.body,q.admin)));
   router.post('/commission/rules/:id/disable',async(q,res)=>res.json(await commissionRules.disable(q.params.id,q.body,q.admin)));

@@ -14,6 +14,7 @@ export default function ServiceCategories({
 }) {
   const renderCard = (item, index) => {
     const image =
+      item.image ||
       categoryImages[item.name] ||
       categoryImages["Venue & Location"];
 

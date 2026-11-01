@@ -15,7 +15,7 @@ import {
 
 import { useAuth } from "../../../context/AuthContext";
 
-import { adminNavigation } from "../navigation";
+import { adminNavigation, paymentNavigation } from "../navigation";
 
 import { adminRequest } from "../api";
 
@@ -26,6 +26,7 @@ import compactLogo from "../../../assets/small logo.png";
 
 // Check whether the navigation link is active
 function isActivePage(path, location, section) {
+  if (path === "payments" && paymentNavigation.some(([paymentPath]) => location.pathname === `/admin/${paymentPath}`)) return true;
   const [pathname, search = ""] = path.split("?");
 
   const isMatchingRoute = pathname.includes("/pending")

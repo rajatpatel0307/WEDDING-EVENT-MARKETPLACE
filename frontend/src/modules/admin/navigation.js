@@ -104,13 +104,35 @@ const navigationGroups = [
     ],
   },
 ];
+export const paymentNavigation = [
+  ["payments", "All Payments"],
+  ["payment-overview", "Payment Overview"],
+  ["refund-requests", "Refund Review"],
+  ["payment-reconciliation", "Reconciliation"],
+  ["refunds", "Refunds"],
+  ["payouts", "Vendor Payouts"],
+  ["commission", "Platform Commission"],
+];
+export function financeCardSection(pathname) {
+  const sections = {
+    "/admin/payment-overview": "overview",
+    "/admin/refund-requests": "refund-review",
+    "/admin/payment-reconciliation": "reconciliation",
+    "/admin/refunds": "refunds",
+    "/admin/payouts": "payouts",
+    "/admin/commission": "commission",
+  };
+  return sections[pathname.replace(/\/+$/, "")] || null;
+}
 export const adminNavigation = [
   { ...navigationGroups[0], label: "OVERVIEW" },
   navigationGroups[1],
   navigationGroups[2],
   {
     label: "TRANSACTIONS",
-    items: [...navigationGroups[3].items, ...navigationGroups[4].items],
+    items: [...navigationGroups[3].items, ...navigationGroups[4].items]
+      .filter(([path]) => !paymentNavigation.some(([paymentPath]) => paymentPath === path) || path === "payments")
+      .map((item) => item[0] === "payments" ? ["payments", "All Payments", CreditCard] : item),
   },
   {
     label: "SYSTEM",
@@ -118,6 +140,7 @@ export const adminNavigation = [
   },
 ];
 export const resourceTitle = (key) =>
+  paymentNavigation.find(([path]) => path === key)?.[1] ||
   adminNavigation.flatMap((g) => g.items).find((i) => i[0] === key)?.[1] ||
   "Overview";
 export const columnLabels = {

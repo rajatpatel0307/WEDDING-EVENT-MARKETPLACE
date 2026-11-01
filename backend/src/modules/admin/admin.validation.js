@@ -38,6 +38,8 @@ export const recordInput = z
     categoryId: z.coerce.number().int().positive().optional(),
     sortOrder: z.coerce.number().int().min(0).max(100000).optional(),
     icon: z.string().trim().max(100).optional(),
+    imageBase64: z.string().min(1).max(7 * 1024 * 1024).optional(),
+    removeImage: z.boolean().optional(),
     description: z.string().trim().max(500).default(""),
     discountType: z.enum(["Percentage", "Fixed"]).optional(),
     discountValue: z.coerce.number().nonnegative().max(10000000).optional(),

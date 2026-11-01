@@ -35,7 +35,7 @@ function filters(args) {
 }
 export async function popularServices() {
   return select(`SELECT c.CategoryId AS id, c.CategoryName AS name, c.Description AS description, c.IconName AS icon,
-    CAST(NULL AS nvarchar(1000)) AS image
+    c.ImageUrl AS image
     FROM dbo.Categories c WHERE c.IsActive = 1 ORDER BY c.SortOrder, c.CategoryId`);
 }
 export async function featuredVenues(args = {}) {

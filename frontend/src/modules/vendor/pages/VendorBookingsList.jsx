@@ -4,6 +4,7 @@ import { Eye, Search, SlidersHorizontal, X, CalendarDays } from "lucide-react";
 import { Heading, Loading, ErrorView, Empty, useVendorData } from "../components/WorkspaceUI";
 import { BookingStatus } from "../../admin/components/BookingUI";
 import { date, money } from "../services/workspace.api";
+import VendorBookingCards from "../components/VendorBookingCards";
 
 const categories = [
   ["all", "All Bookings"],
@@ -36,6 +37,7 @@ export default function VendorBookingsList({ filter }) {
 
   return <div className="min-w-0 text-[#34564f] [&_button]:inline-flex [&_button]:items-center [&_button]:justify-center [&_button]:gap-2 [&_button]:border [&_button]:border-[#dce5de] [&_button]:bg-white [&_button]:rounded-lg [&_button]:px-[13px] [&_button]:py-2.5 [&_button]:min-h-10 [&_button]:text-xs [&_button]:text-[#5e776c] [&_button]:cursor-pointer [&_button:hover]:bg-[#f1f6f2] [&_button:disabled]:opacity-45 [&_button:disabled]:cursor-default [&_select]:border [&_select]:border-[#dce5de] [&_select]:bg-white [&_select]:rounded-lg [&_select]:px-[13px] [&_select]:py-2.5 [&_select]:min-h-10 [&_select]:text-xs [&_select]:text-[#5e776c] [&_select]:cursor-pointer [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#589386] [&_:focus-visible]:outline-offset-3">
     <Heading eyebrow="BOOKING MANAGEMENT" title={title} description="Manage your bookings and keep every event on track." />
+    {filter === "all" && <VendorBookingCards />}
     <nav className="flex gap-2 overflow-x-auto my-7 pb-[5px] max-md:my-5" aria-label="Booking categories">
       {categories.map(([key, label]) => <NavLink key={key} to={`/vendor/bookings/${key}`} className={({ isActive }) => `px-[17px] py-3.5 rounded-[10px] whitespace-nowrap text-[13px] font-medium max-md:px-[13px] max-md:py-[11px] max-md:text-xs ${isActive ? "text-[#176b60] bg-[#e5efeb] font-semibold" : "text-[#7c8e88]"}`}>{label}</NavLink>)}
     </nav>

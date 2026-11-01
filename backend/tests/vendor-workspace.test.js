@@ -244,6 +244,33 @@ test("vendor booking list HTTP endpoint returns records for all seven categories
   }
 });
 
+test("vendor booking statistics bind vendor ownership for every category", async (t) => {
+  const summary = { total: 10, requests: 2, upcoming: 3, active: 4, completed: 2, cancelled: 2, cancellations: 1, reschedules: 1 };
+  const query = t.mock.method(sequelize, "query", async () => [Object.fromEntries(Object.entries(summary).map(([key, value]) => [key, String(value)]))]);
+  assert.deepEqual(await workspace.bookingStatistics(ctx), summary);
+  const [sql, options] = query.mock.calls[0].arguments;
+  assert.equal(options.replacements.id, vendorId);
+  assert.equal((sql.match(/t.VendorId=:id/g) || []).length, 8);
+  assert.match(sql, /BookingDate>=CONVERT\(date,DATEADD\(minute,330,SYSUTCDATETIME\(\)\)\)/);
+  assert.match(sql, /cr.Kind='Cancellation' AND cr.Status='Pending'/);
+  assert.match(sql, /cr.Kind='Reschedule' AND cr.Status='Pending'/);
+  query.mock.resetCalls();
+  await assert.rejects(() => workspace.bookingStatistics({ auth: null }));
+  assert.equal(query.mock.callCount(), 0);
+});
+
+test("vendor booking statistics HTTP route is resolved before booking details", async (t) => {
+  t.mock.method(sequelize, "query", async () => [{ total: 1, requests: 0 }]);
+  const app = express();
+  app.use("/api/vendor", createVendorRouter({ authenticateRequest: async () => ctx.auth }));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/api/vendor/bookings/statistics`);
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).data, { total: 1, requests: 0 });
+});
+
 test("availability limits ranges and rejects partial or backwards time windows", () => {
   const valid = {
     from: "2027-01-01",

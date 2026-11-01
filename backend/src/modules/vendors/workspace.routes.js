@@ -63,6 +63,7 @@ export function createVendorRouter({
       res.json({ success: true, ...result });
     });
   get("/earnings", (req) => earnings(req.vendorContext));
+  get("/bookings/statistics", (req) => workspace.bookingStatistics(req.vendorContext));
   get("/bookings/:id", (req) =>
     lifecycle.details(req.params.id, req.vendorContext, "Vendor"),
   );

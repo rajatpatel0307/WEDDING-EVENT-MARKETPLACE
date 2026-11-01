@@ -140,6 +140,7 @@ export const resources = {
     {
       name: "t.CategoryName",
       code: "t.CategoryCode",
+      image: "t.ImageUrl",
       icon: "t.IconName",
       sortOrder: "t.SortOrder",
       usageCount:

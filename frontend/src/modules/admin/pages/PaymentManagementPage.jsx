@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { CreditCard, Download, RefreshCw } from "lucide-react";
+import { CreditCard, RefreshCw } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -10,13 +10,15 @@ import {
   Tooltip,
 } from "recharts";
 import { useAdminData } from "../services-management.api";
-import { adminRequest, saveBlob, date } from "../api";
+import { adminRequest, date } from "../api";
 import AdminTable, {
   Skeleton,
   ErrorState,
   Badge,
 } from "../components/AdminTable";
 import AdminDialog from "../components/AdminDialog";
+import PaymentTabs from "../components/PaymentTabs";
+import FinanceCards from "../components/FinanceCards";
 import { useAuth } from "../../../context/AuthContext";
 const money = (v) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(
@@ -26,9 +28,7 @@ export default function PaymentManagementPage({ section = "overview" }) {
   const [version, setVersion] = useState(0),
     [page, setPage] = useState(1),
     [status, setStatus] = useState(""),
-    [query, setQuery] = useState(""),
-    [from, setFrom] = useState(""),
-    [to, setTo] = useState("");
+    [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [decision, setDecision] = useState(null),
@@ -37,8 +37,6 @@ export default function PaymentManagementPage({ section = "overview" }) {
     page,
     status,
     q: query,
-    ...(from ? { from } : {}),
-    ...(to ? { to } : {}),
   });
   const path =
     section === "refunds"
@@ -84,99 +82,24 @@ export default function PaymentManagementPage({ section = "overview" }) {
           <RefreshCw size={16} /> Refresh
         </button>
       </div>
-      <nav
-        className="flex flex-wrap gap-3 mb-5"
-        aria-label="Payment management"
-      >
-        {[
-          ["payment-overview", "Overview"],
-          ["payments", "Transactions"],
-          ["refund-requests", "Refund review"],
-          ["refunds", "Refund transactions"],
-          ["payouts", "Payouts"],
-          ["commission", "Commission"],
-          ["payment-reconciliation", "Reconciliation"],
-        ].map(([path, label]) => (
-          <Link key={path} className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" to={`/admin/${path}`}>
-            {label}
-          </Link>
-        ))}
-      </nav>
-      {["overview", "transactions"].includes(section) && (
-        <div className="ad-panel flex flex-wrap gap-4 items-end mb-5 [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]">
-          <label>
-            From
-            <input
-              aria-label="Report from"
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-          </label>
-          <label>
-            Through
-            <input
-              aria-label="Report through"
-              type="date"
-              value={to}
-              min={from}
-              onChange={(e) => setTo(e.target.value)}
-            />
-          </label>
-          <button
-            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-            onClick={async () => {
-              try {
-                saveBlob(
-                  await adminRequest(`/payment-reports/export?${params}`, {
-                    download: true,
-                  }),
-                  "payments-latest-10000.csv",
-                );
-              } catch (e) {
-                setError(e.message);
-              }
-            }}
-          >
-            <Download size={16} /> Export latest 10,000 transactions
-          </button>
-        </div>
-      )}
+      {section !== "transactions" && <>
+        <FinanceCards section={section === "refunds" ? "refund-review" : section} revision={version} overviewState={state} />
+        <PaymentTabs />
+      </>}
       {error && (
         <p role="alert" className="ad-inline-error [background:#fff1ed] text-[#af6158] p-[12px] rounded-[7px] text-[12px] [margin:12px_0]">
           {error}
         </p>
       )}
       {section === "transactions" ? (
-        <AdminTable resource="payments" />
+        <AdminTable resource="payments" beforeTable={<PaymentTabs />} />
       ) : state.loading ? (
         <Skeleton />
       ) : state.error ? (
         <ErrorState error={state.error} retry={state.retry} />
       ) : section === "overview" ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
-            {[
-              ["captured", "Captured collections"],
-              ["pending", "Pending payment orders"],
-              ["failed", "Failed attempts"],
-              ["refunded", "Completed refunds"],
-              ["refundPending", "Refunds in processing"],
-              ["commission", "Recorded platform commission"],
-              ["payables", "Vendor payables"],
-              ["paid", "Completed payouts"],
-              ["failedPayouts", "Failed payouts"],
-            ].map(([key, label]) => (
-              <article className="ad-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]" key={key}>
-                <p>{label}</p>
-                <strong className="text-2xl">
-                  {["pending", "failed", "failedPayouts"].includes(key)
-                    ? state.data.totals[key]
-                    : money(state.data.totals[key])}
-                </strong>
-              </article>
-            ))}
-          </div>
+
           <section className="ad-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]">
             <h2>Monthly payments, refunds, payouts and commission</h2>
             {state.data.monthly.length ? (
