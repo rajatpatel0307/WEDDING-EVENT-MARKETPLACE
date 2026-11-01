@@ -36,7 +36,6 @@ import {
 import ServiceDecisionDialog from "../components/ServiceDecisionDialog";
 import AdminDialog from "../components/AdminDialog";
 import ApprovalTimeline from "../../../components/common/ApprovalTimeline";
-import "../services-management.css";
 
 const tabs = [
   "Overview",
@@ -55,7 +54,7 @@ function Chart({ title, rows, metric }) {
   const [hover, setHover] = useState(null);
   const max = Math.max(1, ...rows.map((r) => Number(r[metric])));
   return (
-    <article className="asm-chart">
+    <article className="asm-chart p-[16px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4ece5] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4ece5] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4ece5] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4ece5] rounded-[10px] [&_h3]:[margin:0_0_20px] [&_small]:block [&_small]:text-[#91a092] [&_small]:text-[11px] [&_small]:font-[400] [&_small]:mt-[4px] [&_svg]:w-full [&_svg]:h-auto [&_p]:text-[11px] [&_p]:text-[#7f9584] [&_p]:mt-[10px]">
       <h3>
         {title} <small>Last 90 days</small>
       </h3>
@@ -115,7 +114,7 @@ function Performance({ id, revision }) {
   const d = state.data;
   return (
     <>
-      <div className="asm-stats">
+      <div className="asm-stats grid grid-cols-[repeat(5,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(767px<width<=1200px)]:grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[12px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e1e9e4] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e1e9e4] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e1e9e4] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e1e9e4] [&_article]:rounded-[12px] [&_article]:[background:#fff] [&_article]:p-[18px] [@media(width<=767px)]:[&_article]:p-[13px] [&_article]:min-w-0 [&_article_>_div]:flex [&_article_>_div]:justify-between [&_article_>_div]:items-center [&_article_>_div]:gap-[10px] [&_span]:text-[12px] [&_span]:text-[#71827a] [&_strong]:block [&_strong]:text-[25px] [@media(width<=767px)]:[&_strong]:text-[21px] [&_strong]:font-[650] [&_strong]:mt-[9px] [&_strong]:tracking-[-0.6px] [&_strong]:[overflow-wrap:anywhere] [&_svg]:text-[#73978b]">
         {[
           ["views", "Total Views"],
           ["enquiries", "Total Enquiries"],
@@ -141,11 +140,11 @@ function Performance({ id, revision }) {
           </article>
         ))}
       </div>
-      <p className="asm-muted">
+      <p className="asm-muted text-[12px] text-[#87958d] [margin:12px_0] leading-[1.7]">
         Revenue is the completed service booking line value. Charts group
         activity by date in India.
       </p>
-      <div className="asm-charts">
+      <div className="asm-charts grid grid-cols-[repeat(3,_minmax(0,_1fr))] [@media(width<=1200px)]:grid-cols-[1fr] gap-[16px] [margin:24px_0]">
         {["views", "bookings", "revenue"].map((metric) => (
           <Chart
             key={metric}
@@ -173,7 +172,7 @@ function Records({ id, kind, revision }) {
   const d = state.data;
   return d.rows.length ? (
     <>
-      <div className="asm-records">
+      <div className="asm-records grid gap-[12px] [margin:18px_0] [&_article]:p-[18px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e4ebe4] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e4ebe4] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e4ebe4] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e4ebe4] [&_article]:rounded-[10px] [&_article]:grid [&_article]:gap-[10px] [&_article]:text-[13px] [&_small]:text-[#8b9b90]">
         {d.rows.map((r) => (
           <article key={r.id}>
             {kind === "bookings" ? (
@@ -259,7 +258,7 @@ function ChildEditor({ dialog, data, close, saved }) {
       close={close}
       busy={busy}
     >
-      <form className="ad-form" onSubmit={submit}>
+      <form className="ad-form flex flex-col gap-[17px] [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] [&_label]:text-[11px] [&_label]:text-[#7c8e76] [&_input]:w-full [&_input]:text-[12px]! [&_textarea]:w-full [&_textarea]:text-[12px]! [&_select]:w-full [&_select]:text-[12px]! [&_textarea]:min-h-[90px] [&_textarea]:[resize:vertical] [&_p]:text-[12px] [&_p]:text-[#86977d] [&_p]:leading-[1.7]" onSubmit={submit}>
         <Field
           label="Name"
           required
@@ -274,7 +273,7 @@ function ChildEditor({ dialog, data, close, saved }) {
             onChange={(e) => change("description", e.target.value)}
           />
         </Field>
-        <div className="asm-form-grid">
+        <div className="asm-form-grid grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[16px]">
           {(item
             ? [
                 ["quantity", "Quantity", 0.001],
@@ -316,7 +315,7 @@ function ChildEditor({ dialog, data, close, saved }) {
           )}
         </div>
         {item && (
-          <label className="asm-checkbox">
+          <label className="asm-checkbox flex gap-[9px] items-center text-[12px] [margin:10px_0] [&_input]:w-[15px] [&_input]:h-[15px] [&_input]:[accent-color:#226e56]">
             <input
               type="checkbox"
               checked={values.included}
@@ -325,7 +324,7 @@ function ChildEditor({ dialog, data, close, saved }) {
             Included in service
           </label>
         )}
-        <label className="asm-checkbox">
+        <label className="asm-checkbox flex gap-[9px] items-center text-[12px] [margin:10px_0] [&_input]:w-[15px] [&_input]:h-[15px] [&_input]:[accent-color:#226e56]">
           <input
             type="checkbox"
             checked={values.active}
@@ -333,25 +332,25 @@ function ChildEditor({ dialog, data, close, saved }) {
           />
           Active
         </label>
-        <p className="asm-muted">
+        <p className="asm-muted text-[12px] text-[#87958d] [margin:12px_0] leading-[1.7]">
           Changes to approved content require a new review before the listing is
           published.
         </p>
         {error && (
-          <p role="alert" className="asm-alert">
+          <p role="alert" className="asm-alert [padding:15px_18px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#edd3d5] [border-right-width:1px] [border-right-style:solid] [border-right-color:#edd3d5] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#edd3d5] [border-left-width:1px] [border-left-style:solid] [border-left-color:#edd3d5] [background:#fff5f4] rounded-[9px] text-[#a8555b] text-[13px]">
             {error}
           </p>
         )}
         <footer className="flex justify-end gap-2">
           <button
             type="button"
-            className="ad-button"
+            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
             disabled={busy}
             onClick={close}
           >
             Cancel
           </button>
-          <button className="ad-button ad-primary" disabled={busy}>
+          <button className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" disabled={busy}>
             {busy ? "Saving…" : "Save changes"}
           </button>
         </footer>
@@ -442,7 +441,7 @@ export default function ServiceManagementDetails() {
   }
   if (state.loading)
     return (
-      <div className="asm-panel">
+      <div className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
         <Loading />
       </div>
     );
@@ -460,22 +459,22 @@ export default function ServiceManagementDetails() {
       dialog.action,
     );
   return (
-    <div className="asm-page">
-      <Link className="asm-back" to="/admin/services">
+    <div className="asm-page grid gap-[24px] text-[#253f3a] [&_select]:[padding:9px_12px] [&_select]:text-[12px] [&_select]:[border-top-width:1px] [&_select]:[border-top-style:solid] [&_select]:[border-top-color:#dce5df] [&_select]:[border-right-width:1px] [&_select]:[border-right-style:solid] [&_select]:[border-right-color:#dce5df] [&_select]:[border-bottom-width:1px] [&_select]:[border-bottom-style:solid] [&_select]:[border-bottom-color:#dce5df] [&_select]:[border-left-width:1px] [&_select]:[border-left-style:solid] [&_select]:[border-left-color:#dce5df] [&_select]:rounded-[7px] [&_select]:[background:#fff]">
+      <Link className="asm-back flex items-center gap-[8px] text-[13px] text-[#698c7d]" to="/admin/services">
         <ArrowLeft size={16} />
         All Services
       </Link>
-      <header className="asm-detail-header">
-        <div className="asm-identity">
+      <header className="asm-detail-header [&_h1]:text-[30px] [@media(width<=767px)]:[&_h1]:text-[25px] [&_h1]:leading-[1.2] [&_h1]:[margin:8px_0_10px] [&_h1]:font-[650] [&_h1]:tracking-[-0.7px] [&_p]:text-[14px] [&_p]:text-[#7b8a83] flex gap-[18px] items-center flex-wrap [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7e1] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7e1] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7e1] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7e1] [background:#fff] rounded-[14px] p-[26px] [@media(width<=767px)]:p-[18px] [&_>_.asm-identity]:flex-1 [&_>_.asm-identity]:min-w-[280px] [@media(width<=767px)]:[&_>_.asm-identity]:min-w-0 [&_.asm-identity_>_img]:w-[100px] [@media(width<=767px)]:[&_.asm-identity_>_img]:w-[70px] [&_.asm-identity_>_img]:h-[100px] [@media(width<=767px)]:[&_.asm-identity_>_img]:h-[70px] [&_.asm-image-placeholder]:w-[100px] [@media(width<=767px)]:[&_.asm-image-placeholder]:w-[70px] [&_.asm-image-placeholder]:h-[100px] [@media(width<=767px)]:[&_.asm-image-placeholder]:h-[70px] [&_small]:text-[11px] [&_small]:text-[#87978d] [&_small]:block [&_small]:mt-[10px] [&_small]:max-w-[none] [&_.asm-identity_p]:mb-[10px] [@media(width<=767px)]:[&_>_.asm-identity]:[flex-basis:100%]">
+        <div className="asm-identity flex gap-[11px] items-center min-w-[180px] [&_img]:w-[48px] [&_img]:h-[48px] [&_img]:object-cover [&_img]:shrink-0 [&_img]:rounded-[9px] [&_img]:[background:#edf3ed] [&_img]:grid [&_img]:place-items-center [&_img]:text-[#77988b] [&_strong]:block [&_strong]:font-[600] [&_strong]:text-[13px] [&_small]:block [&_small]:text-[11px] [&_small]:text-[#88938c] [&_small]:mt-[4px] [&_small]:max-w-[190px] [&_small]:[overflow-x:hidden] [&_small]:[overflow-y:hidden] [&_small]:[text-overflow:ellipsis] [&_small]:whitespace-nowrap">
           {d.images[0] ? (
             <img src={d.images[0].url} alt={d.ServiceName} />
           ) : (
-            <span className="asm-image-placeholder">
+            <span className="asm-image-placeholder w-[48px] h-[48px] object-cover shrink-0 rounded-[9px] [background:#edf3ed] grid place-items-center text-[#77988b]">
               <ImageIcon />
             </span>
           )}
           <div>
-            <span className="ad-eyebrow">SERVICE DETAILS</span>
+            <span className="ad-eyebrow text-[8px] [@media(width<=767px)]:text-[7px] tracking-[1.7px] text-[#7d9183] flex items-center gap-[6px] [&_>_span]:w-[5px] [&_>_span]:h-[5px] [&_>_span]:[background:#bfa471] [&_>_span]:rounded-[50%]">SERVICE DETAILS</span>
             <h1>{d.ServiceName}</h1>
             <p>
               <Link to={`/admin/vendors/${d.VendorId}`}>{d.BusinessName}</Link>{" "}
@@ -491,29 +490,29 @@ export default function ServiceManagementDetails() {
         <ServiceActions row={summary} action={action} inline />
         {["Draft", "Rejected"].includes(d.ApprovalStatus) && (
           <button
-            className="ad-button ad-primary"
+            className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
             onClick={() => action(summary, "submit")}
           >
             Submit for approval
           </button>
         )}
-        <Link className="ad-button" to={`/admin/services/${serviceId}/review`}>
+        <Link className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" to={`/admin/services/${serviceId}/review`}>
           Open approval review
         </Link>
       </header>
       {error && (
-        <p role="alert" className="asm-alert">
+        <p role="alert" className="asm-alert [padding:15px_18px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#edd3d5] [border-right-width:1px] [border-right-style:solid] [border-right-color:#edd3d5] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#edd3d5] [border-left-width:1px] [border-left-style:solid] [border-left-color:#edd3d5] [background:#fff5f4] rounded-[9px] text-[#a8555b] text-[13px]">
           {error}
         </p>
       )}
       {d.RejectionReason && (
-        <aside className="asm-alert">
+        <aside className="asm-alert [padding:15px_18px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#edd3d5] [border-right-width:1px] [border-right-style:solid] [border-right-color:#edd3d5] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#edd3d5] [border-left-width:1px] [border-left-style:solid] [border-left-color:#edd3d5] [background:#fff5f4] rounded-[9px] text-[#a8555b] text-[13px]">
           <strong>Rejection reason: </strong>
           {d.RejectionReason}
           {d.AdminNote && <p>Admin note: {d.AdminNote}</p>}
         </aside>
       )}
-      <nav className="asm-detail-tabs" aria-label="Service details">
+      <nav className="asm-detail-tabs flex gap-[7px] [overflow-x:auto] pb-[3px] [&_button]:text-[13px] [&_button]:[padding:10px_16px] [&_button]:rounded-[8px] [&_button]:whitespace-nowrap [&_button]:text-[#74817c] [&_button[aria-current]]:[background:#e5efea] [&_button[aria-current]]:text-[#185b4d] [&_button[aria-current]]:font-[650]" aria-label="Service details">
         {tabs.map((t) => (
           <button
             key={t}
@@ -524,11 +523,11 @@ export default function ServiceManagementDetails() {
           </button>
         ))}
       </nav>
-      <section className="asm-panel">
+      <section className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
         <h2>{tab === "Overview" ? "Service performance" : tab}</h2>
         {tab === "Overview" && (
           <>
-            <p className="asm-lead">{doc.shortDescription || d.Description}</p>
+            <p className="asm-lead text-[14px] mb-[24px] text-[#6c8374]">{doc.shortDescription || d.Description}</p>
             <Performance id={serviceId} revision={revision} />
           </>
         )}
@@ -576,11 +575,11 @@ export default function ServiceManagementDetails() {
                 "Pricing unit": d.calculation.unit,
               }}
             />
-            <p className="asm-calculation">
+            <p className="asm-calculation [margin:22px_0] p-[18px] [background:#eef6ef] text-[13px] rounded-[9px]">
               Base price + (unit price × quantity) − discount + additional
               charges + tax = <strong>{money(d.calculation.finalPrice)}</strong>
             </p>
-            <p className="asm-muted">
+            <p className="asm-muted text-[12px] text-[#87958d] [margin:12px_0] leading-[1.7]">
               Calculated and validated by the server. Seasonal and weekend rates
               apply when a customer selects an event date.
             </p>
@@ -600,7 +599,7 @@ export default function ServiceManagementDetails() {
           <>
             {canEdit && (
               <button
-                className="ad-button ad-primary"
+                className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
                 onClick={() => setDialog({ kind: "item" })}
               >
                 <Plus size={15} />
@@ -608,8 +607,8 @@ export default function ServiceManagementDetails() {
               </button>
             )}
             {d.items.length ? (
-              <div className="asm-table-wrap">
-                <table className="asm-table">
+              <div className="asm-table-wrap [overflow-x:auto] overflow-y-auto pb-[8px]">
+                <table className="asm-table w-full border-collapse text-left text-[12px] [&_th]:font-[600] [&_th]:text-[10px] [&_th]:tracking-[0.6px] [&_th]:uppercase [&_th]:whitespace-nowrap [&_th]:[padding:13px_14px] [&_th]:[background:#f6f9f6] [&_th]:text-[#7b8b80] [&_th]:[border-bottom-width:1px] [&_th]:[border-bottom-style:solid] [&_th]:[border-bottom-color:#e5ebe6] [&_td]:[border-bottom-width:1px] [&_td]:[border-bottom-style:solid] [&_td]:[border-bottom-color:#edf1ed] [&_td]:[padding:16px_14px] [&_td]:[vertical-align:middle] [&_tbody_tr:hover]:[background:#fbfcfa] [@media(width<=1200px)]:[&_.asm-id]:max-w-[75px]">
                   <thead>
                     <tr>
                       {[
@@ -638,7 +637,7 @@ export default function ServiceManagementDetails() {
                         <td>{i.IsActive ? "Active" : "Inactive"}</td>
                         <td>
                           <button
-                            className="ad-button"
+                            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
                             onClick={() =>
                               setDialog({ kind: "view-item", record: i })
                             }
@@ -648,7 +647,7 @@ export default function ServiceManagementDetails() {
                           {canEdit && (
                             <div className="flex gap-2">
                               <button
-                                className="ad-button"
+                                className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
                                 onClick={() =>
                                   setDialog({ kind: "item", record: i })
                                 }
@@ -656,7 +655,7 @@ export default function ServiceManagementDetails() {
                                 Edit
                               </button>
                               <button
-                                className="ad-button asm-danger-text"
+                                className="ad-button asm-danger-text inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3] [&.asm-danger-text]:text-[#b14b52]!"
                                 onClick={() =>
                                   setDialog({ kind: "remove-item", record: i })
                                 }
@@ -680,13 +679,13 @@ export default function ServiceManagementDetails() {
           </>
         )}
         {tab === "Packages" && (
-          <div className="asm-packages">
+          <div className="asm-packages grid grid-cols-[repeat(auto-fit,_minmax(240px,_1fr))] gap-[18px] mt-[18px] [&_article]:p-[22px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e2ebe3] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e2ebe3] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e2ebe3] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e2ebe3] [&_article]:rounded-[12px] [&_article]:text-[13px] [&_article]:leading-[1.8] [&_header]:flex [&_header]:justify-between [&_header]:gap-[10px] [&_h3]:mt-[0] [&_article_>_strong]:text-[24px] [&_del]:text-[#9da79f] [&_summary]:cursor-pointer [&_summary]:text-[#32765a]">
             {d.packages.length ? (
               d.packages.map((p) => (
                 <article key={p.PackageId}>
                   <header>
                     <h3>{p.PackageName}</h3>
-                    <span className={`asm-active ${p.IsActive ? "on" : ""}`}>
+                    <span className={`asm-active whitespace-nowrap text-[11px] text-[#8a938e] [&:before]:[content:''] [&:before]:inline-block [&:before]:w-[6px] [&:before]:h-[6px] [&:before]:rounded-[50%] [&:before]:[background:#a6ada8] [&:before]:mr-[7px] [&.on]:text-[#2a7a58] [&.on:before]:[background:#4f976a] ${p.IsActive ? "on" : ""}`}>
                       {p.IsActive ? "Active" : "Inactive"}
                     </span>
                   </header>
@@ -718,7 +717,7 @@ export default function ServiceManagementDetails() {
                   {canEdit && (
                     <div className="flex gap-2 mt-3">
                       <button
-                        className="ad-button"
+                        className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
                         onClick={() =>
                           setDialog({ kind: "package", record: p })
                         }
@@ -726,7 +725,7 @@ export default function ServiceManagementDetails() {
                         Edit package
                       </button>
                       <button
-                        className="ad-button"
+                        className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
                         onClick={() =>
                           setDialog({
                             kind: "package",
@@ -751,7 +750,7 @@ export default function ServiceManagementDetails() {
         {tab === "Images" && (
           <>
             {canEdit && (
-              <label className="ad-button asm-upload">
+              <label className="ad-button asm-upload inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3] w-[max-content] cursor-pointer [&_input]:hidden">
                 <Upload size={16} />
                 {busy ? "Uploading…" : "Upload image"}
                 <input
@@ -762,7 +761,7 @@ export default function ServiceManagementDetails() {
                 />
               </label>
             )}
-            <div className="asm-gallery">
+            <div className="asm-gallery grid grid-cols-[repeat(auto-fit,_minmax(240px,_1fr))] gap-[18px] mt-[18px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e5ebe5] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e5ebe5] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e5ebe5] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e5ebe5] [&_article]:rounded-[10px] [&_article]:[overflow-x:hidden] [&_article]:[overflow-y:hidden] [&_img]:w-full [&_img]:h-[230px] [&_img]:object-cover [&_footer]:flex [&_footer]:justify-between [&_footer]:items-center [&_footer]:p-[12px] [&_footer]:gap-[12px] [&_footer]:text-[12px]">
               {d.images.map((img, i) => (
                 <article key={img.id}>
                   <a href={img.url} target="_blank" rel="noreferrer">
@@ -778,7 +777,7 @@ export default function ServiceManagementDetails() {
                     <div className="flex gap-2">
                       {!img.primary && (
                         <button
-                          className="ad-button"
+                          className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
                           title="Set primary image"
                           onClick={() =>
                             setDialog({
@@ -792,7 +791,7 @@ export default function ServiceManagementDetails() {
                         </button>
                       )}
                       <button
-                        className="ad-button asm-danger-text"
+                        className="ad-button asm-danger-text inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3] [&.asm-danger-text]:text-[#b14b52]!"
                         title="Delete image"
                         onClick={() =>
                           setDialog({
@@ -843,7 +842,7 @@ export default function ServiceManagementDetails() {
               }}
             />
             <h3>Date overrides</h3>
-            <div className="asm-records">
+            <div className="asm-records grid gap-[12px] [margin:18px_0] [&_article]:p-[18px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e4ebe4] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e4ebe4] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e4ebe4] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e4ebe4] [&_article]:rounded-[10px] [&_article]:grid [&_article]:gap-[10px] [&_article]:text-[13px] [&_small]:text-[#8b9b90]">
               {d.availability.map((a) => (
                 <article key={a.AvailabilityId}>
                   <strong>{date(a.AvailableDate)}</strong>
@@ -873,7 +872,7 @@ export default function ServiceManagementDetails() {
           title={dialog.record.ItemName}
           close={() => setDialog(null)}
         >
-          <div className="ad-form">
+          <div className="ad-form flex flex-col gap-[17px] [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] [&_label]:text-[11px] [&_label]:text-[#7c8e76] [&_input]:w-full [&_input]:text-[12px]! [&_textarea]:w-full [&_textarea]:text-[12px]! [&_select]:w-full [&_select]:text-[12px]! [&_textarea]:min-h-[90px] [&_textarea]:[resize:vertical] [&_p]:text-[12px] [&_p]:text-[#86977d] [&_p]:leading-[1.7]">
             <Definition
               values={{
                 Description: dialog.record.Description,
@@ -884,7 +883,7 @@ export default function ServiceManagementDetails() {
                 Active: !!dialog.record.IsActive,
               }}
             />
-            <button className="ad-button" onClick={() => setDialog(null)}>
+            <button className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" onClick={() => setDialog(null)}>
               Close
             </button>
           </div>
@@ -914,7 +913,7 @@ export default function ServiceManagementDetails() {
             close={() => setDialog(null)}
             busy={busy}
           >
-            <div className="ad-form">
+            <div className="ad-form flex flex-col gap-[17px] [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] [&_label]:text-[11px] [&_label]:text-[#7c8e76] [&_input]:w-full [&_input]:text-[12px]! [&_textarea]:w-full [&_textarea]:text-[12px]! [&_select]:w-full [&_select]:text-[12px]! [&_textarea]:min-h-[90px] [&_textarea]:[resize:vertical] [&_p]:text-[12px] [&_p]:text-[#86977d] [&_p]:leading-[1.7]">
               <p>
                 {dialog.kind === "image"
                   ? dialog.action === "delete"
@@ -929,20 +928,20 @@ export default function ServiceManagementDetails() {
                         : "Duplicate this service, its items, packages and images as an inactive draft?"}
               </p>
               {error && (
-                <p role="alert" className="asm-alert">
+                <p role="alert" className="asm-alert [padding:15px_18px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#edd3d5] [border-right-width:1px] [border-right-style:solid] [border-right-color:#edd3d5] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#edd3d5] [border-left-width:1px] [border-left-style:solid] [border-left-color:#edd3d5] [background:#fff5f4] rounded-[9px] text-[#a8555b] text-[13px]">
                   {error}
                 </p>
               )}
               <footer className="flex justify-end gap-2">
                 <button
-                  className="ad-button"
+                  className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
                   disabled={busy}
                   onClick={() => setDialog(null)}
                 >
                   Cancel
                 </button>
                 <button
-                  className="ad-button ad-primary"
+                  className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
                   disabled={busy}
                   onClick={confirm}
                 >

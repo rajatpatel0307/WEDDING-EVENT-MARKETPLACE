@@ -9,7 +9,6 @@ import {
 } from "../services-management.api";
 import { Loading, ErrorState, Field } from "../components/ServicesUI";
 import { editorDocument } from "../service-editor.document";
-import "../services-management.css";
 
 function EditorForm({ data }) {
   const [values, setValues] = useState(() => editorDocument(data)),
@@ -103,11 +102,11 @@ function EditorForm({ data }) {
     (c) => c.id === values.categoryId,
   );
   return (
-    <form onSubmit={save} className="asm-editor">
+    <form onSubmit={save} className="asm-editor [&_fieldset]:grid [&_fieldset]:gap-[24px] [&_fieldset]:min-w-0 [&_fieldset]:[border-top-width:0] [&_fieldset]:[border-top-style:none] [&_fieldset]:[border-top-color:currentColor] [&_fieldset]:[border-right-width:0] [&_fieldset]:[border-right-style:none] [&_fieldset]:[border-right-color:currentColor] [&_fieldset]:[border-bottom-width:0] [&_fieldset]:[border-bottom-style:none] [&_fieldset]:[border-bottom-color:currentColor] [&_fieldset]:[border-left-width:0] [&_fieldset]:[border-left-style:none] [&_fieldset]:[border-left-color:currentColor] [&_input:disabled]:[background:#f4f7f3] [&_input:disabled]:text-[#8b998e] [&_select:disabled]:[background:#f4f7f3] [&_select:disabled]:text-[#8b998e]">
       <fieldset disabled={busy}>
-        <section className="asm-panel">
+        <section className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
           <h2>Service Information</h2>
-          <div className="asm-form-grid">
+          <div className="asm-form-grid grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[16px]">
             {!data && (
               <Field
                 label="Find vendor"
@@ -189,10 +188,10 @@ function EditorForm({ data }) {
             })}
           </div>
           {area("description", "Description", null, 10000)}
-          <div className="asm-form-grid">
+          <div className="asm-form-grid grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[16px]">
             {(meta.data?.templates?.[category?.name] || []).map((f) =>
               f.type === "boolean" ? (
-                <label className="asm-checkbox" key={f.key}>
+                <label className="asm-checkbox flex gap-[9px] items-center text-[12px] [margin:10px_0] [&_input]:w-[15px] [&_input]:h-[15px] [&_input]:[accent-color:#226e56]" key={f.key}>
                   <input
                     type="checkbox"
                     checked={!!values.attributes[f.key]}
@@ -232,9 +231,9 @@ function EditorForm({ data }) {
             )}
           </div>
         </section>
-        <section className="asm-panel">
+        <section className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
           <h2>Pricing</h2>
-          <div className="asm-form-grid">
+          <div className="asm-form-grid grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[16px]">
             {[
               ["basePrice", "Base price"],
               ["unitPrice", "Unit price"],
@@ -277,15 +276,15 @@ function EditorForm({ data }) {
             {input("seasonalFrom", "Season starts", "pricing", "date")}
             {input("seasonalTo", "Season ends", "pricing", "date")}
           </div>
-          <p className="asm-muted">
+          <p className="asm-muted text-[12px] text-[#87958d] [margin:12px_0] leading-[1.7]">
             The backend validates pricing and calculates the final price,
             discount and tax when you save. Items and packages are managed on
             the service details page.
           </p>
         </section>
-        <section className="asm-panel">
+        <section className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
           <h2>Location</h2>
-          <div className="asm-form-grid">
+          <div className="asm-form-grid grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[16px]">
             {[
               ["address", "Address"],
               ["city", "City"],
@@ -315,7 +314,7 @@ function EditorForm({ data }) {
             })}
           </div>
         </section>
-        <section className="asm-panel">
+        <section className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
           <h2>Availability</h2>
           <div className="flex flex-wrap gap-4 mb-4">
             {[
@@ -327,7 +326,7 @@ function EditorForm({ data }) {
               "Friday",
               "Saturday",
             ].map((day, i) => (
-              <label key={day} className="asm-checkbox">
+              <label key={day} className="asm-checkbox flex gap-[9px] items-center text-[12px] [margin:10px_0] [&_input]:w-[15px] [&_input]:h-[15px] [&_input]:[accent-color:#226e56]">
                 <input
                   type="checkbox"
                   checked={values.availability.days.includes(i)}
@@ -345,7 +344,7 @@ function EditorForm({ data }) {
               </label>
             ))}
           </div>
-          <div className="asm-form-grid">
+          <div className="asm-form-grid grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[16px]">
             {input("start", "Opening time", "availability", "time", {
               required: true,
             })}
@@ -368,7 +367,7 @@ function EditorForm({ data }) {
             )}
           </div>
         </section>
-        <section className="asm-panel">
+        <section className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
           <h2>Policies</h2>
           {[
             ["cancellation", "Cancellation policy"],
@@ -379,7 +378,7 @@ function EditorForm({ data }) {
           ].map(([key, label]) =>
             area(key, label, "policies", key === "terms" ? 10000 : 2000),
           )}
-          <label className="asm-checkbox">
+          <label className="asm-checkbox flex gap-[9px] items-center text-[12px] [margin:10px_0] [&_input]:w-[15px] [&_input]:h-[15px] [&_input]:[accent-color:#226e56]">
             <input
               type="checkbox"
               checked={values.policies.advanceRequired}
@@ -389,7 +388,7 @@ function EditorForm({ data }) {
             />
             Advance payment required
           </label>
-          <div className="asm-form-grid">
+          <div className="asm-form-grid grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[16px]">
             {[
               ["advancePercentage", "Advance payment %"],
               ["travelCharges", "Travel charges"],
@@ -404,9 +403,9 @@ function EditorForm({ data }) {
             )}
           </div>
         </section>
-        <section className="asm-panel">
+        <section className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
           <h2>Search & discovery</h2>
-          <div className="asm-form-grid">
+          <div className="asm-form-grid grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[16px]">
             {input("slug", "Service URL slug", "seo", "text", {
               required: true,
               pattern: "[a-z0-9]+(-[a-z0-9]+)*",
@@ -422,23 +421,23 @@ function EditorForm({ data }) {
           </div>
         </section>
         {meta.error && (
-          <p role="alert" className="asm-alert">
+          <p role="alert" className="asm-alert [padding:15px_18px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#edd3d5] [border-right-width:1px] [border-right-style:solid] [border-right-color:#edd3d5] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#edd3d5] [border-left-width:1px] [border-left-style:solid] [border-left-color:#edd3d5] [background:#fff5f4] rounded-[9px] text-[#a8555b] text-[13px]">
             {meta.error.message}
           </p>
         )}
         {error && (
-          <p role="alert" className="asm-alert">
+          <p role="alert" className="asm-alert [padding:15px_18px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#edd3d5] [border-right-width:1px] [border-right-style:solid] [border-right-color:#edd3d5] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#edd3d5] [border-left-width:1px] [border-left-style:solid] [border-left-color:#edd3d5] [background:#fff5f4] rounded-[9px] text-[#a8555b] text-[13px]">
             {error}
           </p>
         )}
-        <footer className="asm-editor-footer">
+        <footer className="asm-editor-footer flex gap-[18px] justify-between items-center [@media(width<=767px)]:items-start p-[20px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[12px] [&_p]:text-[12px] [&_p]:text-[#85998a] [&_p]:max-w-[420px] [@media(width<=767px)]:flex-col">
           <p>
             Services are saved as inactive drafts. Approved edits require a new
             review.
           </p>
           <div className="flex gap-2">
             <Link
-              className="ad-button"
+              className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
               to={
                 data ? `/admin/services/${data.ServiceId}` : "/admin/services"
               }
@@ -446,7 +445,7 @@ function EditorForm({ data }) {
               Cancel
             </Link>
             <button
-              className="ad-button ad-primary"
+              className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
               disabled={busy || meta.loading}
             >
               <Save size={16} />
@@ -463,17 +462,17 @@ export default function AdminServiceEditor() {
     [revision, setRevision] = useState(0),
     state = useAdminData(serviceId ? `/services/${serviceId}` : null, revision);
   return (
-    <div className="asm-page">
+    <div className="asm-page grid gap-[24px] text-[#253f3a] [&_select]:[padding:9px_12px] [&_select]:text-[12px] [&_select]:[border-top-width:1px] [&_select]:[border-top-style:solid] [&_select]:[border-top-color:#dce5df] [&_select]:[border-right-width:1px] [&_select]:[border-right-style:solid] [&_select]:[border-right-color:#dce5df] [&_select]:[border-bottom-width:1px] [&_select]:[border-bottom-style:solid] [&_select]:[border-bottom-color:#dce5df] [&_select]:[border-left-width:1px] [&_select]:[border-left-style:solid] [&_select]:[border-left-color:#dce5df] [&_select]:rounded-[7px] [&_select]:[background:#fff]">
       <Link
-        className="asm-back"
+        className="asm-back flex items-center gap-[8px] text-[13px] text-[#698c7d]"
         to={serviceId ? `/admin/services/${serviceId}` : "/admin/services"}
       >
         <ArrowLeft size={16} />
         Back to services
       </Link>
-      <header className="asm-heading">
+      <header className="asm-heading flex items-center [@media(width<=1200px)]:items-start justify-between gap-[24px] [@media(width<=767px)]:gap-[18px] [&_h1]:text-[30px] [@media(width<=767px)]:[&_h1]:text-[26px] [&_h1]:leading-[1.2] [&_h1]:[margin:8px_0_10px] [&_h1]:font-[650] [&_h1]:tracking-[-0.7px] [&_p]:text-[14px] [&_p]:text-[#7b8a83] [@media(width<=767px)]:flex-col">
         <div>
-          <span className="ad-eyebrow">SERVICE STUDIO</span>
+          <span className="ad-eyebrow text-[8px] [@media(width<=767px)]:text-[7px] tracking-[1.7px] text-[#7d9183] flex items-center gap-[6px] [&_>_span]:w-[5px] [&_>_span]:h-[5px] [&_>_span]:[background:#bfa471] [&_>_span]:rounded-[50%]">SERVICE STUDIO</span>
           <h1>{serviceId ? "Edit Service" : "Add Service"}</h1>
           <p>
             Manage the listing information, pricing, availability and policies.

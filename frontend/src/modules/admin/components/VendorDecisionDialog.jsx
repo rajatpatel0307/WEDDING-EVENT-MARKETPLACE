@@ -9,7 +9,6 @@ import {
   vendorChanged,
 } from "../vendor-workflow";
 import AdminDialog from "./AdminDialog";
-import "../vendor-workflow.css";
 
 const labels = {
   Approved: "Approve Vendor",
@@ -92,14 +91,14 @@ export default function VendorDecisionDialog({
         : "Saving...";
   return (
     <AdminDialog title={labels[action]} close={close} busy={busy}>
-      <form className="ad-form va-decision" onSubmit={submit}>
+      <form className="ad-form va-decision flex flex-col gap-[17px] [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] [&_label]:text-[11px] [&_label]:text-[#7c8e76] [&_input]:w-full [&_input]:text-[12px]! [&_textarea]:w-full [&_textarea]:text-[12px]! [&_select]:w-full [&_select]:text-[12px]! [&_textarea]:min-h-[90px] [&_textarea]:[resize:vertical] [&_p]:text-[12px] [&_p]:text-[#86977d] [&_p]:leading-[1.7] [&_.ad-inline-error]:grid [&_.ad-inline-error]:gap-[10px] [&_.ad-inline-error_.ad-button]:[justify-self:start]" onSubmit={submit}>
         {error && (
-          <div className="ad-inline-error" role="alert">
+          <div className="ad-inline-error [background:#fff1ed] text-[#af6158] p-[12px] rounded-[7px] text-[12px] [margin:12px_0]" role="alert">
             <strong>{error.message}</strong>
             {[409, 500].includes(error.status) || !snapshot ? (
               <button
                 type="button"
-                className="ad-button"
+                className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
                 disabled={busy}
                 onClick={() => setRevision((n) => n + 1)}
               >
@@ -109,20 +108,20 @@ export default function VendorDecisionDialog({
           </div>
         )}
         {!snapshot && !error ? (
-          <div className="va-dialog-loading" role="status">
+          <div className="va-dialog-loading flex items-center gap-[10px] [padding:25px_0] text-[#728b75]" role="status">
             <LoaderCircle size={19} className="animate-spin" /> Loading vendor
             verification details...
           </div>
         ) : (
           snapshot && (
             <>
-              <div className="va-decision-business">
+              <div className="va-decision-business flex items-center justify-between gap-[12px] [padding:13px_15px] [background:#edf4ef] [border-top-width:1px] [border-top-style:solid] [border-top-color:#deeadf] [border-right-width:1px] [border-right-style:solid] [border-right-color:#deeadf] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#deeadf] [border-left-width:1px] [border-left-style:solid] [border-left-color:#deeadf] rounded-[8px] [&_strong]:text-[#315c48] [&_strong]:text-[15px] [&_strong]:[overflow-wrap:anywhere]">
                 <strong>{v.businessName}</strong>
-                <span className="ad-badge">
+                <span className="ad-badge rounded-[5px] inline-flex text-[8px] [padding:3px_7px] [background:#f1f4ed] text-[#85927b] [white-space:normal] [&.ad-badge-approved]:[background:#edf5e9] [&.ad-badge-approved]:text-[#65905d] [&.ad-badge-active]:[background:#edf5e9] [&.ad-badge-active]:text-[#65905d] [&.ad-badge-confirmed]:[background:#edf5e9] [&.ad-badge-confirmed]:text-[#65905d] [&.ad-badge-success]:[background:#edf5e9] [&.ad-badge-success]:text-[#65905d] [&.ad-badge-paid]:[background:#edf5e9] [&.ad-badge-paid]:text-[#65905d] [&.ad-badge-published]:[background:#edf5e9] [&.ad-badge-published]:text-[#65905d] [&.ad-badge-completed]:[background:#edf5e9] [&.ad-badge-completed]:text-[#65905d] [&.ad-badge-pending]:[background:#fbf5e7] [&.ad-badge-pending]:text-[#b09454] [&.ad-badge-underreview]:[background:#fbf5e7] [&.ad-badge-underreview]:text-[#b09454] [&.ad-badge-processing]:[background:#fbf5e7] [&.ad-badge-processing]:text-[#b09454] [&.ad-badge-invited]:[background:#fbf5e7] [&.ad-badge-invited]:text-[#b09454] [&.ad-badge-rejected]:[background:#fcf0eb] [&.ad-badge-rejected]:text-[#bc7c68] [&.ad-badge-cancelled]:[background:#fcf0eb] [&.ad-badge-cancelled]:text-[#bc7c68] [&.ad-badge-failed]:[background:#fcf0eb] [&.ad-badge-failed]:text-[#bc7c68] [&.ad-badge-blocked]:[background:#fcf0eb] [&.ad-badge-blocked]:text-[#bc7c68] [&.ad-badge-suspended]:[background:#fcf0eb] [&.ad-badge-suspended]:text-[#bc7c68] [&.ad-badge-disputed]:[background:#fcf0eb] [&.ad-badge-disputed]:text-[#bc7c68]">
                   {v.status} · Cycle {v.cycle || 1}
                 </span>
               </div>
-              <dl className="va-decision-details">
+              <dl className="va-decision-details grid grid-cols-[1fr_1fr] [@media(width<=600px)]:grid-cols-[1fr] gap-[16px_20px] [margin:4px_0] [&_>_div]:min-w-0 [&_dt]:text-[10px] [&_dt]:text-[#839081] [&_dt]:uppercase [&_dt]:tracking-[0.4px] [&_dt]:mb-[4px] [&_dd]:m-[0] [&_dd]:text-[#46614b] [&_dd]:text-[12px] [&_dd]:[overflow-wrap:anywhere]">
                 <Field label="Owner">{v.owner}</Field>
                 <Field label="Email">{v.email}</Field>
                 <Field label="Phone">{v.phone}</Field>
@@ -151,7 +150,7 @@ export default function VendorDecisionDialog({
                   {v.emailVerified ? "Yes" : "No"}
                 </Field>
               </dl>
-              <p className="cd-dialog-note">
+              <p className="cd-dialog-note text-[#738176] leading-[1.7] text-[12px] [background:#f3f7f3] [padding:12px_14px] rounded-[7px]">
                 {action === "Approved"
                   ? "Are you sure you want to approve this vendor?"
                   : action === "Rejected"
@@ -163,7 +162,7 @@ export default function VendorDecisionDialog({
                         : "Mark this application as under review. The vendor will be notified."}
               </p>
               {!permitted && (
-                <p className="ad-inline-error" role="alert">
+                <p className="ad-inline-error [background:#fff1ed] text-[#af6158] p-[12px] rounded-[7px] text-[12px] [margin:12px_0]" role="alert">
                   This action is unavailable for a {v.status} application.
                   Reload the vendor page to choose another action.
                 </p>
@@ -225,10 +224,10 @@ export default function VendorDecisionDialog({
             </>
           )
         )}
-        <div className="cd-dialog-actions">
+        <div className="cd-dialog-actions flex items-center justify-end gap-[9px] mt-[10px]">
           <button
             type="button"
-            className="ad-button"
+            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
             disabled={busy}
             onClick={close}
           >
@@ -236,7 +235,7 @@ export default function VendorDecisionDialog({
           </button>
           <button
             type="submit"
-            className={`ad-button ${action === "Rejected" ? "ad-danger" : "ad-primary"}`}
+            className={`ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3] ${action === "Rejected" ? "ad-danger" : "ad-primary"}`}
             disabled={
               busy ||
               !snapshot ||
