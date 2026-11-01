@@ -54,6 +54,7 @@ const CustomerWishlist = lazy(
 const VendorBookingDetails = lazy(
   () => import("../modules/vendor/pages/VendorBookingsPage"),
 );
+const VendorBookingsList = lazy(() => import("../modules/vendor/pages/VendorBookingsList"));
 const BookingsManagementPage = lazy(
   () => import("../modules/admin/pages/BookingsManagementPage"),
 );
@@ -553,7 +554,7 @@ export default function AppRoutes() {
               ))}
               <Route
                 path="bookings"
-                element={<Navigate to="/vendor/bookings/requests" replace />}
+                element={<Navigate to="/vendor/bookings/all" replace />}
               />
               <Route
                 path="bookings/:id"
@@ -566,6 +567,7 @@ export default function AppRoutes() {
                 }
               />
               {[
+                "all",
                 "requests",
                 "upcoming",
                 "active",
@@ -578,11 +580,9 @@ export default function AppRoutes() {
                   key={filter}
                   path={`bookings/${filter}`}
                   element={
-                    <VendorResourcesPage
+                    <VendorBookingsList
                       key={`bookings-${filter}`}
-                      section="bookings"
                       filter={filter}
-                      title={`${filter === "requests" ? "Booking requests" : filter[0].toUpperCase() + filter.slice(1) + " bookings"}`}
                     />
                   }
                 />

@@ -9,7 +9,6 @@ import {
   Package,
   ListChecks,
   CalendarDays,
-  ShoppingBag,
   Clock3,
   CheckCircle2,
   XCircle,
@@ -56,13 +55,7 @@ export const vendorNavigation = [
   {
     label: "BOOKINGS",
     items: [
-      ["bookings/requests", "Booking Requests", ShoppingBag],
-      ["bookings/upcoming", "Upcoming Bookings", CalendarDays],
-      ["bookings/active", "Active Bookings", Clock3],
-      ["bookings/completed", "Completed Bookings", CheckCircle2],
-      ["bookings/cancelled", "Cancelled Bookings", XCircle],
-      ["bookings/cancellations", "Cancellation Requests", XCircle],
-      ["bookings/reschedules", "Reschedule Requests", CalendarDays],
+      ["bookings/all", "All Bookings", ListChecks],
     ],
   },
   {

@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import express from "express";
+import { createVendorRouter } from "../src/modules/vendors/workspace.routes.js";
 import { sequelize } from "../src/config/database.js";
 import {
   serviceTemplates,
@@ -197,6 +199,51 @@ test("vendor coupons and notifications are scoped to the current business and ow
   assert.match(lookup[0], /UserId=:user/);
   assert.equal(lookup[1].replacements.user, ownerId);
 });
+test("booking lists apply payment and date filters before pagination and allow only safe sorting", async (t) => {
+  const query = t.mock.method(sequelize, "query", async (sql) =>
+    sql.includes("COUNT_BIG") ? [{ total: 51 }] : [],
+  );
+  const result = await workspace.records("bookings", {
+    status: "reschedules", payment: "Paid", eventFrom: "2027-01-01", eventTo: "2027-02-01",
+    sort: "amount", direction: "asc", page: 2, pageSize: 20,
+  }, ctx);
+  assert.equal(result.total, 51);
+  for (const call of query.mock.calls) {
+    const [sql, { replacements }] = call.arguments;
+    assert.match(sql, /t\.VendorId=:id/);
+    assert.match(sql, /cr\.Kind='Reschedule' AND cr\.Status='Pending'/);
+    assert.match(sql, /t\.PaymentStatus=:payment/);
+    assert.match(sql, /t\.BookingDate>=:eventFrom/);
+    assert.equal(replacements.id, vendorId);
+    assert.equal(replacements.payment, "Paid");
+    assert.equal(replacements.offset, 20);
+  }
+  assert.match(query.mock.calls[1].arguments[0], /ORDER BY t\.TotalAmount ASC,t\.BookingId OFFSET/);
+  query.mock.resetCalls();
+  await assert.rejects(() => workspace.records("bookings", { sort: "amount;DROP TABLE Booking" }, ctx));
+  await assert.rejects(() => workspace.records("bookings", { direction: "invalid" }, ctx));
+  assert.equal(query.mock.callCount(), 0);
+});
+
+test("vendor booking list HTTP endpoint returns records for all seven categories", async (t) => {
+  t.mock.method(sequelize, "query", async (sql) =>
+    sql.includes("COUNT_BIG") ? [{ total: 1 }] : [{ id: vendorId, number: "BK-001", customer: "Customer", status: "Pending" }],
+  );
+  const app = express();
+  app.use("/api/vendor", createVendorRouter({ authenticateRequest: async () => ctx.auth }));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  for (const category of ["requests", "upcoming", "active", "completed", "cancelled", "cancellations", "reschedules"]) {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/vendor/records/bookings?status=${category}&sort=createdAt&direction=desc&pageSize=20`);
+    assert.equal(response.status, 200, category);
+    const body = await response.json();
+    assert.equal(body.success, true);
+    assert.equal(body.data.total, 1);
+    assert.equal(body.data.rows[0].number, "BK-001");
+  }
+});
+
 test("availability limits ranges and rejects partial or backwards time windows", () => {
   const valid = {
     from: "2027-01-01",

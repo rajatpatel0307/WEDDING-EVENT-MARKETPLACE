@@ -33,6 +33,9 @@ const listInput = z.object({
   status: z.string().max(30).default(""),
   eventFrom: z.iso.date().optional(),
   eventTo: z.iso.date().optional(),
+  sort: z.enum(["createdAt", "eventDate", "amount", "number"]).optional(),
+  direction: z.enum(["asc", "desc"]).default("desc"),
+  payment: z.enum(["", "Pending", "PartiallyPaid", "Paid", "Failed", "RefundPending", "Refunded", "PartiallyRefunded"]).default(""),
 });
 const extra = {
   requests: {
@@ -99,6 +102,7 @@ export async function records(section, input, ctx) {
     search: `%${q.q.replace(/[\[\]%_]/g, (x) => `[${x}]`)}%`,
     eventFrom: q.eventFrom || null,
     eventTo: q.eventTo || null,
+    payment: q.payment,
   };
   let condition = c.where;
   const filters = {
@@ -142,6 +146,7 @@ export async function records(section, input, ctx) {
     documents: "t.DocumentType",
   }[section];
   if (section === "bookings") {
+    if (q.payment) condition += " AND t.PaymentStatus=:payment";
     if (q.eventFrom && q.eventTo && q.eventFrom > q.eventTo)
       fail("Choose a valid event date range.");
     if (q.eventFrom) condition += " AND t.BookingDate>=:eventFrom";
@@ -166,8 +171,12 @@ export async function records(section, input, ctx) {
     section === "quotations"
   )
     fields += ",t.UpdatedAt AS updatedAt";
+  const bookingSort = { createdAt: "t.CreatedAt", eventDate: "t.BookingDate", amount: "t.TotalAmount", number: "t.BookingNumber" };
+  const order = section === "bookings" && q.sort
+    ? `${bookingSort[q.sort]} ${q.direction === "asc" ? "ASC" : "DESC"},t.BookingId`
+    : section === "bookings" && q.status === "upcoming" ? "t.BookingDate ASC,t.BookingId" : c.order || "t.CreatedAt DESC,[id]";
   const rows = await repo.select(
-    `SELECT ${fields} FROM ${c.from} WHERE ${condition} ORDER BY ${section === "bookings" && q.status === "upcoming" ? "t.BookingDate ASC,t.BookingId" : c.order || "t.CreatedAt DESC,[id]"} OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
+    `SELECT ${fields} FROM ${c.from} WHERE ${condition} ORDER BY ${order} OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
     params,
   );
   return {
