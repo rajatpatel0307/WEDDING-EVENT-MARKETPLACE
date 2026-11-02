@@ -188,41 +188,13 @@ test("action availability matches review state and vendor eligibility", () => {
   assert.equal(actionsFor({ status: "Approved" }).delete, false);
   assert.equal(actionsFor({ status: "Rejected" }).submit, true);
 });
-test("an unapproved vendor can save an inactive draft but cannot submit it", async (t) => {
-  const query = setup(t, null, (sql) =>
-    sql.includes("CategoryName AS name")
-      ? [{ name: "Venue & Location" }]
-      : sql.startsWith("SELECT CategoryId")
-        ? [{ CategoryId: 1 }]
-        : [],
-  );
-  const draft = document();
-  draft.pricing.type = "CustomQuote";
-  Object.assign(draft.pricing, {
-    minimumPrice: 80000,
-    maximumPrice: 150000,
-    customQuote: true,
-  });
-  draft.policies.duration = 120;
-  await services.saveService(null, draft, pending);
-  const insert = query.mock.calls.find((c) =>
-    c.arguments[0].startsWith("INSERT INTO dbo.[Services]"),
-  );
-  const data = values(insert);
-  assert.equal(data.VendorId, vendorId);
-  assert.equal(data.ApprovalStatus, "Draft");
-  assert.equal(data.IsActive, 0);
-  assert.equal(data.BasePrice, 90000);
-  assert.equal(data.MinimumPrice, 80000);
-  assert.equal(data.MaximumPrice, 150000);
-  assert.equal(data.IsCustomQuoteAvailable, 1);
-  assert.equal(data.PricingType, "CustomQuote");
-  assert.equal(data.DurationMinutes, 120);
-  await assert.rejects(
-    () => services.submit(serviceId, { expectedUpdatedAt: updatedAt }, pending),
-    { status: 403 },
-  );
+test("unapproved vendors cannot upload services or submit existing service drafts", async (t) => {
+  const query = setup(t);
+  await assert.rejects(() => services.saveService(null, document(), pending), /Vendor approval required/);
+  await assert.rejects(() => services.submit(serviceId, { expectedUpdatedAt: updatedAt }, pending), /Vendor approval required/);
+  assert.equal(query.mock.callCount(), 0);
 });
+
 test("editing an approved service withdraws it and requires a fresh approval cycle", async (t) => {
   const query = setup(t, record("Approved"), (sql) =>
     sql.includes("CategoryName AS name")

@@ -21,3 +21,7 @@ export function canAccessVendorWorkspace(user) {
     user.vendor.active === true
   );
 }
+
+export function canEnterAccount(user) {
+  return !!user && user.accountStatus === "Active";
+}

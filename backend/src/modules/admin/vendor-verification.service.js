@@ -68,6 +68,8 @@ export async function decideVendor(
       id,
       tx,
     );
+    if (vendor.ProfileDraftJson != null)
+      error("This vendor has not submitted their completed profile for verification.", 409);
     const body = validateDecision(vendor.VerificationStatus, target, parsed);
     if (
       body.expectedUpdatedAt &&
@@ -209,7 +211,7 @@ export const queueQuery = z
 export async function pendingCount(ctx) {
   requireRole(ctx, "ADMIN");
   const [row] = await repo.select(
-    "SELECT COUNT(*) AS total FROM dbo.Vendors WHERE VerificationStatus IN ('Pending','UnderReview')",
+    "SELECT COUNT(*) AS total FROM dbo.Vendors WHERE VerificationStatus IN ('Pending','UnderReview') AND ProfileDraftJson IS NULL",
   );
   return { success: true, data: { pendingCount: Number(row.total) } };
 }
@@ -229,6 +231,7 @@ export async function pendingVendors(input, ctx) {
   const documentStatus =
     "CASE WHEN NOT EXISTS(SELECT 1 FROM dbo.VendorDocuments d WHERE d.VendorId=v.VendorId) THEN 'Missing' WHEN EXISTS(SELECT 1 FROM dbo.VendorDocuments d WHERE d.VendorId=v.VendorId AND d.VerificationStatus='Rejected') THEN 'Rejected' WHEN EXISTS(SELECT 1 FROM dbo.VendorDocuments d WHERE d.VendorId=v.VendorId AND d.VerificationStatus='Pending') THEN 'Pending' ELSE 'Approved' END";
   const where = [
+    "v.ProfileDraftJson IS NULL",
     query.status
       ? "v.VerificationStatus=:status"
       : "v.VerificationStatus IN ('Pending','UnderReview')",

@@ -91,27 +91,6 @@ export default function OtpPage({ reset = false }) {
         Enter the six-digit code sent to your registered email. Your code
         expires in 10 minutes.
       </p>
-      {!reset && sessionStorage.getItem("verifyRole") === "Vendor" && (
-        <ol className="progress-steps flex list-none p-0 [margin:10px_0_30px] justify-between relative [&::before]:[content:''] [&::before]:absolute [&::before]:top-[12px] [&::before]:left-[20px] [&::before]:right-[20px] [&::before]:h-[1px] [&::before]:[background:#eadddf] [&_li]:relative [&_li]:flex [&_li]:flex-col [&_li]:items-center [&_li]:gap-[7px] [&_li]:text-[9px] [&_li]:[color:#ac9da2] [&_li_>_span]:bg-white [&_li_>_span]:[border:1px_solid_#e5d8dc] [&_li_>_span]:rounded-full [&_li_>_span]:w-[24px] [&_li_>_span]:h-[24px] [&_li_>_span]:grid [&_li_>_span]:place-items-center [&_li.current]:[color:#8c414e] [&_li.current_>_span]:[background:#8c414e] [&_li.current_>_span]:text-white [&_li.current_>_span]:[border-color:#8c414e] [&_li.current_>_span]:[box-shadow:0_0_0_4px_#8c414e10] [&_li.complete_>_span]:[background:#f3e9eb] [&_li.complete_>_span]:[color:#8c414e] [&_li.complete_>_span]:[border-color:#dec1c9] max-[480.001px]:mt-[15px] max-[480.001px]:[&_small]:text-[8px] max-[480.001px]:[&_li]:gap-[6px]" aria-label="Registration progress">
-          {[
-            "Account",
-            "Business",
-            "Services",
-            "Location",
-            "Documents",
-            "Verify",
-          ].map((s, i) => (
-            <li
-              key={s}
-              className={i === 5 ? "current" : "complete"}
-              aria-current={i === 5 ? "step" : undefined}
-            >
-              <span>{i === 5 ? "6" : "✓"}</span>
-              <small>{s}</small>
-            </li>
-          ))}
-        </ol>
-      )}
       <form onSubmit={submit}>
         <ErrorBox message={error} />
         <Field

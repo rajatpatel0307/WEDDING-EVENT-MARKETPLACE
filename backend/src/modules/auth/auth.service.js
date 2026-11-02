@@ -8,16 +8,11 @@ import {
   Role,
   UserRole,
   Vendor,
-  VendorCategory,
-  VendorLocation,
-  VendorDocument,
-  Category,
   Session,
   ResetGrant,
 } from "../../models/index.js";
 import {
   account,
-  business,
   email,
   phone,
   password,
@@ -35,7 +30,6 @@ import {
 } from "./token.service.js";
 import { requireAuth } from "../../middleware/auth.middleware.js";
 import { profilePhotoUrl } from "../media/profile.service.js";
-import { documentKey } from "../vendors/documents.service.js";
 const generic =
   "If an account exists with these details, a verification code has been sent.";
 const response = (message, user = null, extra = {}) => ({
@@ -77,7 +71,7 @@ export async function register(input, role, ctx) {
     );
   await limit(`signup:${ctx.req.ip}`, 5, 3600);
   const data = account.parse(input);
-  const vendor = role === "VENDOR" ? business.parse(input) : null;
+  const vendor = role === "VENDOR";
   const passwordHash = await hashPassword(data.password);
   const user = await sequelize.transaction(async (transaction) => {
     if (
@@ -112,45 +106,13 @@ export async function register(input, role, ctx) {
       { transaction },
     );
     if (vendor) {
-      const v = await Vendor.create(
-        {
-          ...vendor,
-          active: false,
-          userId: user.id,
-          slug: `${vendor.businessName
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .slice(0, 100)}-${randomUUID()}`,
-        },
-        { transaction },
-      );
-      const names = [...new Set(vendor.categories)];
-      const selected = await Category.findAll({
-        where: { name: names, active: true },
-        transaction,
-      });
-      if (selected.length !== names.length)
-        fail("A selected service category is unavailable.");
-      await VendorCategory.bulkCreate(
-        selected.map((c, i) => ({
-          vendorId: v.id,
-          categoryId: c.id,
-          primary: i === 0,
-        })),
-        { transaction },
-      );
-      await VendorLocation.create(
-        { ...vendor.location, vendorId: v.id },
-        { transaction },
-      );
-      await VendorDocument.bulkCreate(
-        vendor.documents.map((d) => ({
-          vendorId: v.id,
-          type: d.type,
-          key: documentKey(d.uploadToken, data.email),
-        })),
-        { transaction },
-      );
+      await Vendor.create({
+        userId: user.id,
+        businessName: `${data.firstName} ${data.lastName}`.slice(0, 200),
+        slug: `vendor-${randomUUID()}`,
+        active: false,
+        profileDraftJson: "{}",
+      }, { transaction });
     }
     try { await signupAcceptances(user.id,data,transaction); } catch(error) { if(error.status===409)fail(error.message);throw error; }
     await audit("SIGNUP", ctx, user.id, null, transaction);
@@ -198,8 +160,6 @@ export async function login(input, ctx) {
     }
     if (!user.active || user.blocked)
       fail("Your account is unavailable. Contact support.", "FORBIDDEN");
-    if (!user.emailVerified)
-      fail("Verify your email before signing in.", "EMAIL_UNVERIFIED");
     const loaded = await User.findByPk(user.id, {
       include: [
         { model: Role, as: "roles" },
@@ -207,6 +167,8 @@ export async function login(input, ctx) {
       ],
       transaction,
     });
+    if (!loaded.emailVerified)
+      fail("Verify your email before signing in.", "EMAIL_UNVERIFIED");
     if (!eligible(loaded)) fail("Account unavailable.", "FORBIDDEN");
     await issueSession(loaded, ctx, transaction);
     await audit("LOGIN", ctx, user.id, null, transaction);

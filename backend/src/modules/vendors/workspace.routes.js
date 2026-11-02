@@ -1,3 +1,4 @@
+import * as onboarding from "./onboarding.service.js";
 import * as vendorLocations from "../addresses/vendor-locations.service.js";
 import { Router, json } from "express";
 import { rateLimit } from "express-rate-limit";
@@ -17,7 +18,7 @@ import * as quotations from "../quotations/quotations.service.js";
 import { earnings } from "../payments/finance-reports.js";
 import { communicationCounts } from "../notifications/communications.service.js";
 
-// Service drafts are available to signed-in vendors; other tools require approval.
+// Only profile completion endpoints are available before vendor approval.
 export function createVendorRouter({
   authenticateRequest = authenticate,
 } = {}) {
@@ -33,7 +34,7 @@ export function createVendorRouter({
   router.use(async (req, res, next) => {
     try {
       req.vendorContext = { req, res, auth: await authenticateRequest(req) };
-      req.vendorUser = /^\/(?:services|packages)(?:\/|$)/.test(req.path)
+      req.vendorUser = /^\/onboarding(?:\/|$)/.test(req.path)
         ? requireRole(req.vendorContext, "VENDOR")
         : requireApprovedVendor(req.vendorContext);
       if (
@@ -62,6 +63,15 @@ export function createVendorRouter({
       const result = await fn(req);
       res.json({ success: true, ...result });
     });
+  get("/onboarding", req => onboarding.profile(req.vendorContext));
+  mutation("put", "/onboarding", req => onboarding.saveProfile(req.body, req.vendorContext));
+  mutation("post", "/onboarding/submit", req => onboarding.saveProfile(req.body, req.vendorContext, true));
+  mutation("post", "/onboarding/documents", req => onboarding.upload(req.body, req.vendorContext));
+  mutation("delete", "/onboarding/documents/:id", req => onboarding.document(req.params.id, req.vendorContext, true));
+  router.get("/onboarding/documents/:id/file", async (req, res) => {
+    const file = await onboarding.document(req.params.id, req.vendorContext);
+    res.type(file.mimeType).set("Content-Disposition", `attachment; filename="${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}"`).send(Buffer.from(file.base64, "base64"));
+  });
   get("/earnings", (req) => earnings(req.vendorContext));
   get("/bookings/statistics", (req) => workspace.bookingStatistics(req.vendorContext));
   get("/bookings/:id", (req) =>

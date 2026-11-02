@@ -12,7 +12,7 @@ export function requireRole(ctx, role) {
 }
 export function requireApprovedVendor(ctx) {
   const user = requireRole(ctx, "VENDOR");
-  if (user.vendor?.verificationStatus !== "Approved" || !user.vendor.active)
+  if (!user.emailVerified || user.vendor?.verificationStatus !== "Approved" || !user.vendor.active)
     fail("Vendor approval required.", "FORBIDDEN");
   return user;
 }

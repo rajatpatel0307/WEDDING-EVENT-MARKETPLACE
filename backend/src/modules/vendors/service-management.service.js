@@ -2,7 +2,7 @@ import { publicPredicate } from '../reviews/reviews.policy.js';
 import { approvalHistory } from "../admin/service-approval.service.js";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { requireRole } from "../../middleware/auth.middleware.js";
+import { requireApprovedVendor } from "../../middleware/auth.middleware.js";
 import { repo, owned, fail, audit, assertVersion } from "./workspace.common.js";
 import { templateFor, templatesFor } from "./service-templates.js";
 import {
@@ -20,7 +20,7 @@ import {
 import { csvCell } from "../../utils/csv.js";
 
 export function serviceScope(ctx) {
-  const user = requireRole(ctx, "VENDOR");
+  const user = requireApprovedVendor(ctx);
   if (!user.vendor?.id) fail("Vendor profile required.", 403);
   return {
     id: user.vendor.id,

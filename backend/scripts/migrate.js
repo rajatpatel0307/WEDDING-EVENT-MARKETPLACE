@@ -1,3 +1,4 @@
+import { up as onboardingUp } from "../migrations/028-vendor-onboarding.js";
 import { up as categoryImagesUp } from "../migrations/027-category-images.js";
 import { up as communicationUp } from "../migrations/023-communication.js";
 import { up as reviewsUp } from '../migrations/024-reviews.js';
@@ -421,6 +422,11 @@ try {
       await categoryImagesUp(sequelize.getQueryInterface(), transaction);
       await sequelize.query("INSERT dbo.AuthMigrations(Name) VALUES('027-category-images')", {transaction});
     }
+  });
+  await sequelize.transaction(async transaction => {
+    await sequelize.query("DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;", { transaction });
+    await onboardingUp(sequelize.getQueryInterface(), transaction);
+    await sequelize.query("IF NOT EXISTS(SELECT 1 FROM dbo.AuthMigrations WHERE Name='028-vendor-onboarding') INSERT dbo.AuthMigrations(Name) VALUES('028-vendor-onboarding')", { transaction });
   });
   console.log("Database migrations are current.");
 } catch (error) {

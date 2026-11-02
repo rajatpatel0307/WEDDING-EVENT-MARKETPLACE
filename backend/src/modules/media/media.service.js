@@ -1,3 +1,4 @@
+import { requireApprovedVendor } from "../../middleware/auth.middleware.js";
 import { randomUUID, createHash } from "node:crypto";
 import { z } from "zod";
 import * as db from "./media.repository.js";
@@ -92,6 +93,8 @@ export async function target(type, id, ctx, tx, write = false) {
     !user.roles.some((r) => r.code === "VENDOR" && r.active)
   )
     fail("Vendor access required.", 403);
+  if (write && !admin && ["Service", "Package"].includes(type))
+    requireApprovedVendor(ctx);
   if (write && type === "Review" && !same(row.OwnerId, user.id))
     fail("Only the review author can upload or edit review images.", 403);
   if (

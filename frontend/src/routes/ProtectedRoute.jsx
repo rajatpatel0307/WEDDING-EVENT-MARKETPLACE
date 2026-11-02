@@ -1,3 +1,4 @@
+import { canEnterAccount } from "./authNavigation";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 export default function ProtectedRoute() {
@@ -12,7 +13,7 @@ export default function ProtectedRoute() {
         Preparing your space…
       </div>
     );
-  return user && user.accountStatus === "Active" ? (
+  return canEnterAccount(user) ? (
     <Outlet />
   ) : (
     <Navigate
