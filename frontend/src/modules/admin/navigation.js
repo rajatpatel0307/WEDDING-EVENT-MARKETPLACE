@@ -35,8 +35,6 @@ const navigationGroups = [
     items: [
       ["customers", "All Customers", Users],
       ["vendors", "All Vendors", Store],
-      ["vendors/pending", "Vendor Approvals", ClipboardCheck],
-      ["documents", "Vendor Documents", Files],
     ],
   },
   {

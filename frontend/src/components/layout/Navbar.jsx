@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Heart, Menu, Search, ArrowUpRight, X, UserRound } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -16,15 +16,28 @@ export default function Navbar() {
     [drawer, setDrawer] = useState(false),
     [search, setSearch] = useState(false),
     [city, setCity] = useState("Lucknow"),
-    [scrolled, setScrolled] = useState(false);
+    [scrolled, setScrolled] = useState(() => window.scrollY > 0);
   const location = useLocation();
+  const home = location.pathname === "/";
+  const headerRef = useRef(null);
+  useLayoutEffect(() => {
+    if (!home) return;
+    const header = headerRef.current;
+    const measure = () => {
+      header.style.setProperty("--mn-header-height", `${header.offsetHeight}px`);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, [home]);
   useEffect(() => {
     setOpen(null);
     setDrawer(false);
     setSearch(false);
   }, [location]);
   useEffect(() => {
-    const scroll = () => setScrolled(window.scrollY > 12);
+    const scroll = () => setScrolled(window.scrollY > 0);
     scroll();
     window.addEventListener("scroll", scroll, { passive: true });
     return () => window.removeEventListener("scroll", scroll);
@@ -44,7 +57,10 @@ export default function Navbar() {
       <a className="mn-skip" href="#main-content">
         Skip to content
       </a>
-      <header className={`mn-header ${scrolled ? "mn-scrolled" : ""}`}>
+      <header
+        ref={headerRef}
+        className={`mn-header ${home ? "mn-header-home" : ""} ${scrolled ? "mn-scrolled" : ""}`}
+      >
         <div className="mn-utility">
           <span>
             Thoughtfully planned. <em>Wholeheartedly celebrated.</em>
@@ -72,7 +88,7 @@ export default function Navbar() {
               <Menu size={22} />
             </IconButton>
           </div>
-          <Logo />
+          <Logo transparent />
           <DesktopNavbar user={user} open={open} setOpen={setOpen} />
           <div className="mn-nav-actions">
             <div className="mn-inline-search">
