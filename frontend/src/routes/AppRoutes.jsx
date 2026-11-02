@@ -219,7 +219,7 @@ function PublicPage({ children }) {
   return (
     <Suspense
       fallback={
-        <main id="main-content" className="mp-section" role="status">
+        <main id="main-content" className="mp-section max-w-[1320px] my-0 mx-auto py-[64px] px-[5%] [@media(width<=1100px)]:py-[48px] [@media(width<=1100px)]:px-[5%] [@media(width<=767px)]:py-[38px] [@media(width<=767px)]:px-[6%]" role="status">
           Loading your next chapter?
         </main>
       }

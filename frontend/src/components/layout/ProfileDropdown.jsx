@@ -25,10 +25,10 @@ export default function ProfileDropdown({ open, setOpen }) {
       name="profile"
       open={open}
       setOpen={setOpen}
-      className="mn-profile"
+      className="mn-profile [&_.mn-panel_>_button]:flex [&_.mn-panel_>_button]:items-center [&_.mn-panel_>_button]:justify-between [&_.mn-panel_>_button]:gap-[10px] [&_.mn-panel_>_button]:w-full [&_.mn-panel_>_button]:py-[10px] [&_.mn-panel_>_button]:px-[12px] [&_.mn-panel_>_button]:rounded-[4px] [&_.mn-panel_>_button]:text-[12px] [&_.mn-panel_>_button:hover]:bg-[#f6eeeb] max-[768px]:[&_.mn-panel]:min-w-[210px]"
       label={
         <>
-          <span className="mn-avatar">
+          <span className="mn-avatar rounded-full bg-[#efe0de] w-[30px] h-[30px] grid place-items-center text-[#8c414e] font-[Georgia,serif] text-[16px] max-[768px]:w-[28px] max-[768px]:h-[28px]">
             {user.profilePhotoUrl ? (
               <img
                 src={user.profilePhotoUrl}
@@ -44,12 +44,12 @@ export default function ProfileDropdown({ open, setOpen }) {
               user.firstName?.[0]
             )}
           </span>
-          <span className="mn-profile-name">{user.firstName}</span>
+          <span className="mn-profile-name max-[768px]:hidden">{user.firstName}</span>
           <ChevronDown size={12} />
         </>
       }
     >
-      <div className="mn-profile-summary">
+      <div className="mn-profile-summary py-[9px] px-[12px] border-b border-b-[#ece4df] mb-[5px] [&_>_*]:block [&_small]:text-[#8f7d7e]">
         <strong>
           {user.firstName} {user.lastName}
         </strong>
@@ -59,10 +59,10 @@ export default function ProfileDropdown({ open, setOpen }) {
         <Link key={name} to={path} onClick={() => setOpen(null)}>
           {name}
           {name === "Messages" && user.unreadMessageCount > 0 && (
-            <span className="mn-count">{user.unreadMessageCount}</span>
+            <span className="mn-count bg-[#8c414e] text-white py-0 px-[5px] rounded-[10px] text-[9px] min-w-[16px] text-center">{user.unreadMessageCount}</span>
           )}
           {name === "Notifications" && user.unreadNotificationCount > 0 && (
-            <span className="mn-count">{user.unreadNotificationCount}</span>
+            <span className="mn-count bg-[#8c414e] text-white py-0 px-[5px] rounded-[10px] text-[9px] min-w-[16px] text-center">{user.unreadNotificationCount}</span>
           )}
         </Link>
       ))}

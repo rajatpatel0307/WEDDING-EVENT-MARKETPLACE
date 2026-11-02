@@ -22,7 +22,7 @@ function TopVendors({ items, loading, retry, categories = [] }) {
   const vendors = category ? filtered.data?.featuredVendors : items;
   const pending = category ? filtered.loading : loading;
   return (
-    <section className="mp-section">
+    <section className="mp-section max-w-[1320px] my-0 mx-auto py-[64px] px-[5%] [@media(width<=1100px)]:py-[48px] [@media(width<=1100px)]:px-[5%] [@media(width<=767px)]:py-[38px] [@media(width<=767px)]:px-[6%]">
       <SectionHeader
         eyebrow="GOOD PEOPLE. UNFORGETTABLE CELEBRATIONS."
         title="Meet your wedding dream team."
@@ -31,7 +31,7 @@ function TopVendors({ items, loading, retry, categories = [] }) {
         linkText="All vendors"
       />
       <div
-        className="mp-filter-tabs"
+        className="mp-filter-tabs flex gap-[8px] flex-wrap mb-[26px] [&.mp-filter-tabs_button]:border [&.mp-filter-tabs_button]:border-[#e1d6cf] [&.mp-filter-tabs_button]:py-[8px] [&.mp-filter-tabs_button]:px-[17px] [&.mp-filter-tabs_button]:text-[11px] [&.mp-filter-tabs_button]:rounded-[30px] [&.mp-filter-tabs_button]:bg-transparent [&.mp-filter-tabs_button]:text-[#8b7670] [&.mp-filter-tabs_button]:min-h-[38px] [&.mp-filter-tabs_button[aria-pressed='true']]:bg-[#8c414e] [&.mp-filter-tabs_button[aria-pressed='true']]:text-white [&.mp-filter-tabs_button[aria-pressed='true']]:border-[#8c414e] [@media(width<=767px)]:gap-[7px] [@media(width<=767px)]:flex-nowrap [@media(width<=767px)]:overflow-x-auto [@media(width<=767px)]:pb-[6px] [@media(width<=767px)]:[&.mp-filter-tabs_button]:whitespace-nowrap [@media(width<=767px)]:[&.mp-filter-tabs_button]:py-[9px] [@media(width<=767px)]:[&.mp-filter-tabs_button]:px-[15px]"
         role="group"
         aria-label="Filter vendors by category"
       >
@@ -46,7 +46,7 @@ function TopVendors({ items, loading, retry, categories = [] }) {
         ))}
       </div>
       {vendors?.length ? (
-        <div className="mp-listing-grid">
+        <div className="mp-listing-grid grid grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[23px] [@media(width<=1100px)]:gap-[16px] [@media(width<=767px)]:grid-cols-[1fr] [@media(width<=767px)]:gap-[20px]">
           {vendors.slice(0, 6).map((item) => (
             <MarketplaceCard key={item.id} item={item} />
           ))}
@@ -87,7 +87,7 @@ export default function HomeCollections({ data, loading, retry, part }) {
       />
     );
   return (
-    <section className="mp-section">
+    <section className="mp-section max-w-[1320px] my-0 mx-auto py-[64px] px-[5%] [@media(width<=1100px)]:py-[48px] [@media(width<=1100px)]:px-[5%] [@media(width<=767px)]:py-[38px] [@media(width<=767px)]:px-[6%]">
       <SectionHeader
         eyebrow="BEAUTIFUL THINGS, BROUGHT TOGETHER"
         title="Complete wedding packages."
@@ -96,7 +96,7 @@ export default function HomeCollections({ data, loading, retry, part }) {
         linkText="All packages"
       />
       {data?.featuredPackages?.length ? (
-        <div className="mp-listing-grid">
+        <div className="mp-listing-grid grid grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[23px] [@media(width<=1100px)]:gap-[16px] [@media(width<=767px)]:grid-cols-[1fr] [@media(width<=767px)]:gap-[20px]">
           {data.featuredPackages.map((item) => (
             <PackageCard key={item.id} item={item} />
           ))}

@@ -32,3 +32,26 @@
 @custom-variant service-wide (@media (min-width: 1550px));
 @custom-variant service-tablet (@media (max-width: 1150px));
 @custom-variant service-mobile (@media (max-width: 760px));
+
+@theme static {
+  --animate-mn-fade: mn-fade 0.16s ease;
+  --animate-mn-overlay: mn-fade 0.18s ease;
+  --animate-mn-slide: mn-slide 0.2s ease;
+
+  @keyframes mn-fade {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes mn-slide {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+  }
+}
+
+@theme static {
+  --animate-mp-shimmer: mp-shimmer 1.8s linear infinite;
+
+  @keyframes mp-shimmer {
+    to { background-position: -200% 0; }
+  }
+}

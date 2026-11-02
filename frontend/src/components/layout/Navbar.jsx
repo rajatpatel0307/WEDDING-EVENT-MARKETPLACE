@@ -54,14 +54,16 @@ export default function Navbar() {
     : "/auth/login?redirect=%2Fcustomer%2Fwishlist";
   return (
     <>
-      <a className="mn-skip" href="#main-content">
+      <a className="mn-skip fixed left-[16px] top-[-100px] py-[12px] px-[20px] bg-[#fff] z-[100] focus:top-[10px]" href="#main-content">
         Skip to content
       </a>
       <header
         ref={headerRef}
-        className={`mn-header ${home ? "mn-header-home" : ""} ${scrolled ? "mn-scrolled" : ""}`}
+        className={`mn-header motion-reduce:[&_*]:animate-none! motion-reduce:[&_*]:transition-none! sticky top-0 z-40 border-b transition-[background-color,border-color,backdrop-filter,box-shadow] duration-250 ease-in-out motion-reduce:transition-none ${home ? "mb-[calc(-1*var(--mn-header-height,0px))]" : ""} ${home && !scrolled ? "border-transparent bg-transparent backdrop-blur-0" : "border-[#eae3df] bg-[rgba(255,253,251,0.97)] backdrop-blur-[16px]"} ${scrolled ? "shadow-[0_4px_20px_#422a3110]" : "shadow-none"}`}
       >
-        <div className="mn-utility">
+        <div
+          className={`mn-utility [&_>_div]:flex [&_>_div]:items-center [&_>_div]:gap-[7px] [&_a]:flex [&_a]:items-center [&_a]:gap-[7px] [&_em]:font-[Georgia,serif] max-[768px]:[&_>_span]:hidden max-[768px]:[&_>_div_>_a]:hidden max-[768px]:[&_>_div]:w-full max-[768px]:[&_>_div]:justify-between flex min-h-[35px] items-center justify-between px-[max(4%,calc((100vw_-_1440px)/2))] text-[11px] tracking-[0.2px] text-[#6d5457] transition-colors duration-250 ease-in-out motion-reduce:transition-none max-[767px]:min-h-[31px] max-[767px]:justify-end ${home && !scrolled ? "bg-transparent" : "bg-[#f2eae7]"}`}
+        >
           <span>
             Thoughtfully planned. <em>Wholeheartedly celebrated.</em>
           </span>
@@ -72,14 +74,14 @@ export default function Navbar() {
               open={open}
               setOpen={setOpen}
             />
-            <span className="mn-utility-divider" />
+            <span className="mn-utility-divider h-[13px] w-[1px] bg-[#d8c7c5] my-0 mx-[12px] max-[768px]:hidden" />
             <Link to="/auth/signup?role=vendor">
               For wedding professionals <ArrowUpRight size={12} />
             </Link>
           </div>
         </div>
-        <div className="mn-nav-row">
-          <div className="mn-mobile-menu">
+        <div className="mn-nav-row max-w-[1500px] m-auto flex items-center gap-[27px] py-[10px] px-[4%] min-h-[81px] min-[1180px]:max-[1401px]:gap-[23px] max-[1180px]:gap-[15px] max-[1180px]:py-[8px] max-[1180px]:px-[4%] max-[1180px]:min-h-[75px] max-[768px]:gap-[7px] max-[768px]:[&_.mn-logo_img]:w-[114px] max-[768px]:[&_.mn-logo_img]:h-[49px] max-[768px]:[&_.mn-icon-button]:w-[32px]">
+          <div className="mn-mobile-menu hidden max-[1180px]:block">
             <IconButton
               label="Open navigation"
               aria-expanded={drawer}
@@ -90,11 +92,11 @@ export default function Navbar() {
           </div>
           <Logo transparent />
           <DesktopNavbar user={user} open={open} setOpen={setOpen} />
-          <div className="mn-nav-actions">
-            <div className="mn-inline-search">
+          <div className="mn-nav-actions flex items-center gap-[15px] text-[12px] max-[1180px]:ml-auto max-[768px]:gap-[3px]">
+            <div className="mn-inline-search min-[1180px]:max-[1401px]:hidden max-[1180px]:hidden">
               <SearchBar city={city} compact />
             </div>
-            <div className="mn-search-toggle">
+            <div className="mn-search-toggle hidden min-[1180px]:max-[1401px]:block max-[1180px]:block">
               <IconButton label="Open search" onClick={() => setSearch(true)}>
                 <Search size={20} />
               </IconButton>
@@ -102,36 +104,36 @@ export default function Navbar() {
             {(!user || user.role === "Customer") && (
               <Link
                 to={wishlist}
-                className="mn-wishlist mn-icon-button"
+                className="mn-wishlist relative mn-icon-button inline-flex items-center justify-center w-[36px] h-[36px] rounded-full bg-transparent border-0 text-inherit shrink-0 hover:bg-[#f3e9e7]"
                 aria-label={`Wishlist${user?.wishlistCount ? `, ${user.wishlistCount} saved items` : ""}`}
               >
                 <Heart size={21} />
                 {user?.wishlistCount > 0 && (
-                  <span className="mn-badge">
+                  <span className="mn-badge bg-[#8c414e] text-white py-0 px-[5px] rounded-[10px] text-[9px] min-w-[16px] text-center absolute right-[-2px] top-0">
                     {user.wishlistCount > 99 ? "99+" : user.wishlistCount}
                   </span>
                 )}
               </Link>
             )}
             {loading ? (
-              <span className="mn-auth-loading" role="status">
+              <span className="mn-auth-loading text-[10px] max-w-[75px] text-[#8a7478] max-[768px]:text-[8px] max-[768px]:max-w-[45px]" role="status">
                 Loading account…
               </span>
             ) : user ? (
               <ProfileDropdown open={open} setOpen={setOpen} />
             ) : (
               <>
-                <Link className="mn-login" to="/auth/login">
+                <Link className="mn-login max-[768px]:hidden" to="/auth/login">
                   Login
                 </Link>
                 <Link
-                  className="mn-mobile-profile mn-icon-button"
+                  className="mn-mobile-profile [&.mn-mobile-profile]:hidden max-[768px]:[&.mn-mobile-profile]:inline-flex mn-icon-button inline-flex items-center justify-center w-[36px] h-[36px] rounded-full bg-transparent border-0 text-inherit shrink-0 hover:bg-[#f3e9e7]"
                   aria-label="Login"
                   to="/auth/login"
                 >
                   <UserRound size={21} />
                 </Link>
-                <Link className="mn-button mn-get-started" to="/auth/signup">
+                <Link className="mn-button bg-[#8c414e] text-white! inline-flex items-center justify-center gap-[19px] border border-[#8c414e] py-[12px] px-[19px] rounded-[5px] text-[12px] font-medium whitespace-nowrap hover:bg-[#74333f] hover:border-[#74333f] hover:transform-[translateY(-1px)] mn-get-started max-[768px]:hidden" to="/auth/signup">
                   Get started <ArrowUpRight size={15} />
                 </Link>
               </>
@@ -140,7 +142,7 @@ export default function Navbar() {
         </div>
         {user?.role === "Vendor" &&
           user.vendor?.verificationStatus !== "Approved" && (
-            <div className="mn-status-banner">
+            <div className="mn-status-banner text-center bg-[#f5e6d1] text-[11px] p-[5px] [&_a]:inline-flex [&_a]:items-center [&_a]:gap-[7px]">
               <Link
                 to={`/vendor/${{ Rejected: "rejected", Suspended: "suspended" }[user.vendor?.verificationStatus] || "pending"}`}
               >

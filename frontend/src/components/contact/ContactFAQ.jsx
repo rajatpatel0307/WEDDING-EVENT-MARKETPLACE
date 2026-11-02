@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import SectionHeader from "../common/SectionHeader";
 export default function ContactFAQ() {
   return (
-    <section className="mp-section mp-faq">
+    <section className="mp-section max-w-[1320px] my-0 mx-auto py-[64px] px-[5%] [@media(width<=1100px)]:py-[48px] [@media(width<=1100px)]:px-[5%] [@media(width<=767px)]:py-[38px] [@media(width<=767px)]:px-[6%] mp-faq border-t border-t-[#e4d7cb] grid grid-cols-[1fr_1.3fr] gap-[70px] [&.mp-faq_h2]:max-w-[300px] [&.mp-faq_details]:border-b [&.mp-faq_details]:border-b-[#dfcec2] [&.mp-faq_summary]:flex [&.mp-faq_summary]:items-center [&.mp-faq_summary]:justify-between [&.mp-faq_summary]:gap-[20px] [&.mp-faq_summary]:list-none [&.mp-faq_summary]:cursor-pointer [&.mp-faq_summary]:py-[19px] [&.mp-faq_summary]:px-0 [&.mp-faq_summary]:text-[12px] [&.mp-faq_summary]:text-[#6b5153] [&.mp-faq_summary::-webkit-details-marker]:hidden [&.mp-faq_details[open]_summary_svg]:transform-[rotate(45deg)] [&.mp-faq_details_>_div]:text-[12px] [&.mp-faq_details_>_div]:leading-[1.9] [&.mp-faq_details_>_div]:text-[#907a70] [&.mp-faq_details_>_div]:pt-0 [&.mp-faq_details_>_div]:pr-[25px] [&.mp-faq_details_>_div]:pb-[20px] [&.mp-faq_details_>_div]:pl-0 [&.mp-faq_a]:text-[#8c414e] [&.mp-faq_a]:underline [@media(width<=767px)]:grid-cols-[1fr] [@media(width<=767px)]:gap-0 [@media(width<=767px)]:[&.mp-faq_h2]:max-w-none [@media(width<=767px)]:[&.mp-faq_summary]:text-[12px] [@media(width<=767px)]:[&.mp-faq_summary]:min-h-[56px] [@media(width<=767px)]:[&.mp-faq_details_>_div]:text-[12px]">
       <SectionHeader
         eyebrow="A FEW THINGS YOU MIGHT BE WONDERING"
         title="Good questions. Thoughtful answers."

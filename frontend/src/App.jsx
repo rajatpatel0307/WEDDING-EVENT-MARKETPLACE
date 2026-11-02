@@ -9,8 +9,6 @@ import { AuthProvider } from "./context/AuthContext";
 import AppRoutes from "./routes/AppRoutes";
 import Navbar from "./components/layout/Navbar";
 import Footer from "./components/layout/Footer";
-import "./components/layout/marketplace.css";
-import "./modules/public/public.css";
 const router = createBrowserRouter([
   {
     path: "*",
