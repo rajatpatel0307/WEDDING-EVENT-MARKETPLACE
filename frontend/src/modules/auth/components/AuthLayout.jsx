@@ -1,5 +1,37 @@
 import { Heart, ShieldCheck } from "lucide-react";
-export default function AuthLayout({ children, wide = false }) {
+import "./auth-layout.css";
+
+export default function AuthLayout({ children, wide = false, centered = false, compact = false }) {
+  if (centered) {
+    return (
+      <div
+        className={`auth-shell relative isolate grid min-h-dvh place-items-center overflow-hidden px-4 py-8 sm:px-6 sm:py-12 ${compact ? "auth-compact" : ""}`}
+      >
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -inset-4 -z-10 bg-cover bg-center bg-no-repeat blur-[8px]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(45, 35, 26, 0.18), rgba(45, 35, 26, 0.28)), url('/images/wedding-garden-1024.webp')",
+          }}
+        />
+        <main
+          id="main-content"
+          className="auth-main w-full max-w-[560px] rounded-[20px] border border-white/70 bg-white/50 px-6 py-8 shadow-[0_20px_80px_#24181035] sm:px-12 sm:py-10"
+        >
+          <section className="form-panel min-w-0">
+            <div className="form-content mx-auto w-full max-w-[440px] animate-appear [&_h2]:text-[37px] [&_h2]:leading-[1.2] [&_h2]:text-[#453438] max-[480px]:[&_h2]:text-[32px]">
+              {children}
+            </div>
+            <div className="form-trust mt-7 flex items-center justify-center gap-[6px] text-center text-[9px] text-[#aa9b9f]">
+              <ShieldCheck size={14} className="shrink-0" /> Your information is private and protected
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="auth-shell [padding:0_30px] max-[1150.001px]:[padding:0_22px] max-[850.001px]:[padding:0_18px] max-[480.001px]:[padding:0_12px]">
       <main id="main-content" className={`auth-main grid grid-cols-[1fr_1fr] max-w-[1312px] [margin:4px_auto_0] min-h-[704px] bg-white [border:1px_solid_#eee8e4] rounded-[12px] overflow-hidden [box-shadow:0_8px_45px_#56373c05] min-[1500px]:mt-[30px] min-[1500px]:min-h-[740px] max-[1150.001px]:grid-cols-[0.9fr_1.1fr] max-[850.001px]:grid-cols-[1fr] max-[850.001px]:max-w-[580px] max-[850.001px]:min-h-0 ${wide ? "wide [&.wide]:grid-cols-[0.85fr_1.15fr] [&.wide_.brand-story]:[padding:42px_36px] [&.wide_.story-copy_h1]:text-[36px] [&.wide_.story-copy_h1_em]:text-[32px] [&.wide_.form-panel]:[padding:37px_52px] max-[1150.001px]:[&.wide]:grid-cols-[0.9fr_1.1fr] max-[1150.001px]:[&.wide_.brand-story]:[padding:35px_30px] max-[1150.001px]:[&.wide_.story-copy_h1]:text-[33px] max-[1150.001px]:[&.wide_.story-copy_h1_em]:text-[29px] max-[1150.001px]:[&.wide_.form-panel]:[padding:40px_34px] max-[850.001px]:[&.wide]:grid-cols-[1fr] max-[850.001px]:[&.wide]:max-w-[580px] max-[850.001px]:[&.wide_.form-panel]:[padding:42px_50px_28px] max-[480.001px]:[&.wide_.form-panel]:[padding:32px_23px_25px]" : ""}`}>

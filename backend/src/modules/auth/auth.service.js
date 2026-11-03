@@ -229,6 +229,14 @@ export async function forgotPassword(input, ctx) {
   const user = await User.findOne({
     where: { [Op.or]: [{ email: identifier }, { phone: identifier }] },
   });
+  if (!user) {
+    await audit("PASSWORD_RESET_REQUEST", ctx);
+    fail(
+      identifier.includes("@")
+        ? "Please enter a correct email address."
+        : "Please enter a correct phone number.",
+    );
+  }
   if (user?.active && !user.blocked && user.emailVerified) {
     try {
       await sendOtp(user, "reset");

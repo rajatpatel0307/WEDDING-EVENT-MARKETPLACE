@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { LockKeyhole } from "lucide-react";
 import AuthLayout from "../components/AuthLayout";
 import {
@@ -13,9 +13,10 @@ import { mutate, client } from "../../../services/apollo";
 import { useAuth } from "../../../context/AuthContext";
 export default function ResetPasswordPage({ change = false }) {
   const [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
-  const { resetToken, setResetToken, setUser, notify } = useAuth(),
-    navigate = useNavigate();
+    [error, setError] = useState(""),
+    [saved, setSaved] = useState(false);
+  const { resetToken, setResetToken, setUser, notify } = useAuth();
+  if (saved) return <Navigate to="/auth/login" replace />;
   if (!change && !resetToken)
     return <Navigate to="/auth/forgot-password" replace />;
   async function submit(e) {
@@ -33,11 +34,12 @@ export default function ResetPasswordPage({ change = false }) {
         change ? "changePassword" : "resetPassword",
         change ? data : { ...data, resetToken },
       );
+      setSaved(true);
       setResetToken("");
       setUser(null);
-      await client.clearStore();
       notify(r.message);
-      navigate("/auth/login", { replace: true });
+      // Cache cleanup must not interrupt the successful-save redirect.
+      await client.clearStore().catch(() => {});
     } catch (err) {
       setError(err.message);
     } finally {
@@ -45,7 +47,7 @@ export default function ResetPasswordPage({ change = false }) {
     }
   }
   return (
-    <AuthLayout>
+    <AuthLayout centered compact>
       <div className="form-icon w-[48px] h-[48px] [border:1px_solid_#eaded9] rounded-[13px] grid place-items-center [color:#9a5f65] [background:#fcf8f6] mb-[23px] max-[480.001px]:mb-[20px]">
         <LockKeyhole size={23} />
       </div>

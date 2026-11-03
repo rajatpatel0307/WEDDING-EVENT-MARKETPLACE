@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Heart, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import AuthLayout from "../components/AuthLayout";
 import { Field, Submit, ErrorBox } from "../components/FormControls";
 import { mutate } from "../../../services/apollo";
@@ -37,18 +37,10 @@ export default function LoginPage() {
     }
   }
   return (
-    <AuthLayout>
-      <div className="form-icon w-[48px] h-[48px] [border:1px_solid_#eaded9] rounded-[13px] grid place-items-center [color:#9a5f65] [background:#fcf8f6] mb-[23px] max-[480.001px]:mb-[20px]">
-        <Heart size={22} strokeWidth={1.5} />
-      </div>
+    <AuthLayout centered compact>
       <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full form-eyebrow [&.form-eyebrow]:text-[9px] [&.form-eyebrow]:tracking-[2px] [&.form-eyebrow]:mb-[12px]">
         WELCOME TO MARRYNEST
       </span>
-      <h2>
-        Your next chapter
-        <br />
-        starts here.
-      </h2>
       <p className="form-intro text-[12px] leading-[1.8] [margin:14px_0_28px] max-[480.001px]:mb-[25px]">
         Sign in to bring your celebration to life.
       </p>

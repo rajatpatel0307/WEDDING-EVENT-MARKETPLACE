@@ -1,0 +1,73 @@
+.auth-compact {
+  padding-block: 24px;
+}
+
+.auth-compact .auth-main {
+  max-width: 520px;
+  padding: 24px 36px;
+}
+
+.auth-compact .form-content h2 { font-size: 30px; }
+.auth-compact .form-eyebrow { margin-bottom: 6px; }
+.auth-compact .form-intro { margin: 8px 0 16px; }
+.auth-compact .role-picker { margin-bottom: 16px; }
+.auth-compact .role-picker button { padding: 8px 10px; }
+.auth-compact .field { margin-bottom: 12px; }
+.auth-compact .field > span { margin-bottom: 4px; }
+.auth-compact .field input { min-height: 38px; padding: 7px 10px; }
+.auth-compact .password-hint { margin: -3px 0 12px; }
+.auth-compact .agreements { margin: 8px 0 14px; gap: 6px; }
+.auth-compact .step-actions { margin-top: 12px; }
+.auth-compact .primary-button { min-height: 40px; padding-block: 8px; }
+.auth-compact .signup-prompt { margin-top: 14px; }
+.auth-compact .form-trust { margin-top: 16px; }
+
+/* Keep supporting text readable over the translucent wedding background. */
+.auth-compact .auth-main {
+  color: #30262a;
+}
+
+.auth-compact .auth-main :is(
+  .form-intro, .session-note, .form-trust, .or-divider,
+  .password-hint, .agreements, .signup-prompt, .field,
+  .field small, .role-picker small, .vendor-invite p,
+  .resend-line, .otp-fieldset legend
+) {
+  color: #403238;
+}
+
+.auth-compact .auth-main .form-eyebrow,
+.auth-compact .auth-main .text-link,
+.auth-compact .auth-main .back-link,
+.auth-compact .auth-main .resend-line button,
+.auth-compact .auth-main .signup-prompt a,
+.auth-compact .auth-main .agreements a,
+.auth-compact .auth-main .vendor-invite > a {
+  color: #682b39;
+}
+
+.auth-compact .auth-main .field input::placeholder {
+  color: #74646a;
+  opacity: 1;
+}
+
+.auth-compact .auth-main .password-toggle,
+.auth-compact .auth-main .role-picker button {
+  color: #59424b;
+}
+
+.auth-compact .auth-main .role-picker button.selected {
+  color: #682b39;
+}
+
+.auth-compact .form-icon { margin-bottom: 16px; }
+.auth-compact .otp-fieldset { margin-block: 16px; }
+.auth-compact .otp-inputs input { height: 44px; font-size: 20px; }
+.auth-compact .resend-line { margin-top: 16px; }
+.auth-compact .back-link { margin-top: 16px; }
+
+@media (max-width: 480px) {
+  .auth-compact { padding-block: 16px; }
+  .auth-compact .auth-main { padding: 22px 20px; }
+  .auth-compact .form-content h2 { font-size: 28px; }
+}

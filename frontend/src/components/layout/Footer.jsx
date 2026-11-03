@@ -95,7 +95,7 @@ export default function Footer() {
   const { pathname } = useLocation();
   return (
     <footer className="mn-footer bg-[#30272b] text-[#e8dcda] motion-reduce:[&_*]:animate-none! motion-reduce:[&_*]:transition-none!">
-      {!["/", "/about", "/contact"].includes(pathname) && (
+      {!pathname.startsWith("/auth/") && !["/", "/about", "/contact"].includes(pathname) && (
         <section className="mn-footer-cta bg-[#f1e6e1] relative overflow-hidden text-[#49373b] flex justify-between items-center gap-[35px] pt-[38px] pr-[max(6%,_calc((100vw_-_1250px)] pb-[/] pl-[2))] [&_h2]:text-[35px] [&_h2]:leading-[1.3] [&_h2]:my-[9px] [&_h2]:mx-0 [&_p]:text-[12px] [&_p]:text-[#8a6d6d] max-[1180px]:[&_h2]:text-[29px] max-[768px]:py-[32px] max-[768px]:px-[6%] max-[768px]:block max-[768px]:[&_h2]:text-[29px] max-[768px]:[&_h2]:max-w-[300px] max-[768px]:[&_p]:max-w-[300px] max-[768px]:[&_p]:leading-[1.8] max-[768px]:[&_.mn-button]:py-[11px] max-[768px]:[&_.mn-button]:px-[13px] max-[768px]:[&_.mn-button]:text-[10px] max-[768px]:[&_.mn-button]:gap-[8px]">
           <div>
             <span className="mn-kicker text-[9px] font-semibold tracking-[2px] text-[#9a6964] inline-flex items-center gap-[9px] max-[768px]:text-[8px] max-[768px]:tracking-[1.5px]">YOUR NEXT CHAPTER STARTS HERE</span>

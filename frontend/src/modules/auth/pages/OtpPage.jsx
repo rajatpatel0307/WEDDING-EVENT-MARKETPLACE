@@ -81,7 +81,7 @@ export default function OtpPage({ reset = false }) {
     }
   }
   return (
-    <AuthLayout>
+    <AuthLayout centered compact>
       <div className="form-icon w-[48px] h-[48px] [border:1px_solid_#eaded9] rounded-[13px] grid place-items-center [color:#9a5f65] [background:#fcf8f6] mb-[23px] max-[480.001px]:mb-[20px]">
         <MailCheck size={24} />
       </div>

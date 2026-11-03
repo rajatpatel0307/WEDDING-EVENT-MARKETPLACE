@@ -104,7 +104,7 @@ export default function RegisterPage() {
     }
   }
   return (
-    <AuthLayout wide={vendor}>
+    <AuthLayout centered compact>
       <span className="eyebrow text-[10px] tracking-[2.5px] font-semibold flex items-center gap-[10px] [color:#916a65] [&_>_span]:w-[6px] [&_>_span]:h-[6px] [&_>_span]:[background:#956d67] [&_>_span]:rounded-full form-eyebrow [&.form-eyebrow]:text-[9px] [&.form-eyebrow]:tracking-[2px] [&.form-eyebrow]:mb-[12px]">
         LET'S MAKE SOMETHING BEAUTIFUL
       </span>
