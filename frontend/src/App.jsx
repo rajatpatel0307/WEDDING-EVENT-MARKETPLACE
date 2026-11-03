@@ -33,7 +33,7 @@ function ApplicationContent() {
     pathname === "/customer" ||
     pathname.startsWith("/customer/") ||
     ((pathname === "/vendor" || pathname.startsWith("/vendor/")) &&
-      !["profile", "pending", "rejected", "suspended", "inactive"].includes(
+      !["pending", "rejected", "suspended", "inactive"].includes(
         pathname.split("/")[2],
       ));
   return (

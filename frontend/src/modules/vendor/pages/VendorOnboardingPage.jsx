@@ -1,14 +1,10 @@
+import VerificationDocuments from "../components/VerificationDocuments";
 import {
   ArrowRight,
   Building2,
   Check,
-  CheckCircle2,
-  ChevronRight,
   Clock3,
-  Download,
   FileCheck2,
-  FileText,
-  LifeBuoy,
   LoaderCircle,
   LockKeyhole,
   MapPin,
@@ -17,30 +13,17 @@ import {
   ShieldCheck,
   Sparkles,
   Tags,
-  Trash2,
-  UploadCloud,
   UserRound,
 } from "lucide-react";
-import { readyToSubmit } from "../services/onboarding.validation";
+import {
+  readyToSubmit,
+  verificationStepErrors,
+} from "../services/onboarding.validation";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Field, ErrorBox } from "../../auth/components/FormControls";
 import { useAuth } from "../../../context/AuthContext";
-import {
-  vendorRequest,
-  save,
-  readFile,
-  download,
-} from "../services/workspace.api";
+import { vendorRequest, save } from "../services/workspace.api";
 
-const documentTypes = [
-  "Business Registration",
-  "GST",
-  "PAN",
-  "Identity Proof",
-  "Address Proof",
-  "Other Supporting Document",
-];
 const blank = {
   businessName: "",
   businessDescription: "",
@@ -88,10 +71,10 @@ export default function VendorOnboardingPage() {
     [fields, setFields] = useState(blank);
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
-  const [type, setType] = useState(documentTypes[0]),
-    [number, setNumber] = useState("");
   const [retry, setRetry] = useState(0);
   const [lastSaved, setLastSaved] = useState("");
+  const [activeStep, setActiveStep] = useState(0);
+  const [stepErrors, setStepErrors] = useState([]);
   useEffect(() => {
     let live = true;
     vendorRequest("/onboarding")
@@ -113,7 +96,7 @@ export default function VendorOnboardingPage() {
     return () => {
       live = false;
     };
-  }, [user.id, user.email, user.phone, retry]);
+  }, [user.id, user.email, user.phone, user.vendor?.verificationStatus, retry]);
   async function refreshProfile() {
     const data = await vendorRequest("/onboarding");
     setProfile(data);
@@ -154,6 +137,9 @@ export default function VendorOnboardingPage() {
       <Field
         key={name}
         label={label}
+        name={name}
+        required={!["gst", "pan"].includes(name)}
+        minLength={name === "businessName" ? 2 : undefined}
         type={inputType}
         value={fields[name]}
         maxLength={maxLength}
@@ -162,34 +148,27 @@ export default function VendorOnboardingPage() {
       />
     );
   }
-  const businessComplete =
-    fields.businessName.trim().length >= 2 &&
-    fields.businessDescription.trim().length >= 10 &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.businessEmail.trim()) &&
-    /^\+?[1-9]\d{7,14}$/.test(fields.businessPhone.trim());
   const sections = [
     {
       id: "business",
       title: "Business details",
       subtitle: "Introduce your business",
       icon: Building2,
-      complete: businessComplete,
+      complete: !verificationStepErrors(0, fields).length,
     },
     {
       id: "services",
       title: "Service categories",
       subtitle: "What you bring to celebrations",
       icon: Tags,
-      complete: fields.categories.length > 0,
+      complete: !verificationStepErrors(1, fields).length,
     },
     {
       id: "location",
       title: "Business location",
       subtitle: "Where couples can find you",
       icon: MapPin,
-      complete: ["address", "city", "state", "country", "postalCode"].every(
-        (key) => fields.location[key].trim(),
-      ),
+      complete: !verificationStepErrors(2, fields).length,
     },
     {
       id: "documents",
@@ -197,56 +176,68 @@ export default function VendorOnboardingPage() {
       subtitle: "Build trust with your documents",
       icon: FileCheck2,
       complete:
-        !!profile?.documents.length &&
-        profile.documents.every((doc) => doc.status !== "Rejected"),
+        !!profile &&
+        !verificationStepErrors(3, fields, profile.documents).length,
     },
   ];
+  function openStep(target) {
+    if (busy) return;
+    if (profile.editable && target > activeStep) {
+      for (let step = 0; step < target; step++) {
+        const errors = verificationStepErrors(step, fields, profile.documents);
+        if (errors.length) {
+          setActiveStep(step);
+          setStepErrors(errors);
+          return;
+        }
+      }
+    }
+    setStepErrors([]);
+    setActiveStep(target);
+  }
+  function submitVerification() {
+    for (let step = 0; step < 4; step++) {
+      const errors = verificationStepErrors(step, fields, profile.documents);
+      if (errors.length) {
+        setActiveStep(step);
+        setStepErrors(errors);
+        return;
+      }
+    }
+    setStepErrors([]);
+    persist(true);
+  }
   const completed = sections.filter((section) => section.complete).length;
   const ready = !!profile && readyToSubmit(fields, profile.documents);
   const reviewing =
     profile &&
     !profile.editable &&
     ["Pending", "UnderReview"].includes(profile.status);
-  const statusLabel = profile?.editable
-    ? profile.status === "Rejected"
-      ? "Changes requested"
-      : "Profile in progress"
-    : profile?.status === "Pending"
-      ? "Pending approval"
-      : profile?.status === "UnderReview"
-        ? "Under review"
-        : profile?.status;
+  const rejected = ["Rejected", "Suspended"].includes(profile?.status);
+  const approved = profile?.status === "Approved";
+  const statusTone = rejected
+    ? "border-red-200 bg-red-50 text-red-800"
+    : approved
+      ? "border-green-200 bg-green-50 text-green-800"
+      : "border-yellow-200 bg-yellow-50 text-yellow-800";
+  const flowStage = approved ? 2 : rejected || !profile?.incomplete ? 1 : 0;
+  const statusFlow = ["Profile submission", "Admin review", "Approved"];
   return (
-    <div className="vendor-onboarding [background:#faf8f6] [color:#46363a] min-h-screen [font-size:13px] [line-height:1.65] [&_*]:box-border [&_fieldset]:border-0 [&_fieldset]:p-0 [&_fieldset]:m-0 [&_fieldset]:min-w-0 [&_button:disabled]:[opacity:0.5] [&_button:disabled]:cursor-not-allowed [&_fieldset:disabled]:[opacity:0.75] [&_:is(button,a,input,select):focus-visible]:[outline:2px_solid_#ae7e8e] [&_:is(button,a,input,select):focus-visible]:[outline-offset:3px] motion-reduce:[&_*]:[animation:none]! motion-reduce:[&_*]:[transition:none]! motion-reduce:[&_*::before]:[animation:none]! motion-reduce:[&_*::before]:[transition:none]! motion-reduce:[&_*::after]:[animation:none]! motion-reduce:[&_*::after]:[transition:none]!">
-      <main
-        id="main-content"
-        className="vo-container [max-width:1280px] m-auto [padding:46px_40px_24px] max-[1100px]:[padding:32px_26px_22px] max-[480px]:[padding:26px_15px_18px]"
-      >
+    <div className="vendor-onboarding [background:#faf8f6] [color:#46363a] [font-size:13px] [line-height:1.65] [&_*]:box-border [&_fieldset]:border-0 [&_fieldset]:p-0 [&_fieldset]:m-0 [&_fieldset]:min-w-0 [&_button:disabled]:[opacity:0.5] [&_button:disabled]:cursor-not-allowed [&_fieldset:disabled]:[opacity:0.75] [&_:is(button,a,input,select):focus-visible]:[outline:2px_solid_#ae7e8e] [&_:is(button,a,input,select):focus-visible]:[outline-offset:3px] motion-reduce:[&_*]:[animation:none]! motion-reduce:[&_*]:[transition:none]! motion-reduce:[&_*::before]:[animation:none]! motion-reduce:[&_*::before]:[transition:none]! motion-reduce:[&_*::after]:[animation:none]! motion-reduce:[&_*::after]:[transition:none]!">
+      <div className="vo-container [max-width:1280px] m-auto [padding:46px_40px_24px] max-[1100px]:[padding:32px_26px_22px] max-[480px]:[padding:26px_15px_18px]">
         <header className="vo-header flex items-center justify-between [gap:24px] [margin-bottom:28px] [&_h1]:[font-family:Georgia,_serif] [&_h1]:font-normal [&_h1]:[font-size:clamp(30px,_3.3vw,_43px)] [&_h1]:[letter-spacing:-1.6px] [&_h1]:[line-height:1.2] [&_h1]:[margin:12px_0] [&_h1]:[color:#413036] [&_h1_>_span]:[color:#ad7d87] [&_p]:m-0 [&_p]:[color:#8c7c80] [&_p]:[font-size:12px] max-[800px]:items-start max-[480px]:[gap:10px] max-[480px]:[margin-bottom:22px] max-[480px]:[&_h1]:[font-size:30px] max-[480px]:[&_h1]:[letter-spacing:-1px] max-[480px]:[&_p]:[font-size:11px] max-[480px]:[&_p]:[line-height:1.8]">
           <div>
             <span className="vo-eyebrow flex items-center [gap:9px] [font-size:9px] font-semibold [letter-spacing:2px] [color:#8c414e] [&_>_span]:[width:6px] [&_>_span]:[height:6px] [&_>_span]:[border-radius:50%] [&_>_span]:[background:#b88790] max-[480px]:[font-size:8px] max-[480px]:[letter-spacing:1.4px]">
               <span /> YOUR PARTNER WORKSPACE
             </span>
             <h1>
-              Vendor Dashboard<span>.</span>
+              Verification<span>.</span>
             </h1>
             <p>
               Welcome, {user.firstName}. Let's get your business ready for
               beautiful celebrations.
             </p>
           </div>
-          <Link
-            className="vo-profile-link flex items-center [gap:11px] [border:1px_solid_#eee4e5] bg-white [padding:11px_14px] [border-radius:11px] no-underline [color:#46363a] whitespace-nowrap [font-size:12px] [&_small]:block [&_small]:[color:#8c7c80] [&_small]:[font-size:10px] [&_>_svg]:[color:#b49ba3] [&_>_svg]:[margin-left:9px] max-[800px]:[padding:9px] max-[800px]:[&_>_span:nth-child(2)]:hidden max-[800px]:[&_>_svg]:[margin-left:0] max-[480px]:border-0 max-[480px]:p-0 max-[480px]:bg-transparent max-[480px]:[margin-top:22px] max-[480px]:[&_>_svg]:hidden"
-            to="/vendor/profile"
-          >
-            <span className="vo-avatar grid place-items-center [width:36px] [height:36px] [border-radius:50%] [background:#f5e9ec] [color:#8c414e] [font-family:Georgia,_serif] [font-size:19px] max-[480px]:[width:31px] max-[480px]:[height:31px]">
-              {user.firstName?.charAt(0)}
-            </span>
-            <span>
-              My profile<small>Personal details & photo</small>
-            </span>
-            <ChevronRight size={16} />
-          </Link>
         </header>
         <ErrorBox message={error} />
         {!profile ? (
@@ -268,44 +259,111 @@ export default function VendorOnboardingPage() {
         ) : (
           <>
             <section
-              className={`vo-status flex items-center [gap:20px] [padding:25px_27px] [border:1px_solid_#eadbd7] [border-radius:13px] [background:linear-gradient(110deg,_#f6eeea,_#fcf8f4)] [margin-bottom:28px] [&_h2]:[font-size:20px] [&_h2]:[font-family:Georgia,_serif] [&_h2]:font-normal [&_h2]:[letter-spacing:-0.3px] [&_h2]:[margin:5px_0_6px] [&_h2]:[line-height:1.35] [&_h2]:[color:#694d49] [&_p]:[font-size:11px] [&_p]:[line-height:1.85] [&_p]:[color:#977e76] [&_p]:m-0 [&_p]:[max-width:630px] [&_.vo-rejection-reason]:[margin-top:10px] [&_.vo-rejection-reason]:[color:#984b58] max-[800px]:[padding:20px] max-[800px]:flex-wrap max-[800px]:[gap:14px] max-[480px]:[margin-bottom:20px] max-[480px]:[padding:17px] max-[480px]:[gap:11px] max-[480px]:[&_h2]:[font-size:18px] ${profile.status === "Rejected" ? "vo-status-rejected [border-color:#eacbd1]! [background:#fcf0f2]!" : ""}`}
+              className={`vo-status mb-7 flex flex-wrap items-start gap-5 rounded-xl border p-5 sm:p-7 ${statusTone}`}
               aria-label="Verification status"
             >
-              <span className="vo-status-icon grid place-items-center shrink-0 [width:57px] [height:65px] [border-radius:15px] [background:#fff9f5] [color:#a77b65] [border:1px_solid_#eddfd5] max-[800px]:[width:43px] max-[800px]:[height:50px] max-[480px]:hidden">
+              <span className="vo-status-icon grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-current bg-white/60">
                 {reviewing ? (
                   <Clock3 size={26} strokeWidth={1.5} />
                 ) : (
                   <ShieldCheck size={27} strokeWidth={1.5} />
                 )}
               </span>
-              <div className="vo-status-copy flex-1 min-w-0 max-[800px]:[flex-basis:calc(100%_-_60px)] max-[480px]:[flex-basis:100%]">
-                <span className="vo-status-label [font-size:9px] [letter-spacing:1px] uppercase [color:#9e7867] font-semibold">
-                  {statusLabel}
-                </span>
-                <h2>
+              <div className="vo-status-copy min-w-0 flex-1 basis-[250px]">
+                <h2 className="my-2 font-sans text-lg font-semibold leading-relaxed tracking-normal sm:text-xl">
                   {profile.editable
                     ? profile.status === "Rejected"
                       ? "A few updates, then you're ready to reapply."
                       : "Your next chapter starts with a complete profile."
                     : reviewing
-                      ? "Your profile is with our verification team."
-                      : "Your account needs attention."}
+                      ? "Your verification is in progress."
+                      : profile.status === "Approved"
+                        ? "Your business is approved."
+                        : "Your account needs attention."}
                 </h2>
-                <p>
+                <p className="max-w-2xl font-sans text-[13px] font-normal leading-6 tracking-normal">
                   {profile.editable
                     ? "Tell us about your business, choose your services and upload your documents. You can save your progress and return whenever you're ready."
                     : reviewing
-                      ? "Your application has been submitted successfully. We'll notify you when our team has reviewed your details."
-                      : "Review the account information below or reach out to our support team."}
+                      ? "Our team is reviewing your business details and documents. You can check your progress below."
+                      : profile.status === "Approved"
+                        ? "Your verification is complete. View your documents and review history below."
+                        : "Review the account information below or reach out to our support team."}
                 </p>
                 {profile.reason && (
-                  <p className="vo-rejection-reason">
+                  <p className="vo-rejection-reason mt-3 whitespace-pre-wrap text-xs">
                     <strong>Admin feedback:</strong> {profile.reason}
                   </p>
                 )}
+                <ol
+                  aria-label="Verification status flow"
+                  className="mt-6 flex flex-col rounded-xl bg-white/80 p-5 sm:flex-row sm:py-6"
+                >
+                  {statusFlow.map((label, index) => {
+                    const complete = approved || index < flowStage;
+                    const current = index === flowStage;
+                    const failed = current && rejected;
+                    const circleTone = complete
+                      ? "border-green-600 bg-green-600 text-white"
+                      : failed
+                        ? "border-red-600 bg-red-600 text-white ring-4 ring-red-100"
+                        : current
+                          ? "border-yellow-500 bg-yellow-400 text-yellow-950 ring-4 ring-yellow-100"
+                          : "border-gray-300 bg-white text-gray-400";
+                    const textTone = complete
+                      ? "text-green-700"
+                      : failed
+                        ? "text-red-700"
+                        : current
+                          ? "text-yellow-800"
+                          : "text-gray-500";
+                    return (
+                      <li
+                        key={label}
+                        aria-current={current ? "step" : undefined}
+                        className="relative flex min-w-0 gap-4 pb-7 last:pb-0 sm:flex-1 sm:flex-col sm:items-center sm:gap-3 sm:pb-0 sm:text-center"
+                      >
+                        {index < statusFlow.length - 1 && (
+                          <span
+                            aria-hidden="true"
+                            className={`absolute bottom-0 left-4 top-8 w-0.5 sm:bottom-auto sm:left-1/2 sm:top-4 sm:h-0.5 sm:w-full ${complete ? "bg-green-600" : "bg-gray-200"}`}
+                          />
+                        )}
+                        <span
+                          className={`relative z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full border-2 text-xs ${circleTone}`}
+                          aria-hidden="true"
+                        >
+                          {complete ? (
+                            <Check size={18} strokeWidth={3} />
+                          ) : failed ? (
+                            "!"
+                          ) : current ? (
+                            <Clock3 size={17} />
+                          ) : (
+                            index + 1
+                          )}
+                        </span>
+                        <span
+                          className={`min-w-0 pt-1 text-xs font-semibold sm:px-2 sm:pt-0 ${textTone}`}
+                        >
+                          {failed ? profile.status : label}
+                          <small className="mt-1 block text-[10px] font-normal">
+                            {complete
+                              ? "Completed"
+                              : failed
+                                ? "Action required"
+                                : current
+                                  ? "In progress"
+                                  : "Upcoming"}
+                          </small>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
               </div>
               <button
-                className="vo-refresh inline-flex items-center justify-center [gap:8px] [padding:9px_12px] [background:#fff9] [border:1px_solid_#e5d6ce] [border-radius:7px] [font-size:10px] [color:#947467] whitespace-nowrap max-[800px]:[margin-left:57px] max-[480px]:[margin-left:0]"
+                className="vo-refresh inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-current bg-white/70 px-3 py-2 text-xs hover:bg-white"
                 type="button"
                 disabled={busy}
                 onClick={() =>
@@ -322,91 +380,60 @@ export default function VendorOnboardingPage() {
                 <span>Refresh status</span>
               </button>
             </section>
-            <div className="vo-workspace grid [grid-template-columns:268px_minmax(0,_1fr)] items-start [gap:26px] max-[1100px]:[grid-template-columns:235px_minmax(0,_1fr)] max-[1100px]:[gap:20px] max-[800px]:[grid-template-columns:minmax(0,_1fr)]">
-              <aside className="vo-sidebar sticky [top:24px] grid [gap:17px] max-[800px]:[position:static]">
-                <div className="vo-progress-card bg-white [border:1px_solid_#eee4e5] [border-radius:12px] [padding:23px_20px_0] overflow-hidden [&_>_p]:[font-size:10px] [&_>_p]:[color:#8c7c80] [&_>_p]:[margin:8px_0_22px] [&_nav]:grid [&_nav]:[gap:5px] [&_nav]:[margin-bottom:20px] [&_nav_a]:flex [&_nav_a]:[gap:11px] [&_nav_a]:items-center [&_nav_a]:[padding:10px_0] [&_nav_a]:[font-size:11px] [&_nav_a]:no-underline [&_nav_a]:[color:#604b52] [&_nav_a_>_span:nth-child(2)]:flex-1 [&_nav_a_small]:block [&_nav_a_small]:[color:#a29599] [&_nav_a_small]:[font-size:9px] [&_nav_a_small]:[margin-top:2px] [&_nav_a_>_svg]:[color:#baaab0] max-[800px]:[padding-top:17px] max-[800px]:[&_nav]:[grid-template-columns:repeat(4,_minmax(0,_1fr))] max-[800px]:[&_nav]:[gap:12px] max-[800px]:[&_nav]:[margin-bottom:13px] max-[800px]:[&_nav_a]:items-start max-[800px]:[&_nav_a]:flex-col max-[800px]:[&_nav_a]:[gap:7px] max-[800px]:[&_nav_a]:[font-size:10px] max-[800px]:[&_nav_a_>_svg]:hidden max-[800px]:[&_nav_a_small]:hidden max-[800px]:[&_>_p]:[margin-bottom:7px] max-[480px]:[padding-left:16px] max-[480px]:[padding-right:16px] max-[480px]:[&_nav]:[gap:8px]">
-                  <div className="vo-progress-top flex items-center justify-between [&_>_span]:[font-size:9px] [&_>_span]:font-semibold [&_>_span]:[letter-spacing:1.2px] [&_>_span]:[color:#8e747c] [&_strong]:[font-size:17px] [&_strong]:[color:#8c414e] [&_strong]:font-medium">
-                    <span>PROFILE COMPLETION</span>
-                    <strong>{completed * 25}%</strong>
-                  </div>
-                  <div
-                    className="vo-progress-track [height:5px] [background:#f1e8eb] [border-radius:5px] overflow-hidden [margin-top:12px] [&_>_span]:block [&_>_span]:h-full [&_>_span]:[background:#9d5c6a] [&_>_span]:[border-radius:inherit] [&_>_span]:[transition:width_0.3s]"
-                    role="progressbar"
-                    aria-label="Profile sections completed"
-                    aria-valuenow={completed}
-                    aria-valuemin={0}
-                    aria-valuemax={4}
-                  >
-                    <span className={["w-0", "w-1/4", "w-1/2", "w-3/4", "w-full"][completed]} />
-                  </div>
-                  <p>{completed} of 4 sections complete</p>
-                  <nav aria-label="Profile sections">
-                    {sections.map((section, i) => (
-                      <a key={section.id} href={`#vo-${section.id}`}>
-                        <span
-                          className={
-                            section.complete
-                              ? "vo-step-number grid place-items-center [width:30px] [height:30px] [border-radius:9px] [border:1px_solid_#e9dce1] [background:#fcf8f9] [color:#a77e8a] [font-size:10px] shrink-0 [&.is-complete]:[background:#edf3eb] [&.is-complete]:[border-color:#e1e9dd] [&.is-complete]:[color:#6d8a60] is-complete"
-                              : "vo-step-number grid place-items-center [width:30px] [height:30px] [border-radius:9px] [border:1px_solid_#e9dce1] [background:#fcf8f9] [color:#a77e8a] [font-size:10px] shrink-0 [&.is-complete]:[background:#edf3eb] [&.is-complete]:[border-color:#e1e9dd] [&.is-complete]:[color:#6d8a60]"
-                          }
-                        >
-                          {section.complete ? <Check size={14} /> : `0${i + 1}`}
-                        </span>
-                        <span>
-                          {section.title}
-                          <small>
-                            {section.complete ? "All set" : section.subtitle}
-                          </small>
-                        </span>
-                        <ChevronRight size={14} />
-                      </a>
-                    ))}
-                  </nav>
-                  <div className="vo-autosave-note flex items-center justify-center [gap:7px] [margin:0_-20px] [padding:13px_12px] [background:#fbf9fa] [border-top:1px_solid_#f2ebee] [color:#a08c94] [font-size:9px] max-[480px]:[margin:0_-16px]">
-                    <Save size={14} />
-                    <span>
-                      {lastSaved
-                        ? `Progress saved at ${lastSaved}`
-                        : "Save your progress at any time"}
-                    </span>
-                  </div>
-                </div>
-                <div className="vo-trust-card [padding:23px_21px] [border:1px_solid_#e9e5dc] [border-radius:12px] [background:#f2f2eb] [&_h3]:[font-family:Georgia,_serif] [&_h3]:[font-size:21px] [&_h3]:font-normal [&_h3]:[color:#667157] [&_h3]:[line-height:1.4] [&_h3]:[margin:14px_0_10px] [&_p]:[font-size:11px] [&_p]:[color:#919582] [&_p]:[line-height:1.8] [&_p]:[margin-bottom:16px] [&_>_div]:flex [&_>_div]:[gap:6px] [&_>_div]:items-center [&_>_div]:[color:#7e876d] [&_>_div]:[font-size:9px] [&_>_div]:[padding-top:14px] [&_>_div]:[border-top:1px_solid_#e3e6d9] max-[800px]:hidden">
-                  <span className="vo-trust-icon grid place-items-center [background:#e6eadf] [width:36px] [height:36px] [color:#7e8b6c] [border-radius:10px]">
-                    <LockKeyhole size={20} strokeWidth={1.6} />
-                  </span>
-                  <h3>
-                    A little verification.
-                    <br />A lot more trust.
-                  </h3>
-                  <p>
-                    Once approved, you can upload services and start connecting
-                    with couples.
-                  </p>
-                  <div>
-                    <ShieldCheck size={14} /> Your documents are stored securely
-                  </div>
-                </div>
-                <Link
-                  className="vo-help-link flex items-center [gap:10px] [color:#947b85] [font-size:11px] no-underline [padding:8px_10px] [&_>_span]:flex-1 [&_small]:block [&_small]:[color:#ac9ca3] [&_small]:[font-size:10px] max-[800px]:hidden"
-                  to="/contact"
-                >
-                  <LifeBuoy size={18} />
+            <div className="vo-workspace grid min-w-0 gap-6">
+              <div className="rounded-xl border border-[#eee4e5] bg-white p-4 sm:p-6">
+                <div className="mb-4 flex items-center justify-between gap-3 text-xs text-[#8e747c]">
+                  <span>{completed} of 4 sections complete</span>
                   <span>
-                    Need a hand?<small>We're here to help</small>
+                    {lastSaved
+                      ? `Progress saved at ${lastSaved}`
+                      : "Save your progress at any time"}
                   </span>
-                  <ArrowRight size={15} />
-                </Link>
-              </aside>
+                </div>
+                <nav
+                  aria-label="Verification steps"
+                  className="flex gap-3 overflow-x-auto pb-2"
+                >
+                  {sections.map((section, index) => (
+                    <button
+                      key={section.id}
+                      type="button"
+                      disabled={busy}
+                      aria-current={activeStep === index ? "step" : undefined}
+                      aria-controls={`vo-${section.id}`}
+                      onClick={() => openStep(index)}
+                      className={`flex min-w-[175px] flex-1 items-center gap-3 rounded-lg border p-3 text-left transition-colors ${activeStep === index ? "border-[#8c414e] bg-[#fcf4f6] text-[#8c414e]" : "border-[#eee4e5] bg-white text-[#7d646e]"}`}
+                    >
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[#e9dce1] text-xs">
+                        {section.complete ? (
+                          <Check size={14} />
+                        ) : (
+                          `0${index + 1}`
+                        )}
+                      </span>
+                      <span className="text-xs font-medium">
+                        {section.title}
+                        <small className="mt-1 block text-[10px] font-normal">
+                          {section.complete ? "All set" : section.subtitle}
+                        </small>
+                      </span>
+                    </button>
+                  ))}
+                </nav>
+              </div>
               <form
                 className="vo-form min-w-0 grid [gap:21px]"
+                noValidate
                 onSubmit={(e) => {
                   e.preventDefault();
-                  persist(true);
+                  if (!profile.editable) return;
+                  if (activeStep < 3) openStep(activeStep + 1);
+                  else submitVerification();
                 }}
               >
                 <section
                   id="vo-business"
+                  hidden={activeStep !== 0}
                   className="vo-card min-w-0 [border:1px_solid_#eee4e5] bg-white [border-radius:12px] [padding:26px_28px] [scroll-margin-top:25px] [box-shadow:0_3px_15px_#49303902] [&_.field]:[font-size:11px] [&_.field]:[color:#7d646e] [&_.field]:font-medium [&_.field]:[margin-bottom:19px] [&_.field_input]:[min-height:44px] [&_.field_input]:[font-size:12px] [&_.field_input]:[border-color:#e9e1e4] [&_.field_input]:[border-radius:7px] [&_.field_input]:bg-white [&_.field_input]:[color:#5e4851] [&_.field_input]:[padding:11px_13px] [&_.field_input:focus]:[border-color:#af7b8a] [&_.field_input:focus]:[box-shadow:0_0_0_3px_#8c414e0b] [&_.field_input:focus]:outline-none max-[1100px]:[padding:22px] max-[480px]:[padding:21px_17px]"
                 >
                   <SectionHeading section={sections[0]} index={0} />
@@ -433,6 +460,9 @@ export default function VendorOnboardingPage() {
                     <label className="vo-textarea-label block [font-size:11px] [color:#7d646e] font-medium [&_textarea]:block [&_textarea]:w-full [&_textarea]:[border:1px_solid_#e9e1e4] [&_textarea]:[border-radius:7px] [&_textarea]:bg-white [&_textarea]:[font-size:12px] [&_textarea]:[padding:12px_13px] [&_textarea]:[margin-top:7px] [&_textarea]:[color:#5e4851] [&_textarea]:[min-height:108px] [&_textarea]:resize-y [&_textarea]:[line-height:1.8] [&_textarea::placeholder]:[color:#baaab0] [&_textarea:focus]:outline-none [&_textarea:focus]:[border-color:#af7b8a] [&_textarea:focus]:[box-shadow:0_0_0_3px_#8c414e0b] [&_>_small]:flex [&_>_small]:justify-between [&_>_small]:[gap:10px] [&_>_small]:[font-size:9px] [&_>_small]:[color:#b2a1a9] [&_>_small]:[margin-top:7px] [&_>_small]:font-normal">
                       <span>Business description *</span>
                       <textarea
+                        name="businessDescription"
+                        required
+                        minLength={10}
                         rows={4}
                         maxLength={5000}
                         placeholder="Tell us what you do, your experience and what makes your business special..."
@@ -457,11 +487,13 @@ export default function VendorOnboardingPage() {
                 </section>
                 <section
                   id="vo-services"
+                  hidden={activeStep !== 1}
                   className="vo-card min-w-0 [border:1px_solid_#eee4e5] bg-white [border-radius:12px] [padding:26px_28px] [scroll-margin-top:25px] [box-shadow:0_3px_15px_#49303902] [&_.field]:[font-size:11px] [&_.field]:[color:#7d646e] [&_.field]:font-medium [&_.field]:[margin-bottom:19px] [&_.field_input]:[min-height:44px] [&_.field_input]:[font-size:12px] [&_.field_input]:[border-color:#e9e1e4] [&_.field_input]:[border-radius:7px] [&_.field_input]:bg-white [&_.field_input]:[color:#5e4851] [&_.field_input]:[padding:11px_13px] [&_.field_input:focus]:[border-color:#af7b8a] [&_.field_input:focus]:[box-shadow:0_0_0_3px_#8c414e0b] [&_.field_input:focus]:outline-none max-[1100px]:[padding:22px] max-[480px]:[padding:21px_17px]"
                 >
                   <SectionHeading section={sections[1]} index={1} />
                   <p className="vo-section-description [margin:15px_0_23px] [font-size:11px] [color:#a08f95] [&_>_span]:block [&_>_span]:[margin-top:5px] [&_>_span]:[font-size:9px] [&_>_span]:[color:#af9da4]">
-                    Choose all the categories your business offers.
+                    Service categories * - Choose at least one category your
+                    business offers.
                   </p>
                   <fieldset
                     disabled={busy || !profile.editable}
@@ -501,6 +533,7 @@ export default function VendorOnboardingPage() {
                 </section>
                 <section
                   id="vo-location"
+                  hidden={activeStep !== 2}
                   className="vo-card min-w-0 [border:1px_solid_#eee4e5] bg-white [border-radius:12px] [padding:26px_28px] [scroll-margin-top:25px] [box-shadow:0_3px_15px_#49303902] [&_.field]:[font-size:11px] [&_.field]:[color:#7d646e] [&_.field]:font-medium [&_.field]:[margin-bottom:19px] [&_.field_input]:[min-height:44px] [&_.field_input]:[font-size:12px] [&_.field_input]:[border-color:#e9e1e4] [&_.field_input]:[border-radius:7px] [&_.field_input]:bg-white [&_.field_input]:[color:#5e4851] [&_.field_input]:[padding:11px_13px] [&_.field_input:focus]:[border-color:#af7b8a] [&_.field_input:focus]:[box-shadow:0_0_0_3px_#8c414e0b] [&_.field_input:focus]:outline-none max-[1100px]:[padding:22px] max-[480px]:[padding:21px_17px]"
                 >
                   <SectionHeading section={sections[2]} index={2} />
@@ -529,6 +562,8 @@ export default function VendorOnboardingPage() {
                         >
                           <Field
                             label={`${label} *`}
+                            name={name}
+                            required
                             value={fields.location[name]}
                             maxLength={maxLength}
                             onChange={(e) =>
@@ -574,224 +609,126 @@ export default function VendorOnboardingPage() {
                 </section>
                 <section
                   id="vo-documents"
+                  hidden={activeStep !== 3}
                   className="vo-card min-w-0 [border:1px_solid_#eee4e5] bg-white [border-radius:12px] [padding:26px_28px] [scroll-margin-top:25px] [box-shadow:0_3px_15px_#49303902] [&_.field]:[font-size:11px] [&_.field]:[color:#7d646e] [&_.field]:font-medium [&_.field]:[margin-bottom:19px] [&_.field_input]:[min-height:44px] [&_.field_input]:[font-size:12px] [&_.field_input]:[border-color:#e9e1e4] [&_.field_input]:[border-radius:7px] [&_.field_input]:bg-white [&_.field_input]:[color:#5e4851] [&_.field_input]:[padding:11px_13px] [&_.field_input:focus]:[border-color:#af7b8a] [&_.field_input:focus]:[box-shadow:0_0_0_3px_#8c414e0b] [&_.field_input:focus]:outline-none max-[1100px]:[padding:22px] max-[480px]:[padding:21px_17px]"
                 >
                   <SectionHeading section={sections[3]} index={3} />
-                  <p className="vo-section-description [margin:15px_0_23px] [font-size:11px] [color:#a08f95] [&_>_span]:block [&_>_span]:[margin-top:5px] [&_>_span]:[font-size:9px] [&_>_span]:[color:#af9da4]">
-                    Upload at least one document to verify your business or
-                    identity.
-                  </p>
-                  {profile.editable && (
-                    <>
-                      <div className="vo-field-grid grid [grid-template-columns:repeat(2,_minmax(0,_1fr))] [gap:0_18px] max-[480px]:[grid-template-columns:minmax(0,_1fr)]">
-                        <label className="vo-native-field flex flex-col [gap:7px] [font-size:11px] [color:#7d646e] [margin-bottom:19px] [&_small]:[color:#b09ba5] [&_small]:[font-size:10px] [&_:is(select,input)]:w-full [&_:is(select,input)]:min-w-0 [&_:is(select,input)]:bg-white [&_:is(select,input)]:[border:1px_solid_#e9e1e4] [&_:is(select,input)]:[padding:11px_12px] [&_:is(select,input)]:[min-height:44px] [&_:is(select,input)]:[border-radius:7px] [&_:is(select,input)]:[color:#79626c] [&_:is(select,input)]:[font-size:11px] [&_input::placeholder]:[color:#baaab0]">
-                          <span>Document type</span>
-                          <select
-                            disabled={busy}
-                            value={type}
-                            onChange={(e) => setType(e.target.value)}
-                          >
-                            {documentTypes.map((t) => (
-                              <option key={t}>{t}</option>
-                            ))}
-                          </select>
-                        </label>
-                        <label className="vo-native-field flex flex-col [gap:7px] [font-size:11px] [color:#7d646e] [margin-bottom:19px] [&_small]:[color:#b09ba5] [&_small]:[font-size:10px] [&_:is(select,input)]:w-full [&_:is(select,input)]:min-w-0 [&_:is(select,input)]:bg-white [&_:is(select,input)]:[border:1px_solid_#e9e1e4] [&_:is(select,input)]:[padding:11px_12px] [&_:is(select,input)]:[min-height:44px] [&_:is(select,input)]:[border-radius:7px] [&_:is(select,input)]:[color:#79626c] [&_:is(select,input)]:[font-size:11px] [&_input::placeholder]:[color:#baaab0]">
-                          <span>
-                            Document number <small>(optional)</small>
-                          </span>
-                          <input
-                            disabled={busy}
-                            placeholder="Enter document number"
-                            value={number}
-                            maxLength={100}
-                            onChange={(e) => setNumber(e.target.value)}
-                          />
-                        </label>
-                      </div>
-                      <label
-                        className={`vo-upload relative flex flex-col items-center text-center [padding:26px_15px_22px] [background:#fdf9fa] [border:1px_dashed_#d6b9c3] [border-radius:10px] cursor-pointer overflow-hidden [&_>_strong]:[font-size:12px] [&_>_strong]:[color:#8b5d70] [&_>_strong]:font-medium [&_>_span:not(.vo-upload-icon):not(.vo-upload-button)]:[font-size:10px] [&_>_span:not(.vo-upload-icon):not(.vo-upload-button)]:[color:#b19aa5] [&_>_span:not(.vo-upload-icon):not(.vo-upload-button)]:[margin-top:4px] [&_>_input]:absolute [&_>_input]:[inset:0] [&_>_input]:[opacity:0] [&_>_input]:cursor-pointer [&_>_input]:w-full [&_>_input]:h-full [&:focus-within]:[outline:2px_solid_#9f6a7a] [&:focus-within]:[outline-offset:3px] [&.is-disabled]:[opacity:0.6] [&.is-disabled]:cursor-default ${busy || profile.documents.length >= 6 ? "is-disabled" : ""}`}
-                      >
-                        <span className="vo-upload-icon grid place-items-center [width:48px] [height:48px] [border-radius:50%] [background:#f6eaf0] [color:#a57384] [margin-bottom:11px]">
-                          {busy ? (
-                            <LoaderCircle
-                              size={25}
-                              className="vo-spin animate-spin"
-                            />
-                          ) : (
-                            <UploadCloud size={26} strokeWidth={1.6} />
-                          )}
-                        </span>
-                        <strong>
-                          {busy
-                            ? "Please wait..."
-                            : profile.documents.length >= 6
-                              ? "Six documents uploaded"
-                              : "Choose a verification document"}
-                        </strong>
-                        <span>PDF, PNG or JPG / Up to 5 MB per file</span>
-                        <span className="vo-upload-button flex items-center [gap:8px] [border:1px_solid_#e4ccd5] [border-radius:6px] bg-white [color:#9a657a] [font-size:10px] [padding:7px_13px] [margin-top:15px]">
-                          Browse files <ArrowRight size={14} />
-                        </span>
-                        <input
-                          aria-label="Upload verification document"
-                          type="file"
-                          accept=".pdf,.png,.jpg,.jpeg"
-                          disabled={busy || profile.documents.length >= 6}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            e.target.value = "";
-                            if (file)
-                              action(async () => {
-                                const base64 = await readFile(file);
-                                const result = await save(
-                                  "/onboarding/documents",
-                                  "POST",
-                                  { type, number, base64 },
-                                );
-                                notify(result.message);
-                                await refreshProfile();
-                              });
-                          }}
-                        />
-                      </label>
-                    </>
-                  )}
-                  <div className="vo-document-list-heading flex items-center justify-between [margin-top:23px] [margin-bottom:11px] [&_h3]:[font-size:11px] [&_h3]:[color:#846b77] [&_h3]:font-medium [&_h3]:m-0 [&_>_span]:[font-size:9px] [&_>_span]:[color:#b19aa5]">
-                    <h3>Uploaded documents</h3>
-                    <span>{profile.documents.length} / 6 files</span>
-                  </div>
-                  {!profile.documents.length && (
-                    <div className="vo-documents-empty flex items-center [gap:9px] [padding:13px] [font-size:10px] [color:#b6a6ad] [background:#fcfafb] [border-radius:7px]">
-                      <FileText size={19} />
-                      <span>
-                        No documents uploaded yet. Your files will appear here.
-                      </span>
+                  {activeStep === 3 && (
+                    <div className="mt-5">
+                      <VerificationDocuments
+                        profile={profile}
+                        busy={busy}
+                        action={action}
+                        refreshProfile={refreshProfile}
+                        notify={notify}
+                      />
                     </div>
                   )}
-                  <ul className="vo-document-list list-none p-0 m-0 grid [gap:9px] [&_li]:flex [&_li]:items-center [&_li]:[gap:10px] [&_li]:[padding:12px] [&_li]:[border:1px_solid_#eee5e9] [&_li]:[border-radius:8px] max-[480px]:[&_li]:[gap:7px] max-[480px]:[&_li]:[padding:10px_8px]">
-                    {profile.documents.map((doc) => (
-                      <li key={doc.id}>
-                        <span className="vo-file-icon [color:#ad8a99] shrink-0">
-                          <FileText size={20} strokeWidth={1.6} />
-                        </span>
-                        <div className="vo-file-info flex-1 min-w-0 [overflow-wrap:anywhere] [&_strong]:block [&_strong]:font-medium [&_strong]:[font-size:11px] [&_strong]:[color:#7e6270] [&_small]:block [&_small]:[color:#ab96a1] [&_small]:[font-size:9px] [&_.vo-file-reason]:[color:#b26677]">
-                          <strong>{doc.type}</strong>
-                          {doc.number && <small>{doc.number}</small>}
-                          {doc.reason && (
-                            <small className="vo-file-reason">
-                              {doc.reason}
-                            </small>
-                          )}
-                        </div>
-                        <span
-                          className={`vo-document-status [padding:3px_7px] [font-size:8px] [border-radius:4px] [background:#faf3e9] [color:#ae9368] [&.is-rejected]:[color:#b5687a] [&.is-rejected]:[background:#fcf0f3] [&.is-approved]:[color:#7f9468] [&.is-approved]:[background:#eff4e9] max-[480px]:[font-size:7px] max-[480px]:[padding:3px_5px] ${doc.status === "Rejected" ? "is-rejected" : doc.status === "Approved" ? "is-approved" : ""}`}
-                        >
-                          {doc.status}
-                        </span>
-                        <button
-                          title="Download document"
-                          aria-label={`Download ${doc.type}`}
-                          className="vo-icon-button grid place-items-center border-0 [background:#faf7f8] [color:#9e8190] [padding:7px] [border-radius:5px] [&:hover]:[background:#f2e8ed] max-[480px]:[padding:6px]"
-                          type="button"
-                          disabled={busy}
-                          onClick={() =>
-                            action(async () =>
-                              download(
-                                await vendorRequest(
-                                  `/onboarding/documents/${doc.id}/file`,
-                                  { download: true },
-                                ),
-                                doc.type,
-                              ),
-                            )
-                          }
-                        >
-                          <Download size={16} />
-                        </button>
-                        {profile.editable && (
-                          <button
-                            title="Remove document"
-                            aria-label={`Remove ${doc.type}`}
-                            className="vo-icon-button grid place-items-center border-0 [background:#faf7f8] [color:#9e8190] [padding:7px] [border-radius:5px] [&:hover]:[background:#f2e8ed] max-[480px]:[padding:6px] vo-remove [color:#b17a8a]"
-                            type="button"
-                            disabled={busy}
-                            onClick={() =>
-                              action(async () => {
-                                const result = await save(
-                                  `/onboarding/documents/${doc.id}`,
-                                  "DELETE",
-                                  {},
-                                );
-                                notify(result.message);
-                                await refreshProfile();
-                              })
-                            }
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
                   <p className="vo-document-security flex items-start [gap:7px] [color:#af9ca6] [font-size:9px] [line-height:1.8] [margin:16px_0_0] [&_svg]:shrink-0 [&_svg]:[margin-top:2px]">
                     <LockKeyhole size={13} /> Securely stored and accessible
                     only for verification. Replace rejected documents before
                     resubmitting.
                   </p>
                 </section>
-                {profile.editable && (
-                  <div className="vo-action-bar sticky [bottom:15px] [z-index:5] flex items-center justify-between [gap:18px] [padding:17px_20px] [border:1px_solid_#e6d8df] [border-radius:11px] bg-white [box-shadow:0_8px_32px_#53324312] max-[1100px]:flex-wrap max-[800px]:flex-nowrap max-[480px]:[padding:12px_10px] max-[480px]:[bottom:8px]">
-                    <div className="vo-action-copy flex items-center [gap:10px] [color:#a38292] [&_strong]:block [&_strong]:[font-size:10px] [&_strong]:font-medium [&_strong]:[color:#876574] [&_small]:block [&_small]:[color:#b19aa5] [&_small]:[font-size:9px] [&_small]:[margin-top:2px] max-[800px]:hidden">
-                      {ready ? <CheckCircle2 size={19} /> : <Save size={19} />}
-                      <span>
-                        <strong>
-                          {ready
-                            ? "Your profile is ready to submit"
-                            : "Pick up right where you left off"}
-                        </strong>
-                        <small>
-                          {ready
-                            ? "Send your details to our team for verification."
-                            : "Save now and finish the remaining details later."}
-                        </small>
-                      </span>
-                    </div>
-                    <div className="vo-action-buttons flex [gap:9px] shrink-0 max-[1100px]:ml-auto max-[800px]:w-full max-[800px]:[&_>_button]:flex-1 max-[480px]:[gap:7px]">
+                {stepErrors.length > 0 && (
+                  <div
+                    role="alert"
+                    className="rounded-lg border border-[#e8bac2] bg-[#fff2f3] p-4 text-xs text-[#a1374a]"
+                  >
+                    <p className="mb-2 font-semibold">
+                      Complete the required fields to continue:
+                    </p>
+                    <ul className="list-disc space-y-1 pl-5">
+                      {stepErrors.map((message) => (
+                        <li key={message}>{message}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e6d8df] bg-white p-4">
+                  <div className="flex flex-wrap gap-3">
+                    {activeStep > 0 && (
                       <button
                         type="button"
-                        className="vo-button inline-flex items-center justify-center [gap:7px] [min-height:42px] [padding:10px_13px] [font-size:10px] font-medium [border:1px_solid_transparent] [border-radius:6px] cursor-pointer [transition:background_0.2s,_box-shadow_0.2s] whitespace-nowrap max-[480px]:[font-size:9px] max-[480px]:[padding:10px_8px] max-[480px]:[gap:5px] vo-secondary [border-color:#e2d4dc] [color:#997384] bg-white [&:hover:not(:disabled)]:[background:#fbf6f8]"
+                        disabled={busy}
+                        onClick={() => openStep(activeStep - 1)}
+                        className="rounded-md border border-[#e2d4dc] px-4 py-3 text-xs text-[#997384]"
+                      >
+                        Back
+                      </button>
+                    )}
+                    {profile.editable && (
+                      <button
+                        type="button"
                         disabled={busy}
                         onClick={() => persist(false)}
+                        className="inline-flex items-center gap-2 rounded-md border border-[#e2d4dc] px-4 py-3 text-xs text-[#997384]"
                       >
                         <Save size={15} /> Save progress
                       </button>
+                    )}
+                  </div>
+                  {activeStep < 3 ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => openStep(activeStep + 1)}
+                      className="ml-auto inline-flex items-center gap-2 rounded-md bg-[#8c414e] px-5 py-3 text-xs text-white"
+                    >
+                      Next <ArrowRight size={15} />
+                    </button>
+                  ) : (
+                    profile.editable && (
                       <button
-                        className="vo-button inline-flex items-center justify-center [gap:7px] [min-height:42px] [padding:10px_13px] [font-size:10px] font-medium [border:1px_solid_transparent] [border-radius:6px] cursor-pointer [transition:background_0.2s,_box-shadow_0.2s] whitespace-nowrap max-[480px]:[font-size:9px] max-[480px]:[padding:10px_8px] max-[480px]:[gap:5px] vo-primary [background:#8c414e] [color:white] [border-color:#8c414e] [box-shadow:0_3px_6px_#8c414e14] [&:hover:not(:disabled)]:[background:#763542] max-[480px]:[&_>_svg:last-child]:hidden"
                         type="submit"
-                        disabled={busy || !ready}
+                        disabled={busy}
+                        className="ml-auto inline-flex items-center gap-2 rounded-md bg-[#8c414e] px-5 py-3 text-xs text-white"
                       >
                         {busy ? (
-                          <LoaderCircle
-                            className="vo-spin animate-spin"
-                            size={16}
-                          />
+                          <LoaderCircle size={15} className="animate-spin" />
                         ) : (
-                          <ShieldCheck size={16} />
+                          <ShieldCheck size={15} />
                         )}{" "}
-                        Submit for verification <ArrowRight size={15} />
+                        Submit for verification
                       </button>
-                    </div>
-                  </div>
-                )}
-                {profile.editable && !ready && (
-                  <p className="vo-submit-hint [color:#ad96a2] [font-size:10px] text-right [margin:-10px_3px_0] max-[480px]:text-center">
-                    Complete all required fields and add your documents to
-                    enable submission.
+                    )
+                  )}
+                </div>
+                {profile.editable && activeStep === 3 && !ready && (
+                  <p className="text-xs text-[#ad96a2]">
+                    Complete all required fields and add your documents before
+                    submitting.
                   </p>
                 )}
               </form>
             </div>
+            <section
+              className="mt-6 rounded-xl border border-[#e4eade] bg-white p-6"
+              aria-label="Verification history"
+            >
+              <h2 className="mb-4 text-lg">Verification history</h2>
+              <p>
+                Verification cycle: {profile.cycle}.{" "}
+                {profile.verifiedAt
+                  ? `Approved on ${new Date(profile.verifiedAt).toLocaleString("en-IN")}.`
+                  : ""}
+              </p>
+              {profile.history?.length ? (
+                <ul className="mt-3 space-y-3">
+                  {profile.history.map((entry) => (
+                    <li key={entry.id}>
+                      <strong>{entry.status}</strong> | Cycle {entry.cycle} |{" "}
+                      {new Date(entry.createdAt).toLocaleString("en-IN")}
+                      {entry.reason && (
+                        <p className="whitespace-pre-wrap">{entry.reason}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No review decisions yet.</p>
+              )}
+            </section>
             <footer className="vo-footer flex items-center justify-between [gap:14px] [padding-top:27px] [margin-top:28px] [border-top:1px_solid_#eae1e5] [font-size:9px] [color:#b19aa5] [&_>_span:first-child]:flex [&_>_span:first-child]:items-center [&_>_span:first-child]:[gap:7px] max-[480px]:flex-col max-[480px]:[gap:7px] max-[480px]:text-center">
               <span>
                 <Sparkles size={14} /> Beautiful celebrations begin with trusted
@@ -801,7 +738,7 @@ export default function VendorOnboardingPage() {
             </footer>
           </>
         )}
-      </main>
+      </div>
     </div>
   );
 }

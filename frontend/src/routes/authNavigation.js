@@ -25,3 +25,13 @@ export function canAccessVendorWorkspace(user) {
 export function canEnterAccount(user) {
   return !!user && user.accountStatus === "Active";
 }
+
+export function canAccessVendorPage(user, pathname) {
+  return (
+    user?.role === "Vendor" &&
+    (canAccessVendorWorkspace(user) ||
+      ["/vendor/profile", "/vendor/verification"].includes(
+        pathname.replace(/\/$/, ""),
+      ))
+  );
+}

@@ -1,3 +1,4 @@
+import * as vendorProfile from "./profile.service.js";
 import * as onboarding from "./onboarding.service.js";
 import * as vendorLocations from "../addresses/vendor-locations.service.js";
 import { Router, json } from "express";
@@ -34,7 +35,7 @@ export function createVendorRouter({
   router.use(async (req, res, next) => {
     try {
       req.vendorContext = { req, res, auth: await authenticateRequest(req) };
-      req.vendorUser = /^\/onboarding(?:\/|$)/.test(req.path)
+      req.vendorUser = (req.path === "/profile" || /^\/onboarding(?:\/|$)/.test(req.path))
         ? requireRole(req.vendorContext, "VENDOR")
         : requireApprovedVendor(req.vendorContext);
       if (
@@ -63,6 +64,8 @@ export function createVendorRouter({
       const result = await fn(req);
       res.json({ success: true, ...result });
     });
+  get("/profile", req => vendorProfile.profile(req.vendorContext));
+  mutation("put", "/profile", req => vendorProfile.saveProfile(req.body, req.vendorContext));
   get("/onboarding", req => onboarding.profile(req.vendorContext));
   mutation("put", "/onboarding", req => onboarding.saveProfile(req.body, req.vendorContext));
   mutation("post", "/onboarding/submit", req => onboarding.saveProfile(req.body, req.vendorContext, true));

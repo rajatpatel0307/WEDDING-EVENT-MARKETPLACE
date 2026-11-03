@@ -1,7 +1,7 @@
 import { Router, json } from "express";
 import { rateLimit } from "express-rate-limit";
 import { authenticate } from "../auth/token.service.js";
-import { requireAuth, requireRole } from "../../middleware/auth.middleware.js";
+import { requireAuth, requireRole, requireApprovedVendor } from "../../middleware/auth.middleware.js";
 import { limit } from "../auth/security.service.js";
 import * as s from "./communication.service.js";
 import * as n from "../notifications/notification-center.service.js";
@@ -25,6 +25,7 @@ export function createCommunicationRouter({
       if (!["Customer", "Vendor", "Admin"].includes(req.role))
         s.fail("Select your workspace role.");
       requireRole(req.ctx, req.role.toUpperCase());
+      if (req.role === "Vendor") requireApprovedVendor(req.ctx);
       if (
         !["GET", "HEAD"].includes(req.method) &&
         (req.get("origin") !==

@@ -20,16 +20,23 @@ import { useAuth } from "../../../context/AuthContext";
 import { useCommunicationCounts } from "../../../hooks/useCommunicationCounts";
 import { vendorRequest } from "../services/workspace.api";
 
+import { canAccessVendorWorkspace } from "../../../routes/authNavigation";
+
 import VendorHeader from "./VendorHeader";
 import VendorSidebar from "./VendorSidebar";
+
+function VendorCommunications() {
+  useCommunicationCounts(vendorRequest);
+  return null;
+}
 
 // ============================================
 // VENDOR LAYOUT
 // ============================================
 
 export default function VendorLayout() {
-  useCommunicationCounts(vendorRequest);
-  const { reload } = useAuth();
+  const { user, reload } = useAuth();
+  const approved = canAccessVendorWorkspace(user);
   const location = useLocation();
 
   // Sidebar state
@@ -50,13 +57,17 @@ export default function VendorLayout() {
       refreshVendor
     );
 
+    const timer = setInterval(refreshVendor, 15000);
+    window.addEventListener("focus", refreshVendor);
     return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", refreshVendor);
       window.removeEventListener(
         "vendor:access-changed",
         refreshVendor
       );
     };
-  }, [reload]);
+  }, [user?.id]);
 
   // ============================================
   // CLOSE MOBILE SIDEBAR ON NAVIGATION
@@ -129,6 +140,7 @@ export default function VendorLayout() {
         leading-[1.6] text-[#2e4439]
       "
     >
+      {approved && <VendorCommunications />}
       {/* ======================================
           MOBILE SIDEBAR BACKDROP
       ====================================== */}
@@ -298,7 +310,7 @@ export default function VendorLayout() {
           MOBILE ADD SERVICE BUTTON
       ====================================== */}
 
-      {!mobile && (
+      {approved && !mobile && (
         <Link
           to="/vendor/services/new"
           aria-label="Add new service"

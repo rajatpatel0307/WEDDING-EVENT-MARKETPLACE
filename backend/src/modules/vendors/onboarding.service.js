@@ -75,6 +75,12 @@ export async function profile(ctx) {
     { id },
   );
   return {
+    cycle: row.VerificationCycle,
+    verifiedAt: row.VerifiedAt,
+    history: await repo.select(
+      "SELECT HistoryId AS id,CycleNumber AS cycle,ToStatus AS status,Reason AS reason,CreatedAt AS createdAt FROM dbo.VendorVerificationHistory WHERE VendorId=:id ORDER BY CreatedAt DESC,HistoryId DESC",
+      { id },
+    ),
     status: row.VerificationStatus,
     reason: row.VerificationRemarks,
     incomplete: row.ProfileDraftJson != null,
@@ -111,12 +117,14 @@ export async function profile(ctx) {
 }
 export function validateSubmission(fields, docs) {
   const body = business.omit({ documents: true }).parse(fields);
-  if (!docs.some((d) => d.status !== "Rejected"))
-    fail(
-      "Upload at least one valid verification document. Replace rejected documents before submitting.",
-    );
   if (docs.some((d) => d.status === "Rejected"))
     fail("Replace or remove rejected documents before submitting.");
+  const missing = ["PAN", "Identity Proof", "Address Proof"].filter(
+    (type) =>
+      !docs.some((doc) => doc.type === type && doc.status !== "Rejected"),
+  );
+  if (missing.length)
+    fail(`Upload required verification documents: ${missing.join(", ")}.`);
   return body;
 }
 export async function saveProfile(input, ctx, submit = false) {

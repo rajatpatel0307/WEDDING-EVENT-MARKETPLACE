@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../../context/AuthContext";
-import { vendorNavigation } from "../navigation";
+import { vendorNavigationFor } from "../navigation";
 
 import fullLogo from "../../../assets/MarryNest Wedding Logo.png";
 import compactLogo from "../../../assets/small logo.png";
@@ -30,6 +30,7 @@ export default function VendorSidebar({
 }) {
   const { user } = useAuth();
   const location = useLocation();
+  const vendorNavigation = vendorNavigationFor(user);
 
   // ============================================
   // ACTIVE NAVIGATION
@@ -142,7 +143,7 @@ export default function VendorSidebar({
         ====================================== */}
 
         <Link
-          to="/vendor/dashboard"
+          to={user?.vendor?.verificationStatus === "Approved" && user.vendor.active ? "/vendor/dashboard" : "/vendor/verification"}
           onClick={onCloseMobile}
           aria-label="MarryNest Vendor Dashboard"
           className="

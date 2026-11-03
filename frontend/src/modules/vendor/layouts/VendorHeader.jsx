@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../../context/AuthContext";
-import { vendorNavigation } from "../navigation";
+import { vendorNavigationFor } from "../navigation";
 
 // ============================================
 // CURRENT DATE
@@ -195,6 +195,7 @@ export default function VendorHeader({
   onOpenMobile,
 }) {
   const { user, logout } = useAuth();
+  const approved = user?.vendor?.verificationStatus === "Approved" && user.vendor.active;
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -244,13 +245,13 @@ export default function VendorHeader({
 
     if (!searchText) return [];
 
-    return vendorNavigation
+    return vendorNavigationFor(user)
       .flatMap((group) => group.items)
       .filter(([, label]) =>
         label.toLowerCase().includes(searchText)
       )
       .slice(0, 6);
-  }, [query]);
+  }, [query, user]);
 
   // ============================================
   // CURRENT DATE EFFECT
@@ -595,7 +596,7 @@ export default function VendorHeader({
             NOTIFICATIONS
         ==================================== */}
 
-        <NotificationBell role="Vendor" />
+        {approved && <NotificationBell role="Vendor" />}
 
         {/* ====================================
             PROFILE DROPDOWN
@@ -716,7 +717,7 @@ export default function VendorHeader({
 
               {/* Business Profile */}
               <Link
-                to="/vendor/business/profile"
+                to={approved ? "/vendor/business/profile" : "/vendor/profile"}
                 onClick={() => setProfileOpen(false)}
                 className="
                   mt-2 flex items-center gap-3
@@ -728,12 +729,12 @@ export default function VendorHeader({
                 "
               >
                 <ShieldCheck size={17} />
-                <span>Business Profile</span>
+                <span>{approved ? "Business Profile" : "Profile"}</span>
               </Link>
 
               {/* Settings */}
               <Link
-                to="/vendor/settings"
+                to={approved ? "/vendor/settings" : "/vendor/verification"}
                 onClick={() => setProfileOpen(false)}
                 className="
                   flex items-center gap-3
@@ -745,7 +746,7 @@ export default function VendorHeader({
                 "
               >
                 <Settings size={17} />
-                <span>Settings</span>
+                <span>{approved ? "Settings" : "Verification"}</span>
               </Link>
 
               {/* Logout */}

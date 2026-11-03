@@ -1,3 +1,4 @@
+import VendorDocumentPreview from "../components/VendorDocumentPreview";
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -630,8 +631,8 @@ export default function VendorResourcesPage({
                             [border-bottom:1px_solid_transparent] [border-left:1px_solid_transparent] rounded-[5px] p-[0]
                             [&:hover]:[background:#edf3e4] [&:hover]:text-[#608146]
                           "
-                          title="View details"
-                          aria-label="View details"
+                          title={section === "documents" ? "View document" : "View details"}
+                          aria-label={section === "documents" ? `View ${row.type}` : "View details"}
                           onClick={() => open("view", row)}
                         >
                           <Eye size={15} />
@@ -969,6 +970,8 @@ export default function VendorResourcesPage({
           close={() => setDialog(null)}
           onSaved={() => setVersion((v) => v + 1)}
         />
+      ) : section === "documents" && dialog?.action === "view" ? (
+        <VendorDocumentPreview key={dialog.row.id} document={dialog.row} close={() => setDialog(null)} />
       ) : (
         dialog && (
           <Modal

@@ -1,3 +1,4 @@
+import { canAccessVendorWorkspace } from "../../routes/authNavigation";
 import {
   LayoutDashboard,
   Store,
@@ -32,7 +33,7 @@ export const vendorNavigation = [
       ["locations", "Locations", MapPin],
       ["documents", "Documents", Files],
       ["media", "Media Library", Files],
-      ["verification", "Verification Status", ShieldCheck],
+      ["verification", "Verification", ShieldCheck],
     ],
   },
   {
@@ -50,18 +51,21 @@ export const vendorNavigation = [
   },
   {
     label: "BOOKINGS",
-    items: [
-      ["bookings/all", "All Bookings", ListChecks],
-    ],
+    items: [["bookings/all", "All Bookings", ListChecks]],
   },
   {
     label: "QUOTATIONS",
-    items: [
-      ["quotations/all", "All Quotations", ReceiptText],
-    ],
+    items: [["quotations/all", "All Quotations", ReceiptText]],
   },
   { label: "CUSTOMERS", items: [["customers", "Customers", Users]] },
-  { label: "ACCOUNT", items: [["settings", "Settings", ContactRound], ["legal", "Legal & Privacy", Files]] },
+  {
+    label: "ACCOUNT",
+    items: [
+      ["profile", "Profile", ContactRound],
+      ["settings", "Settings", ContactRound],
+      ["legal", "Legal & Privacy", Files],
+    ],
+  },
   {
     label: "PAYMENTS",
     items: [
@@ -88,4 +92,16 @@ export function vendorTitle(path) {
       .flatMap((g) => g.items)
       .find(([key]) => key === path)?.[1] || "Vendor workspace"
   );
+}
+
+export function vendorNavigationFor(user) {
+  if (canAccessVendorWorkspace(user)) return vendorNavigation;
+  return vendorNavigation
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(([path]) =>
+        ["profile", "verification"].includes(path),
+      ),
+    }))
+    .filter((group) => group.items.length);
 }

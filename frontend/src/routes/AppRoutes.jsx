@@ -1,3 +1,5 @@
+import VendorVerificationPage from "../modules/vendor/pages/VendorVerificationPage";
+import VendorProfilePage from "../modules/vendor/pages/VendorProfilePage";
 import { Routes, Route, Navigate, Link } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import GuestRoute from "./GuestRoute";
@@ -421,12 +423,11 @@ export default function AppRoutes() {
           </Route>
         </Route>
         <Route element={<RoleRoute role="Vendor" />}>
-          <Route path="/vendor/profile" element={<ProfilePage />} />
-          <Route path="/vendor/inactive" element={<VendorStatusPage />} />
-          <Route path="/vendor/pending" element={<VendorStatusPage />} />
-          <Route path="/vendor/rejected" element={<VendorStatusPage />} />
-          <Route path="/vendor/suspended" element={<VendorStatusPage />} />
           <Route element={<VendorApprovalRoute />}>
+            <Route path="/vendor/inactive" element={<VendorStatusPage />} />
+            <Route path="/vendor/pending" element={<VendorStatusPage />} />
+            <Route path="/vendor/rejected" element={<VendorStatusPage />} />
+            <Route path="/vendor/suspended" element={<VendorStatusPage />} />
             <Route
               path="/vendor"
               element={
@@ -441,6 +442,7 @@ export default function AppRoutes() {
                 </Suspense>
               }
             >
+              <Route path="profile" element={<VendorProfilePage />} />
               <Route path="legal" element={<LegalCenterPage />} />
               <Route path="media" element={<MediaLibrary role="Vendor" />} />
               <Route index element={<Navigate to="dashboard" replace />} />
@@ -457,7 +459,7 @@ export default function AppRoutes() {
               />
               <Route
                 path="verification"
-                element={<VendorBusinessPage mode="verification" />}
+                element={<VendorVerificationPage />}
               />
               <Route path="services/new" element={<ServiceForm />} />
               <Route path="services/add" element={<ServiceForm />} />

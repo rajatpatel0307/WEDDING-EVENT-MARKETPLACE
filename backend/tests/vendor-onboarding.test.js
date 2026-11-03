@@ -1,3 +1,5 @@
+import * as basicProfile from "../src/modules/vendors/profile.service.js";
+import { createCommunicationRouter } from "../src/modules/messaging/communication.routes.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
@@ -27,6 +29,7 @@ import {
 } from "../src/models/index.js";
 import { hashPassword } from "../src/modules/auth/password.service.js";
 
+const requiredDocs = ["PAN", "Identity Proof", "Address Proof"].map(type => ({ type, status: "Pending" }));
 const id = "734b9588-c47c-40eb-8c17-1797d65a2800";
 const owner = "734b9588-c47c-40eb-8c17-1797d65a2801";
 const version = "2026-10-28T10:00:00.000Z";
@@ -69,7 +72,7 @@ const fields = {
 function setup(
   t,
   record = row,
-  docs = [{ id, type: "Identity Proof", status: "Pending" }],
+  docs = requiredDocs,
 ) {
   const tx = {};
   t.mock.method(sequelize, "transaction", async (fn) => fn(tx));
@@ -199,7 +202,7 @@ test("draft input saves incomplete fields but rejects owner, status and oversize
     /rejected documents/,
   );
   assert.doesNotThrow(() =>
-    validateSubmission(fields, [{ status: "Pending" }]),
+    validateSubmission(fields, requiredDocs),
   );
 });
 
@@ -220,7 +223,7 @@ test("profile reads load saved draft fields and permanently associated documents
   setup(t, { ...row, ProfileDraftJson: JSON.stringify(fields) });
   const result = await profile(ctx);
   assert.equal(result.fields.businessName, fields.businessName);
-  assert.equal(result.documents.length, 1);
+  assert.equal(result.documents.length, 3);
   assert.equal(result.incomplete, true);
   assert.equal(result.editable, true);
 });
@@ -390,4 +393,71 @@ test("unapproved vendors can read onboarding via REST while business activities 
     403,
   );
   assert.equal(query.mock.callCount(), before);
+});
+
+
+test("vendor basic profile updates use authenticated ownership and reject status or owner overrides", async t => {
+  const { query } = setup(t);
+  query.mock.mockImplementation(async sql => sql.startsWith("SELECT UpdatedAt,PhoneNumber") ? [{ UpdatedAt: version, PhoneNumber: "" }] : []);
+  const body = { firstName: "Vendor", lastName: "Owner", phone: "+919876543210", expectedUpdatedAt: version };
+  for (const injected of [{ vendorId: id }, { userId: id }, { verificationStatus: "Approved" }, { active: true }])
+    await assert.rejects(() => basicProfile.saveProfile({ ...body, ...injected }, ctx));
+  assert.equal(writes(query).length, 0);
+  await basicProfile.saveProfile(body, ctx);
+  const update = writes(query).find(call => call.arguments[0].startsWith("UPDATE dbo.[Users]"));
+  assert.ok(update);
+  assert.ok(Object.values(update.arguments[1].replacements).includes(owner));
+  assert.doesNotMatch(update.arguments[0], /VerificationStatus|IsActive|IsEmailVerified/);
+  assert.match(update.arguments[0], /IsPhoneVerified/);
+  await assert.rejects(() => basicProfile.saveProfile({ ...body, expectedUpdatedAt: "2026-01-01T00:00:00.000Z" }, ctx), /record changed/);
+  for (const code of ["ADMIN", "CUSTOMER", "EMPLOYEE"])
+    await assert.rejects(() => basicProfile.profile({ auth: { user: { ...user, roles: [{ code, active: true }] } } }), /Access denied|Please sign in/);
+});
+
+test("onboarding history is scoped to the signed-in vendor and excludes private admin notes", async t => {
+  const { query } = setup(t);
+  await profile(ctx);
+  const history = query.mock.calls.find(call => call.arguments[0].includes("FROM dbo.VendorVerificationHistory"));
+  assert.equal(history.arguments[1].replacements.id, id);
+  assert.match(history.arguments[0], /WHERE VendorId=:id/);
+  assert.doesNotMatch(history.arguments[0], /Notes|AdminId/);
+});
+
+test("profile REST access remains available while workspace and communication APIs reject unapproved vendors", async t => {
+  const { query } = setup(t);
+  query.mock.mockImplementation(async sql => {
+    if (sql.startsWith("SELECT FirstName AS")) return [{ firstName: "Vendor", updatedAt: version }];
+    return [];
+  });
+  const current = { ...user, vendor: { ...user.vendor } };
+  const app = express();
+  const authenticateRequest = async () => ({ user: current });
+  app.use("/api/vendor", createVendorRouter({ authenticateRequest }));
+  app.use("/api/communication", createCommunicationRouter({ authenticateRequest }));
+  app.use((error, req, res, next) => res.status(error.extensions?.code === "FORBIDDEN" ? 403 : error.status || 500).json({ message: error.message }));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  for (const verificationStatus of ["Pending", "UnderReview", "Rejected", "Suspended"]) {
+    current.vendor.verificationStatus = verificationStatus;
+    assert.equal((await fetch(`${base}/api/vendor/profile`)).status, 200);
+    for (const path of ["services", "workspace", "business", "communications/counts", "earnings"])
+      assert.equal((await fetch(`${base}/api/vendor/${path}`)).status, 403);
+    assert.equal((await fetch(`${base}/api/communication/notifications`, { headers: { "x-communication-role": "Vendor" } })).status, 403);
+  }
+  current.vendor.verificationStatus = "Approved";
+  current.vendor.active = true;
+  assert.equal((await fetch(`${base}/api/vendor/services/metadata`)).status, 200);
+});
+
+
+test("verification submission requires a valid PAN, Identity Proof and Address Proof separately", () => {
+  assert.doesNotThrow(() => validateSubmission(fields, requiredDocs));
+  for (const type of ["PAN", "Identity Proof", "Address Proof"]) {
+    const remaining = requiredDocs.filter(doc => doc.type !== type);
+    assert.throws(() => validateSubmission(fields, [...remaining, { type: "GST", status: "Approved" }]), new RegExp(type));
+    assert.throws(() => validateSubmission(fields, [...remaining, { type, status: "Rejected" }]), /rejected documents/);
+  }
+  assert.throws(() => validateSubmission(fields, [requiredDocs[0], requiredDocs[0], requiredDocs[0]]), /Identity Proof, Address Proof/);
 });
