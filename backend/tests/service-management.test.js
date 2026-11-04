@@ -76,6 +76,8 @@ const record = (status = "Draft") => ({
 function setup(t, row = record(), other = () => []) {
   t.mock.method(sequelize, "transaction", async (fn) => fn({ test: true }));
   return t.mock.method(sequelize, "query", async (sql, options) => {
+    if (sql.startsWith("SELECT v.VerificationStatus")) return [{ VerificationStatus: "Approved", IsActive: 1, userActive: 1, IsBlocked: 0, IsEmailVerified: 1, accessStatus: "Approved" }];
+    if (sql.includes("v.ServiceAccessStatus AS serviceStatus")) return [{ id: vendorId, serviceStatus: "Approved", bookingStatus: "Approved" }];
     if (sql.startsWith("SELECT t.* FROM dbo.[Services]"))
       return row ? [row] : [];
     return other(sql, options);

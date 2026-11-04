@@ -1,4 +1,5 @@
 
+import AccessStatus from "../components/AccessStatus";
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -697,6 +698,7 @@ export default function VendorDashboard({
   analyticsOnly = false,
 }) {
   const { user } = useAuth();
+  const access = useVendorData("/access-status");
 
   const [period, setPeriod] = useState("monthly");
   const [metric, setMetric] = useState("revenue");
@@ -808,6 +810,9 @@ export default function VendorDashboard({
 
           <Link
             to="/vendor/services/new"
+            aria-disabled={access.data?.serviceStatus !== "Approved"}
+            onClick={e => { if (access.data?.serviceStatus !== "Approved") e.preventDefault(); }}
+            style={access.data?.serviceStatus !== "Approved" ? { opacity: 0.45, cursor: "not-allowed" } : undefined}
             className="
               inline-flex min-h-[40px]
               items-center justify-center gap-2
@@ -825,6 +830,8 @@ export default function VendorDashboard({
           </Link>
         </div>
       </div>
+
+      <AccessStatus state={access} />
 
       {/* ======================================
           KPI CARDS

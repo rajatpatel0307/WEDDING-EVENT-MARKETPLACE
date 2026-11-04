@@ -95,7 +95,9 @@ export default function DetailPage() {
   const d = state.data,
     item = vendor ? d.vendor : d.service,
     privatePath = `/customer/${vendor ? "vendors" : "services"}/${item.id}`;
+  const bookingAllowed = item.bookingAccessStatus === "Approved";
   function begin(action, packageId) {
+    if (action === "book" && !bookingAllowed) return;
     const path = `${privatePath}?${new URLSearchParams({ ...(!vendor ? { action } : {}), ...(packageId ? { package: packageId } : {}) })}`;
     navigate(user ? path : `/auth/login?redirect=${encodeURIComponent(path)}`);
   }
@@ -154,12 +156,16 @@ export default function DetailPage() {
       {!vendor && (
         <Link to={`/vendors/${item.vendorId}`}>By {item.vendor}</Link>
       )}
+      {!vendor && !bookingAllowed && (
+        <p role="status">This vendor is currently unavailable for new bookings.</p>
+      )}
       <div className="cm-actions">
         {!vendor && (
           <>
             {canBook && (
               <button
                 className="cm-primary"
+                disabled={!bookingAllowed}
                 onClick={() => begin("book", pack ? id : params.get("package"))}
               >
                 Book now
@@ -284,6 +290,7 @@ export default function DetailPage() {
                       </p>
                       <button
                         className="cm-primary"
+                        disabled={!bookingAllowed}
                         onClick={() => begin("book", p.id)}
                       >
                         Choose this package
@@ -334,10 +341,14 @@ export default function DetailPage() {
                 Final prices, taxes and fees are calculated on the server for
                 your event.
               </p>
+              {!bookingAllowed && (
+                <p role="status">This vendor is currently unavailable for new bookings.</p>
+              )}
               <div className="cm-actions">
                 {canBook && (
                   <button
                     className="cm-primary"
+                    disabled={!bookingAllowed}
                     onClick={() =>
                       begin("book", pack ? id : params.get("package"))
                     }

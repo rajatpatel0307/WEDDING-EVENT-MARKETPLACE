@@ -427,6 +427,7 @@ test("profile REST access remains available while workspace and communication AP
   const { query } = setup(t);
   query.mock.mockImplementation(async sql => {
     if (sql.startsWith("SELECT FirstName AS")) return [{ firstName: "Vendor", updatedAt: version }];
+    if (sql.includes("v.ServiceAccessStatus AS serviceStatus")) return [{ id, serviceStatus: "Approved", bookingStatus: "Approved" }];
     return [];
   });
   const current = { ...user, vendor: { ...user.vendor } };

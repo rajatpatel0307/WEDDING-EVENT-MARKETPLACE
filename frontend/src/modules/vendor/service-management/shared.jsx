@@ -14,7 +14,7 @@ import {
   CalendarDays,
   ListChecks,
 } from "lucide-react";
-import { Badge, Modal } from "../components/WorkspaceUI";
+import { Badge, Modal, useVendorData } from "../components/WorkspaceUI";
 import { save, vendorRequest } from "../services/workspace.api";
 import { useAuth } from "../../../context/AuthContext";
 
@@ -302,6 +302,7 @@ export function ServiceActions({ service, onChange, full = false }) {
           </Link>
         )}
         <button
+          disabled={a.duplicate === false}
           title="Duplicate service"
           aria-label="Duplicate service"
           onClick={() => setConfirm("duplicate")}
@@ -409,6 +410,8 @@ export function ServiceActions({ service, onChange, full = false }) {
   );
 }
 export function AddButton() {
+  const access = useVendorData("/access-status");
+  if (access.data?.serviceStatus !== "Approved") return <button type="button" disabled className="rounded-md border border-[#dfe7d8] bg-[#386348] px-3 py-2 text-xs text-white opacity-45 cursor-not-allowed" title="Administrator approval is required to add services.">Add New Service</button>;
   return (
     <Link className="
       vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]

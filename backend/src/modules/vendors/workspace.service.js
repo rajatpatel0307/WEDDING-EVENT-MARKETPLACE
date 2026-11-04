@@ -1,3 +1,4 @@
+import { assertAccess } from "./access.service.js";
 import { publicPredicate } from '../reviews/reviews.policy.js';
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -283,6 +284,7 @@ export async function saveService(recordId, input, ctx) {
   const { id } = scope(ctx),
     body = serviceInput.parse(input);
   return repo.transaction(async (tx) => {
+    await assertAccess(id, "service", tx);
     const old = recordId ? await owned("services", recordId, id, tx) : null;
     if (old) assertVersion(old, body.expectedUpdatedAt);
     const [category] = await repo.select(

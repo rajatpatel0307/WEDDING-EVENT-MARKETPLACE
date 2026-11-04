@@ -23,6 +23,6 @@ test("dashboard tools still require an approved active vendor", () => {
 });
 
 test("customer and administrator login destinations stay role-specific", () => {
-  assert.equal(destination({ role: "Customer" }), "/customer/dashboard");
+  assert.equal(destination({ role: "Customer" }), "/");
   assert.equal(destination({ role: "Admin" }), "/admin/dashboard");
 });

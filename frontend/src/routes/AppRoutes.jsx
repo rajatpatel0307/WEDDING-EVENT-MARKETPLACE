@@ -1,3 +1,4 @@
+import VendorAccessPage from "../modules/admin/pages/VendorAccessPage";
 import VendorVerificationPage from "../modules/vendor/pages/VendorVerificationPage";
 import VendorProfilePage from "../modules/vendor/pages/VendorProfilePage";
 import { Routes, Route, Navigate, Link } from "react-router-dom";
@@ -825,6 +826,10 @@ export default function AppRoutes() {
                   <ServiceApprovalPage review />
                 </Suspense>
               }
+            />
+            <Route
+              path="vendor-access"
+              element={<VendorAccessPage />}
             />
             <Route
               path="applications"

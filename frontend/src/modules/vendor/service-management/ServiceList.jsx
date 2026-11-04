@@ -216,8 +216,7 @@ export default function ServiceList() {
         ">
           <Sparkles size={16} className="text-amber-500 shrink-0" />
           <span>
-            You can prepare drafts now. Your business must be approved and
-            active before you can submit a service for public listing.
+            Service access is {data.access?.serviceStatus || "Pending"}. Administrator approval is required to create or submit services. Existing services remain available for management.
           </span>
         </div>
       )}

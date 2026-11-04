@@ -137,7 +137,7 @@ export function ServiceCard({ item, saved: savedProp = false, onChange }) {
             >
               {item.type === "Vendor" ? "View services" : "Request quotation"}
             </Link>
-            {item.type !== "Vendor" &&
+            {item.bookingAccessStatus === "Approved" && item.type !== "Vendor" &&
               (item.type === "Package" ||
                 item.pricingType !== "CustomQuote") && (
                 <Link
@@ -149,7 +149,8 @@ export function ServiceCard({ item, saved: savedProp = false, onChange }) {
               )}
           </div>
         )}
-        {item.available === false || item.available === 0 ? (
+        {item.available === false || item.available === 0 ||
+        (item.type !== "Vendor" && item.bookingAccessStatus !== "Approved") ? (
           <p className="cw-unavailable text-[#a96171]!">
             Currently unavailable for new bookings
           </p>

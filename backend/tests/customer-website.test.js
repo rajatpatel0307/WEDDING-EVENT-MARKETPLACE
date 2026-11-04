@@ -130,3 +130,22 @@ test("public HTTP errors do not reveal database statements or internal vendor in
     await new Promise((r) => server.close(r));
   }
 });
+
+
+test("service and package discovery expose live booking permission without hiding suspended vendors", async (t) => {
+  const id = "1D375B0C-89D2-F111-8F30-14133304FA5C";
+  let status = "Suspended";
+  t.mock.method(sequelize, "query", async (sql) => {
+    if (sql.includes("COUNT(*) AS total")) return [{ total: 1 }];
+    if (sql.includes("v.BookingAccessStatus AS bookingAccessStatus")) {
+      assert.doesNotMatch(sql, /WHERE[^;]*v\.BookingAccessStatus\s*=/);
+      return [{ id, vendorId: id, bookingAccessStatus: status, DetailsJson: "{}" }];
+    }
+    return [];
+  });
+  for (status of ["Pending", "Approved", "Rejected", "Suspended"]) {
+    assert.equal((await d.publicServiceDetails(id, false)).service.bookingAccessStatus, status);
+    for (const type of ["services", "packages"])
+      assert.equal((await d.publicDiscover({ type })).rows[0].bookingAccessStatus, status);
+  }
+});

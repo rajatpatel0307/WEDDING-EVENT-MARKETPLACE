@@ -1,3 +1,4 @@
+import { up as vendorAccessUp } from "../migrations/029-vendor-access.js";
 import { up as onboardingUp } from "../migrations/028-vendor-onboarding.js";
 import { up as categoryImagesUp } from "../migrations/027-category-images.js";
 import { up as communicationUp } from "../migrations/023-communication.js";
@@ -427,6 +428,14 @@ try {
     await sequelize.query("DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;", { transaction });
     await onboardingUp(sequelize.getQueryInterface(), transaction);
     await sequelize.query("IF NOT EXISTS(SELECT 1 FROM dbo.AuthMigrations WHERE Name='028-vendor-onboarding') INSERT dbo.AuthMigrations(Name) VALUES('028-vendor-onboarding')", { transaction });
+  });
+  await sequelize.transaction(async transaction => {
+    await sequelize.query("DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;", { transaction });
+    const [rows] = await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='029-vendor-access'", { transaction });
+    if (!rows.length) {
+      await vendorAccessUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query("INSERT dbo.AuthMigrations(Name) VALUES('029-vendor-access')", { transaction });
+    }
   });
   console.log("Database migrations are current.");
 } catch (error) {

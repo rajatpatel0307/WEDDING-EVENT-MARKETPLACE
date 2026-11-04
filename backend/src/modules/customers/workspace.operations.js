@@ -1,3 +1,4 @@
+import { assertAccess } from "../vendors/access.service.js";
 import { validateCoverage } from "../addresses/locations.service.js";
 import {
   capturePolicy,
@@ -64,6 +65,7 @@ export async function createBooking(
   snapshot = null,
 ) {
   const { id } = scope(ctx);
+  await assertAccess(vendorId, "booking", tx);
   await checkDate(
     vendorId,
     event,

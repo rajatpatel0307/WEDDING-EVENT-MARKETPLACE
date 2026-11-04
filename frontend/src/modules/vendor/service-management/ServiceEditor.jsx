@@ -282,6 +282,8 @@ export default function ServiceEditor() {
   if (loading || metadata.loading) return <Loading />;
   if (metadata.error)
     return <ErrorView error={metadata.error} retry={metadata.retry} />;
+  if (!params.id && !metadata.data?.canCreate)
+    return <div className="rounded-xl border border-[#dfe7d8] bg-white p-5"><Heading title="Service access required" description={`Service access is ${metadata.data?.access?.serviceStatus || "Pending"}. Administrator approval is required to create services.`} /><Link to="/vendor/services" className="mt-4 inline-block text-sm underline">Return to services</Link></div>;
   if (params.id && !current && error)
     return (
       <ErrorView
@@ -432,8 +434,7 @@ export default function ServiceEditor() {
         >
           <Info size={18} className="shrink-0 text-primary" />
           <span>
-            Save your work as a draft. Submission becomes available after your
-            business is approved.
+            Service access approval is required to submit services. You can continue managing existing drafts.
           </span>
         </div>
       )}

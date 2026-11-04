@@ -1,3 +1,4 @@
+import VendorAccessActions from "../components/VendorAccessActions";
 import VendorDecisionDialog from "../components/VendorDecisionDialog";
 import { canDecide, decisionActions, vendorChanged } from "../vendor-workflow";
 import { useEffect, useRef, useState } from "react";
@@ -840,6 +841,7 @@ export default function VendorDetailsPage() {
                 <FileText size={14} />
                 Add internal note
               </button>
+              <VendorAccessActions key={id} vendorId={id} refreshKey={version} onChange={() => setVersion(value => value + 1)} />
             </div>
           </div>
           <div className="vd-contact flex items-center [@media(width<=600px)]:items-start [&_>_span]:flex [&_>_span]:items-center gap-[22px] [@media(width<=600px)]:gap-[9px] flex-wrap text-[#73816c] mt-[23px] [@media(width<=600px)]:mt-[18px] [&_>_span]:gap-[7px] [&_>_span]:text-[12px] [@media(width<=600px)]:[&_>_span]:text-[11px] [&_>_span]:[overflow-wrap:anywhere] [&_>_span]:min-w-0 [@media(width<=600px)]:flex-col">

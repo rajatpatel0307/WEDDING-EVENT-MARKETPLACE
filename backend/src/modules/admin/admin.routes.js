@@ -1,3 +1,4 @@
+import * as vendorAccess from "../vendors/access.service.js";
 import * as commission from "./commission.service.js";
 import * as finance from "../payments/finance-reports.js";
 import { financeStatistics } from "./finance-statistics.service.js";
@@ -77,6 +78,10 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
       next,
     ),
   );
+  router.get("/vendor-access", async (req, res) => res.json(await vendorAccess.list(req.query, req.admin)));
+  router.get("/vendor-access/:vendorId/history", async (req, res) => res.json(await vendorAccess.history(req.params.vendorId, req.query, req.admin)));
+  router.get("/vendor-access/:vendorId", async (req, res) => res.json(await vendorAccess.detail(req.params.vendorId, req.admin)));
+  router.patch("/vendor-access/:vendorId/:type/:action", async (req, res) => res.json(await vendorAccess.decide(req.params.vendorId, req.params.type, req.params.action, req.body, req.admin)));
   router.get("/commission/configuration", async (req, res) =>
     res.json(await commission.configuration(req.admin)),
   );

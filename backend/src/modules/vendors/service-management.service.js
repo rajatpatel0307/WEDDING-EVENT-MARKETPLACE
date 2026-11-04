@@ -1,3 +1,4 @@
+import { assertAccess, vendorStatus } from "./access.service.js";
 import { publicPredicate } from '../reviews/reviews.policy.js';
 import { approvalHistory } from "../admin/service-approval.service.js";
 import { randomUUID } from "node:crypto";
@@ -63,6 +64,7 @@ async function reapprove(row, ctx, tx) {
 }
 export async function metadata(ctx) {
   const { approved, user } = serviceScope(ctx);
+  const access = await vendorStatus(ctx);
   const categories = await repo.select(
     "SELECT c.CategoryId AS id,c.CategoryName AS name,c.CategoryCode AS code FROM dbo.Categories c JOIN dbo.VendorCategories vc ON vc.CategoryId=c.CategoryId AND vc.VendorId=:id WHERE c.IsActive=1 ORDER BY c.SortOrder,c.CategoryId",
     { id: user.vendor.id },
@@ -78,7 +80,9 @@ export async function metadata(ctx) {
       { id: user.vendor.id },
     ),
     templates: templatesFor(categories),
-    canSubmit: approved,
+    canSubmit: approved && access.serviceStatus === "Approved",
+    canCreate: approved && access.serviceStatus === "Approved",
+    access,
     vendorName: user.vendor.businessName,
   };
 }
@@ -145,6 +149,7 @@ export async function list(input, ctx, exporting = false) {
     p,
   );
   if (exporting) return rows;
+  const access = await vendorStatus(ctx);
   const [stats] = await repo.select(
     `SELECT COUNT_BIG(*) AS totalServices,SUM(CASE WHEN s.IsActive=1 AND s.ApprovalStatus='Approved' THEN 1 ELSE 0 END) AS activeServices,SUM(CASE WHEN s.ApprovalStatus='Draft' THEN 1 ELSE 0 END) AS draftServices,SUM(CASE WHEN s.ApprovalStatus IN ('Pending','UnderReview') THEN 1 ELSE 0 END) AS pendingApproval,SUM(CASE WHEN s.ApprovalStatus='Approved' THEN 1 ELSE 0 END) AS approvedServices,SUM(CASE WHEN s.ApprovalStatus='Rejected' THEN 1 ELSE 0 END) AS rejectedServices,SUM(CASE WHEN s.ApprovalStatus='Suspended' THEN 1 ELSE 0 END) AS suspendedServices,(SELECT COUNT(DISTINCT bi.BookingId) FROM dbo.BookingItems bi JOIN dbo.Services bs ON bs.ServiceId=bi.ServiceId WHERE bs.VendorId=:id) AS totalBookings FROM dbo.Services s OUTER APPLY(SELECT COUNT(DISTINCT bi.BookingId) AS bookings FROM dbo.BookingItems bi WHERE bi.ServiceId=s.ServiceId) b WHERE s.VendorId=:id`,
     { id },
@@ -154,12 +159,23 @@ export async function list(input, ctx, exporting = false) {
     { id },
   );
   return {
-    rows: rows.map((row) => ({ ...row, actions: actionsFor(row, approved) })),
+    rows: rows.map((row) => ({
+      ...row,
+      actions: {
+        ...actionsFor(row, approved),
+        submit:
+          actionsFor(row, approved).submit &&
+          access.serviceStatus === "Approved",
+        duplicate: access.serviceStatus === "Approved",
+      },
+    })),
     total: Number(count.total),
     page: q.page,
     pageSize: q.pageSize,
     stats: { ...stats, ...rating },
-    canSubmit: approved,
+    canSubmit: approved && access.serviceStatus === "Approved",
+    canCreate: approved && access.serviceStatus === "Approved",
+    access,
   };
 }
 export async function details(serviceId, ctx) {
@@ -176,6 +192,7 @@ export async function details(serviceId, ctx) {
     "SELECT CASE WHEN EXISTS(SELECT 1 FROM dbo.BookingItems WHERE ServiceId=:serviceId) OR EXISTS(SELECT 1 FROM dbo.QuotationItems WHERE ServiceId=:serviceId) OR EXISTS(SELECT 1 FROM dbo.QuotationRequests WHERE ServiceId=:serviceId) OR EXISTS(SELECT 1 FROM dbo.Offers WHERE ServiceId=:serviceId) THEN 1 ELSE 0 END AS hasHistory",
     { serviceId },
   );
+  const access = await vendorStatus(ctx);
   return {
     ...parse(row.DetailsJson),
     pricing: {
@@ -221,10 +238,14 @@ export async function details(serviceId, ctx) {
       ctx,
       serviceScope(ctx).id,
     ),
-    actions: actionsFor(
-      { ...row, hasHistory: history?.hasHistory },
-      serviceScope(ctx).approved,
-    ),
+    actions: {
+      ...actionsFor(
+        { ...row, hasHistory: history?.hasHistory },
+        serviceScope(ctx).approved,
+      ),
+      submit: actionsFor(row).submit && access.serviceStatus === "Approved",
+      duplicate: access.serviceStatus === "Approved",
+    },
   };
 }
 async function replaceItems(serviceId, items, tx) {
@@ -253,6 +274,7 @@ export async function saveService(serviceId, input, ctx) {
   const { id } = serviceScope(ctx),
     body = serviceSchema.parse(input);
   return repo.transaction(async (tx) => {
+    if (!serviceId) await assertAccess(id, "service", tx);
     const old = serviceId ? await lock(serviceId, ctx, tx) : null;
     if (body.location.vendorLocationIds.length) {
       const rows = await repo.select(
@@ -381,6 +403,7 @@ export async function submit(serviceId, input, ctx) {
     .strict()
     .parse(input);
   return repo.transaction(async (tx) => {
+    await assertAccess(id, "service", tx);
     const row = await lock(serviceId, ctx, tx);
     version(row, body.expectedUpdatedAt);
     if (!actionsFor(row).submit)
@@ -478,12 +501,13 @@ export async function active(serviceId, input, ctx) {
   });
 }
 export async function duplicate(serviceId, ctx) {
-  serviceScope(ctx);
+  const { id } = serviceScope(ctx);
   return repo.transaction(async (tx) => {
     const row = await lock(serviceId, ctx, tx),
       next = randomUUID(),
       doc = parse(row.DetailsJson),
       slug = `${row.ServiceSlug.slice(0, 150)}-copy-${next}`;
+    await assertAccess(id, "service", tx);
     if (doc.seo) doc.seo.slug = slug;
     await repo.insert(
       { table: "Services", id: "ServiceId" },
