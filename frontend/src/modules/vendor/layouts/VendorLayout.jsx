@@ -38,6 +38,7 @@ export default function VendorLayout() {
   const { user, reload } = useAuth();
   const approved = canAccessVendorWorkspace(user);
   const location = useLocation();
+  const isServiceEditor = /^\/vendor\/services\/(?:new|[^/]+\/edit)\/?$/.test(location.pathname);
 
   // Sidebar state
   const [collapsed, setCollapsed] = useState(false);
@@ -205,18 +206,16 @@ export default function VendorLayout() {
 
         <main
           id="main-content"
-          className="
+          className={`
             mx-auto flex w-full
-            max-w-[1700px] min-w-0
+            ${isServiceEditor ? "max-w-none" : "max-w-[1700px]"} min-w-0
             flex-1 flex-col gap-[23px]
 
-            px-4 py-6
-            sm:px-6
-            lg:px-8 lg:py-7
+            ${isServiceEditor ? "px-3 sm:px-4" : "px-4 sm:px-6 lg:px-8"} py-6 lg:py-7
 
             [&>*]:min-w-0
             [&>*]:max-w-full
-          "
+          `}
         >
           <Suspense
             fallback={

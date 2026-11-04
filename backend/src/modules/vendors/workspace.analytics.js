@@ -52,6 +52,7 @@ export async function dashboard(input, ctx) {
     (SELECT COUNT(*) FROM dbo.Services WHERE VendorId=:id) AS totalServices,
     (SELECT COUNT(*) FROM dbo.Services WHERE VendorId=:id AND IsActive=1 AND ApprovalStatus='Approved') AS activeServices,
     (SELECT COUNT(*) FROM dbo.Services WHERE VendorId=:id AND ApprovalStatus='Pending') AS pendingApproval,
+    (SELECT COUNT(*) FROM dbo.Booking WHERE VendorId=:id) AS totalBookings,
     (SELECT COUNT(*) FROM dbo.Booking WHERE VendorId=:id AND BookingStatus IN ('Accepted','PaymentPending','Confirmed') AND BookingDate>=CONVERT(date,DATEADD(minute,330,SYSUTCDATETIME()))) AS upcomingBookings,
     (SELECT COUNT(*) FROM dbo.Booking WHERE VendorId=:id AND BookingStatus='Completed') AS completedBookings,
     (SELECT COUNT(*) FROM dbo.Quotations WHERE VendorId=:id AND Status IN ('Draft','Sent','Viewed')) AS pendingQuotations,

@@ -15,7 +15,6 @@ import {
   Trash2,
   ChevronUp,
   ChevronDown,
-  ShieldCheck,
   Sparkles,
   AlertTriangle,
   Info,
@@ -42,6 +41,50 @@ import { validateService } from "./service-validation";
 import MediaManager from "./MediaManager";
 import { ServicePreview } from "./ServiceDetails";
 
+const fieldHints = {
+  "pricing.basePrice": "Starting amount before per-unit costs, discounts and tax.",
+  "pricing.unitPrice": "Amount charged for each person, hour, item or other selected unit.",
+  "pricing.minimumPrice": "Lowest amount you accept for a booking, if applicable.",
+  "pricing.maximumPrice": "Highest booking price, if applicable.",
+  "pricing.minimumQuantity": "Smallest number of pricing units a customer can book.",
+  "pricing.maximumQuantity": "Largest number of pricing units a customer can book.",
+  "pricing.discount": "Enter a percentage from 0 to 100, such as 10 for 10%.",
+  "pricing.taxRate": "Enter the applicable tax percentage, or 0 if none applies.",
+  "pricing.specialPrice": "Alternative starting price used instead of the base price.",
+  "pricing.weekendPrice": "Price applicable to weekend bookings.",
+  "pricing.seasonalPrice": "Price applicable between the seasonal start and end dates.",
+  "pricing.additionalCharges": "Extra amount included in the estimated starting price; enter 0 if none.",
+  "pricing.seasonalFrom": "First date on which the seasonal price applies.",
+  "pricing.seasonalTo": "Last date on which the seasonal price applies.",
+  "location.city": "Enter the city where this service is based, such as Jaipur.",
+  "location.address": "Enter the building, street and local area of your service address.",
+  "location.state": "Enter the state or province of your service address.",
+  "location.country": "Enter the country of your service address.",
+  "location.zip": "Enter the PIN code or postal code of your service address.",
+  "location.latitude": "Optional map coordinate from -90 to 90.",
+  "location.longitude": "Optional map coordinate from -180 to 180.",
+  "location.radiusKm": "Maximum distance you travel from your service location, in kilometres.",
+  "location.travelCharge": "Travel amount for this coverage area; enter 0 if none.",
+  "location.minimumOrderValue": "Smallest booking amount accepted in this coverage area.",
+  "availability.start": "Time you start accepting service bookings on your working days.",
+  "availability.end": "Time your working day ends; it must be after the start time.",
+  "availability.advanceDays": "How many days into the future customers can book.",
+  "availability.noticeHours": "Minimum hours needed between booking and the service start.",
+  "policies.cancellation": "Explain cancellation deadlines, fees and any exceptions.",
+  "policies.refund": "Explain when customers qualify for a refund and how much they receive.",
+  "policies.rescheduling": "Explain how customers can change their booking date and any fees.",
+  "policies.additionalCharges": "Describe when extra fees apply and what they cover.",
+  "policies.terms": "Enter other booking conditions customers need to agree to.",
+  "policies.advancePercentage": "Percentage of the booking amount payable in advance, from 0 to 100.",
+  "policies.travelCharges": "Travel fee stated in your booking policy; enter 0 if none.",
+  "policies.setupTime": "Minutes needed to prepare before the service starts.",
+  "policies.duration": "Total service length in minutes, such as 120 for two hours.",
+  "seo.title": "Title to display for this listing in search engine results.",
+  "seo.description": "Short summary of this listing for search engine results.",
+  "seo.keywords": "Relevant search terms separated by commas, such as wedding venue, Jaipur.",
+  "seo.slug": "Unique URL name using lowercase letters, numbers and hyphens, such as royal-garden-jaipur.",
+};
+
 export default function ServiceEditor() {
   const params = useParams(),
     navigate = useNavigate(),
@@ -57,9 +100,41 @@ export default function ServiceEditor() {
     [loading, setLoading] = useState(!!params.id),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
+    [stepError, setStepError] = useState(""),
     [notice, setNotice] = useState("");
   const form = useRef(null);
   useUnsaved(dirty);
+
+  const validateCurrentStep = () => {
+    if (!form.current) return false;
+    for (const input of form.current.querySelectorAll("input[required], textarea[required]")) {
+      const textInput = input.tagName === "TEXTAREA" || input.type === "text";
+      if (textInput) {
+        const value = input.value.trim();
+        input.setCustomValidity(
+          !value
+            ? "Please fill out this field."
+            : input.minLength > 0 && value.length < input.minLength
+              ? `Please enter at least ${input.minLength} characters.`
+              : "",
+        );
+      }
+    }
+    if (!form.current.reportValidity()) {
+      setStepError("Complete the required fields and correct any invalid values before continuing.");
+      return false;
+    }
+    setStepError("");
+    return true;
+  };
+
+  const goToStep = (nextStep) => {
+    if (nextStep === step) return;
+    if (nextStep > step && !validateCurrentStep()) return;
+    setStepError("");
+    setError("");
+    setStep(nextStep);
+  };
 
   useEffect(() => {
     let live = true;
@@ -112,7 +187,7 @@ export default function ServiceEditor() {
     change(section, { ...data[section], [key]: value });
 
   const field = (section, key, label, type = "text", extra = {}) => (
-    <Field key={key} label={label}>
+    <Field key={key} label={label} hint={fieldHints[`${section}.${key}`]}>
       <input
         type={type}
         value={data[section][key] ?? ""}
@@ -135,7 +210,7 @@ export default function ServiceEditor() {
   );
 
   const area = (section, key, label) => (
-    <Field key={key} label={label}>
+    <Field key={key} label={label} hint={fieldHints[`${section}.${key}`]}>
       <textarea
         rows={3}
         maxLength={key === "terms" ? 10000 : 2000}
@@ -218,7 +293,7 @@ export default function ServiceEditor() {
     return (
       <div
         className="
-        [--sm-accent:#2d604b] [--sm-border:#e2e8df] max-w-[1700px] m-[auto]
+        [--sm-accent:#2d604b] [--sm-border:#e2e8df] w-full min-w-0
         [&_button:disabled]:opacity-[0.45] [&_button:disabled]:cursor-not-allowed
         [&_:focus-visible]:[outline:2px_solid_#397455] [&_:focus-visible]:[outline-offset:3px]
       "
@@ -281,7 +356,7 @@ export default function ServiceEditor() {
   return (
     <div
       className="
-      [--sm-accent:#2d604b] [--sm-border:#e2e8df] max-w-[1700px] m-[auto]
+      [--sm-accent:#2d604b] [--sm-border:#e2e8df] w-full min-w-0
       [&_button:disabled]:opacity-[0.45] [&_button:disabled]:cursor-not-allowed
       [&_:focus-visible]:[outline:2px_solid_#397455] [&_:focus-visible]:[outline-offset:3px]
       animate-fade-in
@@ -365,22 +440,20 @@ export default function ServiceEditor() {
 
       <div
         className="
-        grid grid-cols-[235px_minmax(0,_1fr)] gap-[24px] [align-items:start] mt-[24px]
-        service-tablet:grid-cols-[190px_minmax(0,_1fr)] service-mobile:flex service-mobile:flex-col
+        grid grid-cols-1 gap-[24px] [align-items:start] mt-[24px]
         service-mobile:gap-[15px]
       "
       >
-        {/* Enhanced Interactive Stepper Sidebar */}
+        {/* Horizontal listing steps */}
         <aside
           className="
           [background:#fff] [border-top:1px_solid_var(--sm-border)] [border-right:1px_solid_var(--sm-border)]
           [border-bottom:1px_solid_var(--sm-border)] [border-left:1px_solid_var(--sm-border)] rounded-[12px]
-          [padding:20px_12px] sticky top-[90px] [&_>_span]:block [&_>_span]:text-[9px]
+          min-w-0 [padding:16px_12px] [&_>_span]:block [&_>_span]:text-[9px]
           [&_>_span]:tracking-[1.5px] [&_>_span]:text-[#99a38d] [&_>_span]:[margin:0_10px_18px]
-          [&_>_button]:[border-top:0] [&_>_button]:[border-right:0] [&_>_button]:[border-bottom:0]
-          [&_>_button]:[border-left:0] [&_>_button]:[background:none] [&_>_button]:flex [&_>_button]:gap-[12px]
-          [&_>_button]:items-center [&_>_button]:p-[12px] [&_>_button]:w-[100%] [&_>_button]:text-left
-          [&_>_button]:text-[#94a08e] [&_>_button]:rounded-[8px] [&_>_button]:text-[12px] [&_button_b]:w-[27px]
+          [&_nav_>_button]:border-0 [&_nav_>_button]:[background:none] [&_nav_>_button]:flex [&_nav_>_button]:flex-col [&_nav_>_button]:gap-[8px]
+          [&_nav_>_button]:items-center [&_nav_>_button]:px-1 [&_nav_>_button]:py-3 [&_nav_>_button]:min-w-0 [&_nav_>_button]:text-center
+          [&_nav_>_button]:text-[#94a08e] [&_nav_>_button]:rounded-[8px] [&_nav_>_button]:text-[12px] [&_button_b]:w-[27px] [&_button_b]:shrink-0
           [&_button_b]:h-[27px] [&_button_b]:rounded-[50%] [&_button_b]:[border-top:1px_solid_#dde5d7]
           [&_button_b]:[border-right:1px_solid_#dde5d7] [&_button_b]:[border-bottom:1px_solid_#dde5d7]
           [&_button_b]:[border-left:1px_solid_#dde5d7] [&_button_b]:flex [&_button_b]:items-center
@@ -390,23 +463,23 @@ export default function ServiceEditor() {
           [&_button.current]:font-semibold [&_button.current_b]:[background:#3d6c50]
           [&_button.current_b]:text-[#fff] [&_button.current_b]:[border-color:#3d6c50]
           [&_button.done_b]:[background:#3d6c50] [&_button.done_b]:text-[#fff]
-          [&_button.done_b]:[border-color:#3d6c50] service-mobile:static service-mobile:flex
-          service-mobile:overflow-x-auto service-mobile:w-[100%] service-mobile:p-[8px]
-          service-mobile:[&_>_span]:hidden service-mobile:[&_small]:hidden service-mobile:[&_>_button]:shrink-0
-          service-mobile:[&_>_button]:w-[auto] service-mobile:[&_>_button]:min-w-[155px]
-          service-mobile:[&_>_button]:p-[10px]
+          [&_button.done_b]:[border-color:#3d6c50] service-mobile:w-[100%] service-mobile:p-[8px]
+          service-mobile:[&_nav_>_button]:text-[8px] service-mobile:[&_button_small]:hidden
+          service-mobile:[&_button_b]:w-[22px] service-mobile:[&_button_b]:h-[22px]
         "
         >
           <div className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-muted-foreground tracking-wider">
             <Sparkles size={14} className="text-primary" />
             <span>BUILD YOUR LISTING</span>
           </div>
+          <nav aria-label="Listing steps" className="grid w-full min-w-0 grid-cols-9 items-stretch gap-1 p-1 service-mobile:gap-0">
           {steps.map((name, i) => (
             <button
               type="button"
               key={name}
+              aria-current={step === i ? "step" : undefined}
               className={`${step === i ? "current ring-1 ring-primary/30 bg-primary/5" : ""} ${step > i ? "done opacity-80" : ""} transition-all duration-200`}
-              onClick={() => setStep(i)}
+              onClick={() => goToStep(i)}
             >
               <b
                 className={
@@ -421,7 +494,7 @@ export default function ServiceEditor() {
                   String(i + 1).padStart(2, "0")
                 )}
               </b>
-              <div>
+              <div className="min-w-0 w-full [overflow-wrap:anywhere]">
                 <span className="font-medium">{name}</span>
                 <small className="text-xs text-muted-foreground">
                   {i === step
@@ -433,29 +506,29 @@ export default function ServiceEditor() {
               </div>
             </button>
           ))}
-          <div
-            className="
-            [margin:20px_10px_0] [border-top:1px_solid_var(--sm-border)] pt-[20px] text-[#b4a174]
-            [&_p]:text-[10px]! [&_p]:leading-[1.7] service-mobile:hidden mt-4 p-4 rounded-xl bg-muted/40 border
-            border-border/50 flex flex-col gap-2
-          "
-          >
-            <ShieldCheck size={22} className="text-primary" />
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Your work stays private until approved and activated.
-            </p>
-          </div>
+          </nav>
         </aside>
 
         <form
           ref={form}
+          noValidate
           className="min-w-[0] service-mobile:w-[100%]"
+          onInput={(e) => {
+            e.target.setCustomValidity?.("");
+            setStepError("");
+          }}
           onSubmit={(e) => {
             e.preventDefault();
-            if (step < 8) setStep((v) => v + 1);
-            else persist(true);
+            if (step < 8) goToStep(step + 1);
+            else if (validateCurrentStep()) persist(true);
           }}
         >
+          {stepError && (
+            <div role="alert" className="mb-4 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
+              <AlertTriangle size={16} className="shrink-0" />
+              <span>{stepError}</span>
+            </div>
+          )}
           <Panel
             title={`${String(step + 1).padStart(2, "0")} / ${steps[step]}`}
             description={`Step ${step + 1} of 9 · ${step === 8 ? "Review everything before submitting." : "Every detail helps customers choose with confidence."}`}
@@ -472,16 +545,17 @@ export default function ServiceEditor() {
                   [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
                 "
                 >
-                  <Field label="Service Name *">
+                  <Field label="Service listing name *" hint="Enter the name customers will see for this service.">
                     <input
                       required
+                      minLength={2}
                       maxLength={200}
                       value={data.name}
                       placeholder="e.g. Royal Garden Wedding Venue"
                       onChange={(e) => change("name", e.target.value)}
                     />
                   </Field>
-                  <Field label="Service Type">
+                  <Field label="How this service is delivered" hint="Choose whether you provide an on-site service, rental, sale, digital service or a combination.">
                     <select
                       value={data.serviceType}
                       onChange={(e) => change("serviceType", e.target.value)}
@@ -493,7 +567,7 @@ export default function ServiceEditor() {
                       )}
                     </select>
                   </Field>
-                  <Field label="Category *">
+                  <Field label="Service category *" hint="Choose the category that best describes this service.">
                     <select
                       required
                       value={data.categoryId || ""}
@@ -518,14 +592,14 @@ export default function ServiceEditor() {
                   {field(
                     "location",
                     "city",
-                    "Service Location (city)",
+                    "City where the service is based",
                     "text",
                     { maxLength: 100 },
                   )}
                   {field(
                     "policies",
                     "duration",
-                    "Estimated Duration (minutes)",
+                    "Estimated service duration (minutes)",
                     "number",
                     { step: 1, max: 1000000 },
                   )}
@@ -572,7 +646,7 @@ export default function ServiceEditor() {
                         .
                       </p>
                     )}
-                  <Field label="Subcategory">
+                  <Field label="Service subcategory" hint="Choose a more specific service type within your selected category, if available.">
                     <select
                       value={data.subcategoryId || ""}
                       onChange={(e) =>
@@ -595,8 +669,8 @@ export default function ServiceEditor() {
                     </select>
                   </Field>
                   <Field
-                    label="Short Description"
-                    hint="A concise introduction, up to 500 characters."
+                    label="Short service summary"
+                    hint="Briefly explain what you offer, in up to 500 characters. Required before submission."
                   >
                     <textarea
                       maxLength={500}
@@ -608,8 +682,8 @@ export default function ServiceEditor() {
                     />
                   </Field>
                   <Field
-                    label="Detailed Description"
-                    hint="At least 20 characters are required before submission."
+                    label="Full service description"
+                    hint="Describe what is included, your experience and what customers can expect. At least 20 characters are required before submission."
                   >
                     <textarea
                       maxLength={10000}
@@ -664,7 +738,7 @@ export default function ServiceEditor() {
                             </span>
                           </label>
                         ) : (
-                          <Field key={f.key} label={f.label}>
+                          <Field key={f.key} label={f.label} hint={f.type === "select" ? `Choose the ${f.label.toLowerCase()} for this service.` : `Enter the ${f.label.toLowerCase()} for this service.`}>
                             {f.type === "select" ? (
                               <select
                                 value={data.attributes[f.key] || ""}
@@ -672,7 +746,7 @@ export default function ServiceEditor() {
                                   nested("attributes", f.key, e.target.value)
                                 }
                               >
-                                <option value="">Select option</option>
+                                <option value="">Choose {f.label.toLowerCase()}</option>
                                 {f.options.map((o) => (
                                   <option key={o}>{o}</option>
                                 ))}
@@ -730,18 +804,18 @@ export default function ServiceEditor() {
                   "
                   >
                     {[
-                      ["basePrice", "Base Price"],
-                      ["unitPrice", "Unit Price"],
-                      ["minimumPrice", "Minimum Price (optional)"],
-                      ["maximumPrice", "Maximum Price (optional)"],
-                      ["minimumQuantity", "Minimum Quantity"],
-                      ["maximumQuantity", "Maximum Quantity"],
+                      ["basePrice", "Base booking price (INR)"],
+                      ["unitPrice", "Price per pricing unit (INR)"],
+                      ["minimumPrice", "Minimum booking price (INR, optional)"],
+                      ["maximumPrice", "Maximum booking price (INR, optional)"],
+                      ["minimumQuantity", "Minimum bookable quantity (pricing units)"],
+                      ["maximumQuantity", "Maximum bookable quantity (pricing units)"],
                       ["discount", "Discount (%)"],
                       ["taxRate", "Tax (%)"],
-                      ["specialPrice", "Special Price (optional)"],
-                      ["weekendPrice", "Weekend Price (optional)"],
-                      ["seasonalPrice", "Seasonal Price (optional)"],
-                      ["additionalCharges", "Additional Charges"],
+                      ["specialPrice", "Special booking price (INR, optional)"],
+                      ["weekendPrice", "Weekend booking price (INR, optional)"],
+                      ["seasonalPrice", "Seasonal booking price (INR, optional)"],
+                      ["additionalCharges", "Additional booking charges (INR)"],
                     ].map(([key, label]) =>
                       field("pricing", key, label, "number", {
                         max: ["discount", "taxRate"].includes(key)
@@ -749,7 +823,7 @@ export default function ServiceEditor() {
                           : 100000000,
                       }),
                     )}
-                    <Field label="Pricing Unit">
+                    <Field label="Unit used to charge customers" hint="Choose what the unit price applies to, such as each person, hour or event.">
                       <select
                         value={data.pricing.unit}
                         onChange={(e) =>
@@ -767,7 +841,7 @@ export default function ServiceEditor() {
                         ))}
                       </select>
                     </Field>
-                    <Field label="Pricing Type">
+                    <Field label="Booking pricing method" hint="Choose fixed pricing, a per-unit rate or a custom quote. Leave the default to match your pricing unit.">
                       <select
                         value={data.pricing.type || ""}
                         onChange={(e) =>
@@ -909,11 +983,11 @@ export default function ServiceEditor() {
                         "
                         >
                           {[
-                            ["name", "Item Name", "text"],
-                            ["description", "Description", "text"],
-                            ["quantity", "Quantity", "number"],
-                            ["unit", "Unit", "text"],
-                            ["price", "Price", "number"],
+                            ["name", "Service item name *", "text"],
+                            ["description", "What this item includes", "text"],
+                            ["quantity", "Number of units for this item", "number"],
+                            ["unit", "Item unit (e.g. person, hour, piece)", "text"],
+                            ["price", "Item price (INR)", "number"],
                           ].map(([k, l, t]) => (
                             <Field key={k} label={l}>
                               <input
@@ -1070,7 +1144,7 @@ export default function ServiceEditor() {
                 "
                 >
                   {!!metadata.data.locations?.length && (
-                    <Field label="Use a saved vendor location">
+                    <Field label="Copy address from a saved business location" hint="Choose a saved location to fill in the address fields below.">
                       <select
                         value=""
                         onChange={(e) => {
@@ -1104,21 +1178,21 @@ export default function ServiceEditor() {
                     </Field>
                   )}
                   {[
-                    ["address", "Address"],
-                    ["city", "City"],
-                    ["state", "State"],
+                    ["address", "Service street address"],
+                    ["city", "Service city"],
+                    ["state", "State or province"],
                     ["country", "Country"],
-                    ["zip", "ZIP Code"],
+                    ["zip", "PIN code / postal code"],
                   ].map(([k, l]) => field("location", k, l))}
-                  {field("location", "latitude", "Latitude", "number", {
+                  {field("location", "latitude", "Map latitude (optional)", "number", {
                     min: -90,
                     max: 90,
                   })}
-                  {field("location", "longitude", "Longitude", "number", {
+                  {field("location", "longitude", "Map longitude (optional)", "number", {
                     min: -180,
                     max: 180,
                   })}
-                  <Field label="Assigned business locations">
+                  <Field label="Business locations offering this service" hint="Select all applicable locations. Hold Ctrl (Windows) or Command (Mac) to select more than one.">
                     <select
                       multiple
                       value={data.location.vendorLocationIds || []}
@@ -1137,8 +1211,9 @@ export default function ServiceEditor() {
                       ))}
                     </select>
                   </Field>
-                  <Field label="Cities covered (comma separated)">
+                  <Field label="Cities where you provide this service" hint="Separate each city with a comma, such as Jaipur, Ajmer, Udaipur.">
                     <input
+                      placeholder="e.g. Jaipur, Ajmer, Udaipur"
                       defaultValue={(data.location.cities || []).join(", ")}
                       onBlur={(e) =>
                         nested(
@@ -1152,8 +1227,9 @@ export default function ServiceEditor() {
                       }
                     />
                   </Field>
-                  <Field label="Postal codes covered (comma separated)">
+                  <Field label="PIN codes / postal codes you serve" hint="Separate each postal code with a comma, such as 302001, 302002.">
                     <input
+                      placeholder="e.g. 302001, 302002"
                       defaultValue={(data.location.postalCodes || []).join(
                         ", ",
                       )}
@@ -1179,18 +1255,18 @@ export default function ServiceEditor() {
                   {field(
                     "location",
                     "travelCharge",
-                    "Travel charge",
+                    "Travel charge for this service area (INR)",
                     "number",
                     { min: 0, max: 10000000 },
                   )}
                   {field(
                     "location",
                     "minimumOrderValue",
-                    "Minimum booking value",
+                    "Minimum booking amount for this area (INR)",
                     "number",
                     { min: 0, max: 100000000 },
                   )}
-                  <Field label="Coverage active">
+                  <Field label="Enable service in this coverage area" hint="Select this to mark your service coverage as active.">
                     <input
                       type="checkbox"
                       checked={data.location.active !== false}
@@ -1199,7 +1275,7 @@ export default function ServiceEditor() {
                       }
                     />
                   </Field>
-                  <Field label="Service availability location">
+                  <Field label="Where the service takes place" hint="Choose your business location, the customer’s location, both, or a service area.">
                     <select
                       value={data.location.mode}
                       onChange={(e) =>
@@ -1221,7 +1297,7 @@ export default function ServiceEditor() {
               {step === 6 && (
                 <>
                   <p className="text-sm font-medium mb-3">
-                    Available working days
+                    Days of the week you accept bookings
                   </p>
                   <div
                     className="
@@ -1274,20 +1350,20 @@ export default function ServiceEditor() {
                     {field(
                       "availability",
                       "start",
-                      "Working hours start",
+                      "Daily service start time",
                       "time",
                     )}
-                    {field("availability", "end", "Working hours end", "time")}
+                    {field("availability", "end", "Daily service end time", "time")}
                     {field(
                       "availability",
                       "advanceDays",
-                      "Advance booking period (days)",
+                      "How far ahead customers can book (days)",
                       "number",
                     )}
                     {field(
                       "availability",
                       "noticeHours",
-                      "Minimum notice (hours)",
+                      "Minimum notice before a booking (hours)",
                       "number",
                     )}
                   </div>
@@ -1328,11 +1404,11 @@ export default function ServiceEditor() {
                 "
                 >
                   {[
-                    ["cancellation", "Cancellation Policy"],
-                    ["refund", "Refund Policy"],
-                    ["rescheduling", "Rescheduling Policy"],
-                    ["additionalCharges", "Additional Charges"],
-                    ["terms", "Terms & Conditions"],
+                    ["cancellation", "Booking cancellation policy"],
+                    ["refund", "Customer refund policy"],
+                    ["rescheduling", "Booking date change policy"],
+                    ["additionalCharges", "Extra fee conditions"],
+                    ["terms", "Service terms and conditions"],
                   ].map(([k, l]) => area("policies", k, l))}
                   <label
                     className="
@@ -1354,10 +1430,10 @@ export default function ServiceEditor() {
                     </span>
                   </label>
                   {[
-                    ["advancePercentage", "Advance Percentage"],
-                    ["travelCharges", "Travel Charges"],
-                    ["setupTime", "Setup Time (minutes)"],
-                    ["duration", "Service Duration (minutes)"],
+                    ["advancePercentage", "Advance payment required (%)"],
+                    ["travelCharges", "Travel fee in booking policy (INR)"],
+                    ["setupTime", "Setup time before the service (minutes)"],
+                    ["duration", "Total service duration (minutes)"],
                   ].map(([k, l]) =>
                     field("policies", k, l, "number", {
                       max: k === "advancePercentage" ? 100 : 1000000,
@@ -1376,10 +1452,10 @@ export default function ServiceEditor() {
                   [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
                 "
                 >
-                  {field("seo", "title", "SEO Title")}
-                  {area("seo", "description", "SEO Description")}
-                  {field("seo", "keywords", "SEO Keywords")}
-                  {field("seo", "slug", "URL Slug")}
+                  {field("seo", "title", "Search engine listing title")}
+                  {area("seo", "description", "Search engine listing description")}
+                  {field("seo", "keywords", "Search keywords (comma separated)")}
+                  {field("seo", "slug", "Service page URL name (slug)")}
                   <p className="text-[#8f9c84] text-[11px] text-xs text-muted-foreground italic">
                     Use lowercase letters, numbers and hyphens. Every service
                     URL must be globally unique.
@@ -1456,7 +1532,7 @@ export default function ServiceEditor() {
                   flex items-center gap-1
                 "
                 disabled={busy || step === 0}
-                onClick={() => setStep((v) => v - 1)}
+                onClick={() => goToStep(step - 1)}
               >
                 <ArrowLeft size={15} />
                 Back
@@ -1494,7 +1570,7 @@ export default function ServiceEditor() {
                 [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
               "
                   disabled={busy}
-                  onClick={() => setStep(8)}
+                  onClick={() => goToStep(8)}
                 >
                   Preview
                 </button>

@@ -16,13 +16,10 @@ import {
   Plus,
   ReceiptText,
   RefreshCw,
-  ShieldCheck,
-  Sparkles,
   Star,
   Wallet,
 } from "lucide-react";
 
-import { QuotationOverview } from "../../quotations/QuotationPages";
 import { useAuth } from "../../../context/AuthContext";
 import { useVendorData } from "../components/WorkspaceUI";
 import { date, money } from "../services/workspace.api";
@@ -52,6 +49,13 @@ const metrics = [
     icon: Clock3,
     path: "services",
     description: "Services with our review team",
+  },
+  {
+    key: "totalBookings",
+    label: "Total bookings",
+    icon: CalendarDays,
+    path: "bookings/all",
+    description: "All bookings across every status",
   },
   {
     key: "upcomingBookings",
@@ -725,9 +729,6 @@ export default function VendorDashboard({
 
   const vendorName = user?.firstName || "Partner";
 
-  const businessName =
-    user?.vendor?.businessName || "";
-
   const totalChartValue =
     metric === "revenue"
       ? money(
@@ -826,172 +827,6 @@ export default function VendorDashboard({
       </div>
 
       {/* ======================================
-          WELCOME BANNER
-      ====================================== */}
-
-      {!analyticsOnly && (
-        <section
-          className="
-            relative flex min-h-[215px]
-            justify-between overflow-hidden
-            rounded-xl border border-[#dfe8d5]
-            bg-[#e9f0e1] px-5 py-7
-            sm:px-8 sm:py-8
-          "
-        >
-          <div className="relative z-10 max-w-[470px]">
-
-            <span
-              className="
-                inline-flex items-center gap-2
-                text-[9px] font-medium
-                tracking-[1.6px] text-[#7b9168]
-              "
-            >
-              <Sparkles size={15} />
-              EVERY DETAIL MAKES A DIFFERENCE
-            </span>
-
-            <h2
-              className="
-                mt-4 font-serif
-                text-[27px] font-normal
-                leading-[1.2] tracking-[-1px]
-                text-[#4c6b43]
-                sm:text-[34px]
-              "
-            >
-              Your expertise.
-              <span className="block italic text-[#8e9f7f]">
-                Their unforgettable day.
-              </span>
-            </h2>
-
-            <p
-              className="
-                mt-4 max-w-[330px]
-                text-[11px] leading-[1.9]
-                text-[#92a283]
-              "
-            >
-              Keep your services current, respond to
-              enquiries, and make room for the next
-              celebration.
-            </p>
-
-            <Link
-              to="/vendor/business/profile"
-              className="
-                mt-4 inline-flex items-center gap-2
-                border-b border-[#a7b993] pb-1
-                text-[11px] font-medium
-                text-[#6a8454] no-underline
-                transition-colors
-                hover:text-[#245c49]
-              "
-            >
-              Refine your business profile
-              <ArrowRight size={15} />
-            </Link>
-          </div>
-
-          {/* Decorative Arch */}
-          <div
-            aria-hidden="true"
-            className="
-              pointer-events-none absolute
-              bottom-[-5px] right-[9%]
-              hidden h-[235px] w-[260px]
-              items-end justify-center
-              lg:flex
-            "
-          >
-            <div
-              className="
-                flex h-[209px] w-[148px]
-                flex-col items-center
-                rounded-t-[85px]
-                border border-[#bbcca8]
-                bg-gradient-to-br
-                from-[#dfe9d4] to-[#cdddbb]
-                pt-[35px]
-                shadow-[0_0_0_12px_#e0e9d5,0_0_0_13px_#c7d6b5,0_0_0_26px_#e5eddc]
-              "
-            >
-              <span
-                className="
-                  pr-2 font-serif text-[51px]
-                  tracking-[-11px] text-[#9eb18a]
-                "
-              >
-                mn
-              </span>
-
-              <span className="my-3 h-px w-[35px] bg-[#adbf98]" />
-
-              <small
-                className="
-                  text-center text-[7px]
-                  leading-5 tracking-[2.8px]
-                  text-[#a0b28c]
-                "
-              >
-                BEAUTIFULLY
-                <span className="block">CONNECTED</span>
-              </small>
-            </div>
-
-            <span
-              className="
-                absolute right-0 top-0
-                font-serif text-[48px]
-                text-[#b4c59e]
-              "
-            >
-              ✧
-            </span>
-          </div>
-
-          {/* Business Name */}
-          {businessName && (
-            <div
-              className="
-                absolute right-5 top-5
-                hidden items-center gap-2
-                text-[#8ea578]
-                xl:flex
-              "
-            >
-              <ShieldCheck
-                size={18}
-                className="shrink-0"
-              />
-
-              <div className="max-w-[170px]">
-                <span
-                  className="
-                    block text-[8px]
-                    tracking-[1.4px]
-                  "
-                >
-                  PARTNER BUSINESS
-                </span>
-
-                <strong
-                  className="
-                    mt-1 block truncate
-                    text-[10px] font-semibold
-                  "
-                >
-                  {businessName}
-                </strong>
-              </div>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ======================================
           KPI CARDS
       ====================================== */}
 
@@ -999,8 +834,7 @@ export default function VendorDashboard({
         className="
           grid grid-cols-1 gap-[13px]
           sm:grid-cols-2
-          lg:grid-cols-3
-          2xl:grid-cols-5
+          lg:grid-cols-4
         "
       >
         {metrics.map(
@@ -1098,14 +932,6 @@ export default function VendorDashboard({
           }
         )}
       </div>
-
-      {/* ======================================
-          QUOTATION OVERVIEW
-      ====================================== */}
-
-      {!analyticsOnly && (
-        <QuotationOverview role="Vendor" />
-      )}
 
       {/* ======================================
           ANALYTICS + UPCOMING CELEBRATIONS

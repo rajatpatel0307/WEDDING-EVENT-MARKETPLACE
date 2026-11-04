@@ -132,7 +132,7 @@ export default function VendorCalendarPage({ filter = "" }) {
           flex justify-end gap-[18px] flex-wrap [padding:0_22px_20px] [&_span]:flex [&_span]:items-center
           [&_span]:gap-[6px] [&_span]:text-[8px] [&_span]:text-[#a5b592] [&_i]:w-[6px] [&_i]:h-[6px]
           [&_i]:rounded-[50%] [&_.available]:[background:#95b773] [&_.blocked]:[background:#d49c85]
-          [&_.booked]:[background:#6ca895] [&_.pending]:[background:#d1bd82] vendor-mobile:justify-start
+          [&_.booked]:[background:#dc8b8b] [&_.pending]:[background:#d1bd82] vendor-mobile:justify-start
           vendor-mobile:[padding:0_17px_15px] vendor-mobile:gap-[12px] vendor-phone:[&_span]:text-[7px]
         ">
           <span>
@@ -157,10 +157,10 @@ export default function VendorCalendarPage({ filter = "" }) {
         ) : calendar.loading ? (
           <Loading />
         ) : (
-          <div className="vw-calendar">
+          <div className="vw-calendar border-l border-black">
             <div className="
-              grid grid-cols-[repeat(7,_minmax(0,_1fr))] [border-top:1px_solid_#e6efdb]
-              [border-bottom:1px_solid_#e6efdb] [background:#f9fcf4] [&_>_strong]:[padding:13px_5px]
+              grid grid-cols-[repeat(7,_minmax(0,_1fr))] [border-top:1px_solid_#000]
+              [border-bottom:1px_solid_#000] [background:#f9fcf4] [&_>_strong]:[padding:13px_5px] [&_>_strong]:border-r [&_>_strong]:border-black
               [&_>_strong]:text-[#a0b38a] [&_>_strong]:text-center [&_>_strong]:text-[9px] [&_>_strong]:font-medium
             ">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
@@ -170,7 +170,7 @@ export default function VendorCalendarPage({ filter = "" }) {
             <div className="grid grid-cols-[repeat(7,_minmax(0,_1fr))]">
               {Array.from({ length: offset }, (_, i) => (
                 <div key={`blank-${i}`} className="
-                  min-h-[115px] [border-top:0] [border-right:1px_solid_#edf2e4] [border-bottom:1px_solid_#edf2e4]
+                  min-h-[115px] [border-top:0] [border-right:1px_solid_#000] [border-bottom:1px_solid_#000]
                   [border-left:0] [background:#fff] [padding:10px_8px] min-w-[0] text-left [vertical-align:top]
                   vendor-mobile:min-h-[85px] vendor-mobile:[padding:7px_3px] vendor-phone:min-h-[75px]
                 " />
@@ -180,13 +180,15 @@ export default function VendorCalendarPage({ filter = "" }) {
                   slots = calendar.data.slots.filter((s) => s.date === day),
                   bookings = calendar.data.bookings.filter(
                     (b) => b.date === day,
-                  );
+                  ),
+                  isBooked = bookings.some((booking) => booking.status !== "Pending") ||
+                    slots.some((slot) => slot.status === "Booked");
                 return (
                   <button
                     key={day}
-                    className={`min-h-[115px] [border-top:0] [border-right:1px_solid_#edf2e4] [border-bottom:1px_solid_#edf2e4]
-                      [border-left:0] [background:#fff] [padding:10px_8px] min-w-[0] text-left
-                      [vertical-align:top] flex flex-col gap-[8px] [&:hover]:[background:#f8fcf1]
+                    className={`min-h-[115px] [border-top:0] [border-right:1px_solid_#000] [border-bottom:1px_solid_#000]
+                      [border-left:0] ${isBooked ? "[background:#fde8e8] [&:hover]:[background:#fbd5d5]" : "[background:#edf7e9] [&:hover]:[background:#e1f0db]"} [padding:10px_8px] min-w-[0] text-left
+                      [vertical-align:top] flex flex-col gap-[8px]
                       [&_>_strong]:text-[11px] [&_>_strong]:text-[#a1b28d] [&_>_strong]:w-[23px]
                       [&_>_strong]:h-[23px] [&_>_strong]:grid [&_>_strong]:place-items-center
                       [&_>_strong]:font-normal [&.today_>_strong]:[background:#99b57b]
@@ -206,7 +208,7 @@ export default function VendorCalendarPage({ filter = "" }) {
                             [&.available]:[background:#edf6e3] [&.available]:text-[#94b16e]
                             [&.blocked]:[background:#fff2e9] [&.blocked]:text-[#c99c81]
                             [&.pending]:[background:#fcf6e7] [&.pending]:text-[#bba66c]
-                            [&.booked]:[background:#eaf5ef] [&.booked]:text-[#81aa93]
+                            [&.booked]:[background:#fbd5d5] [&.booked]:text-[#a34646]
                             vendor-mobile:text-[6px] vendor-mobile:p-[2px] ${slot.status.toLowerCase()}`}
                         >
                           {slot.status}
@@ -220,7 +222,7 @@ export default function VendorCalendarPage({ filter = "" }) {
                             [&.available]:[background:#edf6e3] [&.available]:text-[#94b16e]
                             [&.blocked]:[background:#fff2e9] [&.blocked]:text-[#c99c81]
                             [&.pending]:[background:#fcf6e7] [&.pending]:text-[#bba66c]
-                            [&.booked]:[background:#eaf5ef] [&.booked]:text-[#81aa93]
+                            [&.booked]:[background:#fbd5d5] [&.booked]:text-[#a34646]
                             vendor-mobile:text-[6px] vendor-mobile:p-[2px] ${booking.status === "Pending" ? "pending" : "booked"}`}
                         >
                           {booking.status === "Pending" ? "Request" : "Booked"}{" "}

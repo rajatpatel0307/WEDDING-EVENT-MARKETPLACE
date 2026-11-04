@@ -227,12 +227,6 @@ export default function VendorOnboardingPage() {
       <div className="vo-container [max-width:1280px] m-auto [padding:46px_40px_24px] max-[1100px]:[padding:32px_26px_22px] max-[480px]:[padding:26px_15px_18px]">
         <header className="vo-header flex items-center justify-between [gap:24px] [margin-bottom:28px] [&_h1]:[font-family:Georgia,_serif] [&_h1]:font-normal [&_h1]:[font-size:clamp(30px,_3.3vw,_43px)] [&_h1]:[letter-spacing:-1.6px] [&_h1]:[line-height:1.2] [&_h1]:[margin:12px_0] [&_h1]:[color:#413036] [&_h1_>_span]:[color:#ad7d87] [&_p]:m-0 [&_p]:[color:#8c7c80] [&_p]:[font-size:12px] max-[800px]:items-start max-[480px]:[gap:10px] max-[480px]:[margin-bottom:22px] max-[480px]:[&_h1]:[font-size:30px] max-[480px]:[&_h1]:[letter-spacing:-1px] max-[480px]:[&_p]:[font-size:11px] max-[480px]:[&_p]:[line-height:1.8]">
           <div>
-            <span className="vo-eyebrow flex items-center [gap:9px] [font-size:9px] font-semibold [letter-spacing:2px] [color:#8c414e] [&_>_span]:[width:6px] [&_>_span]:[height:6px] [&_>_span]:[border-radius:50%] [&_>_span]:[background:#b88790] max-[480px]:[font-size:8px] max-[480px]:[letter-spacing:1.4px]">
-              <span /> YOUR PARTNER WORKSPACE
-            </span>
-            <h1>
-              Verification<span>.</span>
-            </h1>
             <p>
               Welcome, {user.firstName}. Let's get your business ready for
               beautiful celebrations.
