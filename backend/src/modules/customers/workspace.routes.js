@@ -1,3 +1,5 @@
+import * as shopping from "../shopping/shopping.service.js";
+import { bookingCheckout } from "../shopping/booking-checkout.js";
 import * as locations from "../addresses/locations.service.js";
 import { z } from "zod";
 import { Router, json } from "express";
@@ -62,6 +64,18 @@ export function createCustomerRouter({
     r[method](path, async (req, res) =>
       res.json({ success: true, ...(await fn(req)) }),
     );
+  mut("post", "/booking-checkout/preview", q => bookingCheckout(q.body,q.ctx));
+  mut("post", "/booking-checkout", q => bookingCheckout(q.body,q.ctx,true));
+  get("/cart", q => shopping.cart(q.ctx));
+  mut("put", "/cart/items", q => shopping.setCartItem(q.body,q.ctx));
+  mut("delete", "/cart/items/:id", q => shopping.removeCartItem(q.params.id,q.ctx));
+  mut("post", "/cart/preview", q => shopping.purchasePreview(q.body,q.ctx));
+  mut("post", "/orders", q => shopping.purchase(q.body,q.ctx));
+  get("/orders", q => shopping.orders(q.ctx));
+  get("/orders/:id", q => shopping.orderDetails(q.params.id,q.ctx));
+  mut("post", "/orders/:id/payment-order", q => shopping.paymentOrder(q.params.id,q.ctx));
+  mut("post", "/orders/:id/payment-refresh", q => shopping.refreshPurchase(q.params.id,q.ctx));
+  mut("post", "/order-payments/verify", q => shopping.verifyPurchase(q.body,q.ctx));
   get("/communications/counts", (q) => communicationCounts(q.ctx));
   get("/dashboard", (q) => w.dashboard(q.ctx));
   get("/catalog", (q) => d.catalog(q.ctx));

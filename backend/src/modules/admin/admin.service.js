@@ -17,6 +17,19 @@ export const validId = (r, id) =>
   ["CategoryId", "SubCategoryId", "AuditLogId", "WishlistId"].includes(r.id)
     ? z.coerce.number().int().positive().parse(id)
     : z.guid().parse(id);
+export async function categoryDetails(id, ctx) {
+  requireRole(ctx, "ADMIN");
+  const category = getResource("categories");
+  id = validId(category, id);
+  const [row] = await repo.select(
+    `SELECT t.CategoryId AS id,${Object.entries(category.fields)
+      .map(([name, column]) => `${column} AS [${name}]`)
+      .join(",")},t.CreatedAt AS createdAt,t.UpdatedAt AS updatedAt FROM dbo.Categories t WHERE t.CategoryId=:id`,
+    { id },
+  );
+  if (!row) error("Category not found.", 404);
+  return row;
+}
 export async function reviewVendor(
   id,
   input,
@@ -224,6 +237,7 @@ export async function save(name, id, input, ctx) {
         .map(([key, column]) => [column, body[key]]),
     );
     if (name === "categories") {
+      if (body.sellEnabled !== undefined) values.AllowAddToCart = body.sellEnabled ? 1 : 0;
       if (body.removeImage) values.ImageUrl = null;
       else if (body.imageBase64) {
         const asset = await uploadAsset(body.imageBase64, true, {

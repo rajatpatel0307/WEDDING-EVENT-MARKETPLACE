@@ -36,6 +36,8 @@ export const recordInput = z
     name: z.string().trim().min(2).max(150),
     code: z.string().trim().min(2).max(50).optional(),
     categoryId: z.coerce.number().int().positive().optional(),
+    sellEnabled: z.boolean().optional(),
+    bookEnabled: z.boolean().optional(),
     sortOrder: z.coerce.number().int().min(0).max(100000).optional(),
     icon: z.string().trim().max(100).optional(),
     imageBase64: z.string().min(1).max(7 * 1024 * 1024).optional(),

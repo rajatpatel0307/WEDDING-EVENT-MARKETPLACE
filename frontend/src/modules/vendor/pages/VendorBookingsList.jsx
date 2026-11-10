@@ -74,8 +74,8 @@ export default function VendorBookingsList({ filter }) {
               <td><Link className="block text-[#2f6559] font-semibold whitespace-nowrap" to={`/vendor/bookings/${row.id}`}>{row.number}</Link><small className="block mt-[5px] max-w-[125px] truncate font-mono text-[10px] text-[#8b9b91]" title={row.id}>{row.id}</small></td>
               <td><div className="flex items-center gap-2.5 min-w-[150px]"><span className="grid place-items-center size-10 shrink-0 rounded-[10px] bg-[#e9f0e8] text-[#6a8c73] text-xs font-semibold" aria-hidden="true">{(row.customer || "?").trim().split(/\s+/).slice(0, 2).map((name) => name[0]).join("")}</span><span>{row.customer || "—"}</span></div></td>
               <td><strong>{row.event || "—"}</strong></td>
-              <td className="min-w-40 max-w-60 leading-[1.7]">{row.services || "—"}</td>
-              <td><span className="flex items-center gap-[7px] whitespace-nowrap [&_svg]:text-[#879c8e]"><CalendarDays size={14} aria-hidden="true" />{date(row.eventDate)}</span></td>
+              <td className="min-w-40 max-w-60 leading-[1.7]">{row.services || "—"}{row.bookingQuantity!=null && <small className="block">Booking quantity: {row.bookingQuantity}</small>}</td>
+              <td><span className="flex items-center gap-[7px] whitespace-nowrap [&_svg]:text-[#879c8e]"><CalendarDays size={14} aria-hidden="true" />{row.eventDate ? date(row.eventDate) : "Quantity reservation"} {row.bookingTime}</span></td>
               <td className="whitespace-nowrap font-semibold">{money(row.amount)}</td>
               <td><BookingStatus value={row.paymentStatus} /></td>
               <td><BookingStatus value={row.status} /></td>

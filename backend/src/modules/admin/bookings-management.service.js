@@ -78,7 +78,7 @@ export const listInput = z
       (!q.bookedFrom || !q.bookedTo || q.bookedFrom <= q.bookedTo),
     { message: "Choose valid amount and date ranges." },
   );
-const source = `FROM dbo.Booking b JOIN dbo.Users u ON u.UserId=b.CustomerId JOIN dbo.Vendors v ON v.VendorId=b.VendorId JOIN dbo.Events e ON e.EventId=b.EventId`;
+const source = `FROM dbo.Booking b JOIN dbo.Users u ON u.UserId=b.CustomerId JOIN dbo.Vendors v ON v.VendorId=b.VendorId LEFT JOIN dbo.Events e ON e.EventId=b.EventId`;
 const like = (value) => `%${value.replace(/[\[\]%_]/g, (x) => `[${x}]`)}%`;
 export function filters(q) {
   const p = {
@@ -287,10 +287,11 @@ export async function detail(id, ctx) {
     customer,
     vendor,
     event: {
+      ...JSON.parse(row.EventSnapshotJson || "{}"),
       ...event,
       date: row.BookingDate,
-      startTime: row.StartTime ?? event.startTime,
-      endTime: row.EndTime ?? event.endTime,
+      startTime: row.StartTime ?? event?.startTime,
+      endTime: row.EndTime ?? event?.endTime,
     },
     quotation,
     items: bookedItems,
@@ -370,7 +371,7 @@ export async function changeStatus(id, next, input, ctx) {
       row.BookingDate instanceof Date
         ? row.BookingDate.toISOString().slice(0, 10)
         : String(row.BookingDate).slice(0, 10);
-    if (["InProgress", "Completed"].includes(next) && day > today)
+    if (["InProgress", "Completed"].includes(next) && row.BookingDate && day > today)
       fail("The event date has not arrived.");
     if (
       next === "Completed" &&

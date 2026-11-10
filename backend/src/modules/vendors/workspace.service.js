@@ -164,7 +164,7 @@ export async function records(section, input, ctx) {
     params,
   );
   let fields = c.fields;
-  if (section === "bookings") fields += ",t.EventId AS eventId";
+  if (section === "bookings") fields += ",t.EventId AS eventId,CONVERT(char(5),t.StartTime,108) AS bookingTime,(SELECT SUM(r.Quantity) FROM dbo.BookingReservations r WHERE r.BookingId=t.BookingId) AS bookingQuantity";
   if (section === "services")
     fields +=
       `,t.UpdatedAt AS updatedAt,(SELECT AVG(CAST(r.Rating AS decimal(6,2))) FROM dbo.Reviews r WHERE ${publicPredicate()} AND r.VendorId=:id AND r.ServiceId=t.ServiceId) AS rating`;

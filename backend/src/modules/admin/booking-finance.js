@@ -190,7 +190,7 @@ export function financialSummary(row, ledger, now = new Date()) {
   const cutoffPassed =
     policy &&
     policy.minimumNoticeHours > 0 &&
-    notice < policy.minimumNoticeHours;
+    (!Number.isFinite(notice) || notice < policy.minimumNoticeHours);
   const charges = policy
     ? Math.round(
         (minor(row.TotalAmount) *
@@ -287,8 +287,8 @@ export async function capturePolicy(row, tx) {
     } catch {}
     return {
       service: s.ServiceName,
-      cancellation: d.policies?.cancellation || "",
-      refund: d.policies?.refund || "",
+      cancellation: d.offer?.book?.cancellation || d.policies?.cancellation || "",
+      refund: d.offer?.book?.refund || d.policies?.refund || "",
       policy: d.policies?.bookingRefundPolicy || null,
     };
   });

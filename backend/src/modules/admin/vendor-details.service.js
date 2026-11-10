@@ -161,7 +161,7 @@ const collections = {
     order: "t.AvailableDate DESC,t.AvailabilityId DESC",
   },
   bookings: {
-    from: "dbo.Booking t JOIN dbo.Users u ON u.UserId=t.CustomerId JOIN dbo.Events e ON e.EventId=t.EventId",
+    from: "dbo.Booking t JOIN dbo.Users u ON u.UserId=t.CustomerId LEFT JOIN dbo.Events e ON e.EventId=t.EventId",
     where: "t.VendorId=:id",
     fields:
       "t.BookingId AS id,t.BookingNumber AS number,CONCAT(u.FirstName,' ',u.LastName) AS customer,t.CustomerId AS customerId,e.EventName AS event,t.BookingDate AS eventDate,(SELECT STRING_AGG(CONVERT(nvarchar(max),bi.ItemName),', ') FROM dbo.BookingItems bi WHERE bi.BookingId=t.BookingId) AS services,t.TotalAmount AS amount,t.PaidAmount AS paid,t.RemainingAmount AS remaining,t.PaymentStatus AS paymentStatus,t.BookingStatus AS status,t.CustomerNotes AS customerNotes,t.VendorNotes AS vendorNotes,t.CreatedAt AS createdAt",

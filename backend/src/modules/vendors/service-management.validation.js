@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { offerSchema } from "../shopping/commerce.policy.js";
 import { amount } from "./workspace.validation.js";
 const text = (max = 2000) => z.string().trim().max(max).default("");
 const number = z.number().finite().nonnegative().max(1000000);
@@ -164,6 +165,7 @@ export const serviceSchema = z
     subcategoryId: z.number().int().positive().nullable().default(null),
     shortDescription: text(500),
     description: text(10000),
+    offer: offerSchema.nullable().optional(),
     serviceType: z
       .enum(["On site", "Rental", "Sale", "Digital", "Hybrid"])
       .default("On site"),
@@ -194,7 +196,7 @@ export function validateServiceSubmission(document, imageCount) {
     document.description.length < 20 ||
     !document.location.city ||
     !document.shortDescription ||
-    !document.policies.cancellation
+    (!document.offer && !document.policies.cancellation)
   )
     throw Object.assign(
       new Error(

@@ -1,3 +1,4 @@
+import { removeProduct, validateOffer, syncProduct, currentOffer } from "../shopping/configuration.js";
 import { assertAccess, vendorStatus } from "./access.service.js";
 import { publicPredicate } from '../reviews/reviews.policy.js';
 import { approvalHistory } from "../admin/service-approval.service.js";
@@ -66,7 +67,7 @@ export async function metadata(ctx) {
   const { approved, user } = serviceScope(ctx);
   const access = await vendorStatus(ctx);
   const categories = await repo.select(
-    "SELECT c.CategoryId AS id,c.CategoryName AS name,c.CategoryCode AS code FROM dbo.Categories c JOIN dbo.VendorCategories vc ON vc.CategoryId=c.CategoryId AND vc.VendorId=:id WHERE c.IsActive=1 ORDER BY c.SortOrder,c.CategoryId",
+    "SELECT c.CategoryId AS id,c.CategoryName AS name,c.CategoryCode AS code,c.AllowBuyOnline AS sellEnabled,c.AllowBooking AS bookEnabled FROM dbo.Categories c JOIN dbo.VendorCategories vc ON vc.CategoryId=c.CategoryId AND vc.VendorId=:id WHERE c.IsActive=1 ORDER BY c.SortOrder,c.CategoryId",
     { id: user.vendor.id },
   );
   const subcategories = await repo.select(
@@ -195,6 +196,7 @@ export async function details(serviceId, ctx) {
   const access = await vendorStatus(ctx);
   return {
     ...parse(row.DetailsJson),
+    offer: await currentOffer(serviceId, parse(row.DetailsJson)),
     pricing: {
       type: row.PricingType,
       minimumPrice: row.MinimumPrice == null ? null : Number(row.MinimumPrice),
@@ -296,6 +298,7 @@ export async function saveService(serviceId, input, ctx) {
       tx,
     );
     if (!category) fail("Choose an active category.");
+    await validateOffer(body.offer, body.categoryId, tx);
     const attributes = validateAttributes(
       category.name,
       body.attributes,
@@ -324,7 +327,7 @@ export async function saveService(serviceId, input, ctx) {
     );
     if (duplicate) fail("This URL slug is already used. Choose another.", 409);
     const { expectedUpdatedAt, items, ...document } = body;
-    const price = calculatePrice(body.pricing);
+    const price = body.offer ? body.offer.book?.price ?? body.offer.sell.price : calculatePrice(body.pricing);
     // All customer-visible edits create a new review cycle. Live content is withdrawn atomically.
     const status =
       old?.ApprovalStatus === "Approved"
@@ -372,6 +375,7 @@ export async function saveService(serviceId, input, ctx) {
         { ...values, ServiceId: next, VendorId: id },
         tx,
       );
+    await syncProduct(next, body, id, tx);
     await replaceItems(next, items, tx);
     await audit(
       ctx,
@@ -410,6 +414,7 @@ export async function submit(serviceId, input, ctx) {
       fail("Only drafts and rejected services can be submitted.", 409);
     const document = serviceSchema.parse({
       ...parse(row.DetailsJson),
+      offer: await currentOffer(serviceId, parse(row.DetailsJson), tx),
       name: row.ServiceName,
       description: row.Description,
       categoryId: row.CategoryId,
@@ -423,6 +428,7 @@ export async function submit(serviceId, input, ctx) {
       tx,
     );
     validateServiceSubmission(document, media ? 1 : 0);
+    if (document.offer) await validateOffer(document.offer, row.CategoryId, tx);
     // Lock vendor too: approval withdrawal cannot race with submission.
     const [vendor] = await repo.select(
       "SELECT VerificationStatus,IsActive FROM dbo.Vendors WITH(UPDLOCK,HOLDLOCK) WHERE VendorId=:id",
@@ -509,6 +515,8 @@ export async function duplicate(serviceId, ctx) {
       slug = `${row.ServiceSlug.slice(0, 150)}-copy-${next}`;
     await assertAccess(id, "service", tx);
     if (doc.seo) doc.seo.slug = slug;
+    if(doc.offer?.sell) doc.offer.sell={...doc.offer.sell,stock:0,sku:`COPY-${next}`,available:false};
+    if(doc.offer?.book) doc.offer.book={...doc.offer.book,available:false};
     await repo.insert(
       { table: "Services", id: "ServiceId" },
       {
@@ -534,6 +542,7 @@ export async function duplicate(serviceId, ctx) {
       },
       tx,
     );
+    await syncProduct(next,{...doc,name:`${row.ServiceName.slice(0,190)} (copy)`,categoryId:row.CategoryId,description:row.Description||"",pricing:doc.pricing||{taxRate:0}},row.VendorId,tx);
     await repo.select(
       "INSERT INTO dbo.ServiceItems(ServiceId,ItemName,Description,Quantity,Unit,UnitPrice,IsIncluded,SortOrder) SELECT :next,ItemName,Description,Quantity,Unit,UnitPrice,IsIncluded,SortOrder FROM dbo.ServiceItems WHERE ServiceId=:serviceId",
       { next, serviceId },
@@ -636,6 +645,7 @@ export async function remove(serviceId, input, ctx) {
         "This service has booking, quotation or offer history. Deactivate it instead.",
         409,
       );
+    await removeProduct(serviceId,tx);
     await repo.select(
       "UPDATE dbo.Media SET DeletedAt=SYSUTCDATETIME(),IsPrimary=0,CleanupStatus='Pending',NextCleanupAt=:cleanupAt WHERE EntityType='Package' AND EntityId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:serviceId); DELETE FROM dbo.PackageItems WHERE PackageId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:serviceId); DELETE FROM dbo.Wishlists WHERE ServiceId=:serviceId OR PackageId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:serviceId); DELETE FROM dbo.ServicePackages WHERE ServiceId=:serviceId; DELETE FROM dbo.ServiceItems WHERE ServiceId=:serviceId; DELETE FROM dbo.VendorAvailability WHERE ServiceId=:serviceId; DELETE FROM dbo.ServiceDailyMetrics WHERE ServiceId=:serviceId; UPDATE dbo.Media SET DeletedAt=SYSUTCDATETIME(),IsPrimary=0,CleanupStatus='Pending',NextCleanupAt=:cleanupAt WHERE EntityType='Service' AND EntityId=:serviceId; DELETE FROM dbo.Services WHERE ServiceId=:serviceId",
       { serviceId, cleanupAt:(await import('../media/media.service.js')).retentionDate() },

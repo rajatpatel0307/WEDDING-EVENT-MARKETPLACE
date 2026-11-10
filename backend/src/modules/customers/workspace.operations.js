@@ -1,3 +1,4 @@
+import { recordReservations } from "../shopping/booking-capacity.js";
 import { assertAccess } from "../vendors/access.service.js";
 import { validateCoverage } from "../addresses/locations.service.js";
 import {
@@ -72,10 +73,10 @@ export async function createBooking(
     items.map((i) => i.ServiceId),
     tx,
   );
-  if (!event.LocationJson)
+  if (!event.LocationJson && snapshot?.source !== "Commerce")
     fail("Add a full event location before booking.", 409);
-  const destination = JSON.parse(event.LocationJson);
-  for (const serviceId of new Set(items.map((i) => i.ServiceId))) {
+  const destination = JSON.parse(event.LocationJson || "null");
+  for (const serviceId of snapshot?.source === "Commerce" ? [] : new Set(items.map((i) => i.ServiceId))) {
     const [row] = await repo.select(
       "SELECT DetailsJson FROM dbo.Services WHERE ServiceId=:serviceId",
       { serviceId },
@@ -178,6 +179,7 @@ export async function createBooking(
       },
       tx,
     );
+  await recordReservations(bookingId, items, event, tx);
   await insert(
     "BookingStatusHistory",
     "BookingStatusHistoryId",
@@ -231,6 +233,7 @@ async function prepareBooking(input, ctx, tx) {
   if (!pack && s.PricingType === "CustomQuote")
     fail("Request a quotation for this service.");
   const document = s.DetailsJson ? JSON.parse(s.DetailsJson) : null;
+  if (document?.offer) fail("Use the dedicated booking checkout for this listing.", 409);
   const flexible = !pack && !!document?.pricing;
   const quantity =
     !pack && s.PricingType === "PerPerson"

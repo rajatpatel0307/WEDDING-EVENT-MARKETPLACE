@@ -1,3 +1,4 @@
+import { removeProduct, validateOffer, syncProduct } from "../shopping/configuration.js";
 import { publicPredicate } from '../reviews/reviews.policy.js';
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -193,7 +194,7 @@ export async function metadata(ctx, input = {}) {
     .parse(input);
   const [categories, subcategories, vendors] = await Promise.all([
     repo.select(
-      "SELECT CategoryId AS id,CategoryName AS name,CategoryCode AS code FROM dbo.Categories WHERE IsActive=1 ORDER BY SortOrder,CategoryId",
+      "SELECT CategoryId AS id,CategoryName AS name,CategoryCode AS code,AllowBuyOnline AS sellEnabled,AllowBooking AS bookEnabled FROM dbo.Categories WHERE IsActive=1 ORDER BY SortOrder,CategoryId",
     ),
     repo.select(
       "SELECT SubCategoryId AS id,CategoryId AS categoryId,SubCategoryName AS name FROM dbo.SubCategories WHERE IsActive=1 ORDER BY SortOrder,SubCategoryId",
@@ -342,6 +343,7 @@ export async function save(id, input, ctx) {
       tx,
     );
     if (duplicate) fail("This service URL slug is already used.", 409);
+    await validateOffer(body.offer, body.categoryId, tx);
     const { expectedUpdatedAt, items, ...document } = body;
     const values = {
       VendorId: vendorId,
@@ -352,7 +354,7 @@ export async function save(id, input, ctx) {
       Description: body.description,
       AttributesJson: JSON.stringify(attributes),
       DetailsJson: JSON.stringify(document),
-      BasePrice: calculatePrice(body.pricing),
+      BasePrice: body.offer ? body.offer.book?.price ?? body.offer.sell.price : calculatePrice(body.pricing),
       PricingType: pricingTypeFor(body.pricing),
       MinimumPrice: body.pricing.minimumPrice,
       MaximumPrice: body.pricing.maximumPrice,
@@ -394,6 +396,7 @@ export async function save(id, input, ctx) {
           },
           tx,
         );
+    await syncProduct(next, body, vendorId, tx);
     await repo.auditAdmin(
       ctx,
       old ? "ADMIN_SERVICE_EDITED" : "ADMIN_SERVICE_CREATED",
@@ -446,6 +449,7 @@ export async function submit(id, input, ctx) {
       tx,
     );
     validateServiceSubmission(doc, Number(media.total));
+    if(doc.offer) await validateOffer(doc.offer, row.CategoryId, tx);
     await repo.update(
       resource,
       id,
@@ -482,6 +486,8 @@ export async function duplicate(id, input, ctx) {
       doc = JSON.parse(row.DetailsJson || "{}");
     const slug = `${row.ServiceSlug.slice(0, 150)}-copy-${next}`;
     if (doc.seo) doc.seo.slug = slug;
+    if(doc.offer?.sell) doc.offer.sell={...doc.offer.sell,stock:0,sku:`COPY-${next}`,available:false};
+    if(doc.offer?.book) doc.offer.book={...doc.offer.book,available:false};
     await repo.insert(
       resource,
       {
@@ -559,6 +565,7 @@ export async function duplicate(id, input, ctx) {
         tx,
       );
     }
+    await syncProduct(next,{...doc,name:`${row.ServiceName.slice(0,190)} (copy)`,categoryId:row.CategoryId,description:row.Description||"",pricing:doc.pricing||{taxRate:0}},row.VendorId,tx);
     await repo.auditAdmin(
       ctx,
       "ADMIN_SERVICE_DUPLICATED",
@@ -590,6 +597,7 @@ export async function remove(id, input, ctx) {
         "Service has booking, quotation or offer history. Deactivate it instead.",
         409,
       );
+    await removeProduct(id,tx);
     await repo.select(
       "UPDATE dbo.Media SET DeletedAt=SYSUTCDATETIME(),IsPrimary=0,CleanupStatus='Pending',NextCleanupAt=:cleanupAt WHERE EntityType='Package' AND EntityId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:id); DELETE FROM dbo.Wishlists WHERE ServiceId=:id OR PackageId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:id); DELETE FROM dbo.PackageItems WHERE PackageId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:id); DELETE FROM dbo.ServicePackages WHERE ServiceId=:id; DELETE FROM dbo.ServiceItems WHERE ServiceId=:id; DELETE FROM dbo.VendorAvailability WHERE ServiceId=:id; DELETE FROM dbo.ServiceDailyMetrics WHERE ServiceId=:id; UPDATE dbo.Media SET DeletedAt=SYSUTCDATETIME(),IsPrimary=0,CleanupStatus='Pending',NextCleanupAt=:cleanupAt WHERE EntityType='Service' AND EntityId=:id; DELETE FROM dbo.Services WHERE ServiceId=:id",
       { id, cleanupAt:(await import('../media/media.service.js')).retentionDate() },

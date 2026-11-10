@@ -9,6 +9,8 @@ export const overview = async (req, res) =>
   res.json(await dashboard(req.query, req.admin));
 export const list = async (req, res) =>
   res.json(await repo.list(req.params.resource, listQuery.parse(req.query)));
+export const categoryDetails = async (req, res) =>
+  res.json(await service.categoryDetails(req.params.id, req.admin));
 export const review = async (req, res) =>
   res.json(await service.reviewVendor(req.params.id, req.body, req.admin));
 export const action = async (req, res) =>

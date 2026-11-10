@@ -66,7 +66,7 @@ const extra = {
     fields: eventFields,
   },
   bookings: {
-    from: "dbo.Booking t JOIN dbo.Vendors v ON v.VendorId=t.VendorId JOIN dbo.Events e ON e.EventId=t.EventId",
+    from: "dbo.Booking t JOIN dbo.Vendors v ON v.VendorId=t.VendorId LEFT JOIN dbo.Events e ON e.EventId=t.EventId",
     where: "t.CustomerId=:id",
     fields: `t.BookingId AS id,t.BookingNumber AS number,t.VendorId AS vendorId,v.BusinessName AS vendor,e.EventName AS event,t.EventId AS eventId,t.BookingDate AS bookingDate,t.TotalAmount AS amount,t.PaidAmount AS paid,t.RemainingAmount AS remaining,t.BookingStatus AS status,t.PaymentStatus AS paymentStatus,t.CreatedAt AS createdAt,(SELECT STRING_AGG(CONVERT(nvarchar(max),ItemName),', ') FROM dbo.BookingItems WHERE BookingId=t.BookingId) AS services`,
   },

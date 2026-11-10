@@ -13,7 +13,6 @@ import { columnLabels } from "../navigation";
 import { useAuth } from "../../../context/AuthContext";
 import AdminDialog from "./AdminDialog";
 import RecordPicker from "./RecordPicker";
-import CategoryImageUpload from "./CategoryImageUpload";
 import { categoryImages } from "../../../components/home/categoryImages";
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
@@ -268,6 +267,13 @@ export default function AdminTable({
   }
 
   function open(row, action) {
+    if (resource === "categories") {
+      const path = action === "create" ? "/admin/categories/new"
+        : `/admin/categories/${row.id}${action === "edit" ? "/edit"
+          : ["Active", "Inactive"].includes(action) ? `?action=${action}` : ""}`;
+      navigate(path);
+      return;
+    }
     if (["vendors", "applications"].includes(resource) &&
         ["Approved", "Rejected", "Suspended"].includes(action)) {
       setDecision({ id: row.id, action });
@@ -307,6 +313,7 @@ export default function AdminTable({
       let result;
       if (["create", "edit"].includes(dialog.action)) {
         const values = { ...fields };
+        for (const key of ["sellEnabled", "bookEnabled"]) if(key in values) values[key] = values[key] === "true";
         if ("removeImage" in values) values.removeImage = values.removeImage === "true";
         for (const key of ["discountValue", "categoryId", "usageLimit", "sortOrder"]) {
           if (key in values) values[key] = values[key] === "" ? null : Number(values[key]);
@@ -706,11 +713,10 @@ export default function AdminTable({
             <form onSubmit={submit} className="ad-form flex flex-col gap-[17px] [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] [&_label]:text-[11px] [&_label]:text-[#7c8e76] [&_input]:w-full [&_input]:text-[12px]! [&_textarea]:w-full [&_textarea]:text-[12px]! [&_select]:w-full [&_select]:text-[12px]! [&_textarea]:min-h-[90px] [&_textarea]:[resize:vertical] [&_p]:text-[12px] [&_p]:text-[#86977d] [&_p]:leading-[1.7]">
               {["create", "edit"].includes(dialog.action) ? (
                 <>
-                {resource === "categories" && <CategoryImageUpload key={dialog.row?.id || "new"} image={dialog.row ? categoryImage(dialog.row) : ""} onReadingChange={setBusy} />}
                 {editable.map((key) => (
                   <label key={key}>
-                    {label(key)}
-                    {key === "categoryId" ? (
+                    {key === "sellEnabled" ? "Enable Sell (Buy Online)" : key === "bookEnabled" ? "Enable Book (Reservation)" : label(key)}
+                    {["sellEnabled","bookEnabled"].includes(key) ? <select name={key} defaultValue={String(dialog.row?.[key] ?? (key==="bookEnabled"))}><option value="true">Yes</option><option value="false">No</option></select> : key === "categoryId" ? (
                       <RecordPicker resource="categories" name={key}
                         initialValue={dialog.row?.categoryId} initialLabel={dialog.row?.category} />
                     ) : key === "description" ? (

@@ -220,7 +220,7 @@ export function validateService(data, { submit = false, imageCount = 0 } = {}) {
       };
     if (!data.location.city.trim())
       return { step: 5, message: "Add your service city before submitting." };
-    if (!data.policies.cancellation.trim())
+    if (!data.offer && !data.policies.cancellation.trim())
       return {
         step: 7,
         message: "Add a cancellation policy before submitting.",

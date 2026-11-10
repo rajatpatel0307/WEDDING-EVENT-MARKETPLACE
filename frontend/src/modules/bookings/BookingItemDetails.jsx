@@ -10,6 +10,9 @@ export default function BookingItemDetails({ description }) {
   return (
     <div className="mt-1 text-sm text-stone-500">
       <p>{snapshot.description}</p>
+      {snapshot.duration && <p>Booking duration: {snapshot.duration}</p>}
+      {snapshot.startsAt && <p>{snapshot.startsAt.replace("T"," ")} to {snapshot.endsAt?.replace("T"," ")} (India time)</p>}
+      {snapshot.instructions && <p>Booking instructions: {snapshot.instructions}</p>}
       {snapshot.inclusions?.length > 0 && (
         <details>
           <summary>Package inclusions</summary>

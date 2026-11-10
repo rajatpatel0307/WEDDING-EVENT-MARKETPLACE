@@ -199,7 +199,7 @@ export default function ServiceApprovalPage({ review = false }) {
                   <tr key={row.id}>
                     <td>
                       <Link to={`/admin/services/${row.id}/review`}>
-                        {row.name}
+                        {row.name}{row.offerType && <small className="block">{({Sell:"Sell Only",Book:"Book Only",Both:"Sell & Book Both"})[row.offerType]}</small>}
                       </Link>
                     </td>
                     <td>{row.vendor}</td>
@@ -395,6 +395,7 @@ export default function ServiceApprovalPage({ review = false }) {
                 dates: data.availability,
               },
             ],
+            ["Product Service Options", data.document.offer],
             ["Policies", data.document.policies],
           ].map(([title, value]) => (
             <section className="ad-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]" key={title}>

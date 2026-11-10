@@ -1,3 +1,4 @@
+import { assertConfiguredReservations } from "../shopping/booking-capacity.js";
 import * as repo from "../admin/admin.repository.js";
 import { assertServiceSchedule } from "../vendors/service-schedule.js";
 import { fail } from "../admin/booking-finance.js";
@@ -36,6 +37,9 @@ export async function assertReservation(
   exclude = null,
 ) {
   if (!tx) throw new Error("Reservation checks require a transaction.");
+  const managed = await assertConfiguredReservations(vendorId, event, serviceIds, tx, exclude);
+  serviceIds = serviceIds.filter(id => !managed.includes(id.toLowerCase()));
+  if (!serviceIds.length) return;
   assertEventTime(event);
   const day = dayOf(event.EventDate),
     services = [...new Set(serviceIds)].sort();

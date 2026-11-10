@@ -1,3 +1,4 @@
+import { OfferReview } from "../../commerce/OfferEditor";
 import { useState } from "react";
 import {
   Link,
@@ -553,6 +554,7 @@ export default function ServiceManagementDetails() {
             />
             <h3>Category information</h3>
             <Definition values={d.attributes} />
+            <OfferReview offer={doc.offer}/>
             <h3>Policies</h3>
             <Definition values={doc.policies || {}} />
           </>

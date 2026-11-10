@@ -1,3 +1,6 @@
+import { bookingAvailability } from "../shopping/booking-checkout.js";
+import { z } from "zod";
+import { categoryOptions } from "../shopping/configuration.js";
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import * as d from "./workspace.discovery.js";
@@ -16,12 +19,14 @@ export function createMarketplaceRouter() {
       res.set("Cache-Control", "no-store");
       res.json({ success: true, data: await fn(req) });
     });
+  get("/categories/:id/service-options", req => categoryOptions(z.coerce.number().int().positive().parse(req.params.id)));
   get("/catalog", () => d.publicCatalog());
   get("/discover", (req) => d.publicDiscover(req.query));
   get("/services/:id", (req) =>
     d.publicServiceDetails(req.params.id, true, req.query),
   );
   get("/vendors/:id", (req) => d.publicVendorDetails(req.params.id));
+  get("/services/:id/booking-availability", req => bookingAvailability(req.params.id,req.query));
   get("/services/:id/availability", (req) =>
     d.publicAvailability(req.params.id, req.query),
   );

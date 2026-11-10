@@ -641,6 +641,10 @@ export async function webhook(req, res) {
       return res
         .status(400)
         .json({ success: false, message: "Malformed provider event." });
+    if (event.event === "payment.captured") {
+      const { settleProductPayment } = await import("../shopping/shopping.service.js");
+      if (await settleProductPayment(entity.id, entity.order_id)) return res.json({ success: true });
+    }
     // Retain only reconciliation fields, never card data, tokens or complete provider responses.
     const safe = Object.fromEntries(
       [

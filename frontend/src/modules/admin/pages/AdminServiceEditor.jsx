@@ -1,3 +1,4 @@
+import { OfferSelection, OfferConfiguration } from "../../commerce/OfferEditor";
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Save, ArrowLeft } from "lucide-react";
@@ -232,7 +233,10 @@ function EditorForm({ data }) {
           </div>
         </section>
         <section className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
-          <h2>Pricing</h2>
+          <h2>Product Service Options</h2>
+          <OfferSelection value={values.offer} category={category} onChange={offer=>change("offer",offer)}/>
+          <OfferConfiguration value={values.offer} onChange={offer=>change("offer",offer)} taxRate={values.pricing.taxRate} onTaxChange={taxRate=>setValues(v=>({...v,pricing:{...v.pricing,taxRate}}))}/>
+          <h2>{values.offer ? "Existing pricing configuration" : "Pricing"}</h2>
           <div className="asm-form-grid grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[16px]">
             {[
               ["basePrice", "Base price"],

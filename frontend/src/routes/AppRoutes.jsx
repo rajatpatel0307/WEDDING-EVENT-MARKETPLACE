@@ -1,3 +1,4 @@
+import { BookingCheckout, CartCheckout, PurchaseOrder, MyOrders } from "../modules/commerce/CheckoutPages";
 import VendorAccessPage from "../modules/admin/pages/VendorAccessPage";
 import VendorVerificationPage from "../modules/vendor/pages/VendorVerificationPage";
 import VendorProfilePage from "../modules/vendor/pages/VendorProfilePage";
@@ -202,6 +203,7 @@ const VendorDetailsPage = lazy(
 const CustomerDetailsPage = lazy(
   () => import("../modules/admin/pages/CustomerDetailsPage"),
 );
+const CategoryManagementPage = lazy(() => import("../modules/admin/pages/CategoryManagementPage"));
 const AdminManagement = lazy(
   () => import("../modules/admin/pages/AdminManagement"),
 );
@@ -360,6 +362,10 @@ export default function AppRoutes() {
               path="vendors/:id"
               element={<CustomerServiceDetails vendor />}
             />
+            <Route path="cart" element={<CartCheckout/>}/>
+            <Route path="orders" element={<MyOrders/>}/>
+            <Route path="orders/:id" element={<PurchaseOrder/>}/>
+            <Route path="booking-checkout/:id" element={<BookingCheckout/>}/>
             <Route path="bookings/:id" element={<CustomerRecordDetails />} />
             <Route
               path="bookings/:id/checkout"
@@ -921,6 +927,9 @@ export default function AppRoutes() {
                 </Suspense>
               }
             />
+            <Route path="categories/new" element={<Suspense fallback={<div role="status">Loading category...</div>}><CategoryManagementPage create /></Suspense>} />
+            <Route path="categories/:id/edit" element={<Suspense fallback={<div role="status">Loading category...</div>}><CategoryManagementPage edit /></Suspense>} />
+            <Route path="categories/:id" element={<Suspense fallback={<div role="status">Loading category...</div>}><CategoryManagementPage /></Suspense>} />
             <Route
               path=":resource"
               element={

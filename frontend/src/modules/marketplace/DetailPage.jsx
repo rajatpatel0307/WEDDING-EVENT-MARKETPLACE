@@ -1,3 +1,4 @@
+import OfferActions, { OfferPrices } from "../commerce/OfferActions";
 import { MediaGallery } from '../media/MediaLibrary';
 import { PublicReviews } from '../reviews/Reviews';
 import { useReviews } from '../reviews/api';
@@ -95,7 +96,7 @@ export default function DetailPage() {
   const d = state.data,
     item = vendor ? d.vendor : d.service,
     privatePath = `/customer/${vendor ? "vendors" : "services"}/${item.id}`;
-  const bookingAllowed = item.bookingAccessStatus === "Approved";
+  const bookingAllowed = item.bookingAccessStatus === "Approved" && item.bookEnabled !== false && item.bookEnabled !== 0;
   function begin(action, packageId) {
     if (action === "book" && !bookingAllowed) return;
     const path = `${privatePath}?${new URLSearchParams({ ...(!vendor ? { action } : {}), ...(packageId ? { package: packageId } : {}) })}`;
@@ -123,6 +124,7 @@ export default function DetailPage() {
   const selectedPackage = pack ? id : params.get("package");
   const canBook =
     !vendor &&
+    !item.offer &&
     (item.pricingType !== "CustomQuote" ||
       d.packages.some(
         (p) => p.id.toLowerCase() === selectedPackage?.toLowerCase(),
@@ -159,13 +161,14 @@ export default function DetailPage() {
       {!vendor && !bookingAllowed && (
         <p role="status">This vendor is currently unavailable for new bookings.</p>
       )}
+      {!vendor && <><OfferPrices item={item}/><OfferActions item={item}/></>}
       <div className="cm-actions">
-        {!vendor && (
+        {!vendor && !item.offer && (
           <>
             {canBook && (
               <button
                 className="cm-primary"
-                disabled={!bookingAllowed}
+                disabled={!bookingAllowed || !!item.offer}
                 onClick={() => begin("book", pack ? id : params.get("package"))}
               >
                 Book now
@@ -290,7 +293,7 @@ export default function DetailPage() {
                       </p>
                       <button
                         className="cm-primary"
-                        disabled={!bookingAllowed}
+                        disabled={!bookingAllowed || !!item.offer}
                         onClick={() => begin("book", p.id)}
                       >
                         Choose this package
@@ -301,7 +304,7 @@ export default function DetailPage() {
                   <p>No packages published. Request a customized quotation.</p>
                 )}
               </section>
-              <AvailabilityCalendar id={item.id} />
+              {!item.offer && <AvailabilityCalendar id={item.id} />}
               <section className="cm-panel">
                 <h2>Booking policies</h2>
                 {[
@@ -332,7 +335,7 @@ export default function DetailPage() {
             <a href="#vendor-services" className="cm-button cm-primary">
               View services
             </a>
-          ) : (
+          ) : item.offer ? <><OfferPrices item={item}/><OfferActions item={item}/></> : (
             <>
               <p className="cm-price">
                 {item.price ? money(item.price) : "Custom quotation"}
@@ -348,7 +351,7 @@ export default function DetailPage() {
                 {canBook && (
                   <button
                     className="cm-primary"
-                    disabled={!bookingAllowed}
+                    disabled={!bookingAllowed || !!item.offer}
                     onClick={() =>
                       begin("book", pack ? id : params.get("package"))
                     }

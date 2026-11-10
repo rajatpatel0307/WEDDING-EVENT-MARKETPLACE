@@ -1,3 +1,4 @@
+import { OfferSelection, OfferConfiguration } from "../../commerce/OfferEditor";
 import { useEffect, useRef, useState } from "react";
 import {
   Link,
@@ -102,6 +103,7 @@ export default function ServiceEditor() {
     [error, setError] = useState(""),
     [stepError, setStepError] = useState(""),
     [notice, setNotice] = useState("");
+  const [serviceOptions,setServiceOptions] = useState(null);
   const form = useRef(null);
   useUnsaved(dirty);
 
@@ -169,6 +171,14 @@ export default function ServiceEditor() {
   useEffect(() => {
     setStep(Math.min(8, Math.max(0, Number(search.get("step")) || 0)));
   }, [search]);
+
+  useEffect(() => {
+    if(!data.categoryId) {setServiceOptions(null);return;}
+    let live=true;
+    setServiceOptions(null);
+    vendorRequest(`/categories/${data.categoryId}/service-options`).then(options=>{if(live)setServiceOptions({id:options.CategoryId,sellEnabled:!!options.AllowBuyOnline,bookEnabled:!!options.AllowBooking});}).catch(e=>{if(live)setError(e.message);});
+    return ()=>{live=false;};
+  },[data.categoryId]);
 
   const change = (key, value) => {
     setData((d) => ({
@@ -590,6 +600,7 @@ export default function ServiceEditor() {
                       ))}
                     </select>
                   </Field>
+                  <div className="col-span-full"><OfferSelection category={serviceOptions || metadata.data.categories.find(c=>c.id===data.categoryId)} value={data.offer} onChange={offer=>change("offer",offer)}/></div>
                   {field(
                     "location",
                     "city",
@@ -794,6 +805,8 @@ export default function ServiceEditor() {
                 ))}
               {step === 2 && (
                 <>
+                  {data.offer && <OfferConfiguration value={data.offer} onChange={offer=>change("offer",offer)} taxRate={data.pricing.taxRate} onTaxChange={v=>nested("pricing","taxRate",v)}/>}
+                  {!data.offer && <>
                   <div
                     className="
                     grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_input]:w-[100%] [&_input]:rounded-[7px]
@@ -907,6 +920,7 @@ export default function ServiceEditor() {
                       recalculates the final price.
                     </p>
                   </div>
+                  </>}
                 </>
               )}
               {step === 3 && (

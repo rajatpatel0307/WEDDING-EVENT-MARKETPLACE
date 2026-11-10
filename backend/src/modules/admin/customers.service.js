@@ -91,7 +91,7 @@ export const customerReadCollections = {
       "t.EventId AS id,t.EventName AS name,t.EventType AS type,t.EventDate AS eventDate,CONCAT_WS(', ',t.City,t.State) AS location,t.GuestCount AS guests,t.Budget AS budget,t.Status AS status,t.CreatedAt AS createdAt",
   },
   bookings: {
-    from: "dbo.Booking t JOIN dbo.Vendors v ON v.VendorId=t.VendorId JOIN dbo.Events e ON e.EventId=t.EventId",
+    from: "dbo.Booking t JOIN dbo.Vendors v ON v.VendorId=t.VendorId LEFT JOIN dbo.Events e ON e.EventId=t.EventId",
     where: "t.CustomerId=:id",
     fields:
       "t.BookingId AS id,t.BookingNumber AS number,v.BusinessName AS vendor,(SELECT STRING_AGG(CONVERT(nvarchar(max),bi.ItemName),', ') FROM dbo.BookingItems bi WHERE bi.BookingId=t.BookingId) AS services,e.EventName AS event,t.TotalAmount AS amount,t.PaymentStatus AS paymentStatus,t.BookingStatus AS status,t.CreatedAt AS createdAt",

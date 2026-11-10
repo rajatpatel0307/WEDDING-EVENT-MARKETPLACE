@@ -1,3 +1,4 @@
+import OfferActions, { OfferPrices } from "../../commerce/OfferActions";
 import { MediaGallery } from '../../media/MediaLibrary';
 import { PublicReviews } from '../../reviews/Reviews';
 import WishlistButton from "../components/WishlistButton";
@@ -542,7 +543,7 @@ export function CustomerServiceDetails({ vendor = false }) {
   if (r.loading) return <Loading />;
   if (r.error) return <ErrorView error={r.error} retry={r.retry} />;
   const item = vendor ? r.data.vendor : r.data.service;
-  const bookingAllowed = item.bookingAccessStatus === "Approved";
+  const bookingAllowed = item.bookingAccessStatus === "Approved" && item.bookEnabled !== false && item.bookEnabled !== 0;
   async function message() {
     setBusy(true);
     try {
@@ -580,8 +581,9 @@ export function CustomerServiceDetails({ vendor = false }) {
             {item.city || "Location on request"} <Star size={15} />{" "}
             {Number(item.rating || 0).toFixed(1)} · {item.reviews || 0} reviews
           </p>
+          {!vendor && <><OfferPrices item={item}/><OfferActions item={item}/></>}
           <div className="cw-detail-actions flex gap-[12px] flex-wrap mt-[22px] [@media(width<=520px)]:[&_>_.cw-button]:text-[11px]">
-            {!vendor && (
+            {!vendor && !item.offer && (
               <>
                 <button
                   className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
@@ -612,7 +614,7 @@ export function CustomerServiceDetails({ vendor = false }) {
       {!vendor && (
         <div className="customer-marketplace cm-embedded">
           <MediaGallery type="services" id={id} />
-          <AvailabilityCalendar id={id} />
+          {!item.offer && <AvailabilityCalendar id={id} />}
           <section className="cm-panel">
             <h2>Booking policies</h2>
             {Object.entries(r.data.policies || {})
@@ -644,7 +646,7 @@ export function CustomerServiceDetails({ vendor = false }) {
             <>
               <h3>Service details</h3>
               <dl>
-                <dt>Starting price</dt>
+                <dt>{item.offer?.book ? "Booking Price" : item.offer?.sell ? "Selling Price" : "Starting price"}</dt>
                 <dd>{item.price ? money(item.price) : "Custom quotation"}</dd>
                 <dt>Pricing</dt>
                 <dd>{item.pricingType}</dd>
@@ -706,7 +708,7 @@ export function CustomerServiceDetails({ vendor = false }) {
                     {p.minGuests || "Flexible"}–{p.maxGuests || "flexible"}{" "}
                     guests
                   </p>
-                  <button
+                  {!item.offer && <button
                     className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
                     disabled={!bookingAllowed}
                     onClick={() => {
@@ -715,7 +717,7 @@ export function CustomerServiceDetails({ vendor = false }) {
                     }}
                   >
                     Select package
-                  </button>
+                  </button>}
                 </div>
               ))
             ) : (
@@ -749,7 +751,7 @@ export function CustomerServiceDetails({ vendor = false }) {
       )}
       {vendor && <MediaGallery type="vendors" id={id} />}
       {vendor && <PublicReviews key={id} type="vendors" id={id} />}
-      {mode && (mode !== "book" || bookingAllowed) && (
+      {mode && !item.offer && (mode !== "book" || bookingAllowed) && (
         <ServiceAction
           service={item}
           coverage={{

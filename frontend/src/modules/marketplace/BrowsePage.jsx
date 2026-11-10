@@ -1,3 +1,4 @@
+import OfferActions, { OfferPrices } from "../commerce/OfferActions";
 import { optimizedMediaUrl } from '../media/api';
 import { useWishlist } from "../customer/services/wishlist";
 import { useEffect, useState, useRef, useCallback } from "react";
@@ -94,12 +95,13 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
         ) : (
           <>
             <p>{item.vendor}</p>
-            <p>
+            {!item.offerType && <p>
               <strong>
                 {item.price ? money(item.price) : "Request a quotation"}
               </strong>
               {item.price ? " onwards" : ""}
-            </p>
+            </p>}
+            <OfferPrices item={item}/><OfferActions item={item}/>
           </>
         )}
         <div className="cm-actions">

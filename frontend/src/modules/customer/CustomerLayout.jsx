@@ -45,6 +45,8 @@ const navigation = [
   ["reviews", "Reviews", Star],
   ["addresses", "Addresses", MapPin],
   ["settings", "Settings", Settings],
+  ["cart", "My Cart", ShoppingBag],
+  ["orders", "My Orders", ShoppingBag],
 ];
 const top = [
   ["Home", "/"],

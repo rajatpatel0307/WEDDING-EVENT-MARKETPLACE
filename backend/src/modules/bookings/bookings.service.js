@@ -39,11 +39,11 @@ export async function accessible(id, ctx, role, tx, lock = false) {
   return row;
 }
 export const eligibleRequest = (row, kind) =>
-  dayOf(row.BookingDate) >=
-    new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) &&
+  (row.BookingDate == null || dayOf(row.BookingDate) >=
+    new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })) &&
   (kind === "Cancellation"
     ? ["Pending", "Accepted", "PaymentPending", "Confirmed"]
-    : ["Accepted", "PaymentPending", "Confirmed"]
+    : row.CommerceCheckoutKey ? [] : ["Accepted", "PaymentPending", "Confirmed"]
   ).includes(row.BookingStatus);
 async function record(
   row,
@@ -107,12 +107,14 @@ export async function details(id, ctx, role) {
   try {
     eventSnapshot = JSON.parse(row.EventSnapshotJson || "{}");
   } catch {}
+  const [customer] = role !== "Customer" ? await repo.select("SELECT CONCAT(FirstName,' ',LastName) AS name,Email AS email,PhoneNumber AS phone FROM dbo.Users WHERE UserId=:id", {id:row.CustomerId}) : [];
   const pending = requests.some((r) => r.status === "Pending");
   // Read the policy estimate through the existing captured/refunded ledger, and
   // expose only customer-facing financial fields (no payout or review notes).
   const summary = financialSummary(row, await financialRows(id));
   return {
     booking: safe,
+    ...(customer ? {customer} : {}),
     checkout: { vendor: vendorLabel?.name || "", event: eventSnapshot },
     items,
     history: historyRows,

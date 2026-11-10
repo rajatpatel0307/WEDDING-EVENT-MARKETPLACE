@@ -1,3 +1,4 @@
+import { currentOffer, validateOffer } from "../shopping/configuration.js";
 import { z } from "zod";
 import { requireRole } from "../../middleware/auth.middleware.js";
 import * as repo from "./admin.repository.js";
@@ -74,7 +75,7 @@ export async function pending(input, ctx) {
     p,
   );
   const rows = await repo.select(
-    `SELECT s.ServiceId AS id,s.ServiceName AS name,v.BusinessName AS vendor,c.CategoryName AS category,s.BasePrice AS price,JSON_VALUE(s.DetailsJson,'$.location.city') AS location,s.SubmittedAt AS submittedAt,s.ApprovalStatus AS status,s.UpdatedAt AS updatedAt,v.VerificationStatus AS verificationStatus,(SELECT COUNT(*) FROM dbo.VendorDocuments d WHERE d.VendorId=v.VendorId) AS documents ${source} ${where} ORDER BY s.SubmittedAt,s.ServiceId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
+    `SELECT s.ServiceId AS id,s.ServiceName AS name,v.BusinessName AS vendor,c.CategoryName AS category,s.BasePrice AS price,JSON_VALUE(s.DetailsJson,'$.offer.type') AS offerType,JSON_VALUE(s.DetailsJson,'$.location.city') AS location,s.SubmittedAt AS submittedAt,s.ApprovalStatus AS status,s.UpdatedAt AS updatedAt,v.VerificationStatus AS verificationStatus,(SELECT COUNT(*) FROM dbo.VendorDocuments d WHERE d.VendorId=v.VendorId) AS documents ${source} ${where} ORDER BY s.SubmittedAt,s.ServiceId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
     p,
   );
   return {
@@ -155,7 +156,7 @@ export async function review(id, ctx) {
   ]);
   return {
     ...row,
-    document: JSON.parse(row.DetailsJson || "{}"),
+    document: { ...JSON.parse(row.DetailsJson || "{}"), offer: await currentOffer(id, JSON.parse(row.DetailsJson || "{}")) },
     attributes: JSON.parse(row.AttributesJson || "{}"),
     items,
     packages: packages.map((p) => ({
@@ -203,6 +204,7 @@ export async function decide(id, action, input, ctx) {
       (!vendor.OwnerActive || vendor.OwnerBlocked || !vendor.IsEmailVerified)
     )
       fail("The vendor owner must have an active, verified account.", 409);
+    if (["approve", "activate"].includes(action) && JSON.parse(old.DetailsJson || "{}").offer) await validateOffer(JSON.parse(old.DetailsJson || "{}").offer, old.CategoryId, tx);
     const status =
       {
         approve: "Approved",

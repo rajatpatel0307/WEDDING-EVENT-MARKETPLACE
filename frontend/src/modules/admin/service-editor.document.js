@@ -1,5 +1,6 @@
 export function newDocument() {
   return {
+    offer: null,
     vendorId: "",
     name: "",
     categoryId: 0,

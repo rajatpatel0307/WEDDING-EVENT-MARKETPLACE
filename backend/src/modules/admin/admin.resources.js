@@ -141,6 +141,8 @@ export const resources = {
       name: "t.CategoryName",
       code: "t.CategoryCode",
       image: "t.ImageUrl",
+      sellEnabled: "t.AllowBuyOnline",
+      bookEnabled: "t.AllowBooking",
       icon: "t.IconName",
       sortOrder: "t.SortOrder",
       usageCount:
@@ -157,6 +159,8 @@ export const resources = {
         name: "CategoryName",
         code: "CategoryCode",
         description: "Description",
+        sellEnabled: "AllowBuyOnline",
+        bookEnabled: "AllowBooking",
         icon: "IconName",
         sortOrder: "SortOrder",
       },

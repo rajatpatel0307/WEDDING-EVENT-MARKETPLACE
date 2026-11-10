@@ -41,6 +41,7 @@ export const units = [
   "Custom",
 ];
 export const blank = () => ({
+  offer: null,
   name: "",
   categoryId: 0,
   subcategoryId: null,
@@ -111,7 +112,7 @@ export function editableDocument(data) {
   return Object.fromEntries(
     Object.keys(defaults).map((key) => [
       key,
-      key === "items"
+      key === "offer" ? data.offer || null : key === "items"
         ? (data.items || []).map(({ id, ...i }) => ({
             ...i,
             included: !!i.included,

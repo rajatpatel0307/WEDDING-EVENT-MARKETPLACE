@@ -36,6 +36,7 @@ export default function VendorBookingsPage() {
           {event.name} · {date(b.BookingDate)} · {event.city} · {event.guests}{" "}
           guests
         </p>
+        {d.customer && <p>Customer: {d.customer.name} / {d.customer.email} / {d.customer.phone}</p>}
         <p>Requirements: {event.requirements || "None specified"}</p>
         <p className="my-3 text-xl font-semibold">{money(b.TotalAmount)}</p>
         {d.items.map((i) => (
@@ -87,6 +88,7 @@ export default function VendorBookingsPage() {
             </button>
           </form>
         )}
+        {b.CommerceCheckoutKey && ["Confirmed","InProgress"].includes(b.BookingStatus) && <form className="my-4 grid gap-3" onSubmit={async e=>{e.preventDefault();if(!window.confirm("Mark this booking as completed?")) return;const reason=new FormData(e.currentTarget).get("reason");setBusy(true);setError("");try{await save(`/bookings/${id}/complete`,"POST",{reason,expectedUpdatedAt:new Date(b.UpdatedAt).toISOString()});setVersion(v=>v+1);}catch(e){setError(e.message);}finally{setBusy(false);}}}><label>Completion note<input name="reason" required minLength={3} maxLength={1000} className="block w-full rounded border p-2"/></label><button disabled={busy} className="rounded-lg border px-4 py-2 justify-self-start">Mark as completed</button></form>}
         {error && <p role="alert">{error}</p>}
       </section>
       <BookingChanges

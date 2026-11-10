@@ -1,3 +1,4 @@
+import { OfferReview } from "../../commerce/OfferEditor";
 import ApprovalTimeline from "../../../components/common/ApprovalTimeline";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -261,7 +262,7 @@ export function ServicePreview({
         ))}
       </dl>
       <h3>Pricing details</h3>
-      <PricingDetails pricing={s.pricing} />
+      <OfferReview offer={s.offer}/>{!s.offer && <PricingDetails pricing={s.pricing} />}
       <h3>Included items</h3>
       {s.items?.length ? (
         <ul>
@@ -648,7 +649,7 @@ export default function ServiceDetails() {
         )}
         {tab === "Pricing" && (
           <div className="p-[25px] service-mobile:p-[18px]">
-            <PricingDetails pricing={s.pricing} />
+            <OfferReview offer={s.offer}/>{!s.offer && <PricingDetails pricing={s.pricing} />}
             <div className="
               p-[25px] [background:#f3f7ef] [border-top:1px_solid_#e1e8d9] [border-right:1px_solid_#e1e8d9]
               [border-bottom:1px_solid_#e1e8d9] [border-left:1px_solid_#e1e8d9] rounded-[10px] [margin:24px_0]

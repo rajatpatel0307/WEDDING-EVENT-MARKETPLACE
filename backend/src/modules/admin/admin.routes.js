@@ -1,3 +1,4 @@
+import { orders as productOrders } from "../shopping/shopping.service.js";
 import * as vendorAccess from "../vendors/access.service.js";
 import * as commission from "./commission.service.js";
 import * as finance from "../payments/finance-reports.js";
@@ -52,6 +53,7 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
   });
   const standardJson = json({ limit: "64kb" }),
     uploadJson = json({ limit: "8mb" });
+  router.get("/orders", async (req,res) => res.json({success:true,data:await productOrders(req.admin,"Admin")}));
   router.get("/bookings/:id/change-requests", async (req, res) =>
     res.json(
       (await lifecycle.details(req.params.id, req.admin, "Admin")).requests,
@@ -510,6 +512,7 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
   router.get("/documents/:id/download", controller.document);
   router.post("/vendors/:id/review", controller.review);
   router.get("/:resource/export", controller.exportRows);
+  router.get("/categories/:id", controller.categoryDetails);
   router.get("/:resource", controller.list);
   router.post("/:resource", controller.create);
   router.patch("/:resource/:id/action", controller.action);
