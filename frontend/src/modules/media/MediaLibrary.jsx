@@ -123,9 +123,75 @@ export function ImageLightbox({ images, index = 0, close }) {
     </MediaPreview>
   );
 }
-export function MediaGallery({ type, id }) {
+export function MediaGallery({ type, id, variant, fallbackImage, title }) {
   const state = useMedia(`/${type}/${id}/media`),
     [index, setIndex] = useState(null);
+  if (variant === "editorial") {
+    const images = state.data?.rows || [];
+    return (
+      <section
+        className="mm-module cm-editorial-gallery"
+        aria-label="Image gallery"
+        data-empty={!state.loading && !images.length && !fallbackImage ? "true" : undefined}
+      >
+        {state.loading ? (
+          <div className="cm-gallery-placeholder" role="status">
+            <Images size={32} aria-hidden="true" />
+            <p>Loading gallery…</p>
+          </div>
+        ) : images.length ? (
+          <>
+            <div className={`cm-gallery-mosaic${images.length === 1 ? " cm-gallery-single" : images.length > 3 ? " cm-gallery-rich" : ""}`}>
+              {images.slice(0, 5).map((image, i) => (
+                <button
+                  type="button"
+                  key={image.id}
+                  onClick={() => setIndex(i)}
+                  aria-label={`View ${image.fileName || `photo ${i + 1}`}`}
+                >
+                  <img
+                    src={mediaContent(image.id, i === 0 ? "gallery" : "card")}
+                    alt={image.fileName || `${title || "Listing"} photo ${i + 1}`}
+                    loading={i === 0 ? "eager" : "lazy"}
+                  />
+                </button>
+              ))}
+            </div>
+            <span className="cm-gallery-label"><Images size={13} aria-hidden="true" />THE GALLERY</span>
+            <button type="button" className="cm-gallery-view" onClick={() => setIndex(0)}>
+              <Images size={16} aria-hidden="true" />
+              View all {images.length} {images.length === 1 ? "photo" : "photos"}
+            </button>
+          </>
+        ) : fallbackImage ? (
+          <img className="cm-gallery-cover" src={fallbackImage} alt={title || "Listing cover"} />
+        ) : (
+          <div className="cm-gallery-placeholder">
+            <div className="cm-gallery-placeholder-copy">
+              <span className="cm-kicker">THE POSSIBILITIES BEGIN HERE</span>
+              <h2>Your next chapter.<br /><em>Beautifully imagined.</em></h2>
+              <p>{state.error ? "The gallery is unavailable right now. Message the vendor for photos." : "Photos haven’t been added yet. Get a closer look at the setting for your celebration."}</p>
+              <a href="#listing-booking">Ask the vendor for photos<ArrowRight size={15} aria-hidden="true" /></a>
+            </div>
+            <div className="cm-gallery-art" aria-hidden="true">
+              <svg viewBox="0 0 300 330" fill="none" stroke="currentColor" strokeWidth="0.8">
+                <path d="M60 295V140a90 90 0 0 1 180 0v155M75 295V140a75 75 0 0 1 150 0v155M90 295V140a60 60 0 0 1 120 0v155M40 295h220M35 303h230M150 80v215M90 175h120M90 235h120" />
+                <circle cx="150" cy="38" r="9" /><path d="M150 17v8m0 26v8m-21-21h8m26 0h8m-36-15 6 6m18 18 6 6m0-30-6 6m-18 18-6 6" />
+                <path d="M46 280c-15-34-23-57-16-97m12 82c-26 3-33-8-29-19 13-1 23 5 29 19Zm-8-29c-22-2-28-13-22-23 12 1 20 8 22 23Zm-4-30c-18-6-19-17-11-25 10 5 13 13 11 25Zm11 59c13-18 25-18 30-7-6 11-16 14-30 7Zm-8-28c12-18 23-19 29-10-4 11-15 17-29 10Z" />
+                <path d="M254 280c15-34 23-57 16-97m-12 82c26 3 33-8 29-19-13-1-23 5-29 19Zm8-29c22-2 28-13 22-23-12 1-20 8-22 23Zm4-30c18-6 19-17 11-25-10 5-13 13-11 25Zm-11 59c-13-18-25-18-30-7 6 11 16 14 30 7Zm8-28c-12-18-23-19-29-10 4 11 15 17 29 10Z" />
+              </svg>
+              <span>THE ART OF CELEBRATING</span>
+            </div>
+            <span className="cm-gallery-index" aria-hidden="true">01 / THE GALLERY</span>
+          </div>
+        )}
+        {state.error && fallbackImage && <p role="status" className="cm-gallery-note">Additional photos are unavailable right now.</p>}
+        {index !== null && images[index] && (
+          <ImageLightbox images={images} index={index} close={() => setIndex(null)} />
+        )}
+      </section>
+    );
+  }
   return (
     <section className="mm-module my-6" aria-label="Image gallery">
       <State state={state} />

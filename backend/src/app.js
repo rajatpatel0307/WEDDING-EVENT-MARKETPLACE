@@ -10,6 +10,7 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { rateLimit } from "express-rate-limit";
+import { captureClientIp } from "./middleware/client-ip.middleware.js";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@as-integrations/express5";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
@@ -29,6 +30,7 @@ export async function createApp() {
   app.disable("x-powered-by");
   if (process.env.TRUST_PROXY_HOPS)
     app.set("trust proxy", Number(process.env.TRUST_PROXY_HOPS));
+  app.use(captureClientIp);
   app.use(
     helmet(),
     cors({

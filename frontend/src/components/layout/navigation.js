@@ -70,6 +70,8 @@ export function profileFor(user) {
             ["My Dashboard", "dashboard"],
             ["My Profile", "profile"],
             ["My Bookings", "bookings"],
+            ["My Orders", "orders"],
+            ["My Cart", "cart"],
             ["Wishlist", "wishlist"],
             ["Messages", "messages"],
             ["Notifications", "notifications"],

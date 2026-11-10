@@ -34,6 +34,8 @@ import { customerRequest } from "./services/workspace.api";
 const navigation = [
   ["dashboard", "Dashboard", LayoutDashboard],
   ["profile", "My Profile", UserRound],
+   ["cart", "My Cart", ShoppingBag],
+  ["orders", "My Orders", ShoppingBag],
   ["events", "My Events", CalendarHeart],
   ["discover", "Find Services", Search],
   ["bookings", "My Bookings", ShoppingBag],
@@ -45,8 +47,7 @@ const navigation = [
   ["reviews", "Reviews", Star],
   ["addresses", "Addresses", MapPin],
   ["settings", "Settings", Settings],
-  ["cart", "My Cart", ShoppingBag],
-  ["orders", "My Orders", ShoppingBag],
+ 
 ];
 const top = [
   ["Home", "/"],
