@@ -8,6 +8,12 @@
   --color-cream: #faf8f5;
   --font-serif: Georgia, "Times New Roman", serif;
   --animate-appear: appear 0.4s ease;
+  --animate-service-categories-scroll: service-categories-scroll var(--category-duration, 35s) linear infinite alternate;
+
+  @keyframes service-categories-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(min(0px, calc(100cqw - 100%))); }
+  }
 
   @keyframes appear {
     from { opacity: 0; transform: translateY(7px); }

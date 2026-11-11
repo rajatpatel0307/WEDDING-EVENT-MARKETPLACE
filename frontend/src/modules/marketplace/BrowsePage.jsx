@@ -1,5 +1,6 @@
 import OfferActions, { OfferPrices } from "../commerce/OfferActions";
-import { optimizedMediaUrl } from '../media/api';
+import { offerState } from "../commerce/offer-state";
+import { optimizedMediaUrl } from "../media/api";
 import { useWishlist } from "../customer/services/wishlist";
 import { useEffect, useState, useRef, useCallback } from "react";
 import {
@@ -17,10 +18,17 @@ import {
   LayoutGrid,
   List,
   ShieldCheck,
+  ArrowUpRight,
+  ChevronRight,
+  ChevronDown,
+  Flower2,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useMarketplace, money } from "./api";
 import "./marketplace.css";
+import "./browse-page.css";
 export function ReadState({ state }) {
   return state.loading ? (
     <div role="status" className="cm-state">
@@ -40,6 +48,7 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
     [failed, setFailed] = useState(false);
   const wishState = useWishlist(),
     saved = !!wishState.find(item.type || "Service", item.id);
+  const offer = offerState(item);
   const path =
     item.type === "Vendor"
       ? `/vendors/${item.vendorId || item.id}`
@@ -61,32 +70,72 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
     }
   };
   return (
-    <article className="cm-card">
-      <Link to={path} className="cm-photo" aria-label={`View ${item.name}`}>
-        {item.image && !failed ? (
-          <img
-            src={optimizedMediaUrl(item.image,'card')}
-            alt={item.name}
-            loading="lazy"
-            onError={() => setFailed(true)}
-          />
-        ) : (
-          <ImageIcon size={38} />
-        )}
-      </Link>
+    <article className="cm-card cm-discovery-card">
+      <div className="cm-card-visual">
+        <Link to={path} className="cm-photo" aria-label={`View ${item.name}`}>
+          {item.image && !failed ? (
+            <img
+              src={optimizedMediaUrl(item.image, "card")}
+              alt={item.name}
+              loading="lazy"
+              onError={() => setFailed(true)}
+            />
+          ) : (
+            <ImageIcon size={38} />
+          )}
+        </Link>
+        <button
+          className="cm-save-button"
+          onClick={wish}
+          disabled={busy}
+          aria-pressed={saved}
+          aria-label={`${saved ? "Remove" : "Save"} ${item.name}`}
+        >
+          <Heart size={17} fill={saved ? "currentColor" : "none"} />
+        </button>
+      </div>
       <div className="cm-card-body">
-        <p className="cm-kicker">{item.category || item.type}</p>
+        <div className="cm-card-topline">
+          <p className="cm-kicker">{item.category || item.type}</p>
+          {(offer.canSell || offer.canBook) && (
+            <span className="cm-offer-tag">
+              {offer.canSell && offer.canBook
+                ? "Buy or book"
+                : offer.canSell
+                  ? "For purchase"
+                  : "For booking"}
+            </span>
+          )}
+        </div>
         <h3>
           <Link to={path}>{item.name}</Link>
         </h3>
-        <p className="cm-meta">
-          <MapPin size={14} />
-          {item.city || "Location on request"}
-        </p>
-        <p className="cm-meta">
-          <Star size={14} />
-          {Number(item.rating || 0).toFixed(1)} · {item.reviews || 0} reviews
-        </p>
+        <div className="cm-card-meta-row">
+          <p className="cm-meta">
+            <MapPin size={13} strokeWidth={1.5} />
+            {item.city || "Location on request"}
+            {item.type !== "Vendor" && item.vendor && (
+              <span className="cm-vendor-inline">
+                <span aria-hidden="true">·</span> by{" "}
+                <strong>{item.vendor}</strong>
+              </span>
+            )}
+          </p>
+          {Number(item.reviews) > 0 ? (
+            <span className="cm-rating">
+              <Star size={12} fill="currentColor" />{" "}
+              {Number(item.rating || 0).toFixed(1)}{" "}
+              <small>
+                ({item.reviews}{" "}
+                {Number(item.reviews) === 1 ? "review" : "reviews"})
+              </small>
+            </span>
+          ) : (
+            <span className="cm-new-listing">
+              <Star size={12} strokeWidth={1.5} /> No reviews yet
+            </span>
+          )}
+        </div>
         {item.type === "Vendor" ? (
           <p className="cm-meta">
             <ShieldCheck size={14} />
@@ -94,65 +143,94 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
           </p>
         ) : (
           <>
-            <p>{item.vendor}</p>
-            {!item.offerType && <p>
-              <strong>
-                {item.price ? money(item.price) : "Request a quotation"}
-              </strong>
-              {item.price ? " onwards" : ""}
-            </p>}
-            <OfferPrices item={item}/><OfferActions item={item}/>
+            <div className="cm-card-commerce">
+              {!offer.type && (
+                <p className="cm-card-price">
+                  <small>
+                    {item.price ? "Starting from" : "Made for your celebration"}
+                  </small>
+                  <strong>
+                    {item.price ? money(item.price) : "Request a quotation"}
+                  </strong>
+                  {item.price ? <span> onwards</span> : null}
+                </p>
+              )}
+              <OfferPrices item={item} />
+              <OfferActions item={item} />
+            </div>
           </>
         )}
-        <div className="cm-actions">
-          <Link className="cm-button cm-primary" to={path}>
-            View details
+        <div className="cm-card-footer">
+          {toggleCompare && (
+            <label className="cm-compare-label">
+              <input
+                type="checkbox"
+                checked={compare}
+                disabled={compareFull && !compare}
+                onChange={() => toggleCompare(item)}
+              />
+              Compare
+            </label>
+          )}
+          <Link className="cm-card-details" to={path}>
+            View details <ArrowUpRight size={15} />
           </Link>
-          <button
-            onClick={wish}
-            disabled={busy}
-            aria-label={`${saved ? "Remove" : "Save"} ${item.name}`}
-          >
-            <Heart size={16} fill={saved ? "currentColor" : "none"} />
-            {saved ? "Saved" : "Save"}
-          </button>
         </div>
-        {toggleCompare && (
-          <label className="cm-compare-label">
-            <input
-              type="checkbox"
-              checked={compare}
-              disabled={compareFull && !compare}
-              onChange={() => toggleCompare(item)}
-            />
-            Compare service
-          </label>
-        )}
       </div>
     </article>
   );
 }
-function FilterDrawer({ children, close }) {
+function FilterDrawer({ children, close, reset, canReset, total }) {
   const ref = useRef(null);
   useEffect(() => {
-    ref.current.showModal();
+    const dialog = ref.current;
+    const previousOverflow = document.body.style.overflow;
+    dialog.showModal();
+    document.body.style.overflow = "hidden";
+    return () => {
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
+    };
   }, []);
   return (
     <dialog
       id="cm-filter-drawer"
       ref={ref}
-      className="customer-marketplace cm-filter-dialog"
-      aria-label="Search filters"
-      onCancel={close}
+      className="customer-marketplace cm-filter-dialog cm-filter-drawer"
+      aria-labelledby="cm-filter-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        close();
+      }}
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return;
+        const bounds = event.currentTarget.getBoundingClientRect();
+        if (
+          event.clientX < bounds.left ||
+          event.clientX > bounds.right ||
+          event.clientY < bounds.top ||
+          event.clientY > bounds.bottom
+        )
+          close();
+      }}
     >
-      <div className="cm-toolbar">
-        <h2>Refine your search</h2>
-        <button onClick={close}>Close</button>
+      <div className="cm-toolbar cm-drawer-heading">
+        <h2 id="cm-filter-title">Refine your search</h2>
+        <button onClick={close} aria-label="Close filters">
+          <X size={19} />
+        </button>
       </div>
       <div className="cm-drawer-fields">{children}</div>
-      <button className="cm-primary" onClick={close}>
-        View results
-      </button>
+      <div className="cm-drawer-footer">
+        <button onClick={reset} disabled={!canReset}>
+          Reset filters
+        </button>
+        <button className="cm-primary" onClick={close}>
+          {total == null
+            ? "View results"
+            : `View ${total} ${total === 1 ? "result" : "results"}`}
+        </button>
+      </div>
     </dialog>
   );
 }
@@ -160,7 +238,6 @@ export default function BrowsePage({ embedded = false }) {
   const [params, setParams] = useSearchParams(),
     location = useLocation(),
     catalog = useMarketplace("/catalog"),
-    [search, setSearch] = useState(params.get("q") || ""),
     [open, setOpen] = useState(false),
     [view, setView] = useState("grid"),
     [compare, setCompare] = useState([]);
@@ -173,6 +250,7 @@ export default function BrowsePage({ embedded = false }) {
   for (const k of [
     "q",
     "city",
+    "postalCode",
     "min",
     "max",
     "rating",
@@ -222,16 +300,12 @@ export default function BrowsePage({ embedded = false }) {
     },
     [setParams],
   );
-  const queryText = params.get("q") || "";
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (search !== queryText) filter("q", search);
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [search, queryText, filter]);
-  useEffect(() => {
-    setSearch(queryText);
-  }, [queryText]);
+  const activeFilters = [...params].filter(
+    ([key]) => !["page", "type", "sort"].includes(key),
+  );
+  const resetFilters = () => {
+    setParams(embedded && params.get("type") ? { type: kind } : {});
+  };
   const select = (key, label, options) => (
     <label>
       {label}
@@ -264,43 +338,77 @@ export default function BrowsePage({ embedded = false }) {
   );
   const filters = (
     <>
-      {select("category", "Category", catalog.data?.categories || [])}
-      {kind !== "vendors" &&
-        select(
-          "subcategory",
-          "Subcategory",
-          (catalog.data?.subcategories || []).filter(
-            (s) => !matched || s.categoryId === matched.id,
-          ),
-        )}
-      {select("city", "Location", catalog.data?.cities || [])}
-      <label>
-        Postal code
-        <input
-          value={params.get("postalCode") || ""}
-          maxLength={20}
-          onChange={(e) => filter("postalCode", e.target.value)}
-        />
-      </label>
-      {select("rating", "Rating", [
-        { id: 4, name: "4 stars and above" },
-        { id: 3, name: "3 stars and above" },
-      ])}
-      {kind !== "vendors" && (
-        <>
-          {input("date", "Event date", "date")}
-          {input("guests", "Guest count")}
-          {input("min", "Minimum price")}
-          {input("max", "Maximum price")}
-          {select(
-            "serviceType",
-            "Service type",
-            ["On site", "Rental", "Sale", "Digital", "Hybrid"].map((name) => ({
-              name,
-            })),
+      <fieldset className="cm-filter-section">
+        <legend>
+          <Sparkles size={14} /> Your essentials
+        </legend>
+        {select("category", "Category", catalog.data?.categories || [])}
+        {kind !== "vendors" &&
+          select(
+            "subcategory",
+            "Subcategory",
+            (catalog.data?.subcategories || []).filter(
+              (s) => !matched || s.categoryId === matched.id,
+            ),
           )}
-        </>
-      )}
+      </fieldset>
+      <fieldset className="cm-filter-section">
+        <legend>
+          <MapPin size={14} /> The perfect place
+        </legend>
+        {select("city", "Location", catalog.data?.cities || [])}
+        <label>
+          Postal code
+          <input
+            value={params.get("postalCode") || ""}
+            placeholder="Enter postal code"
+            autoComplete="postal-code"
+            maxLength={20}
+            onChange={(e) => filter("postalCode", e.target.value)}
+          />
+        </label>
+      </fieldset>
+      <details
+        className="cm-filter-advanced"
+        open={
+          ["rating", "date", "guests", "min", "max", "serviceType"].some(
+            (key) => params.has(key),
+          ) || undefined
+        }
+      >
+        <summary>
+          <span>
+            <SlidersHorizontal size={14} /> More preferences
+          </span>
+          <ChevronDown size={14} />
+        </summary>
+        <fieldset className="cm-filter-section">
+          <legend className="cm-visually-hidden">
+            Rating, budget and event preferences
+          </legend>
+          {select("rating", "Rating", [
+            { id: 4, name: "4 stars and above" },
+            { id: 3, name: "3 stars and above" },
+          ])}
+          {kind !== "vendors" && (
+            <>
+              {input("date", "Event date", "date")}
+              {input("guests", "Guest count")}
+              {input("min", "Minimum price")}
+              {input("max", "Maximum price")}
+              {select(
+                "serviceType",
+                "Service type",
+                ["On site", "Rental", "Sale", "Digital", "Hybrid"].map(
+                  (name) => ({
+                    name,
+                  }),
+                ),
+              )}
+            </>
+          )}
+        </fieldset>
+      </details>
     </>
   );
   const toggleCompare = (item) =>
@@ -313,133 +421,183 @@ export default function BrowsePage({ embedded = false }) {
     );
   return (
     <main
-      className={`customer-marketplace ${embedded ? "cm-embedded" : ""}`}
+      className={`customer-marketplace cm-browse ${embedded ? "cm-embedded" : ""}`}
       id={embedded ? undefined : "main-content"}
     >
-      <nav aria-label="Breadcrumb">
-        <Link to="/">Home</Link> / {kind === "vendors" ? "Vendors" : "Services"}
+      <nav className="cm-breadcrumb" aria-label="Breadcrumb">
+        <Link to="/">Home</Link> <ChevronRight size={12} />{" "}
+        <span aria-current="page">
+          {kind === "vendors"
+            ? "Wedding professionals"
+            : kind === "packages"
+              ? "Wedding packages"
+              : kind === "offers"
+                ? "Wedding offers"
+                : "Wedding services"}
+        </span>
       </nav>
-      <p className="cm-kicker">THOUGHTFULLY CHOSEN FOR YOUR CELEBRATION</p>
-      <h1>
-        {kind === "vendors"
-          ? "Meet your wedding dream team."
-          : "Find the details that feel like you."}
-      </h1>
-      <p>
-        Discover approved professionals, explore their work, and bring your
-        celebration together.
-      </p>
-      <div className="cm-toolbar">
-        <label className="cm-search">
-          Search
-          <input
-            type="search"
-            placeholder={
-              kind === "vendors" ? "Business name" : "Service or vendor name"
-            }
-            maxLength={150}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </label>
-        {embedded && (
-          <label>
-            Browse
-            <select
-              value={kind}
-              onChange={(e) => filter("type", e.target.value)}
+      <div className="cm-discovery-controls">
+        {catalog.data?.categories.length > 0 && (
+          <div className="cm-category-bar" aria-label="Popular categories">
+            <span>Explore</span>
+            <button
+              aria-pressed={!requested}
+              onClick={() => {
+                if (location.pathname === "/venues")
+                  navigate(
+                    `/services?${new URLSearchParams([...params].filter(([key]) => key !== "category" && key !== "subcategory" && key !== "page"))}`,
+                  );
+                else filter("category", "");
+              }}
             >
-              <option value="services">Services</option>
-              <option value="vendors">Vendors</option>
-              <option value="packages">Packages</option>
-              <option value="offers">Vendors with offers</option>
+              All categories
+            </button>
+            {catalog.data.categories.slice(0, 5).map((category) => (
+              <button
+                key={category.id}
+                aria-pressed={matched?.id === category.id}
+                onClick={() => filter("category", String(category.id))}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="cm-toolbar cm-results-toolbar">
+          {embedded && (
+            <label>
+              <span className="cm-control-label">Browse</span>
+              <select
+                value={kind}
+                onChange={(e) => filter("type", e.target.value)}
+              >
+                <option value="services">Services</option>
+                <option value="vendors">Vendors</option>
+                <option value="packages">Packages</option>
+                <option value="offers">Vendors with offers</option>
+              </select>
+            </label>
+          )}
+          <label className="cm-sort">
+            <span className="cm-control-label">Sort by</span>
+            <select
+              value={params.get("sort") || "relevance"}
+              onChange={(e) => filter("sort", e.target.value)}
+            >
+              {[
+                ["relevance", "Recommended"],
+                ["rating", "Highest rated"],
+                ...(kind === "vendors"
+                  ? []
+                  : [
+                      ["priceAsc", "Price: low to high"],
+                      ["priceDesc", "Price: high to low"],
+                    ]),
+                ["newest", "Newest"],
+              ].map(([v, n]) => (
+                <option key={v} value={v}>
+                  {n}
+                </option>
+              ))}
             </select>
           </label>
-        )}
-        <label>
-          Sort by
-          <select
-            value={params.get("sort") || "relevance"}
-            onChange={(e) => filter("sort", e.target.value)}
+          <button
+            className="cm-filter-toggle"
+            aria-expanded={open}
+            aria-controls="cm-filter-drawer"
+            aria-haspopup="dialog"
+            onClick={() => setOpen(!open)}
           >
-            {[
-              ["relevance", "Recommended"],
-              ["rating", "Highest rated"],
-              ...(kind === "vendors"
-                ? []
-                : [
-                    ["priceAsc", "Price: low to high"],
-                    ["priceDesc", "Price: high to low"],
-                  ]),
-              ["newest", "Newest"],
-            ].map(([v, n]) => (
-              <option key={v} value={v}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          className="cm-filter-toggle"
-          aria-expanded={open}
-          aria-controls="cm-filter-drawer"
-          onClick={() => setOpen(!open)}
-        >
-          <SlidersHorizontal size={17} />
-          Filters
-        </button>
-        <button
-          aria-label="Grid view"
-          aria-pressed={view === "grid"}
-          onClick={() => setView("grid")}
-        >
-          <LayoutGrid size={17} />
-        </button>
-        <button
-          aria-label="List view"
-          aria-pressed={view === "list"}
-          onClick={() => setView("list")}
-        >
-          <List size={17} />
-        </button>
+            <SlidersHorizontal size={17} />
+            Filters{" "}
+            {activeFilters.length > 0 && <span>{activeFilters.length}</span>}
+          </button>
+          <div
+            className="cm-view-switch"
+            role="group"
+            aria-label="Results layout"
+          >
+            <button
+              aria-label="Grid view"
+              aria-pressed={view === "grid"}
+              onClick={() => setView("grid")}
+            >
+              <LayoutGrid size={17} />
+            </button>
+            <button
+              aria-label="List view"
+              aria-pressed={view === "list"}
+              onClick={() => setView("list")}
+            >
+              <List size={17} />
+            </button>
+          </div>
+        </div>
       </div>
-      <div className="cm-chips">
-        {[...params]
-          .filter(([k]) => !["page", "type", "sort"].includes(k))
-          .map(([k, v]) => (
+      {activeFilters.length > 0 && (
+        <div className="cm-chips">
+          {activeFilters.map(([k, v]) => (
             <button
               key={k}
               aria-label={`Remove ${k} filter`}
               onClick={() => filter(k, "")}
             >
-              {k}: {k === "category" ? matched?.name || v : v} ×
+              {k === "category"
+                ? matched?.name || v
+                : k === "subcategory"
+                  ? catalog.data?.subcategories.find((s) => String(s.id) === v)
+                      ?.name || v
+                  : `${{ q: "Search", min: "Min price", max: "Max price", postalCode: "Postal code", serviceType: "Service type", date: "Event date", guests: "Guests", rating: "Rating", city: "Location" }[k] || k}: ${v}`}{" "}
+              <X size={12} />
             </button>
           ))}
-        {params.size > 0 && (
-          <button
-            onClick={() => {
-              setSearch("");
-              setParams({});
-            }}
-          >
-            Clear all
-          </button>
-        )}
-      </div>
+          {activeFilters.length > 0 && (
+            <button className="cm-reset" onClick={resetFilters}>
+              Clear all
+            </button>
+          )}
+        </div>
+      )}
       <ReadState state={catalog} />
       <div className="cm-body">
-        <aside aria-label="Search filters" className="cm-filters">
-          {filters}
-        </aside>
         {open && (
-          <FilterDrawer close={() => setOpen(false)}>{filters}</FilterDrawer>
+          <FilterDrawer
+            close={() => setOpen(false)}
+            reset={resetFilters}
+            canReset={activeFilters.length > 0}
+            total={results.data?.total}
+          >
+            {filters}
+          </FilterDrawer>
         )}
-        <section aria-label="Search results">
-          <p aria-live="polite">
-            {results.data
-              ? `${results.data.total} results`
-              : "Finding your possibilities…"}
-          </p>
+        <section
+          aria-label="Search results"
+          className="cm-results"
+          aria-busy={results.loading || catalog.loading || false}
+        >
+          <div className="cm-results-heading">
+            <div>
+              <p className="cm-kicker">YOUR CELEBRATION STARTS HERE</p>
+              <h1>
+                {matched?.name ||
+                  (kind === "vendors"
+                    ? "Meet the professionals"
+                    : kind === "packages"
+                      ? "Beautifully brought together"
+                      : "Discover the possibilities")}
+              </h1>
+            </div>
+            <p aria-live="polite">
+              {results.data ? (
+                <>
+                  <strong>{results.data.total}</strong>{" "}
+                  {results.data.total === 1 ? "result" : "results"}
+                </>
+              ) : (
+                "Finding your possibilities…"
+              )}
+            </p>
+          </div>
           {results.loading ? (
             <div
               className="cm-grid"
@@ -506,18 +664,14 @@ export default function BrowsePage({ embedded = false }) {
             </>
           ) : (
             results.data && (
-              <div className="cm-state">
+              <div className="cm-state cm-empty-results">
+                <Flower2 size={34} strokeWidth={1} />
                 <h2>Let’s try a different combination.</h2>
                 <p>
                   Try another city, broaden your price range, or remove a
                   filter.
                 </p>
-                <button
-                  onClick={() => {
-                    setSearch("");
-                    setParams({});
-                  }}
-                >
+                <button className="cm-primary" onClick={resetFilters}>
                   Reset filters
                 </button>
               </div>

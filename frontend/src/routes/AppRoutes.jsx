@@ -209,6 +209,7 @@ const AdminManagement = lazy(
 );
 import MarketplacePage from "../modules/public/pages/MarketplacePage";
 const HomePage = lazy(() => import("../modules/public/pages/HomePage"));
+const CategoriesPage = lazy(() => import("../modules/public/pages/CategoriesPage"));
 const AboutPage = lazy(() => import("../modules/public/pages/AboutPage"));
 const ContactPage = lazy(() => import("../modules/public/pages/ContactPage"));
 const TermsPage = lazy(
@@ -241,6 +242,14 @@ export default function AppRoutes() {
         element={
           <PublicPage>
             <HomePage />
+          </PublicPage>
+        }
+      />
+      <Route
+        path="/categories"
+        element={
+          <PublicPage>
+            <CategoriesPage />
           </PublicPage>
         }
       />

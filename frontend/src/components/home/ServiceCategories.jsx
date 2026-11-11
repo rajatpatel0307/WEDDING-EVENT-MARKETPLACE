@@ -12,6 +12,11 @@ export default function ServiceCategories({
   retry,
   visual = true,
 }) {
+  const midpoint = Math.ceil((items?.length || 0) / 2);
+  const rows = items?.length
+    ? [items.slice(0, midpoint), items.slice(midpoint)].filter((row) => row.length)
+    : [];
+
   const renderCard = (item, index) => {
     const image =
       item.image ||
@@ -22,7 +27,7 @@ export default function ServiceCategories({
       <Link
         key={`${item.name}-${index}`}
         to={servicePath(item.name)}
-        className="group relative block w-full h-44 sm:h-52 lg:h-56 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200/80 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+        className="group relative block flex-none w-[calc((100cqw-var(--category-gap))/1.25)] sm:w-[calc((100cqw-var(--category-gap))/2)] lg:w-[calc((100cqw-3*var(--category-gap))/4)] h-44 sm:h-52 lg:h-56 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200/80 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
       >
         {/* Category Image */}
         <img
@@ -74,18 +79,30 @@ export default function ServiceCategories({
               ? "Explore the people and possibilities behind your celebration."
               : "Find wedding professionals for every part of your celebration."
           }
-          link="/services"
-          linkText="All services"
+          link="/categories"
+          linkText="All categories"
         />
       </div>
 
-      {/* Fixed 4 Column Grid */}
+      {/* Both rows reverse at the last card and travel in opposite directions. */}
       {items?.length ? (
         <div className="max-w-[1230px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-            {items.map((item, index) =>
-              renderCard(item, index)
-            )}
+          <div className="grid gap-4 sm:gap-5 lg:gap-6 [container-type:inline-size] [--category-gap:1rem] sm:[--category-gap:1.25rem] lg:[--category-gap:1.5rem]">
+            {rows.map((row, rowIndex) => (
+              <div
+                className="group/service-row overflow-hidden py-1.5 focus-within:overflow-x-auto motion-reduce:overflow-x-auto"
+                key={rowIndex}
+              >
+                <div
+                  className={`flex w-max gap-4 sm:gap-5 lg:gap-6 animate-service-categories-scroll group-hover/service-row:[animation-play-state:paused] group-active/service-row:[animation-play-state:paused] group-focus-within/service-row:animate-none motion-reduce:animate-none ${rowIndex === 0 ? "[animation-direction:alternate]" : "[animation-direction:alternate-reverse]"}`}
+                  style={{
+                    "--category-duration": `${(Math.max(midpoint - 4, 1) * 10) }s`,
+                  }}
+                >
+                  {row.map((item, index) => renderCard(item, index))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       ) : (

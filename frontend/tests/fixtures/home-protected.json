@@ -42,7 +42,7 @@
   "src/components/home/HomeCollections.jsx": "5b2712e8a39b4932991b6549bbf709fe72ec51bfc8f5c99ed608fbacee44870e",
   "src/components/home/HomeCTA.jsx": "178737ab5275517c2f576879cb862ad2a48f76552bee531dfec23438fbf67dae",
   "src/components/home/HowItWorks.jsx": "07f4e525e4e1a6bbd801038df1b1754cbfcb77e68dce7b05900b9339641f2588",
-  "src/components/home/ServiceCategories.jsx": "bc2a2b6894704a9aa71090ac073c4bcf4de9cb7723a5ca462353269d0741324c",
+  "src/components/home/ServiceCategories.jsx": "dbca166f79be03cfc988f15d25fb5c9b34b570bbdff3f4b2eb751c6a1806313b",
   "src/components/home/Testimonials.jsx": "215276f2a8b2d42a1ce1bcfbb22fd730be9de45e8a860b21ee6df7f728b5a309",
   "src/components/home/WhyChooseUs.jsx": "58d2e688dee8f45131bdd29e8f00c19d086cab87fe2d5fb32aee8c08555ae3c6",
   "src/components/layout/DesktopNavbar.jsx": "1d5c698fc2633fefc32c2d8446e56557f9e788736920739fe0cd91680bd185f9",
@@ -63,5 +63,5 @@
   "src/modules/public/pages/HomePage.jsx": "b1f87682a271f2396cd3cdef859747c34739aadebb6d8f2916fe99884ec11319",
   "src/modules/public/public.css": "aa784b0afc2a9c88c98d4ce283fdbc7bcaac6dd73c63a40f394d8167999a3ec3",
   "src/services/public.js": "e2deb154e7da88af74364c3d1c154be9894d236601cf9e5026a4fa16918efaf4",
-  "src/tailwind.css": "9815229a421ec8f00bce09ebafb47a96d29f1462c9a7944dc98e195222d842ad"
+  "src/tailwind.css": "78fc9fb24d64fa3cd13e527498ca3fbdff851baf48aad6ba9d93e43fc7e1940e"
 }
