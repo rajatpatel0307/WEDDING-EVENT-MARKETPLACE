@@ -2,7 +2,6 @@ import {
   LayoutDashboard,
   Users,
   Store,
-  ClipboardCheck,
   Files,
   Tags,
   Layers,
@@ -35,7 +34,6 @@ const navigationGroups = [
     items: [
       ["customers", "All Customers", Users],
       ["vendors", "All Vendors", Store],
-      ["vendor-access", "Vendor Access Control", ClipboardCheck],
     ],
   },
   {

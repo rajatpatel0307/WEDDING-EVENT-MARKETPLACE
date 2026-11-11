@@ -73,7 +73,14 @@ function defaultColumns(columns, resource, compact) {
     .slice(0, compact ? 7 : ["customers", "vendors"].includes(resource) ? 16 : 8);
 }
 
-export function Badge({ children }) {
+export function Badge({ children, highlighted = false }) {
+  if (highlighted && ["Approved", "Active"].includes(children)) {
+    return (
+      <span className="inline-flex items-center rounded-[6px] border border-[#86c6a5] bg-[#dcfce7] px-[10px] py-[5px] text-[10px] font-semibold leading-tight text-[#166534]">
+        {children}
+      </span>
+    );
+  }
   return (
     <span className={`ad-badge rounded-[5px] inline-flex text-[8px] [padding:3px_7px] [background:#f1f4ed] text-[#85927b] [white-space:normal] [&.ad-badge-approved]:[background:#edf5e9] [&.ad-badge-approved]:text-[#65905d] [&.ad-badge-active]:[background:#edf5e9] [&.ad-badge-active]:text-[#65905d] [&.ad-badge-confirmed]:[background:#edf5e9] [&.ad-badge-confirmed]:text-[#65905d] [&.ad-badge-success]:[background:#edf5e9] [&.ad-badge-success]:text-[#65905d] [&.ad-badge-paid]:[background:#edf5e9] [&.ad-badge-paid]:text-[#65905d] [&.ad-badge-published]:[background:#edf5e9] [&.ad-badge-published]:text-[#65905d] [&.ad-badge-completed]:[background:#edf5e9] [&.ad-badge-completed]:text-[#65905d] [&.ad-badge-pending]:[background:#fbf5e7] [&.ad-badge-pending]:text-[#b09454] [&.ad-badge-underreview]:[background:#fbf5e7] [&.ad-badge-underreview]:text-[#b09454] [&.ad-badge-processing]:[background:#fbf5e7] [&.ad-badge-processing]:text-[#b09454] [&.ad-badge-invited]:[background:#fbf5e7] [&.ad-badge-invited]:text-[#b09454] [&.ad-badge-rejected]:[background:#fcf0eb] [&.ad-badge-rejected]:text-[#bc7c68] [&.ad-badge-cancelled]:[background:#fcf0eb] [&.ad-badge-cancelled]:text-[#bc7c68] [&.ad-badge-failed]:[background:#fcf0eb] [&.ad-badge-failed]:text-[#bc7c68] [&.ad-badge-blocked]:[background:#fcf0eb] [&.ad-badge-blocked]:text-[#bc7c68] [&.ad-badge-suspended]:[background:#fcf0eb] [&.ad-badge-suspended]:text-[#bc7c68] [&.ad-badge-disputed]:[background:#fcf0eb] [&.ad-badge-disputed]:text-[#bc7c68] ad-badge-${String(children || "").toLowerCase().replace(/\s/g, "")}`}>
       {children === "UnderReview" ? "Under Review" : children || "—"}
@@ -132,6 +139,24 @@ function display(key, value, row = {}) {
   if (typeof value === "number") return number(value);
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
+}
+
+function VendorAvatar({ row }) {
+  const [failedSource, setFailedSource] = useState(null);
+  const src = row?.profilePhotoUrl;
+  return (
+    <span className="ad-vendor-avatar inline-flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-[7px] border border-[#dae6df] bg-[#f3f5ef] text-[10px] text-[#98916e]">
+      {src && src !== failedSource ? (
+        <img
+          src={src}
+          alt={`${row?.name || "Vendor"} profile`}
+          className="size-full object-cover"
+          loading="lazy"
+          onError={() => setFailedSource(src)}
+        />
+      ) : String(row?.name || "?").slice(0, 1)}
+    </span>
+  );
 }
 
 function VendorCategories({ value, vendorId }) {
@@ -573,9 +598,9 @@ export default function AdminTable({
                       ) : key === "name" ? (
                         <button type="button" className="ad-record-name flex items-center gap-[9px] [border-top-width:0] [border-top-style:none] [border-top-color:currentColor] [border-right-width:0] [border-right-style:none] [border-right-color:currentColor] [border-bottom-width:0] [border-bottom-style:none] [border-bottom-color:currentColor] [border-left-width:0] [border-left-style:none] [border-left-color:currentColor] [background:none] text-left text-[#4c6554] p-[0] text-[10px] [@media(width<=767px)]:text-[12px] [@media(767px<width<=1200px)]:text-[9px] leading-[1.6] font-[500] max-w-full [&_>_span:last-child]:[overflow-wrap:anywhere] [&_>_span:last-child]:min-w-0 [@media(width<=767px)]:[&_.ad-avatar]:inline-flex [@media(767px<width<=1200px)]:[&_.ad-avatar]:hidden"
                           onClick={() => open(row, "view")}>
-                          <span className="ad-avatar ad-avatar-small w-[28px] h-[28px] inline-flex items-center justify-center [background:#f3f5ef] text-[#98916e] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dae6df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dae6df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dae6df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dae6df] rounded-[7px] text-[10px] shrink-0">
+                          {["vendors", "applications"].includes(resource) ? <VendorAvatar row={row} /> : <span className="ad-avatar ad-avatar-small w-[28px] h-[28px] inline-flex items-center justify-center [background:#f3f5ef] text-[#98916e] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dae6df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dae6df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dae6df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dae6df] rounded-[7px] text-[10px] shrink-0">
                             {resource === "categories" ? <img src={categoryImage(row)} alt={`${row.name} category`} className="size-full rounded-[6px] object-cover" /> : String(row?.name || "?").slice(0, 1)}
-                          </span>
+                          </span>}
                           <span>
                             {display(key, row?.[key], row)}
                             {compact && row?.email &&

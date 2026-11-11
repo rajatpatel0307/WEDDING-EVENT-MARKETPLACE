@@ -70,7 +70,12 @@ export async function list(name, query) {
     replacements,
   );
   const rows = await select(
-    `SELECT ${Object.entries(columns)
+    `SELECT ${Object.entries({
+      ...columns,
+      ...(["vendors", "applications"].includes(name)
+        ? { profilePhotoUrl: "COALESCE(u.ProfilePhotoUrl,u.ProfileImageUrl,t.LogoUrl)" }
+        : {}),
+    })
       .map(([key, value]) => `${value} AS [${key}]`)
       .join(
         ",",

@@ -58,6 +58,9 @@ const tabs = [
   ["history", "Approval History"],
   ["audit", "Audit Logs"],
 ];
+const countedTabs = new Set([
+  "services", "packages", "bookings", "quotations", "reviews", "documents",
+]);
 const columns = {
   payments: [
     ["reference", "Payment reference"],
@@ -232,7 +235,6 @@ function VendorImage({
   src,
   alt = "",
   className = "",
-  cover = false,
   name = "",
 }) {
   const [failed, setFailed] = useState(false);
@@ -248,15 +250,7 @@ function VendorImage({
       className={`${className} vd-image-fallback`}
       aria-label={alt || undefined}
     >
-      {cover ? (
-        <>
-          <span className="vd-cover-lines absolute w-[440px] h-[440px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#ffffff20] [border-right-width:1px] [border-right-style:solid] [border-right-color:#ffffff20] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#ffffff20] [border-left-width:1px] [border-left-style:solid] [border-left-color:#ffffff20] rounded-[50%] top-[-300px] right-[10%] [box-shadow:0_0_0_35px_#ffffff05,_0_0_0_70px_#ffffff05,_0_0_0_105px_#ffffff05]" />
-          <span className="vd-cover-mark absolute right-[32px] [@media(width<=600px)]:right-[19px] bottom-[27px] [@media(width<=600px)]:bottom-[25px] text-[#dce8d9] tracking-[5px] text-[19px] [@media(width<=600px)]:text-[15px] font-[300] [&_>_span]:text-[#d5c79b] [&_small]:block [&_small]:tracking-[3px] [&_small]:text-[7px] [&_small]:text-right [&_small]:mt-[6px] [&_small]:text-[#b2c6b0]">
-            MARRY<span>NEST</span>
-            <small>THE VENDOR COLLECTIVE</small>
-          </span>
-        </>
-      ) : name ? (
+      {name ? (
         name.slice(0, 2).toUpperCase()
       ) : (
         <ImageIcon size={19} />
@@ -567,7 +561,8 @@ export default function VendorDetailsPage() {
     [formError, setFormError] = useState(""),
     [viewer, setViewer] = useState(null),
     [loadingDoc, setLoadingDoc] = useState(false);
-  const tabRefs = useRef([]),
+  const tabListRef = useRef(null),
+    tabRefs = useRef([]),
     previewUrl = useRef(null),
     documentRequest = useRef(null);
   const tab = tabs.some(([key]) => key === params.get("tab"))
@@ -576,6 +571,18 @@ export default function VendorDetailsPage() {
   function selectTab(key) {
     setParams(key === "overview" ? {} : { tab: key }, { replace: true });
   }
+  useEffect(() => {
+    const viewport = tabListRef.current;
+    const selected = tabRefs.current[tabs.findIndex(([key]) => key === tab)];
+    if (!viewport || !selected) return;
+    const left = selected.offsetLeft;
+    const right = left + selected.offsetWidth;
+    if (left < viewport.scrollLeft) {
+      viewport.scrollTo({ left, behavior: "smooth" });
+    } else if (right > viewport.scrollLeft + viewport.clientWidth) {
+      viewport.scrollTo({ left: right - viewport.clientWidth, behavior: "smooth" });
+    }
+  }, [tab, data?.vendor?.id]);
   useEffect(() => {
     const abort = new AbortController();
     setError(null);
@@ -754,37 +761,53 @@ export default function VendorDetailsPage() {
         </span>
       </div>
       <section className="ad-panel vd-header [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]" aria-label="Vendor profile">
-        <VendorImage
-          key={v.coverUrl}
-          src={v.coverUrl}
-          alt={`${v.businessName} cover`}
-          className="vd-cover block w-full h-[166px] [@media(width<=600px)]:h-[125px] object-cover relative [&.vd-image-fallback]:block [&.vd-image-fallback]:[background:linear-gradient(115deg,_#143f35,_#2e5d4b_55%,_#6c8767)] [&.vd-image-fallback]:[overflow-x:hidden] [&.vd-image-fallback]:[overflow-y:hidden]"
-          cover
-        />
         <div className="vd-header-body [padding:0_28px_0] [@media(width<=600px)]:[padding:0_17px]">
-          <div className="vd-header-row flex items-center [@media(width<=1200px)]:items-start justify-between gap-[22px] [@media(width<=1000px)]:gap-[0] [@media(width<=1000px)]:flex-col">
-            <div className="vd-identity flex items-center [@media(width<=600px)]:items-start gap-[20px] [@media(width<=600px)]:gap-[13px] min-w-0 pt-[20px]">
-              <VendorImage
-                key={v.logoUrl}
-                src={v.logoUrl}
-                alt={`${v.businessName} logo`}
-                className="vd-logo w-[91px] [@media(width<=600px)]:w-[65px] h-[91px] [@media(width<=600px)]:h-[65px] object-cover shrink-0 [border-top-width:5px] [border-top-style:solid] [border-top-color:white] [border-right-width:5px] [border-right-style:solid] [border-right-color:white] [border-bottom-width:5px] [border-bottom-style:solid] [border-bottom-color:white] [border-left-width:5px] [border-left-style:solid] [border-left-color:white] rounded-[18px] [@media(width<=600px)]:rounded-[12px] [background:#eef3ed] [box-shadow:0_0_0_1px_#e3e9e1] mt-[-49px] [@media(width<=600px)]:mt-[-50px] relative [&.vd-image-fallback]:grid [&.vd-image-fallback]:place-items-center [&.vd-image-fallback]:text-[#577755] [&.vd-image-fallback]:text-[30px] [&.vd-image-fallback]:font-[600]"
-                name={v.businessName}
-              />
-              <div>
-                <div className="ad-eyebrow text-[8px] [@media(width<=767px)]:text-[7px] tracking-[1.7px] text-[#7d9183] flex items-center gap-[6px] [&_>_span]:w-[5px] [&_>_span]:h-[5px] [&_>_span]:[background:#bfa471] [&_>_span]:rounded-[50%]">VENDOR PROFILE</div>
-                <h1>{v.businessName}</h1>
-                <div className="vd-badges flex items-center [&_>_span:last-child]:flex [&_>_span:last-child]:items-center flex-wrap gap-[8px] [@media(width<=600px)]:gap-[6px] [&_>_span:last-child]:gap-[4px] [&_>_span:last-child]:text-[#82907e] [&_>_span:last-child]:text-[11px]">
-                  <Badge>{v.status}</Badge>
-                  <Badge>{v.active ? "Active" : "Inactive"}</Badge>
-                  <span>
-                    <MapPin size={13} />
-                    {primary?.city || "City not provided"}
-                  </span>
+          <div className="vd-header-row grid grid-cols-[minmax(0,1fr)_minmax(0,440px)] items-start gap-[28px] py-[24px] [@media(width<=1200px)]:grid-cols-[1fr] [@media(width<=600px)]:gap-[20px] [@media(width<=600px)]:py-[20px]">
+            <div className="vd-summary min-w-0">
+              <div className="vd-identity flex items-center [@media(width<=600px)]:items-start gap-[20px] [@media(width<=600px)]:gap-[13px] min-w-0">
+                <VendorImage
+                  key={v.profilePhotoUrl || v.logoUrl}
+                  src={v.profilePhotoUrl || v.logoUrl}
+                  alt={`${v.businessName} profile`}
+                  className="vd-logo w-[91px] [@media(width<=600px)]:w-[65px] h-[91px] [@media(width<=600px)]:h-[65px] object-cover shrink-0 [border-top-width:5px] [border-top-style:solid] [border-top-color:white] [border-right-width:5px] [border-right-style:solid] [border-right-color:white] [border-bottom-width:5px] [border-bottom-style:solid] [border-bottom-color:white] [border-left-width:5px] [border-left-style:solid] [border-left-color:white] rounded-[18px] [@media(width<=600px)]:rounded-[12px] [background:#eef3ed] [box-shadow:0_0_0_1px_#e3e9e1] relative [&.vd-image-fallback]:grid [&.vd-image-fallback]:place-items-center [&.vd-image-fallback]:text-[#577755] [&.vd-image-fallback]:text-[30px] [&.vd-image-fallback]:font-[600]"
+                  name={v.businessName}
+                />
+                <div className="min-w-0">
+                  <div className="ad-eyebrow text-[8px] [@media(width<=767px)]:text-[7px] tracking-[1.7px] text-[#7d9183] flex items-center gap-[6px] [&_>_span]:w-[5px] [&_>_span]:h-[5px] [&_>_span]:[background:#bfa471] [&_>_span]:rounded-[50%]">VENDOR PROFILE</div>
+                  <h1 className="my-[8px] text-[26px] leading-tight font-semibold text-[#24483d] [overflow-wrap:anywhere] [@media(width<=600px)]:text-[22px]">{v.businessName}</h1>
+                  <div className="vd-badges flex items-center [&_>_span:last-child]:flex [&_>_span:last-child]:items-center flex-wrap gap-[8px] [@media(width<=600px)]:gap-[6px] [&_>_span:last-child]:gap-[4px] [&_>_span:last-child]:text-[#82907e] [&_>_span:last-child]:text-[11px]">
+                    <Badge highlighted>{v.status}</Badge>
+                    <Badge highlighted>{v.active ? "Active" : "Inactive"}</Badge>
+                    <span>
+                      <MapPin size={13} />
+                      {primary?.city || "City not provided"}
+                    </span>
+                  </div>
                 </div>
               </div>
+              <div className="vd-contact flex items-center [@media(width<=600px)]:items-start [&_>_span]:flex [&_>_span]:items-center gap-[22px] [@media(width<=600px)]:gap-[9px] flex-wrap text-[#73816c] mt-[23px] [@media(width<=600px)]:mt-[18px] [&_>_span]:gap-[7px] [&_>_span]:text-[12px] [@media(width<=600px)]:[&_>_span]:text-[11px] [&_>_span]:[overflow-wrap:anywhere] [&_>_span]:min-w-0 [@media(width<=600px)]:flex-col">
+                <span>
+                  <UserRound size={14} />
+                  {v.owner}
+                </span>
+                <span>
+                  <Mail size={14} />
+                  {v.email}
+                </span>
+                <span>
+                  <Phone size={14} />
+                  {v.phone || "Phone not provided"}
+                </span>
+              </div>
+              <div className="vd-categories flex items-center flex-wrap gap-[6px] mt-[14px] [&_>_span]:text-[10px] [&_>_span]:text-[#687d61] [&_>_span]:[background:#f0f4ed] [&_>_span]:[border-top-width:1px] [&_>_span]:[border-top-style:solid] [&_>_span]:[border-top-color:#e4ebdf] [&_>_span]:[border-right-width:1px] [&_>_span]:[border-right-style:solid] [&_>_span]:[border-right-color:#e4ebdf] [&_>_span]:[border-bottom-width:1px] [&_>_span]:[border-bottom-style:solid] [&_>_span]:[border-bottom-color:#e4ebdf] [&_>_span]:[border-left-width:1px] [&_>_span]:[border-left-style:solid] [&_>_span]:[border-left-color:#e4ebdf] [&_>_span]:rounded-[5px] [&_>_span]:[padding:3px_8px]">
+                {categories.length ? (
+                  categories.map((c) => <span key={c.id}>{c.name}</span>)
+                ) : (
+                  <span>No categories selected</span>
+                )}
+              </div>
             </div>
-            <div className="vd-actions flex items-center justify-end [@media(width<=1000px)]:justify-start gap-[8px] [@media(width<=600px)]:gap-[6px] flex-wrap pt-[22px] max-w-[420px] [@media(width<=1000px)]:max-w-[none] [@media(1000px<width<=1200px)]:max-w-[285px] [&_>_button]:[flex:0_0_auto] [@media(width<=600px)]:[&_>_button]:text-[9px] [@media(width<=600px)]:[&_>_button]:[padding:7px_9px]">
+            <div className="vd-actions flex min-w-0 items-center justify-start gap-[8px] flex-wrap [&_>_button]:[flex:0_0_auto] [@media(width<=600px)]:[&_>_button]:text-[10px] [@media(width<=600px)]:[&_>_button]:[padding:8px_10px]">
               {v.status === "Pending" && (
                 <button
                   className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
@@ -844,28 +867,7 @@ export default function VendorDetailsPage() {
               <VendorAccessActions key={id} vendorId={id} refreshKey={version} onChange={() => setVersion(value => value + 1)} />
             </div>
           </div>
-          <div className="vd-contact flex items-center [@media(width<=600px)]:items-start [&_>_span]:flex [&_>_span]:items-center gap-[22px] [@media(width<=600px)]:gap-[9px] flex-wrap text-[#73816c] mt-[23px] [@media(width<=600px)]:mt-[18px] [&_>_span]:gap-[7px] [&_>_span]:text-[12px] [@media(width<=600px)]:[&_>_span]:text-[11px] [&_>_span]:[overflow-wrap:anywhere] [&_>_span]:min-w-0 [@media(width<=600px)]:flex-col">
-            <span>
-              <UserRound size={14} />
-              {v.owner}
-            </span>
-            <span>
-              <Mail size={14} />
-              {v.email}
-            </span>
-            <span>
-              <Phone size={14} />
-              {v.phone || "Phone not provided"}
-            </span>
-          </div>
-          <div className="vd-categories flex items-center flex-wrap gap-[6px] [margin:17px_0_22px] [&_>_span]:text-[10px] [&_>_span]:text-[#687d61] [&_>_span]:[background:#f0f4ed] [&_>_span]:[border-top-width:1px] [&_>_span]:[border-top-style:solid] [&_>_span]:[border-top-color:#e4ebdf] [&_>_span]:[border-right-width:1px] [&_>_span]:[border-right-style:solid] [&_>_span]:[border-right-color:#e4ebdf] [&_>_span]:[border-bottom-width:1px] [&_>_span]:[border-bottom-style:solid] [&_>_span]:[border-bottom-color:#e4ebdf] [&_>_span]:[border-left-width:1px] [&_>_span]:[border-left-style:solid] [&_>_span]:[border-left-color:#e4ebdf] [&_>_span]:rounded-[5px] [&_>_span]:[padding:3px_8px]">
-            {categories.length ? (
-              categories.map((c) => <span key={c.id}>{c.name}</span>)
-            ) : (
-              <span>No categories selected</span>
-            )}
-          </div>
-          <dl className="vd-header-meta grid grid-cols-[1.4fr_1fr_1fr_0.8fr] [@media(width<=600px)]:grid-cols-[1fr] [@media(600px<width<=1000px)]:grid-cols-[1fr_1fr] [@media(1000px<width<=1200px)]:grid-cols-[1.4fr_1fr_1fr] gap-[22px] [@media(width<=600px)]:gap-[15px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#edf0e9] m-[0] [padding:20px_0_23px] [@media(width<=1200px)]:[&_>_div:last-child]:hidden">
+          <dl className="vd-header-meta grid grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] [@media(width<=1000px)]:grid-cols-[repeat(2,minmax(0,1fr))] [@media(width<=600px)]:grid-cols-[1fr] gap-x-[24px] gap-y-[18px] border-t border-[#edf0e9] m-0 py-[20px]">
             <Info label="Vendor ID">
               <span className="cd-id [font-family:ui-monospace,_monospace] text-[11px] text-[#728078]">{v.id}</span>
             </Info>
@@ -892,50 +894,70 @@ export default function VendorDetailsPage() {
           </div>
         </div>
       )}
-      <div
-        className="cd-tabs vd-tabs flex [overflow-x:visible] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dde6df] gap-[22px] [margin:24px_0_27px] [scrollbar-width:thin] [&_button]:flex [&_button]:items-center [&_button]:gap-[7px] [&_button]:whitespace-nowrap [&_button]:[border-top-width:0] [&_button]:[border-top-style:none] [&_button]:[border-top-color:currentColor] [&_button]:[border-right-width:0] [&_button]:[border-right-style:none] [&_button]:[border-right-color:currentColor] [&_button]:[border-bottom-width:2px] [&_button]:[border-bottom-style:solid] [&_button]:[border-bottom-color:transparent] [&_button]:[border-left-width:0] [&_button]:[border-left-style:none] [&_button]:[border-left-color:currentColor] [&_button]:[background:transparent] [&_button]:text-[#7b897f] [&_button]:[padding:0_0_15px] [&_button]:text-[12px] [&_button]:cursor-pointer [&_button.selected]:text-[#176b60] [&_button.selected]:[border-bottom-color:#176b60] [&_button.selected]:font-[600] [&_button_>_span]:text-[10px] [&_button_>_span]:rounded-[5px] [&_button_>_span]:[background:#e8eee9] [&_button_>_span]:text-[#6b8174] [&_button_>_span]:[padding:1px_5px] [&_button.selected_>_span]:[background:#dfeee6] [&_button.selected_>_span]:text-[#27725a] [&_button:focus-visible]:[outline:2px_solid_#176b60] [&_button:focus-visible]:[outline-offset:-2px] flex-wrap [overflow-y:visible] gap-y-[0] [&_button]:pt-[10px] [&_button]:pb-[10px]"
-        role="tablist"
-        aria-label="Vendor details sections"
+      <nav
+        className="vd-tabs my-[24px] flex min-w-0 items-center gap-[8px] rounded-[10px] border border-[#e3eae5] bg-white px-[10px] shadow-[0_2px_8px_#24483d03]"
+        aria-label="Vendor sections"
       >
-        {tabs.map(([key, label], i) => (
-          <button
-            key={key}
-            ref={(el) => {
-              tabRefs.current[i] = el;
-            }}
-            id={`vd-tab-${key}`}
-            role="tab"
-            aria-selected={tab === key}
-            aria-controls="vd-tabpanel"
-            tabIndex={tab === key ? 0 : -1}
-            className={tab === key ? "selected" : ""}
-            onClick={() => selectTab(key)}
-            onKeyDown={(e) => {
-              let next;
-              if (e.key === "ArrowRight") next = (i + 1) % tabs.length;
-              if (e.key === "ArrowLeft")
-                next = (i - 1 + tabs.length) % tabs.length;
-              if (e.key === "Home") next = 0;
-              if (e.key === "End") next = tabs.length - 1;
-              if (next !== undefined) {
-                e.preventDefault();
-                selectTab(tabs[next][0]);
-                tabRefs.current[next]?.focus();
-              }
-            }}
-          >
-            {label}
-            {[
-              "services",
-              "packages",
-              "bookings",
-              "quotations",
-              "reviews",
-              "documents",
-            ].includes(key) && <span>{number(s[key])}</span>}
-          </button>
-        ))}
-      </div>
+        <button
+          type="button"
+          className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-full text-[#819287] transition-colors hover:bg-[#f0f5f1] hover:text-[#176b60] focus-visible:outline-2 focus-visible:outline-[#176b60]"
+          aria-label="Scroll sections left"
+          onClick={() => tabListRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <div
+          ref={tabListRef}
+          role="tablist"
+          aria-label="Vendor details sections"
+          className="relative flex min-w-0 flex-1 items-stretch gap-[24px] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [@media(width<=600px)]:gap-[18px]"
+        >
+          {tabs.map(([key, label], i) => {
+            const selected = tab === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                ref={(el) => { tabRefs.current[i] = el; }}
+                id={`vd-tab-${key}`}
+                role="tab"
+                aria-selected={selected}
+                aria-controls="vd-tabpanel"
+                tabIndex={selected ? 0 : -1}
+                className={`inline-flex min-h-[54px] shrink-0 items-center justify-center gap-[7px] whitespace-nowrap border-x-0 border-t-0 border-b-2 bg-transparent px-[2px] py-[14px] text-[12px] leading-[1.4] font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-[#176b60] ${selected ? "selected border-[#176b60] text-[#176b60]" : "border-transparent text-[#77867d] hover:border-[#c5d6cb] hover:text-[#24483d]"}`}
+                onClick={() => selectTab(key)}
+                onKeyDown={(e) => {
+                  let next;
+                  if (e.key === "ArrowRight") next = (i + 1) % tabs.length;
+                  if (e.key === "ArrowLeft") next = (i - 1 + tabs.length) % tabs.length;
+                  if (e.key === "Home") next = 0;
+                  if (e.key === "End") next = tabs.length - 1;
+                  if (next !== undefined) {
+                    e.preventDefault();
+                    selectTab(tabs[next][0]);
+                    tabRefs.current[next]?.focus();
+                  }
+                }}
+              >
+                {label}
+                {countedTabs.has(key) && (
+                  <span className={`inline-flex min-w-[18px] items-center justify-center rounded-[5px] px-[5px] py-[3px] text-[9px] leading-none font-semibold tabular-nums ${selected ? "bg-[#e7f1ea] text-[#176b60]" : "bg-[#f1f4f1] text-[#86968b]"}`}>
+                    {number(s[key])}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          className="inline-flex size-[30px] shrink-0 items-center justify-center rounded-full text-[#819287] transition-colors hover:bg-[#f0f5f1] hover:text-[#176b60] focus-visible:outline-2 focus-visible:outline-[#176b60]"
+          aria-label="Scroll sections right"
+          onClick={() => tabListRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
+        >
+          <ChevronRight size={16} />
+        </button>
+      </nav>
       <div
         id="vd-tabpanel"
         role="tabpanel"

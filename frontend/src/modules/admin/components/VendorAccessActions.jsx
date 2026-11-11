@@ -40,13 +40,13 @@ export default function VendorAccessActions({ vendorId, refreshKey = 0, onChange
       if (e.status === 409) setRevision(value => value + 1);
     } finally { setBusy(false); }
   }
-  return <div className="w-full basis-full border-t border-[#edf1e8] mt-2 pt-3" aria-label="Vendor service and booking access actions">
-    {error ? <div className="text-xs text-[#b25454]" role="alert">{error} <button className={`${button} border-[#dfe7df] bg-white text-[#63786a]`} onClick={() => setRevision(value => value + 1)}>Retry access controls</button></div> : !current ? <p className="text-xs text-[#73816c]" role="status">Loading access controls…</p> : <div className="flex flex-col gap-3">
+  return <div className="w-full min-w-0 basis-full border-t border-[#edf1e8] mt-2 pt-3" aria-label="Vendor service and booking access actions">
+    {error ? <div className="text-xs text-[#b25454]" role="alert">{error} <button className={`${button} border-[#dfe7df] bg-white text-[#63786a]`} onClick={() => setRevision(value => value + 1)}>Retry access controls</button></div> : !current ? <p className="text-xs text-[#73816c]" role="status">Loading access controls…</p> : <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 [@media(width<=600px)]:grid-cols-[1fr]">
       {["service", "booking"].map(type => {
         const label = type === "service" ? "Service" : "Booking";
-        return <section key={type} aria-label={`${label} access`} className="flex flex-col items-end gap-2 [@media(width<=1000px)]:items-start">
-          <div className="flex items-center gap-2 text-[10px] text-[#63786a]"><span>{label} Access</span><Badge>{current[`${type}Status`]}</Badge></div>
-          <div className="flex flex-wrap justify-end gap-2 [@media(width<=1000px)]:justify-start">
+        return <section key={type} aria-label={`${label} access`} className="flex min-w-0 flex-col items-start gap-3 rounded-[8px] border border-[#edf1e8] bg-[#f8faf7] p-3">
+          <div className="flex w-full flex-wrap items-center justify-between gap-2 text-[10px] text-[#63786a]"><span>{label} Access</span><Badge highlighted>{current[`${type}Status`]}</Badge></div>
+          <div className="flex w-full flex-wrap justify-start gap-2 [&_button]:w-full [&_button]:whitespace-normal [&_button]:text-center">
             {actions.filter(action => action.status !== current[`${type}Status`]).map(action => <button key={action.action} className={`${button} ${action.style}`} disabled={busy} onClick={() => open(type, action)}><action.Icon size={14} />{action.label} {label}{action.action === "suspend" ? " Access" : ""}</button>)}
           </div>
         </section>;
