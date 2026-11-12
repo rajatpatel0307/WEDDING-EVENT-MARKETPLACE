@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, Menu, Search, ArrowUpRight, X, UserRound } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import Logo from "../common/Logo";
@@ -10,13 +10,22 @@ import LocationSelector from "./LocationSelector";
 import SearchBar from "./SearchBar";
 import ProfileDropdown from "./ProfileDropdown";
 import Modal from "./Modal";
+import { useSelectedLocation, setSelectedLocation } from "../../modules/marketplace/location-selection";
 export default function Navbar() {
   const { user, loading } = useAuth();
   const [open, setOpen] = useState(null),
     [drawer, setDrawer] = useState(false),
     [search, setSearch] = useState(false),
-    [city, setCity] = useState("Lucknow"),
     [scrolled, setScrolled] = useState(() => window.scrollY > 0);
+  const city = useSelectedLocation(), navigate = useNavigate();
+  const setCity = value => {
+    setSelectedLocation(value);
+    if (["/services", "/products", "/vendors", "/venues", "/packages", "/offers", "/search"].includes(location.pathname)) {
+      const params = new URLSearchParams(location.search);
+      params.set("city", value); params.delete("page");
+      navigate(`${location.pathname}?${params}`);
+    }
+  };
   const location = useLocation();
   const home = location.pathname === "/";
   const headerRef = useRef(null);

@@ -20,7 +20,7 @@ export const publicTypeDefs = `#graphql
     featuredVendors(category: String, city: String, q: String, id: ID, limit: Int): [MarketplaceCard!]
     featuredPackages(city: String, q: String, id: ID, limit: Int): [PublicPackage!]
     testimonials: [PublicTestimonial!]
-    activeOffers: [PublicOffer!]
+    activeOffers(city: String): [PublicOffer!]
     marketplaceStatistics: MarketplaceStatistics
     publicCompany: PublicCompany!
   }

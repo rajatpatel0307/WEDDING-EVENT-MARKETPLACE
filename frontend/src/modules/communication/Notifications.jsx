@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Bell, Check, Settings, Trash2, X } from "lucide-react";
 import { communicationRequest } from "./api";
 import { useCommunicationSocket } from "./useCommunicationSocket";
+import ResourceStatistics from "../admin/components/ResourceStatistics";
+import NotificationTable from "./NotificationTable";
 import "./communication.css";
 export function relativeTime(value) {
   const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000),
@@ -30,13 +32,10 @@ function useInbox(role, query = "") {
   const reload = useCallback(async () => {
     const current = ++generation.current;
     try {
-      const [inbox, c] = await Promise.all([
-        communicationRequest(role, `/notifications${query}`),
-        communicationRequest(role, "/notifications/unread-count"),
-      ]);
+      const inbox = await communicationRequest(role, `/notifications${query}`);
       if (current !== generation.current) return;
       setData(inbox);
-      setCount(c.count);
+      setCount(inbox.summary.unread);
       setError("");
     } catch (e) {
       if (current === generation.current) setError(e.message);
@@ -120,10 +119,11 @@ function NotificationCard({ item, action, onOpen }) {
     </article>
   );
 }
-export function NotificationBell({ role }) {
-  const { data, count, error, loading, reload, action } = useInbox(role),
+export function NotificationBell({ role, unreadOnly = false }) {
+  const { data, count, error, loading, reload, action } = useInbox(role, unreadOnly ? "?unread=1" : ""),
     [open, setOpen] = useState(false),
     root = useRef();
+  const rows = data.rows.filter(item => !unreadOnly || !item.isRead);
   useEffect(() => {
     if (!open) return;
     const close = (e) => {
@@ -151,9 +151,9 @@ export function NotificationBell({ role }) {
         {count > 0 && <em>{count > 99 ? "99+" : count}</em>}
       </button>
       {open && (
-        <section className="comm-dropdown" aria-label="Recent notifications">
+        <section className="comm-dropdown" aria-label={unreadOnly ? "Unread notifications" : "Recent notifications"}>
           <header>
-            <h3>Notifications</h3>
+            <h3>{unreadOnly ? "Unread notifications" : "Notifications"}</h3>
             <button
               aria-label="Close notifications"
               onClick={() => setOpen(false)}
@@ -168,8 +168,8 @@ export function NotificationBell({ role }) {
             </p>
           ) : loading ? (
             <p role="status">Loading…</p>
-          ) : data.rows.length ? (
-            data.rows
+          ) : rows.length ? (
+            rows
               .slice(0, 5)
               .map((item) => (
                 <NotificationCard
@@ -180,7 +180,7 @@ export function NotificationBell({ role }) {
                 />
               ))
           ) : (
-            <p>You’re all caught up.</p>
+            <p>You're all caught up.</p>
           )}
           <Link
             to={`/${role.toLowerCase()}/notifications`}
@@ -213,6 +213,7 @@ export default function NotificationCenter({ role }) {
           <Settings size={17} /> Preferences
         </Link>
       </div>
+      <ResourceStatistics resource="notifications" summary={data.summary} loading={loading} error={error} />
       <div className="comm-filters">
         <label>
           Type{" "}
@@ -254,11 +255,7 @@ export default function NotificationCenter({ role }) {
       ) : loading ? (
         <p role="status">Loading notifications…</p>
       ) : data.rows.length ? (
-        <div className="comm-notifications">
-          {data.rows.map((item) => (
-            <NotificationCard key={item.id} item={item} action={action} />
-          ))}
-        </div>
+        <NotificationTable rows={data.rows} action={action} />
       ) : (
         <div className="comm-empty">
           <Bell size={36} />

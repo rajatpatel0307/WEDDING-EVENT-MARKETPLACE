@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { MapPin, ChevronDown, Check, Search } from "lucide-react";
 import Popover from "./Popover";
-import { cities } from "./navigation";
+import { useCustomerLocations } from "../../modules/marketplace/location-selection";
 export default function LocationSelector({ city, setCity, open, setOpen }) {
+  const locations = useCustomerLocations();
+  const cities = (locations.data || []).map(l => ({ id: l.id, name: `${l.city}, ${l.state}` }));
   const [query, setQuery] = useState("");
   return (
     <Popover
@@ -13,7 +15,7 @@ export default function LocationSelector({ city, setCity, open, setOpen }) {
       label={
         <>
           <MapPin size={15} />
-          <span>{city}</span>
+          <span>{cities.find(l => l.id === city)?.name || "Select location"}</span>
           <ChevronDown size={12} />
         </>
       }
@@ -30,22 +32,24 @@ export default function LocationSelector({ city, setCity, open, setOpen }) {
           />
         </label>
         {cities
-          .filter((c) => c.toLowerCase().includes(query.toLowerCase()))
+          .filter((c) => c.name.toLowerCase().includes(query.toLowerCase()))
           .map((c) => (
             <button
               type="button"
-              key={c}
+              key={c.id}
               onClick={() => {
-                setCity(c);
+                setCity(c.id);
                 setOpen(null);
               }}
             >
               <MapPin size={15} />
-              {c}
-              {c === city && <Check size={15} className="ml-auto" />}
+              {c.name}
+              {c.id === city && <Check size={15} className="ml-auto" />}
             </button>
           ))}
-        {!cities.some((c) => c.toLowerCase().includes(query.toLowerCase())) && (
+        {locations.loading && <p role="status">Loading locations…</p>}
+        {locations.error && <p role="alert">Locations unavailable. <button type="button" onClick={locations.retry}>Retry</button></p>}
+        {!locations.loading && !locations.error && !cities.some((c) => c.name.toLowerCase().includes(query.toLowerCase())) && (
           <p>No matching cities.</p>
         )}
       </div>

@@ -26,8 +26,8 @@ export const CATEGORIES = gql`
   }
 `;
 export const OFFERS = gql`
-  query PublicOffers {
-    activeOffers {
+  query PublicOffers($city: String) {
+    activeOffers(city: $city) {
       id
       name
       description
@@ -55,13 +55,13 @@ export const TERMS = gql`
 `;
 const card =
   "id name description category location image rating reviewCount startingPrice pricingType capacity verified featured vendorId vendorName";
-export const HOME = gql`query HomePage {
+export const HOME = gql`query HomePage($city: String) {
   popularServices { id name description icon image }
-  featuredVenues(limit: 3) { ${card} }
-  featuredVendors(limit: 6) { ${card} }
-  featuredPackages(limit: 3) { id name description price image location vendorName items }
+  featuredVenues(limit: 3, city: $city) { ${card} }
+  featuredVendors(limit: 6, city: $city) { ${card} }
+  featuredPackages(limit: 3, city: $city) { id name description price image location vendorName items }
   testimonials { id customerName location rating review weddingDate }
-  activeOffers { id name description discountType discountValue endDate }
+  activeOffers(city: $city) { id name description discountType discountValue endDate }
 }`;
 export const STATS = gql`
   query MarketplaceStatistics {

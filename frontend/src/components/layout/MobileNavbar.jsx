@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { ChevronDown, X, MapPin } from "lucide-react";
-import { navigationFor, profileFor, cities } from "./navigation";
+import { navigationFor, profileFor } from "./navigation";
+import { useCustomerLocations } from "../../modules/marketplace/location-selection";
 import { useServiceGroups, servicePath } from "./services";
 import SearchBar from "./SearchBar";
 import Logo from "../common/Logo";
 import IconButton from "../common/IconButton";
 export default function MobileNavbar({ user, city, setCity, close }) {
+  const locations = useCustomerLocations();
   const serviceGroups = useServiceGroups();
   const { logout, notify } = useAuth(),
     navigate = useNavigate();
@@ -37,8 +39,9 @@ export default function MobileNavbar({ user, city, setCity, close }) {
         <MapPin size={16} />
         <span className="sr-only">Your city</span>
         <select value={city} onChange={(e) => setCity(e.target.value)}>
-          {cities.map((c) => (
-            <option key={c}>{c}</option>
+          <option value="">Select location</option>
+          {(locations.data || []).map((c) => (
+            <option key={c.id} value={c.id}>{c.city}, {c.state}</option>
           ))}
         </select>
       </label>

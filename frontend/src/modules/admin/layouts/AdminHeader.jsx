@@ -284,6 +284,7 @@ export default function AdminHeader({
   // ------------------------------------------
 
   const [profileOpen, setProfileOpen] = useState(false);
+  const [failedPhotoUrl, setFailedPhotoUrl] = useState(null);
 
   // ------------------------------------------
   // NOTIFICATION STATES
@@ -404,7 +405,7 @@ export default function AdminHeader({
     setInboxLoading(true);
 
     adminRequest(
-      "/notifications/inbox?pageSize=5",
+      "/notifications/inbox?pageSize=5&unread=1",
       {
         signal: abort.signal,
       }
@@ -595,13 +596,23 @@ export default function AdminHeader({
         {
           method: "PATCH",
           body: JSON.stringify({
-            read: !item.read,
+            read: true,
           }),
         }
       );
 
+      setInbox((current) => {
+        if (!current?.rows?.some((row) => row.id === item.id)) return current;
+        return {
+          ...current,
+          rows: current.rows.filter((row) => row.id !== item.id),
+          unread: Math.max(0, current.unread - 1),
+          total: Math.max(0, current.total - 1),
+        };
+      });
+
       const result = await adminRequest(
-        "/notifications/inbox?pageSize=5"
+        "/notifications/inbox?pageSize=5&unread=1"
       );
 
       setInbox(result);
@@ -618,6 +629,7 @@ export default function AdminHeader({
   // ==========================================
 
   const adminName = user?.firstName || "Admin";
+  const unreadNotifications = inbox?.rows?.filter((item) => !item.read) || [];
 
   const adminInitial = adminName
     .charAt(0)
@@ -887,7 +899,7 @@ export default function AdminHeader({
                   </h3>
 
                   <p className="mt-1 text-xs text-slate-500">
-                    Recent marketplace updates
+                    Unread marketplace updates
                   </p>
                 </div>
 
@@ -899,7 +911,7 @@ export default function AdminHeader({
                       font-semibold text-emerald-700
                     "
                   >
-                    {inbox.unread} new
+                    {inbox.unread} unread
                   </span>
                 )}
               </div>
@@ -926,7 +938,7 @@ export default function AdminHeader({
 
                 {!inboxLoading &&
                   !inboxError &&
-                  !inbox?.rows?.length && (
+                  !unreadNotifications.length && (
                     <div className="flex flex-col items-center px-6 py-10 text-center">
                       <div
                         className="
@@ -942,18 +954,18 @@ export default function AdminHeader({
                       </div>
 
                       <p className="text-sm font-medium text-slate-700">
-                        No notifications yet
+                        You're all caught up
                       </p>
 
                       <p className="mt-1 text-xs text-slate-400">
-                        Your latest updates will appear here.
+                        No unread notifications.
                       </p>
                     </div>
                   )}
 
                 {/* Notification Records */}
                 {!inboxLoading &&
-                  inbox?.rows?.map((item) => (
+                  unreadNotifications.map((item) => (
                     <div
                       key={item.id}
                       className={`
@@ -1013,9 +1025,7 @@ export default function AdminHeader({
                               hover:underline
                             "
                           >
-                            {item.read
-                              ? "Mark unread"
-                              : "Mark read"}
+                            Mark read
                           </button>
                         </div>
                       </div>
@@ -1078,11 +1088,18 @@ export default function AdminHeader({
               className="
                 flex h-9 w-9 shrink-0
                 items-center justify-center
-                rounded-full bg-[#273e35]
+                overflow-hidden rounded-full bg-[#273e35]
                 text-sm font-bold text-white
               "
             >
-              {adminInitial}
+              {user?.profilePhotoUrl && failedPhotoUrl !== user.profilePhotoUrl ? (
+                <img
+                  src={user.profilePhotoUrl}
+                  alt={`${adminName}'s profile photo`}
+                  className="block h-full w-full object-cover"
+                  onError={() => setFailedPhotoUrl(user.profilePhotoUrl)}
+                />
+              ) : adminInitial}
             </span>
 
             {/* Admin Name */}

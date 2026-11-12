@@ -195,7 +195,20 @@ export async function inbox(input, ctx, role) {
       offset: (b.page - 1) * 20,
     },
   );
+  const [summary] = await query(
+    `DECLARE @todayStart datetime2 = DATEADD(minute,-330,
+      CAST(CAST(DATEADD(minute,330,SYSUTCDATETIME()) AS date) AS datetime2));
+    SELECT COUNT_BIG(*) AS total,
+      COUNT_BIG(CASE WHEN IsRead=0 THEN 1 END) AS unread,
+      COUNT_BIG(CASE WHEN IsRead=1 THEN 1 END) AS [read],
+      COUNT_BIG(CASE WHEN CreatedAt>=@todayStart AND CreatedAt<DATEADD(day,1,@todayStart) THEN 1 END) AS today
+    FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL`,
+    { user: user.id },
+  );
   return {
+    summary: Object.fromEntries(
+      ["total", "unread", "read", "today"].map(key => [key, Number(summary[key])]),
+    ),
     rows: rows
       .slice(0, 20)
       .map((r) => ({ ...r, actionUrl: notificationUrl(r, role) })),

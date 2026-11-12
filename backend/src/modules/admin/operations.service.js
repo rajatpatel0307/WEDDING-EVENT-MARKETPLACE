@@ -128,6 +128,7 @@ export async function inbox(ctx, input = {}) {
     .object({
       page: z.coerce.number().int().min(1).max(100000).default(1),
       pageSize: z.coerce.number().int().min(1).max(100).default(20),
+      unread: z.enum(["0", "1"]).default("0"),
     })
     .parse(input);
   const [count] = await repo.select(
@@ -135,22 +136,23 @@ export async function inbox(ctx, input = {}) {
     { user: user.id },
   );
   const [total] = await repo.select(
-    "SELECT COUNT(*) AS total FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL",
-    { user: user.id },
+    "SELECT COUNT(*) AS total FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL AND (:unread = 0 OR IsRead=0)",
+    { user: user.id, unread: query.unread === "1" ? 1 : 0 },
   );
   const rows = await repo.select(
-    "SELECT NotificationId AS id,Title AS title,Message AS message,ReferenceType AS referenceType,ReferenceId AS referenceId,IsRead AS [read],CreatedAt AS createdAt FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL ORDER BY CreatedAt DESC,NotificationId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY",
+    "SELECT NotificationId AS id,Title AS title,Message AS message,ReferenceType AS referenceType,ReferenceId AS referenceId,IsRead AS [read],CreatedAt AS createdAt FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL AND (:unread = 0 OR IsRead=0) ORDER BY CreatedAt DESC,NotificationId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY",
     {
       user: user.id,
+      unread: query.unread === "1" ? 1 : 0,
       offset: (query.page - 1) * query.pageSize,
       size: query.pageSize,
     },
   );
   return {
+    ...query,
     unread: Number(count.unread),
     rows,
     total: Number(total.total),
-    ...query,
   };
 }
 export async function readNotification(id, input, ctx) {

@@ -596,7 +596,7 @@ export default function VendorHeader({
             NOTIFICATIONS
         ==================================== */}
 
-        {approved && <NotificationBell role="Vendor" />}
+        {approved && <NotificationBell role="Vendor" unreadOnly />}
 
         {/* ====================================
             PROFILE DROPDOWN

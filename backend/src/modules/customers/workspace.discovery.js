@@ -1,4 +1,6 @@
 import { commerceFields, publicOffer } from "../shopping/public-options.js";
+import { visibleVendor as eligibleVendor, registeredLocation } from "../addresses/location-policy.js";
+import { customerLocations } from "../addresses/admin-locations.service.js";
 import { publicPredicate } from '../reviews/reviews.policy.js';
 import { z } from "zod";
 import { assertServiceSchedule } from "../vendors/service-schedule.js";
@@ -6,7 +8,6 @@ import { recordServiceMetric } from "../vendors/service-metrics.js";
 import {
   scope,
   repo,
-  eligibleVendor,
   fail,
   pageInput,
   insert,
@@ -37,13 +38,12 @@ export const discoveryInput = pageInput
   .refine((v) => v.max >= v.min, {
     message: "Maximum price must exceed minimum price.",
   });
-const location =
-  "OUTER APPLY(SELECT TOP(1) City,State FROM dbo.VendorLocations WHERE VendorId=v.VendorId AND IsActive=1 ORDER BY IsPrimary DESC,CreatedAt) l";
+const location = registeredLocation("l");
 const serviceRatings =
   `OUTER APPLY(SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS rating,COUNT_BIG(*) AS reviews FROM dbo.Reviews r WHERE ${publicPredicate()} AND r.ServiceId=s.ServiceId) sr`;
 const source = `dbo.Services s JOIN dbo.Vendors v ON v.VendorId=s.VendorId JOIN dbo.Users u ON u.UserId=v.UserId JOIN dbo.Categories c ON c.CategoryId=s.CategoryId LEFT JOIN dbo.SubCategories sc ON sc.SubCategoryId=s.SubCategoryId ${location} ${serviceRatings}`;
 const image = `OUTER APPLY(SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityId=s.ServiceId AND LOWER(EntityType)='service' AND MediaType='Image' AND ModerationStatus='Approved' AND UploadStatus='Ready' AND DeletedAt IS NULL ORDER BY IsPrimary DESC,SortOrder,CreatedAt) m`;
-const fields = `${commerceFields},s.ServiceId AS serviceId,v.VendorId AS vendorId,v.BusinessName AS vendor,v.BookingAccessStatus AS bookingAccessStatus,c.CategoryName AS category,c.CategoryId AS categoryId,sc.SubCategoryName AS subcategory,COALESCE(NULLIF(JSON_VALUE(s.DetailsJson,'$.location.city'),''),l.City) AS city,COALESCE(sr.rating,0) AS rating,COALESCE(sr.reviews,0) AS reviews,m.MediaUrl AS image`;
+const fields = `${commerceFields},s.ServiceId AS serviceId,v.VendorId AS vendorId,v.BusinessName AS vendor,v.BookingAccessStatus AS bookingAccessStatus,c.CategoryName AS category,c.CategoryId AS categoryId,sc.SubCategoryName AS subcategory,l.City AS city,COALESCE(sr.rating,0) AS rating,COALESCE(sr.reviews,0) AS reviews,m.MediaUrl AS image`;
 const escapeLike = (value) =>
   `%${value.replace(/[\[\]%_]/g, (c) => `[${c}]`)}%`;
 export async function catalog(ctx) {
@@ -58,9 +58,7 @@ export async function publicCatalog() {
     repo.select(
       "SELECT sc.SubCategoryId AS id,sc.CategoryId AS categoryId,sc.SubCategoryName AS name FROM dbo.SubCategories sc JOIN dbo.Categories c ON c.CategoryId=sc.CategoryId WHERE sc.IsActive=1 AND c.IsActive=1 ORDER BY sc.SubCategoryName",
     ),
-    repo.select(
-      `SELECT DISTINCT vl.City AS name FROM dbo.VendorLocations vl JOIN dbo.Vendors v ON v.VendorId=vl.VendorId JOIN dbo.Users u ON u.UserId=v.UserId WHERE vl.IsActive=1 AND ${eligibleVendor} ORDER BY name`,
-    ),
+    customerLocations().then(rows => rows.map(row => ({ ...row, name: `${row.city}, ${row.state}, ${row.country}` }))),
   ]);
   return { categories, subcategories, cities };
 }
@@ -73,13 +71,13 @@ export async function publicDiscover(input) {
     p = {
       ...q,
       q: escapeLike(q.q),
-      city: escapeLike(q.city),
+      city: q.city,
       date: q.date || null,
       guests: q.guests || null,
       offset: (q.page - 1) * q.pageSize,
       size: q.pageSize,
     };
-  const city = `(:city ='%%' OR EXISTS(SELECT 1 FROM dbo.VendorLocations vl WHERE vl.VendorId=v.VendorId AND vl.IsActive=1 AND vl.City LIKE :city))`;
+  const city = `(:city ='' OR l.City=:city OR CONVERT(varchar(36),l.LocationId)=:city)`;
   if (q.type === "vendors") {
     const where = `${eligibleVendor} AND v.BusinessName LIKE :q AND (:category =0 OR EXISTS(SELECT 1 FROM dbo.VendorCategories vc JOIN dbo.Categories ac ON ac.CategoryId=vc.CategoryId WHERE vc.VendorId=v.VendorId AND vc.CategoryId=:category AND ac.IsActive=1)) AND ${city} AND v.AverageRating>=:rating`;
     const from = `dbo.Vendors v JOIN dbo.Users u ON u.UserId=v.UserId ${location}`;
@@ -109,7 +107,7 @@ export async function publicDiscover(input) {
     "(:category =0 OR s.CategoryId=:category)",
     "(:subcategory =0 OR s.SubCategoryId=:subcategory)",
     `(s.ServiceName LIKE :q OR v.BusinessName LIKE :q ${packages ? "OR p.PackageName LIKE :q" : ""})`,
-    `(:city ='%%' OR EXISTS(SELECT 1 FROM OPENJSON(s.DetailsJson,'$.location.cities') WHERE value LIKE :city) OR JSON_VALUE(s.DetailsJson,'$.location.city') LIKE :city OR (NULLIF(JSON_VALUE(s.DetailsJson,'$.location.city'),'') IS NULL AND ${city}))`,
+    city,
     "(:postalCode ='' OR JSON_VALUE(s.DetailsJson,'$.location.zip')=:postalCode OR EXISTS(SELECT 1 FROM OPENJSON(s.DetailsJson,'$.location.postalCodes') WHERE value=:postalCode))",
     `(${price} BETWEEN :min AND :max OR (${price} IS NULL AND :min =0))`,
     "COALESCE(sr.rating,0)>=:rating",
@@ -243,7 +241,7 @@ export async function publicVendorDetails(id) {
       { id },
     ),
     repo.select(
-      "SELECT DISTINCT City AS city,State AS state FROM dbo.VendorLocations WHERE VendorId=:id AND IsActive=1",
+      "SELECT al.City AS city,al.State AS state FROM dbo.AdminLocations al JOIN dbo.Vendors v ON v.AdminLocationId=al.LocationId WHERE v.VendorId=:id AND al.IsActive=1 AND al.DeletedAt IS NULL",
       { id },
     ),
     repo.select(

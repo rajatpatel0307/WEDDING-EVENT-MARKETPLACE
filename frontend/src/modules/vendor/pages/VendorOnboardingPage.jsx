@@ -1,4 +1,5 @@
 import VerificationDocuments from "../components/VerificationDocuments";
+import RegisteredLocationField from "../../../components/common/RegisteredLocationField";
 import {
   ArrowRight,
   Building2,
@@ -25,6 +26,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { vendorRequest, save } from "../services/workspace.api";
 
 const blank = {
+  adminLocationId: "",
   businessName: "",
   businessDescription: "",
   businessEmail: "",
@@ -538,6 +540,7 @@ export default function VendorOnboardingPage() {
                     disabled={busy || !profile.editable}
                     aria-label="Business location"
                   >
+                    <RegisteredLocationField value={fields.adminLocationId} onChange={value => update("adminLocationId", value)} />
                     <div className="vo-field-grid grid [grid-template-columns:repeat(2,_minmax(0,_1fr))] [gap:0_18px] max-[480px]:[grid-template-columns:minmax(0,_1fr)]">
                       {[
                         ["address", "Street address", 300],

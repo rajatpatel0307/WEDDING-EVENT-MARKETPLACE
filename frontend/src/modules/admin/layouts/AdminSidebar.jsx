@@ -4,16 +4,12 @@ import { useEffect, useState } from "react";
 import {
   Link,
   useLocation,
-  useNavigate,
 } from "react-router-dom";
 
 import {
-  LogOut,
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
-
-import { useAuth } from "../../../context/AuthContext";
 
 import { adminNavigation, paymentNavigation } from "../navigation";
 
@@ -59,8 +55,6 @@ export default function AdminSidebar({
   onCloseMobile,
 }) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { logout } = useAuth();
 
   const [pendingCount, setPendingCount] = useState(null);
   const [serviceCount, setServiceCount] = useState(null);
@@ -154,13 +148,6 @@ export default function AdminSidebar({
     };
   }, []);
 
-  // Logout administrator
-  const handleLogout = async () => {
-    await logout();
-    onCloseMobile();
-    navigate("/auth/login");
-  };
-
   return (
     <aside
       id="admin-sidebar"
@@ -246,7 +233,7 @@ export default function AdminSidebar({
             </div>
 
             {/* All links always visible */}
-            {group.items.map(
+            {group.items.filter(([path]) => !["settings", "profile"].includes(path)).map(
               ([path, label, Icon]) => {
                 const active = isActivePage(
                   path,
@@ -302,15 +289,6 @@ export default function AdminSidebar({
           </div>
         ))}
 
-        {/* Logout */}
-        <button
-          type="button"
-          className="ad-nav-link flex items-center gap-[11px] [padding:9px_12px] rounded-[7px] [margin:2px_0] text-[#738078] text-[11px] relative whitespace-nowrap [&:hover]:[background:#f4f7f4] [&_i]:h-[5px] [&_i]:w-[5px] [&_i]:ml-[auto] [&_i]:[background:#176b60] [&_i]:rounded-[50%]"
-          onClick={handleLogout}
-        >
-          <LogOut size={18} />
-          <span>Logout</span>
-        </button>
       </nav>
     </aside>
   );

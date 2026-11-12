@@ -30,4 +30,6 @@ Quotation lifecycle, API map, migration rollout and verification: [backend/docs/
 
 Wishlist, addresses, business locations, service coverage and approved booking venue changes: [implementation and verification report](backend/docs/wishlist-and-locations.md).
 
+Admin-managed registration locations and approval-controlled customer discovery: [location setup and verification](backend/docs/admin-locations.md).
+
 [Category-based Sell & Book setup](backend/docs/sell-and-book.md) documents category permissions, vendor configuration, independent purchase and booking checkout, migration `030-sell-book`, APIs, rollback-only integration verification, and rollout requirements.

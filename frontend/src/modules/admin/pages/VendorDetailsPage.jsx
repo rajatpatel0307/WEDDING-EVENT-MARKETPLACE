@@ -1253,6 +1253,7 @@ export default function VendorDetailsPage() {
                   <dl className="m-0 grid gap-[20px]">
                     <Info label="Business email">{v.businessEmail}</Info>
                     <Info label="Business phone">{v.businessPhone}</Info>
+                    <Info label="Registered marketplace location">{v.registeredLocation || "Not assigned"}</Info>
                     <Info label="Owner email">{v.ownerEmail}</Info>
                     <Info label="Owner phone">{v.ownerPhone}</Info>
                   </dl>

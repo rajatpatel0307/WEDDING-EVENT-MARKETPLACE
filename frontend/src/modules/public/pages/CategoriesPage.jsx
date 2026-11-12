@@ -2,11 +2,9 @@ import { useQuery } from "@apollo/client/react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowDown,
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
-  Flower2,
   LayoutGrid,
   Search,
   Sparkles,
@@ -87,59 +85,12 @@ export default function CategoriesPage() {
           <span aria-current="page" className="text-rose-brand">All categories</span>
         </nav>
 
-        <header className="relative isolate grid overflow-hidden rounded-[28px] border border-[#e9dcd1] bg-[#f2e9e0] px-6 py-9 sm:px-10 sm:py-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10 lg:px-12 lg:py-10">
-          <div className="relative z-10 self-center">
-            <p className="flex items-center gap-2.5 text-[9px] font-semibold uppercase tracking-[2px] text-rose-brand sm:text-[10px]">
-              <Flower2 size={17} strokeWidth={1.3} aria-hidden="true" />
-              A celebration, uniquely yours
-            </p>
-            <h1 className="mt-5 font-serif text-[38px] leading-[1.13] tracking-[-1.5px] sm:text-[50px] lg:text-[56px]">
-              All categories.
-              <span className="mt-1 block font-normal italic text-rose-brand">
-                One beautiful day.
-              </span>
-            </h1>
-            <p className="mt-5 max-w-[390px] text-[13px] leading-[1.9] text-[#807174] sm:text-sm">
-              From the perfect setting to the finishing touches, find the people
-              and details that make your celebration feel like you.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-4">
-              <a
-                href="#category-collection"
-                className="inline-flex min-h-11 items-center justify-center gap-4 rounded-full bg-rose-brand px-5 py-3 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#74333f] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-brand"
-              >
-                Explore the collection <ArrowDown size={14} aria-hidden="true" />
-              </a>
-              {categories.length > 0 && (
-                <p className="flex items-center gap-2 text-xs text-[#807174]">
-                  <span className="h-1 w-1 rounded-full bg-[#b28a71]" aria-hidden="true" />
-                  {categories.length} ways to make it yours
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="relative hidden h-[330px] self-center lg:block" aria-hidden="true">
-            <div className="absolute bottom-3 left-[4%] top-0 w-[60%] overflow-hidden rounded-t-[150px] rounded-b-2xl border-[5px] border-[#fffaf4] shadow-[0_16px_32px_-20px_#73584770]">
-              <img src={categoryImages["Venue & Location"]} alt="" className="h-full w-full object-cover object-[60%_center]" />
-            </div>
-            <div className="absolute bottom-0 right-0 h-[76%] w-[43%] overflow-hidden rounded-t-[110px] rounded-b-2xl border-[5px] border-[#fffaf4] shadow-[0_16px_32px_-20px_#73584770]">
-              <img src={categoryImages.Decoration} alt="" className="h-full w-full object-cover" />
-            </div>
-            <Sparkles size={32} strokeWidth={1} className="absolute right-[10%] top-1 text-[#ac8663]" />
-            <div className="absolute bottom-5 left-0 flex items-center gap-3 rounded-full border border-[#e7d9cc] bg-[#fffcf7] px-4 py-3 shadow-[0_6px_18px_-12px_#73584760]">
-              <Flower2 size={22} strokeWidth={1.15} className="text-rose-brand" />
-              <span className="font-serif text-sm italic text-[#756159]">Your day. Your way.</span>
-            </div>
-          </div>
-        </header>
-
-        <section id="category-collection" aria-labelledby="category-collection-title" className="scroll-mt-28 pt-10 sm:pt-12">
+        <section id="category-collection" aria-labelledby="category-collection-title" className="scroll-mt-28">
           <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
             <div>
-              <h2 id="category-collection-title" className="font-serif text-[26px] leading-tight tracking-[-0.6px] sm:text-[30px]">
+              <h1 id="category-collection-title" className="font-serif text-[26px] leading-tight tracking-[-0.6px] sm:text-[30px]">
                 Find your celebration essentials
-              </h2>
+              </h1>
               <p className="mt-2 text-[13px] text-[#8a7976]">
                 Big moments. Little details. Everything in between.
               </p>

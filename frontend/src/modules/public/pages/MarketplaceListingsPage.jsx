@@ -16,7 +16,7 @@ import {
   safeImage,
   money,
 } from "../../../services/public";
-import { cities } from "../../../components/layout/navigation";
+import { useCustomerLocations, useSelectedLocation, setSelectedLocation } from "../../marketplace/location-selection";
 import PageMeta from "../../../components/common/PageMeta";
 import CollectionState from "../../../components/common/CollectionState";
 import MarketplaceCard from "../../../components/common/MarketplaceCard";
@@ -32,12 +32,13 @@ const titles = {
   offers: "A little more to celebrate.",
 };
 export default function MarketplaceListingsPage() {
+  const locations = useCustomerLocations(), selectedLocation = useSelectedLocation();
   const { pathname } = useLocation(),
     [params, setParams] = useSearchParams(),
     { id } = useParams(),
     kind = pathname.split("/")[1];
   const category = params.get("category") || null,
-    city = params.get("city") || null,
+    city = params.get("city") ?? (selectedLocation || null),
     q = params.get("q") || null;
   const query =
     kind === "venues"
@@ -56,7 +57,7 @@ export default function MarketplaceListingsPage() {
   const { data, loading, refetch } = useQuery(query, {
     variables: { category, city, q, id },
     errorPolicy: "all",
-    fetchPolicy: "cache-first",
+    fetchPolicy: "network-only",
     skip: !!invalidId,
   });
   const retry = () => {
@@ -65,6 +66,7 @@ export default function MarketplaceListingsPage() {
   function filter(e) {
     e.preventDefault();
     const fields = Object.fromEntries(new FormData(e.currentTarget));
+    setSelectedLocation(fields.city || "");
     if (category) fields.category = category;
     setParams(
       Object.fromEntries(Object.entries(fields).filter(([, value]) => value)),
@@ -183,8 +185,8 @@ export default function MarketplaceListingsPage() {
             defaultValue={city || ""}
           >
             <option value="">All cities</option>
-            {cities.map((c) => (
-              <option key={c}>{c}</option>
+            {(locations.data || []).map((c) => (
+              <option key={c.id} value={c.id}>{c.city}, {c.state}</option>
             ))}
           </select>
           <button className="mn-button bg-[#8c414e] text-white! inline-flex items-center justify-center gap-[19px] border border-[#8c414e] py-[12px] px-[19px] rounded-[5px] text-[12px] font-medium whitespace-nowrap hover:bg-[#74333f] hover:border-[#74333f] hover:transform-[translateY(-1px)]" type="submit">

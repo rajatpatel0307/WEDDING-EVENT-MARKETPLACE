@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
 import { HOME } from "../../../services/public";
+import { useSelectedLocation } from "../../marketplace/location-selection";
 import PageMeta from "../../../components/common/PageMeta";
 import Hero from "../../../components/home/Hero";
 import ServiceCategories from "../../../components/home/ServiceCategories";
@@ -16,8 +17,10 @@ const HomeCollections = lazy(
   () => import("../../../components/home/HomeCollections"),
 );
 export default function HomePage() {
+  const city = useSelectedLocation();
   const { data, loading, refetch } = useQuery(HOME, {
-    fetchPolicy: "cache-first",
+    variables: { city: city || null },
+    fetchPolicy: "network-only",
     errorPolicy: "all",
   });
   const retry = () => {

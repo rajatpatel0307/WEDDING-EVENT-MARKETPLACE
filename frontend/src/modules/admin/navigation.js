@@ -88,6 +88,7 @@ const navigationGroups = [
       ["events", "Events", CalendarDays],
       ["customer-addresses", "Customer Addresses", CalendarDays],
       ["vendor-locations", "Vendor Locations", CalendarDays],
+      ["locations", "Location Management", CalendarDays],
       ["service-locations", "Service Coverage", CalendarDays],
       ["event-locations", "Event Locations", CalendarDays],
       ["guests", "Event Guests", ContactRound],

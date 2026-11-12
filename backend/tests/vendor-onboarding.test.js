@@ -51,6 +51,7 @@ const row = {
   UpdatedAt: version,
 };
 const fields = {
+  adminLocationId: id,
   businessName: "Wedding Studio",
   businessDescription: "Photography for wedding celebrations",
   businessEmail: "studio@example.com",
@@ -82,6 +83,7 @@ function setup(
       sql.startsWith("SELECT * FROM dbo.[Vendors]")
     )
       return [record];
+    if (sql.includes("FROM dbo.AdminLocations")) return [{ LocationId: id }];
     if (sql.startsWith("SELECT VendorDocumentId AS id")) return docs;
     if (sql.startsWith("SELECT CategoryId AS id")) return [{ id: 1 }];
     return [];
@@ -104,7 +106,7 @@ test("vendors, buyers and admins must verify email before authentication", () =>
 test("basic account registration creates an inactive draft vendor without business details or documents", async (t) => {
   const tx = {};
   t.mock.method(sequelize, "transaction", async (opts, fn) => (fn || opts)(tx));
-  t.mock.method(sequelize, "query", async () => []);
+  t.mock.method(sequelize, "query", async sql => sql.includes("FROM dbo.AdminLocations") ? [{ LocationId: id }] : []);
   t.mock.method(Limit, "findByPk", async () => ({
     count: 0,
     expiresAt: new Date(Date.now() + 60000),
@@ -122,6 +124,7 @@ test("basic account registration creates an inactive draft vendor without busine
   });
   const result = await register(
     {
+      adminLocationId: id,
       firstName: "Test",
       lastName: "Vendor",
       email: "vendor@example.com",
@@ -139,6 +142,7 @@ test("basic account registration creates an inactive draft vendor without busine
   const data = created.mock.calls[0].arguments[0];
   assert.equal(data.userId, owner);
   assert.equal(data.active, false);
+  assert.equal(data.adminLocationId, id);
   assert.equal(data.profileDraftJson, "{}");
 });
 
@@ -214,7 +218,7 @@ test("draft saves are durable and do not change verification status or activate 
   assert.match(calls[0].arguments[0], /ProfileDraftJson/);
   assert.doesNotMatch(calls[0].arguments[0], /VerificationStatus|IsActive/);
   const draft = Object.values(calls[0].arguments[1].replacements).find(
-    (v) => typeof v === "string" && v.startsWith('{"businessName"'),
+    (v) => typeof v === "string" && v.startsWith('{') && Object.hasOwn(JSON.parse(v), 'businessName'),
   );
   assert.equal(JSON.parse(draft).businessName, "");
 });

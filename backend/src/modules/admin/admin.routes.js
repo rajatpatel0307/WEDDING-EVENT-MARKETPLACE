@@ -1,4 +1,5 @@
 import { orders as productOrders } from "../shopping/shopping.service.js";
+import * as adminLocations from "../addresses/admin-locations.service.js";
 import * as vendorAccess from "../vendors/access.service.js";
 import * as commission from "./commission.service.js";
 import * as finance from "../payments/finance-reports.js";
@@ -53,6 +54,11 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
   });
   const standardJson = json({ limit: "64kb" }),
     uploadJson = json({ limit: "8mb" });
+  router.get("/locations", async (req, res) => res.json({ success: true, data: await adminLocations.list(req.admin) }));
+  router.post("/locations", standardJson, async (req, res) => res.json(await adminLocations.save(null, req.body, req.admin)));
+  router.put("/locations/:id", standardJson, async (req, res) => res.json(await adminLocations.save(req.params.id, req.body, req.admin)));
+  router.delete("/locations/:id", standardJson, async (req, res) => res.json(await adminLocations.save(req.params.id, req.body || {}, req.admin, true)));
+  router.put("/vendors/:id/registered-location", standardJson, async (req, res) => res.json(await adminLocations.assignVendor(req.params.id, req.body, req.admin)));
   router.get("/orders", async (req,res) => res.json({success:true,data:await productOrders(req.admin,"Admin")}));
   router.get("/bookings/:id/change-requests", async (req, res) =>
     res.json(

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 const base =
   import.meta.env.VITE_MARKETPLACE_API_URL ||
   new URL(
@@ -18,6 +18,7 @@ export function useMarketplace(path) {
   const [state, setState] = useState({}),
     [attempt, setAttempt] = useState(0),
     key = `${path}:${attempt}`;
+  const retry = useCallback(() => setAttempt(a => a + 1), []);
   useEffect(() => {
     if (!path) return;
     const abort = new AbortController();
@@ -30,7 +31,7 @@ export function useMarketplace(path) {
   }, [path, key]);
   return {
     ...(state.key === key ? state : { loading: !!path }),
-    retry: () => setAttempt((a) => a + 1),
+    retry,
   };
 }
 export const money = (value) =>

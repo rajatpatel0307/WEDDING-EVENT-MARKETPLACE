@@ -1,4 +1,5 @@
 import { bookingAvailability } from "../shopping/booking-checkout.js";
+import { availableLocations, customerLocations } from "../addresses/admin-locations.service.js";
 import { z } from "zod";
 import { categoryOptions } from "../shopping/configuration.js";
 import { Router } from "express";
@@ -21,6 +22,8 @@ export function createMarketplaceRouter() {
     });
   get("/categories/:id/service-options", req => categoryOptions(z.coerce.number().int().positive().parse(req.params.id)));
   get("/catalog", () => d.publicCatalog());
+  get("/registration-locations", () => availableLocations());
+  get("/locations", () => customerLocations());
   get("/discover", (req) => d.publicDiscover(req.query));
   get("/services/:id", (req) =>
     d.publicServiceDetails(req.params.id, true, req.query),

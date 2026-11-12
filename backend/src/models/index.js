@@ -52,6 +52,7 @@ export const UserRole = sequelize.define("UserRoles", {
 });
 export const Vendor = sequelize.define("Vendors", {
   id: uuid("VendorId"),
+  adminLocationId: col(UUID, "AdminLocationId"),
   userId: col(UUID, "UserId"),
   profileDraftJson: col(D.TEXT, "ProfileDraftJson"),
   businessName: col(D.STRING(200), "BusinessName"),

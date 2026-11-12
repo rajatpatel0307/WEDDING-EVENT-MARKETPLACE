@@ -22,6 +22,7 @@ test("vendors verify email before dashboard access just like buyers and admins",
 
 test("verification submission requires all business fields, categories, location and valid documents", () => {
   const fields = {
+    adminLocationId: "734b9588-c47c-40eb-8c17-1797d65a2800",
     businessName: "Studio",
     businessDescription: "Wedding photography",
     businessEmail: "studio@example.com",
@@ -37,6 +38,7 @@ test("verification submission requires all business fields, categories, location
   };
   const documents = requiredDocs;
   assert.ok(readyToSubmit(fields, documents));
+  assert.equal(readyToSubmit({ ...fields, adminLocationId: "" }, documents), false);
   for (const name of [
     "businessName",
     "businessDescription",
@@ -83,11 +85,13 @@ test("unapproved vendors can only open profile and verification, including direc
 
 test("verification steps validate their required fields before moving forward", () => {
   const fields = {
+    adminLocationId: "734b9588-c47c-40eb-8c17-1797d65a2800",
     businessName: "Studio", businessDescription: "Wedding photography",
     businessEmail: "studio@example.com", businessPhone: "+919876543210", categories: ["Photography"],
     location: { address: "Main Road", city: "Pune", state: "Maharashtra", country: "India", postalCode: "411001" },
   };
   for (let step = 0; step < 4; step++) assert.deepEqual(verificationStepErrors(step, fields, requiredDocs), []);
+  assert.deepEqual(verificationStepErrors(2, { ...fields, adminLocationId: "" }), ["Select an active registered business / service location."]);
   assert.equal(verificationStepErrors(0, { ...fields, businessName: " ", businessDescription: "short", businessEmail: "bad-email", businessPhone: "123" }).length, 4);
   assert.deepEqual(verificationStepErrors(1, { ...fields, categories: [] }), ["Select at least one service category."]);
   for (const [key, label] of [["address", "Street address"], ["city", "City"], ["state", "State"], ["country", "Country"], ["postalCode", "Postal code"]]) {

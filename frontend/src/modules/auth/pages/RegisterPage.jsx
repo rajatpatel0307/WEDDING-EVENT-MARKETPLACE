@@ -1,4 +1,5 @@
 import { useContent } from "../../content/api";
+import RegisteredLocationField from "../../../components/common/RegisteredLocationField";
 import { useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Heart, Store, Check } from "lucide-react";
@@ -27,6 +28,7 @@ const initial = {
   privacy: false,
 };
 export default function RegisterPage() {
+  const [adminLocationId, setAdminLocationId] = useState("");
   const legalVersions = useContent("/legal/current"),
     [acceptedVersions, setAcceptedVersions] = useState({});
   const acceptDocument = (type, checked) => {
@@ -84,6 +86,7 @@ export default function RegisterPage() {
     try {
       const { profilePhotoUrl: _photoPreview, ...account } = data;
       const input = account;
+      if (vendor) input.adminLocationId = adminLocationId;
       if (data.terms && acceptedVersions.terms)
         input.termsVersionId = acceptedVersions.terms;
       if (data.privacy && acceptedVersions.privacy)
@@ -148,6 +151,7 @@ export default function RegisterPage() {
       }
       <form onSubmit={submit}>
         <ErrorBox message={error} />
+        {vendor && <RegisteredLocationField value={adminLocationId} onChange={setAdminLocationId} disabled={busy} />}
         {
           <>
             <div className="field-grid grid grid-cols-[1fr_1fr] gap-[14px] max-[480.001px]:gap-[10px]">

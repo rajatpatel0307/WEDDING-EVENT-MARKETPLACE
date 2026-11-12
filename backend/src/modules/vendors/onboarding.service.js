@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { assertActiveLocation } from "../addresses/admin-locations.service.js";
 import { requireRole } from "../../middleware/auth.middleware.js";
 import { business } from "../auth/auth.validation.js";
 import { repo, fail, audit, assertVersion } from "./workspace.common.js";
@@ -8,6 +9,7 @@ import { downloadDocument } from "./documents.service.js";
 const text = (max) => z.string().trim().max(max).default("");
 export const draftInput = z
   .object({
+    adminLocationId: z.union([z.guid(), z.literal("")]).default(""),
     businessName: text(200),
     businessDescription: text(5000),
     businessEmail: text(320),
@@ -90,8 +92,9 @@ export async function profile(ctx) {
     documents: await documents(id),
     fields:
       row.ProfileDraftJson != null
-        ? JSON.parse(row.ProfileDraftJson)
+        ? { adminLocationId: row.AdminLocationId || "", ...JSON.parse(row.ProfileDraftJson) }
         : {
+            adminLocationId: row.AdminLocationId || "",
             businessName: row.BusinessName || "",
             businessDescription: row.BusinessDescription || "",
             businessEmail: row.ContactEmail || "",
@@ -135,6 +138,7 @@ export async function saveProfile(input, ctx, submit = false) {
     editable(row);
     assertVersion(row, parsed.expectedUpdatedAt);
     const { expectedUpdatedAt, ...fields } = parsed;
+    if (fields.adminLocationId) await assertActiveLocation(fields.adminLocationId, tx);
     if (!submit) {
       await repo.update(
         { table: "Vendors", id: "VendorId" },
@@ -145,6 +149,7 @@ export async function saveProfile(input, ctx, submit = false) {
       return { message: "Profile progress saved. You can continue later." };
     }
     const body = validateSubmission(fields, await documents(id, tx));
+    await assertActiveLocation(fields.adminLocationId, tx);
     const names = [...new Set(body.categories)];
     const selected = await repo.select(
       "SELECT CategoryId AS id FROM dbo.Categories WHERE IsActive=1 AND CategoryName IN (:names)",
@@ -158,6 +163,7 @@ export async function saveProfile(input, ctx, submit = false) {
       id,
       {
         BusinessName: body.businessName,
+        AdminLocationId: fields.adminLocationId,
         BusinessDescription: body.businessDescription,
         ContactEmail: body.businessEmail,
         ContactPhone: body.businessPhone,

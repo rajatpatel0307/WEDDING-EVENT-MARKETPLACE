@@ -6,17 +6,19 @@ import PackageCard from "../common/PackageCard";
 import Testimonials from "./Testimonials";
 import { useQuery } from "@apollo/client/react";
 import { VENDORS } from "../../services/public";
+import { useSelectedLocation } from "../../modules/marketplace/location-selection";
 
 function TopVendors({ items, loading, retry, categories = [] }) {
+  const city = useSelectedLocation();
   const tabs = [
     ["All", null],
     ...categories.slice(0, 6).map((category) => [category.name, category.name]),
   ];
   const [category, setCategory] = useState(null);
   const filtered = useQuery(VENDORS, {
-    variables: { category },
+    variables: { category, city: city || null },
     skip: !category,
-    fetchPolicy: "cache-first",
+    fetchPolicy: "network-only",
     errorPolicy: "all",
   });
   const vendors = category ? filtered.data?.featuredVendors : items;

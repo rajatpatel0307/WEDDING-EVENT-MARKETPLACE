@@ -3,11 +3,10 @@ import { GraphQLError } from "graphql";
 import { sequelize } from "../../config/database.js";
 import { limit } from "../auth/security.service.js";
 import { contactInput, listingInput } from "./public.validation.js";
+import { visibleVendor, registeredLocation } from "../addresses/location-policy.js";
 
-export const eligibleVendor = `v.IsActive = 1 AND v.VerificationStatus = 'Approved'
-  AND u.IsActive = 1 AND u.IsBlocked = 0 AND u.IsEmailVerified = 1`;
-const locationSql = `OUTER APPLY (SELECT TOP (1) l.City, l.State FROM dbo.VendorLocations l
-  WHERE l.VendorId = v.VendorId AND l.IsActive = 1 ORDER BY l.IsPrimary DESC, l.CreatedAt, l.VendorLocationId) loc`;
+export const eligibleVendor = visibleVendor;
+const locationSql = registeredLocation("loc");
 const imageSql = (
   entity,
 ) => `OUTER APPLY (SELECT TOP (1) MediaUrl FROM dbo.Media m
@@ -49,7 +48,7 @@ export async function featuredVenues(args = {}) {
     JOIN dbo.Vendors v ON v.VendorId = s.VendorId JOIN dbo.Users u ON u.UserId = v.UserId
     ${locationSql} ${imageSql("s.ServiceId")}
     WHERE ${eligibleVendor} AND s.IsActive = 1 AND s.ApprovalStatus = 'Approved' AND c.IsActive = 1 AND (c.CategoryCode='AUTH_SERVICE_1' OR c.CategoryName = 'Venue & Location')
-    AND (:city IS NULL OR loc.City = :city) AND (:id IS NULL OR s.ServiceId = :id)
+    AND (:city IS NULL OR loc.City = :city OR CONVERT(varchar(36),loc.LocationId) = :city) AND (:id IS NULL OR s.ServiceId = :id)
     AND (:q IS NULL OR s.ServiceName LIKE :q OR v.BusinessName LIKE :q OR c.CategoryName LIKE :q OR loc.City LIKE :q)
     ORDER BY v.AverageRating DESC, v.TotalReviews DESC, s.ServiceId`,
     filters(args),
@@ -69,7 +68,7 @@ export async function featuredVendors(args = {}) {
       FROM dbo.Services s JOIN dbo.Categories sc ON sc.CategoryId = s.CategoryId
       WHERE s.VendorId = v.VendorId AND s.IsActive = 1 AND s.ApprovalStatus = 'Approved' AND sc.IsActive = 1
       AND COALESCE(s.MinimumPrice, s.BasePrice) IS NOT NULL ORDER BY COALESCE(s.MinimumPrice, s.BasePrice), s.ServiceId) price
-    WHERE ${eligibleVendor} AND (:city IS NULL OR loc.City = :city) AND (:id IS NULL OR v.VendorId = :id)
+    WHERE ${eligibleVendor} AND (:city IS NULL OR loc.City = :city OR CONVERT(varchar(36),loc.LocationId) = :city) AND (:id IS NULL OR v.VendorId = :id)
     AND (:category IS NULL OR EXISTS (SELECT 1 FROM dbo.VendorCategories vc JOIN dbo.Categories c ON c.CategoryId = vc.CategoryId
       WHERE vc.VendorId = v.VendorId AND c.IsActive = 1 AND c.CategoryName = :category))
     AND (:q IS NULL OR v.BusinessName LIKE :q OR cat.CategoryName LIKE :q OR loc.City LIKE :q)
@@ -85,7 +84,7 @@ export async function featuredPackages(args = {}) {
     JOIN dbo.Vendors v ON v.VendorId = s.VendorId JOIN dbo.Users u ON u.UserId = v.UserId ${locationSql} ${imageSql("s.ServiceId")}
     WHERE ${eligibleVendor} AND s.IsActive = 1 AND s.ApprovalStatus = 'Approved' AND c.IsActive = 1 AND p.IsActive = 1
     AND (:id IS NOT NULL OR p.IsFeatured = 1) AND (:id IS NULL OR p.PackageId = :id)
-    AND (:city IS NULL OR loc.City = :city) AND (:q IS NULL OR p.PackageName LIKE :q OR v.BusinessName LIKE :q OR loc.City LIKE :q)
+    AND (:city IS NULL OR loc.City = :city OR CONVERT(varchar(36),loc.LocationId) = :city) AND (:q IS NULL OR p.PackageName LIKE :q OR v.BusinessName LIKE :q OR loc.City LIKE :q)
     ORDER BY p.CreatedAt DESC, p.PackageId`,
     filters(args),
   );
@@ -109,24 +108,24 @@ export async function testimonials() {
     AND LEN(r.ReviewText) > 0 AND customer.IsActive = 1 AND customer.IsBlocked = 0
     ORDER BY r.CreatedAt DESC, r.ReviewId`);
 }
-export async function activeOffers() {
+export async function activeOffers(args = {}) {
   return select(`SELECT TOP (6) o.OfferId AS id, o.OfferName AS name, o.Description AS description,
     o.DiscountType AS discountType, o.DiscountValue AS discountValue, CONVERT(varchar(10), o.EndDate, 23) AS endDate
     FROM dbo.Offers o LEFT JOIN dbo.Services s ON s.ServiceId = o.ServiceId
     LEFT JOIN dbo.Vendors v ON v.VendorId = COALESCE(s.VendorId, o.VendorId)
-    LEFT JOIN dbo.Users u ON u.UserId = v.UserId
+    LEFT JOIN dbo.Users u ON u.UserId = v.UserId ${locationSql}
     WHERE o.IsActive = 1 AND o.StartDate <= SYSUTCDATETIME() AND o.EndDate > SYSUTCDATETIME()
     AND (o.ServiceId IS NULL OR (s.IsActive = 1 AND s.ApprovalStatus = 'Approved'))
     AND (o.VendorId IS NULL OR o.ServiceId IS NULL OR o.VendorId = s.VendorId)
-    AND ((o.VendorId IS NULL AND o.ServiceId IS NULL) OR (${eligibleVendor})) ORDER BY o.EndDate, o.OfferId`);
+    AND ((o.VendorId IS NULL AND o.ServiceId IS NULL) OR (${eligibleVendor}
+      AND (:city IS NULL OR loc.City=:city OR CONVERT(varchar(36),loc.LocationId)=:city))) ORDER BY o.EndDate, o.OfferId`, filters(args));
 }
 export async function marketplaceStatistics() {
   const [row] = await select(`SELECT
     (SELECT COUNT(*) FROM dbo.Vendors v JOIN dbo.Users u ON u.UserId = v.UserId WHERE ${eligibleVendor}) AS verifiedVendors,
     (SELECT COUNT(*) FROM dbo.Categories WHERE IsActive = 1) AS services,
     (SELECT COUNT(*) FROM dbo.Booking WHERE BookingStatus = 'Completed') AS successfulBookings,
-    (SELECT COUNT(DISTINCT l.City) FROM dbo.VendorLocations l JOIN dbo.Vendors v ON v.VendorId = l.VendorId
-      JOIN dbo.Users u ON u.UserId = v.UserId WHERE l.IsActive = 1 AND ${eligibleVendor}) AS cities`);
+    (SELECT COUNT(DISTINCT v.AdminLocationId) FROM dbo.Vendors v JOIN dbo.Users u ON u.UserId = v.UserId WHERE ${eligibleVendor}) AS cities`);
   return row;
 }
 export async function submitContactMessage(_, { input }, ctx) {

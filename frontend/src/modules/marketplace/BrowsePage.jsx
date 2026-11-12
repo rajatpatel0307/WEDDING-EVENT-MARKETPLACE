@@ -1,4 +1,5 @@
 import OfferActions, { OfferPrices } from "../commerce/OfferActions";
+import { useSelectedLocation, setSelectedLocation } from "./location-selection";
 import { offerState } from "../commerce/offer-state";
 import { optimizedMediaUrl } from "../media/api";
 import { useWishlist } from "../customer/services/wishlist";
@@ -235,6 +236,7 @@ function FilterDrawer({ children, close, reset, canReset, total }) {
   );
 }
 export default function BrowsePage({ embedded = false }) {
+  const selectedLocation = useSelectedLocation();
   const [params, setParams] = useSearchParams(),
     location = useLocation(),
     catalog = useMarketplace("/catalog"),
@@ -262,6 +264,10 @@ export default function BrowsePage({ embedded = false }) {
     "page",
   ])
     if (params.get(k)) query.set(k, params.get(k));
+  if (!params.has("city") && selectedLocation) query.set("city", selectedLocation);
+  useEffect(() => {
+    if (params.has("city")) setSelectedLocation(params.get("city") || "");
+  }, [params]);
   query.set("type", kind);
   query.set("pageSize", "12");
   const requested =
@@ -278,6 +284,7 @@ export default function BrowsePage({ embedded = false }) {
   const results = useMarketplace(catalog.data ? `/discover?${query}` : null);
   const filter = useCallback(
     (key, value) => {
+      if (key === "city") setSelectedLocation(value);
       setParams((prev) => {
         const n = new URLSearchParams(prev);
         if (value) n.set(key, value);
@@ -304,6 +311,7 @@ export default function BrowsePage({ embedded = false }) {
     ([key]) => !["page", "type", "sort"].includes(key),
   );
   const resetFilters = () => {
+    setSelectedLocation("");
     setParams(embedded && params.get("type") ? { type: kind } : {});
   };
   const select = (key, label, options) => (
@@ -311,7 +319,7 @@ export default function BrowsePage({ embedded = false }) {
       {label}
       <select
         value={
-          key === "category" ? String(matched?.id || "") : params.get(key) || ""
+          key === "category" ? String(matched?.id || "") : key === "city" ? params.get(key) ?? selectedLocation : params.get(key) || ""
         }
         onChange={(e) => filter(key, e.target.value)}
       >
@@ -547,7 +555,9 @@ export default function BrowsePage({ embedded = false }) {
                 : k === "subcategory"
                   ? catalog.data?.subcategories.find((s) => String(s.id) === v)
                       ?.name || v
-                  : `${{ q: "Search", min: "Min price", max: "Max price", postalCode: "Postal code", serviceType: "Service type", date: "Event date", guests: "Guests", rating: "Rating", city: "Location" }[k] || k}: ${v}`}{" "}
+                  : k === "city"
+                    ? `Location: ${catalog.data?.cities.find(l => String(l.id).toLowerCase() === v.toLowerCase() || l.city === v)?.name || "Unavailable location"}`
+                    : `${{ q: "Search", min: "Min price", max: "Max price", postalCode: "Postal code", serviceType: "Service type", date: "Event date", guests: "Guests", rating: "Rating" }[k] || k}: ${v}`}{" "}
               <X size={12} />
             </button>
           ))}

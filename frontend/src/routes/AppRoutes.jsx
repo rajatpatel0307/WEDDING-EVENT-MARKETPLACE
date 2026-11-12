@@ -656,6 +656,7 @@ export default function AppRoutes() {
             }
           >
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="change-password" element={<ResetPasswordPage change embedded />} />
             <Route
               path="reviews"
               element={

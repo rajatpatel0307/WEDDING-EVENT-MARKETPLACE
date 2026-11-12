@@ -1,14 +1,15 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, MapPin, ArrowUpRight, Flower2, Volume2, VolumeX, Sparkles } from "lucide-react";
-import { cities } from "../layout/navigation";
+import { useCustomerLocations, useSelectedLocation, setSelectedLocation } from "../../modules/marketplace/location-selection";
 
 // Video asset path
 import heroVideo from "../../assets/gemini_generated_video_95816cb3.mp4";
 
 export default function Hero() {
   const [query, setQuery] = useState("");
-  const [city, setCity] = useState("");
+  const city = useSelectedLocation(), setCity = setSelectedLocation;
+  const locations = useCustomerLocations();
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef(null);
   const navigate = useNavigate();
@@ -160,9 +161,9 @@ export default function Hero() {
                 className="bg-transparent text-sm text-stone-900 focus:outline-none cursor-pointer w-full font-medium"
               >
                 <option value="">Select location</option>
-                {cities.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                {(locations.data || []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.city}, {c.state}
                   </option>
                 ))}
               </select>
