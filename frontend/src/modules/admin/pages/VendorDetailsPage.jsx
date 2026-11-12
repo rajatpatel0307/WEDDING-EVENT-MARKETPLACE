@@ -20,6 +20,7 @@ import {
   FileCheck2,
   FileText,
   Image as ImageIcon,
+  Layers,
   Mail,
   MapPin,
   Phone,
@@ -35,7 +36,10 @@ import {
 import { adminRequest, date, money, number } from "../api";
 import { Badge, Empty, ErrorState, Skeleton } from "../components/AdminTable";
 import AdminDialog from "../components/AdminDialog";
+import { BookingStatus } from "../components/BookingUI";
 import { useAuth } from "../../../context/AuthContext";
+import { categoryImages } from "../../../components/home/categoryImages";
+import "./vendor-bookings.css";
 
 const tabs = [
   ["overview", "Overview"],
@@ -404,6 +408,79 @@ function Cell({ field, row, section }) {
     </span>
   );
 }
+function VendorBookingRecords({ rows, page, size, total, onPageChange }) {
+  const pageCount = Math.ceil(total / size);
+  const pagerButton = "inline-flex size-[32px] items-center justify-center rounded-[7px] border border-[#e1e9e3] bg-white text-[#6e8876] transition-colors hover:border-[#b8cebf] hover:bg-[#f3f7f2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-not-allowed disabled:opacity-40";
+  return (
+    <>
+      <div className="vd-bookings-layout w-full min-w-0">
+        <table className="vd-bookings-table w-full table-fixed border-collapse text-left">
+          <caption className="sr-only">Vendor bookings with customer and event details, services, payment balances, statuses, notes and creation dates.</caption>
+          <colgroup>
+            {[160, 150, 200, 170, 130, 120, 210, 140].map((width, i) => <col key={i} style={{ width: `${width / 1280 * 100}%` }} />)}
+          </colgroup>
+          <thead>
+            <tr className="border-y border-[#eaf0eb] bg-[#f8faf8]">
+              {["Booking / customer", "Event", "Services", "Payment breakdown", "Payment status", "Booking status", "Notes", "Created"].map(label => (
+                <th key={label} scope="col" className="px-[16px] py-[13px] text-[9px] font-medium uppercase tracking-[0.7px] text-[#8b9c90] first:pl-[24px] last:pr-[24px]">{label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.id} className="border-b border-[#edf2ed] align-top transition-colors last:border-b-0 hover:bg-[#fbfcfa]">
+                <td data-label="Booking / customer" className="py-[20px] pr-[16px] pl-[24px] [overflow-wrap:anywhere]">
+                  <div className="text-[11px] font-semibold leading-[1.6] text-[#345c49]">{row.number || "Booking reference unavailable"}</div>
+                  <div className="mt-[7px] text-[10px] leading-[1.6] text-[#809487]">
+                    {row.customerId ? <Link to={`/admin/customers/${row.customerId}`} className="rounded-[2px] text-[#658b70] no-underline hover:text-[#176b60] hover:underline focus-visible:outline-2 focus-visible:outline-[#176b60]">{row.customer || "View customer"}</Link> : row.customer || "Customer not provided"}
+                  </div>
+                </td>
+                <td data-label="Event" className="px-[16px] py-[20px] [overflow-wrap:anywhere]">
+                  <div className="text-[11px] font-medium leading-[1.6] text-[#4c6755]">{row.event || "Event not provided"}</div>
+                  <div className="mt-[7px] text-[10px] leading-[1.6] text-[#8b9c90]">{row.eventDate ? date(row.eventDate) : "Date not provided"}</div>
+                </td>
+                <td data-label="Services" className="px-[16px] py-[20px] whitespace-pre-wrap text-[11px] leading-[1.8] text-[#718878] [overflow-wrap:anywhere]">{row.services || "Services not provided"}</td>
+                <td data-label="Payment breakdown" className="px-[16px] py-[20px]">
+                  <div className="text-[12px] font-semibold leading-[1.6] text-[#345344] tabular-nums [overflow-wrap:anywhere]"><Cell field="amount" row={row} section="bookings" /></div>
+                  <dl className="m-0 mt-[8px] grid gap-[5px] text-[10px] leading-[1.5]">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-[6px] gap-y-[2px]"><dt className="text-[#91a195]">Paid</dt><dd className="m-0 text-[#64876d] tabular-nums [overflow-wrap:anywhere]"><Cell field="paid" row={row} section="bookings" /></dd></div>
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-[6px] gap-y-[2px]"><dt className="text-[#91a195]">Balance</dt><dd className="m-0 font-medium text-[#997d48] tabular-nums [overflow-wrap:anywhere]"><Cell field="remaining" row={row} section="bookings" /></dd></div>
+                  </dl>
+                </td>
+                <td data-label="Payment status" className="px-[16px] py-[20px] [&_span]:max-w-full [&_span]:whitespace-normal [&_span]:text-[10px]"><BookingStatus value={row.paymentStatus} /></td>
+                <td data-label="Booking status" className="px-[16px] py-[20px] [&_span]:max-w-full [&_span]:whitespace-normal [&_span]:text-[10px]"><BookingStatus value={row.status} /></td>
+                <td data-label="Notes" className="px-[16px] py-[20px]">
+                  {row.customerNotes || row.vendorNotes ? (
+                    <div className="grid gap-[8px]">
+                      {[["Customer note", row.customerNotes], ["Vendor note", row.vendorNotes]].filter(([, note]) => note).map(([label, note]) => (
+                        <details key={label} className="rounded-[6px] border border-[#e6ede5] bg-[#fafcf8] px-[9px] py-[6px]">
+                          <summary className="cursor-pointer text-[10px] font-medium text-[#728b76] focus-visible:outline-2 focus-visible:outline-[#176b60]">{label}</summary>
+                          <p className="m-0 mt-[8px] whitespace-pre-wrap text-[10px] leading-[1.8] text-[#809284] [overflow-wrap:anywhere]">{note}</p>
+                        </details>
+                      ))}
+                    </div>
+                  ) : <span className="text-[10px] text-[#a0ada4]">No notes</span>}
+                </td>
+                <td data-label="Created" className="py-[20px] pr-[24px] pl-[16px]">
+                  {row.createdAt ? <time dateTime={row.createdAt} className="block text-[10px] leading-[1.6] text-[#6f8475]"><span className="block">{date(row.createdAt)}</span><span className="mt-[4px] block text-[9px] text-[#98a69d]">{new Date(row.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })}</span></time> : <span className="text-[10px] text-[#a0ada4]">Not recorded</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-[14px] border-t border-[#eaf0e9] bg-[#fcfdfa] px-[24px] py-[16px] text-[10px] text-[#8b9d8f]">
+        <span>{number((page - 1) * size + 1)}&ndash;{number(Math.min(page * size, total))} of {number(total)} {total === 1 ? "booking" : "bookings"}</span>
+        <div className="flex items-center gap-[12px]">
+          <button type="button" className={pagerButton} aria-label="Previous bookings page" disabled={page === 1} onClick={() => onPageChange(page - 1)}><ChevronLeft size={14} /></button>
+          <span className="tabular-nums">Page <span className="font-medium text-[#526f5b]">{number(page)}</span> of {number(pageCount)}</span>
+          <button type="button" className={pagerButton} aria-label="Next bookings page" disabled={page >= pageCount} onClick={() => onPageChange(page + 1)}><ChevronRight size={14} /></button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function Records({ id, section, version, onDocument, compact = false }) {
   const [page, setPage] = useState(1),
     [result, setResult] = useState(null),
@@ -434,6 +511,9 @@ function Records({ id, section, version, onDocument, compact = false }) {
         description="This vendor has no records in this section yet."
       />
     );
+  if (section === "bookings" && !compact) {
+    return <VendorBookingRecords rows={result.rows} page={page} size={size} total={result.total} onPageChange={setPage} />;
+  }
   const cols = compact
     ? columns[section].filter(([key]) =>
         ["number", "customer", "amount", "status", "createdAt"].includes(key),
@@ -1150,56 +1230,64 @@ export default function VendorDetailsPage() {
           </>
         ) : tab === "business" ? (
           <>
-            <section className="ad-panel cd-personal [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden] [&_dl]:grid [&_dl]:grid-cols-[repeat(3,_minmax(0,_1fr))] [@media(width<=600px)]:[&_dl]:grid-cols-[1fr] [@media(600px<width<=1000px)]:[&_dl]:grid-cols-[1fr_1fr] [&_dl]:gap-[32px] [&_dl]:m-[0] [&_dl]:[padding:2px_24px_26px] [&_dl]:pt-[12px]">
-              <div className="ad-panel-heading flex items-center justify-between gap-[15px] [padding:21px_22px_17px] [@media(width<=767px)]:[padding:18px_16px] [@media(767px<width<=1200px)]:[padding:17px_16px] [&_p]:text-[10px] [@media(width<=1200px)]:[&_p]:text-[9px] [&_p]:mt-[4px] [@media(width<=767px)]:[&_h2]:text-[14px] [@media(767px<width<=1200px)]:[&_h2]:text-[13px] [@media(width<=767px)]:flex-wrap">
-                <div>
-                  <h2>Business information</h2>
-                  <p>
-                    Legal identity, contact details and marketplace categories.
-                  </p>
+            <section className="ad-panel vd-business-information min-w-0 overflow-hidden rounded-[14px] border border-[#e1e9e3] bg-white shadow-[0_4px_20px_#24483d04]" aria-labelledby="vendor-business-heading">
+              <div className="flex items-center gap-[12px] border-b border-[#edf1ed] px-[24px] py-[22px] [@media(width<=600px)]:px-[20px]">
+                <span className="inline-flex size-[38px] shrink-0 items-center justify-center rounded-[10px] border border-[#e2ebe3] bg-[#f1f6f1] text-[#6b8b75]" aria-hidden="true"><BriefcaseBusiness size={18} strokeWidth={1.6} /></span>
+                <div className="min-w-0">
+                  <h2 id="vendor-business-heading" className="m-0 text-[15px] font-semibold leading-[1.5] tracking-[-0.2px] text-[#2f4f3f]">Business information</h2>
+                  <p className="m-0 mt-[4px] text-[11px] leading-[1.6] text-[#93a196]">Legal identity, contact details and marketplace categories.</p>
                 </div>
-                <BriefcaseBusiness size={19} />
               </div>
-              <dl>
-                <Info label="Business name">{v.businessName}</Info>
-                <Info label="Owner name">{v.owner}</Info>
-                <Info label="Business email">{v.businessEmail}</Info>
-                <Info label="Business phone">{v.businessPhone}</Info>
-                <Info label="Last approved">
-                  {v.verifiedAt ? timestamp(v.verifiedAt) : "Not yet recorded"}
-                </Info>
-                <Info label="Verification cycle">{v.cycle || 1}</Info>
-                <Info label="Owner email">{v.ownerEmail}</Info>
-                <Info label="Owner phone">{v.ownerPhone}</Info>
-                <Info label="GST number">{v.gst}</Info>
-                <Info label="PAN number">{v.pan}</Info>
-                <Info label="Registered on">{timestamp(v.createdAt)}</Info>
-                <Info label="Verification status">
-                  <Badge>{v.status}</Badge>
-                </Info>
-                <Info label="Vendor account">
-                  <Badge>{v.active ? "Active" : "Inactive"}</Badge>
-                </Info>
-                <Info label="Last updated">{timestamp(v.updatedAt)}</Info>
-                <Info label="Last approved">
-                  {v.verifiedAt ? timestamp(v.verifiedAt) : "Not yet recorded"}
-                </Info>
-                <Info label="Verification cycle">{v.cycle || 1}</Info>
-              </dl>
-              <div className="vd-business-description [padding:0_24px_24px] [&_h3]:text-[12px] [&_h3]:text-[#53694d] [&_h3]:[margin:0_0_10px] [&_h3]:font-[600] [&_>_p]:whitespace-pre-wrap [&_>_p]:leading-[1.9] [&_>_p]:[margin:0_0_24px] [&_>_p]:[overflow-wrap:anywhere] [&_.vd-categories]:mb-[0]">
-                <h3>Business description</h3>
-                <p>{v.description || "No description provided."}</p>
-                <h3>Business categories</h3>
-                <div className="vd-categories flex items-center flex-wrap gap-[6px] [margin:17px_0_22px] [&_>_span]:text-[10px] [&_>_span]:text-[#687d61] [&_>_span]:[background:#f0f4ed] [&_>_span]:[border-top-width:1px] [&_>_span]:[border-top-style:solid] [&_>_span]:[border-top-color:#e4ebdf] [&_>_span]:[border-right-width:1px] [&_>_span]:[border-right-style:solid] [&_>_span]:[border-right-color:#e4ebdf] [&_>_span]:[border-bottom-width:1px] [&_>_span]:[border-bottom-style:solid] [&_>_span]:[border-bottom-color:#e4ebdf] [&_>_span]:[border-left-width:1px] [&_>_span]:[border-left-style:solid] [&_>_span]:[border-left-color:#e4ebdf] [&_>_span]:rounded-[5px] [&_>_span]:[padding:3px_8px]">
-                  {categories.length
-                    ? categories.map((c) => (
-                        <span key={c.id}>
-                          {c.name}
-                          {c.isPrimary ? " · Primary" : ""}
-                        </span>
-                      ))
-                    : "No categories selected"}
-                </div>
+              <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.3fr)] items-start gap-[28px] p-[24px] [@media(width<=1100px)]:grid-cols-[repeat(2,minmax(0,1fr))] [@media(width<=600px)]:grid-cols-[1fr] [@media(width<=600px)]:gap-[24px] [@media(width<=600px)]:p-[20px]">
+                <section className="min-w-0" aria-labelledby="vendor-identity-heading">
+                  <h3 id="vendor-identity-heading" className="m-0 mb-[20px] text-[12px] font-semibold text-[#3e5f4c]">Business identity</h3>
+                  <dl className="m-0 grid gap-[20px]">
+                    <Info label="Business name"><span className="font-semibold text-[#345c49]">{v.businessName}</span></Info>
+                    <Info label="Owner name">{v.owner}</Info>
+                    <Info label="GST number">{v.gst}</Info>
+                    <Info label="PAN number">{v.pan}</Info>
+                  </dl>
+                </section>
+                <section className="min-w-0 border-l border-[#edf1ed] pl-[28px] [@media(width<=600px)]:border-l-0 [@media(width<=600px)]:border-t [@media(width<=600px)]:pt-[24px] [@media(width<=600px)]:pl-0" aria-labelledby="vendor-contact-heading">
+                  <h3 id="vendor-contact-heading" className="m-0 mb-[20px] text-[12px] font-semibold text-[#3e5f4c]">Contact details</h3>
+                  <dl className="m-0 grid gap-[20px]">
+                    <Info label="Business email">{v.businessEmail}</Info>
+                    <Info label="Business phone">{v.businessPhone}</Info>
+                    <Info label="Owner email">{v.ownerEmail}</Info>
+                    <Info label="Owner phone">{v.ownerPhone}</Info>
+                  </dl>
+                </section>
+                <section className="min-w-0 rounded-[10px] border border-[#e8eee7] bg-[#f8faf7] p-[20px] [@media(600px<width<=1100px)]:col-span-2" aria-labelledby="vendor-verification-heading">
+                  <div className="mb-[20px] flex items-center justify-between gap-[12px]">
+                    <h3 id="vendor-verification-heading" className="m-0 text-[12px] font-semibold text-[#3e5f4c]">Verification & account</h3>
+                    <ShieldCheck size={16} strokeWidth={1.6} className="shrink-0 text-[#86a18b]" aria-hidden="true" />
+                  </div>
+                  <dl className="m-0 grid grid-cols-[repeat(2,minmax(0,1fr))] gap-x-[20px] gap-y-[22px] [@media(width<=600px)]:grid-cols-[1fr]">
+                    <Info label="Verification status"><Badge highlighted>{v.status}</Badge></Info>
+                    <Info label="Vendor account"><Badge highlighted>{v.active ? "Active" : "Inactive"}</Badge></Info>
+                    <Info label="Registered on">{timestamp(v.createdAt)}</Info>
+                    <Info label="Last approved">{v.verifiedAt ? timestamp(v.verifiedAt) : "Not yet recorded"}</Info>
+                    <Info label="Last updated">{timestamp(v.updatedAt)}</Info>
+                    <Info label="Verification cycle">{v.cycle || 1}</Info>
+                  </dl>
+                </section>
+              </div>
+              <div className="grid min-w-0 grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-[32px] border-t border-[#edf1ed] px-[24px] py-[22px] [@media(width<=800px)]:grid-cols-[1fr] [@media(width<=600px)]:px-[20px]">
+                <section className="vd-business-description min-w-0" aria-labelledby="vendor-description-heading">
+                  <h3 id="vendor-description-heading" className="m-0 mb-[10px] text-[12px] font-semibold text-[#3e5f4c]">Business description</h3>
+                  <p className="m-0 whitespace-pre-wrap text-[12px] leading-[1.85] text-[#829487] [overflow-wrap:anywhere]">{v.description || "No description provided."}</p>
+                </section>
+                <section className="min-w-0" aria-labelledby="vendor-categories-heading">
+                  <h3 id="vendor-categories-heading" className="m-0 mb-[12px] text-[12px] font-semibold text-[#3e5f4c]">Business categories</h3>
+                  <div className="vd-categories flex flex-wrap items-start gap-[8px]">
+                    {categories.length ? categories.map(category => (
+                      <span key={category.id} className="inline-flex max-w-full flex-wrap items-center gap-[7px] rounded-[7px] border border-[#e0e9de] bg-[#f3f7ef] px-[10px] py-[6px] text-[10px] leading-[1.5] text-[#69815d] [overflow-wrap:anywhere]">
+                        {category.name}
+                        {!!category.isPrimary && <span className="rounded-[4px] bg-[#e2ecdc] px-[5px] py-[2px] text-[8px] font-semibold uppercase tracking-[0.4px] text-[#5c7c4d]">Primary</span>}
+                      </span>
+                    )) : <span className="text-[11px] text-[#93a196]">No categories selected</span>}
+                  </div>
+                </section>
               </div>
             </section>
             <section className="ad-panel vd-business-locations [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden] mt-[22px]">
@@ -1218,29 +1306,42 @@ export default function VendorDetailsPage() {
             </section>
           </>
         ) : tab === "categories" ? (
-          <section className="ad-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]">
-            <div className="ad-panel-heading flex items-center justify-between gap-[15px] [padding:21px_22px_17px] [@media(width<=767px)]:[padding:18px_16px] [@media(767px<width<=1200px)]:[padding:17px_16px] [&_p]:text-[10px] [@media(width<=1200px)]:[&_p]:text-[9px] [&_p]:mt-[4px] [@media(width<=767px)]:[&_h2]:text-[14px] [@media(767px<width<=1200px)]:[&_h2]:text-[13px] [@media(width<=767px)]:flex-wrap">
-              <h2>Service categories</h2>
+          <section className="ad-panel vd-service-categories min-w-0 overflow-hidden rounded-[14px] border border-[#e1e9e3] bg-white shadow-[0_4px_20px_#24483d04]" aria-labelledby="vendor-service-categories-heading">
+            <div className="flex flex-wrap items-center justify-between gap-[16px] border-b border-[#edf1ed] px-[24px] py-[22px] [@media(width<=600px)]:px-[20px]">
+              <div className="flex min-w-0 items-center gap-[12px]">
+                <span className="inline-flex size-[38px] shrink-0 items-center justify-center rounded-[10px] border border-[#e2ebe3] bg-[#f1f6f1] text-[#6b8b75]" aria-hidden="true"><Layers size={18} strokeWidth={1.6} /></span>
+                <div className="min-w-0">
+                  <h2 id="vendor-service-categories-heading" className="m-0 text-[15px] font-semibold leading-[1.5] tracking-[-0.2px] text-[#2f4f3f]">Service categories</h2>
+                  <p className="m-0 mt-[4px] text-[11px] leading-[1.6] text-[#93a196]">The vendor's areas of service and primary specialty.</p>
+                </div>
+              </div>
+              <span className="inline-flex shrink-0 items-center rounded-full border border-[#e4ebe4] bg-[#f7f9f5] px-[11px] py-[5px] text-[10px] font-medium text-[#78917b]">{number(categories.length)} {categories.length === 1 ? "category" : "categories"}</span>
             </div>
             {categories.length ? (
-              <dl className="ad-details grid grid-cols-[1fr_1fr] gap-[18px] [@media(width<=767px)]:gap-[15px] [margin:0_0_22px] [&_>_div]:min-w-0 [&_dt]:text-[10px] [&_dt]:text-[#98a38e] [&_dt]:mb-[5px] [&_dd]:text-[12px] [&_dd]:m-[0] [&_dd]:[overflow-wrap:anywhere]">
-                {categories.map((category) => (
-                  <div key={category.id}>
-                    <dt>
-                      {category.isPrimary ? "Primary category" : "Category"}
-                    </dt>
-                    <dd>
-                      <Link
-                        to={`/admin/categories?q=${encodeURIComponent(category.name)}`}
-                      >
-                        {category.name}
-                      </Link>
-                    </dd>
-                  </div>
+              <ul className="m-0 grid list-none grid-cols-[repeat(3,minmax(0,1fr))] gap-[12px] p-[24px] [@media(width<=1200px)]:grid-cols-[repeat(2,minmax(0,1fr))] [@media(width<=600px)]:grid-cols-[1fr] [@media(width<=600px)]:p-[20px]">
+                {categories.map(category => (
+                  <li key={category.id} className="min-w-0">
+                    <Link
+                      to={`/admin/categories?q=${encodeURIComponent(category.name)}`}
+                      aria-label={`View ${category.name} category${category.isPrimary ? ", primary category" : ""}`}
+                      className={`group flex h-full min-h-[80px] min-w-0 items-center gap-[12px] rounded-[10px] border p-[14px] no-underline transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] ${category.isPrimary ? "border-[#bcd5c2] bg-[#f0f7ee] hover:border-[#8db39b] hover:bg-[#eaf3e7]" : "border-[#e7ede7] bg-white hover:border-[#c4d6c6] hover:bg-[#fafcf8]"}`}
+                    >
+                      <VendorImage
+                        src={categoryImages[category.name]}
+                        alt=""
+                        className="size-[42px] shrink-0 rounded-[9px] object-cover [&.vd-image-fallback]:grid [&.vd-image-fallback]:place-items-center [&.vd-image-fallback]:bg-[#eef3e9] [&.vd-image-fallback]:text-[#8da180]"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <span className="block text-[12px] font-medium leading-[1.6] text-[#3e624c] [overflow-wrap:anywhere]">{category.name}</span>
+                        {!!category.isPrimary && <span className="mt-[5px] inline-flex items-center gap-[4px] rounded-[4px] border border-[#d3e3c8] bg-[#e3efda] px-[6px] py-[2px] text-[8px] font-semibold uppercase tracking-[0.5px] text-[#60834e]"><Check size={10} aria-hidden="true" /> Primary category</span>}
+                      </div>
+                      <ArrowUpRight size={14} strokeWidth={1.6} className="shrink-0 text-[#a2b39f] transition-colors group-hover:text-[#4f7b61]" aria-hidden="true" />
+                    </Link>
+                  </li>
                 ))}
-              </dl>
+              </ul>
             ) : (
-              <Empty text="No categories assigned" />
+              <Empty text="No categories assigned" description="Assigned service categories will appear here." />
             )}
           </section>
         ) : tab === "revenue" ? (
@@ -1296,6 +1397,20 @@ export default function VendorDetailsPage() {
               />
             </section>
           </>
+        ) : tab === "bookings" ? (
+          <section className="ad-panel vd-bookings min-w-0 overflow-hidden rounded-[14px] border border-[#e1e9e3] bg-white shadow-[0_4px_20px_#24483d04]" aria-labelledby="vendor-bookings-heading">
+            <div className="flex flex-wrap items-center justify-between gap-[16px] px-[24px] py-[22px] [@media(width<=600px)]:px-[20px]">
+              <div className="flex min-w-0 items-center gap-[12px]">
+                <span className="inline-flex size-[38px] shrink-0 items-center justify-center rounded-[10px] border border-[#e2ebe3] bg-[#f1f6f1] text-[#6b8b75]" aria-hidden="true"><CalendarCheck size={18} strokeWidth={1.6} /></span>
+                <div className="min-w-0">
+                  <h2 id="vendor-bookings-heading" className="m-0 text-[15px] font-semibold leading-[1.5] tracking-[-0.2px] text-[#2f4f3f]">Bookings</h2>
+                  <p className="m-0 mt-[4px] text-[11px] leading-[1.6] text-[#93a196]">Complete booking history, customer notes, and payment balances.</p>
+                </div>
+              </div>
+              <span className="rounded-full border border-[#e4ebe4] bg-[#f7f9f5] px-[11px] py-[5px] text-[10px] text-[#829984]">Newest first</span>
+            </div>
+            <Records key={`${id}-bookings`} id={id} section="bookings" version={version} />
+          </section>
         ) : (
           <section className="ad-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]">
             <div className="ad-panel-heading flex items-center justify-between gap-[15px] [padding:21px_22px_17px] [@media(width<=767px)]:[padding:18px_16px] [@media(767px<width<=1200px)]:[padding:17px_16px] [&_p]:text-[10px] [@media(width<=1200px)]:[&_p]:text-[9px] [&_p]:mt-[4px] [@media(width<=767px)]:[&_h2]:text-[14px] [@media(767px<width<=1200px)]:[&_h2]:text-[13px] [@media(width<=767px)]:flex-wrap">

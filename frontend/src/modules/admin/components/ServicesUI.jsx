@@ -110,7 +110,8 @@ const icons = {
   duplicate: Copy,
   delete: Trash2,
 };
-export function ServiceActions({ row, action, inline = false }) {
+export function ServiceActions({ row, action, inline = false, iconsOnly = false }) {
+  const iconButtonClass = "inline-flex size-[30px] shrink-0 items-center justify-center rounded-[7px] border border-[#e2e9e3] bg-white text-[#6a8372] transition-colors hover:border-[#b8cebf] hover:bg-[#f1f6f1] hover:text-[#176b60] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60]";
   const buttons = (row.actions || []).map((key) => {
     const Icon = icons[key] || MoreHorizontal,
       label = key[0].toUpperCase() + key.slice(1);
@@ -118,29 +119,34 @@ export function ServiceActions({ row, action, inline = false }) {
       return (
         <Link
           key={key}
-          className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+          title={iconsOnly ? label : undefined}
+          aria-label={`${label} ${row.name || "service"}`}
+          className={iconsOnly ? iconButtonClass : "ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"}
           to={`/admin/services/${row.id}${key === "edit" ? "/edit" : ""}`}
         >
-          <Icon size={14} />
-          {label}
+          <Icon size={14} aria-hidden="true" />
+          {iconsOnly ? <span className="sr-only">{label}</span> : label}
         </Link>
       );
     return (
       <button
         key={key}
-        className={`ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3] ${key === "delete" || key === "reject" ? "asm-danger-text [&.asm-danger-text]:text-[#b14b52]!" : ""}`}
+        type="button"
+        title={iconsOnly ? label : undefined}
+        aria-label={`${label} ${row.name || "service"}`}
+        className={iconsOnly ? `${iconButtonClass} ${key === "delete" || key === "reject" ? "text-[#b14b52] hover:bg-[#fff3ef] hover:text-[#a23f47]" : ""}` : `ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3] ${key === "delete" || key === "reject" ? "asm-danger-text [&.asm-danger-text]:text-[#b14b52]!" : ""}`}
         onClick={(e) => {
           e.currentTarget.closest("details")?.removeAttribute("open");
           action(row, key);
         }}
       >
-        <Icon size={14} />
-        {label}
+        <Icon size={14} aria-hidden="true" />
+        {iconsOnly ? <span className="sr-only">{label}</span> : label}
       </button>
     );
   });
-  return inline ? (
-    <div className="flex flex-wrap gap-2">{buttons}</div>
+  return inline || iconsOnly ? (
+    <div className={iconsOnly ? "flex flex-wrap items-center gap-[4px]" : "flex flex-wrap gap-2"} role="group" aria-label={`Actions for ${row.name || "service"}`}>{buttons}</div>
   ) : (
     <details
       className="asm-menu relative [&_summary]:[list-style:none] [&_summary]:cursor-pointer [&_summary]:p-[7px] [&_summary]:[border-top-width:1px] [&_summary]:[border-top-style:solid] [&_summary]:[border-top-color:#e0e7e1] [&_summary]:[border-right-width:1px] [&_summary]:[border-right-style:solid] [&_summary]:[border-right-color:#e0e7e1] [&_summary]:[border-bottom-width:1px] [&_summary]:[border-bottom-style:solid] [&_summary]:[border-bottom-color:#e0e7e1] [&_summary]:[border-left-width:1px] [&_summary]:[border-left-style:solid] [&_summary]:[border-left-color:#e0e7e1] [&_summary]:rounded-[7px] [&_summary]:w-[max-content] [&_summary::-webkit-details-marker]:hidden [&[open]_>_div]:fixed [&[open]_>_div]:right-[auto] [&[open]_>_div]:bottom-[auto] [&[open]_>_div]:z-[40] [&[open]_>_div]:min-w-[175px] [&[open]_>_div]:p-[7px] [&[open]_>_div]:grid [&[open]_>_div]:gap-[4px] [&[open]_>_div]:[background:#fff] [&[open]_>_div]:[border-top-width:1px] [&[open]_>_div]:[border-top-style:solid] [&[open]_>_div]:[border-top-color:#e0e7e1] [&[open]_>_div]:[border-right-width:1px] [&[open]_>_div]:[border-right-style:solid] [&[open]_>_div]:[border-right-color:#e0e7e1] [&[open]_>_div]:[border-bottom-width:1px] [&[open]_>_div]:[border-bottom-style:solid] [&[open]_>_div]:[border-bottom-color:#e0e7e1] [&[open]_>_div]:[border-left-width:1px] [&[open]_>_div]:[border-left-style:solid] [&[open]_>_div]:[border-left-color:#e0e7e1] [&[open]_>_div]:[box-shadow:0_10px_35px_#153f2724] [&[open]_>_div]:rounded-[10px] [&_.ad-button]:[border-top-width:0] [&_.ad-button]:[border-top-style:none] [&_.ad-button]:[border-top-color:currentColor] [&_.ad-button]:[border-right-width:0] [&_.ad-button]:[border-right-style:none] [&_.ad-button]:[border-right-color:currentColor] [&_.ad-button]:[border-bottom-width:0] [&_.ad-button]:[border-bottom-style:none] [&_.ad-button]:[border-bottom-color:currentColor] [&_.ad-button]:[border-left-width:0] [&_.ad-button]:[border-left-style:none] [&_.ad-button]:[border-left-color:currentColor] [&_.ad-button]:justify-start [&[open]_>_div]:max-h-[70vh] [&[open]_>_div]:[overflow-x:auto] [&[open]_>_div]:overflow-y-auto"

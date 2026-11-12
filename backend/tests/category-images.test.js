@@ -74,22 +74,24 @@ test("marketplace category cards receive the saved category image", async (t) =>
 
 test("category statistics count all categories independently of table filters and pagination", async (t) => {
   const query = t.mock.method(sequelize, "query", async (sql) => {
-    if (sql.includes("AS inactive FROM dbo.Categories")) return [{ total: "31", active: 22, inactive: 9 }];
+    if (sql.includes("FROM dbo.Categories c")) return [{ total: "31", active: 22, inactive: 9, services: "36" }];
     return sql.includes("COUNT_BIG") ? [{ total: 1 }] : [];
   });
   const result = await list("categories", listQuery.parse({ q: "Technology", status: "Active", page: 2, pageSize: 10 }));
-  assert.deepEqual(result.summary, { total: 31, active: 22, inactive: 9 });
+  assert.deepEqual(result.summary, { total: 31, active: 22, inactive: 9, services: 36 });
   assert.equal(result.total, 1);
-  const summarySQL = query.mock.calls.find((call) => call.arguments[0].includes("AS inactive FROM dbo.Categories")).arguments[0];
+  const summarySQL = query.mock.calls.find((call) => call.arguments[0].includes("FROM dbo.Categories c")).arguments[0];
   assert.doesNotMatch(summarySQL, /WHERE|OFFSET|:q|:status/);
+  assert.match(summarySQL, /JOIN dbo.Categories linked ON linked.CategoryId=s.CategoryId/);
+  assert.equal(result.columns.includes("services"), false);
 });
 
 test("category statistics report zero for an empty category catalogue", async (t) => {
   t.mock.method(sequelize, "query", async (sql) => {
-    if (sql.includes("AS inactive FROM dbo.Categories")) return [{ total: 0, active: 0, inactive: 0 }];
+    if (sql.includes("FROM dbo.Categories c")) return [{ total: 0, active: 0, inactive: 0, services: 0 }];
     return sql.includes("COUNT_BIG") ? [{ total: 0 }] : [];
   });
-  assert.deepEqual((await list("categories", listQuery.parse({}))).summary, { total: 0, active: 0, inactive: 0 });
+  assert.deepEqual((await list("categories", listQuery.parse({}))).summary, { total: 0, active: 0, inactive: 0, services: 0 });
 });
 
 test("category detail reads authorize the administrator and validate IDs before SQL", async (t) => {

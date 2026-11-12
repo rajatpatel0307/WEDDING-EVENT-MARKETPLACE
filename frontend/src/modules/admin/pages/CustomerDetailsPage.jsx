@@ -134,6 +134,9 @@ const activityIcons = {
   review: Star,
 };
 
+const profileActionClass = "inline-flex min-h-[38px] items-center justify-center gap-[7px] rounded-[8px] border px-[12px] py-[9px] text-[11px] font-medium leading-[1.4] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] [&_svg]:shrink-0";
+const profileSecondaryAction = `${profileActionClass} border-[#dfe7e1] bg-white text-[#526b5d] hover:border-[#b8cebf] hover:bg-[#f6f9f6]`;
+
 function Avatar({ customer }) {
   const [failed, setFailed] = useState(false);
   return (
@@ -197,6 +200,69 @@ function Cell({ field, value, row }) {
     </span>
   );
 }
+function RecentBookingStatus({ value }) {
+  if (!value) return <span className="text-[#a0ada4]">&mdash;</span>;
+  const tone = ["Confirmed", "Completed", "Paid", "Success", "Approved"].includes(value)
+    ? "border-[#d2e7d8] bg-[#eef7f0] text-[#387453]"
+    : ["Pending", "PartiallyPaid", "InProgress", "Processing"].includes(value)
+      ? "border-[#eee0bd] bg-[#fcf7ea] text-[#9a7b36]"
+      : ["Cancelled", "Failed", "Rejected"].includes(value)
+        ? "border-[#f0dcd7] bg-[#fcf1ee] text-[#aa6258]"
+        : "border-[#e1e8e2] bg-[#f2f5f2] text-[#728578]";
+  return (
+    <span className={`inline-flex max-w-full items-center rounded-[6px] border px-[7px] py-[4px] text-[9px] font-medium leading-[1.4] ${tone}`}>
+      {String(value).replace(/([a-z])([A-Z])/g, "$1 $2")}
+    </span>
+  );
+}
+
+function RecentBookingsTable({ rows }) {
+  return (
+    <div className="w-full min-w-0 overflow-x-auto [scrollbar-width:thin] [scrollbar-color:#d5e1d8_transparent] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#176b60]" role="region" aria-label="Recent bookings table, scroll horizontally for more details" tabIndex={0}>
+      <table className="w-full min-w-[760px] table-fixed border-collapse text-left">
+        <caption className="sr-only">This customer's five most recent bookings, including vendor, services, payment and booking status.</caption>
+        <colgroup>
+          {[21, 25, 15, 14, 13, 12].map((width, i) => <col key={i} style={{ width: `${width}%` }} />)}
+        </colgroup>
+        <thead>
+          <tr className="border-y border-[#eaf0eb] bg-[#f8faf8]">
+            {["Booking", "Vendor & services", "Amount", "Payment", "Status", "Created"].map(label => (
+              <th key={label} scope="col" className="px-[16px] py-[12px] text-[9px] font-medium uppercase tracking-[0.8px] text-[#8b9c90] first:pl-[24px] last:pr-[24px]">{label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr key={row.id} className="border-b border-[#eef2ee] align-top transition-colors last:border-b-0 hover:bg-[#fbfcfa]">
+              <td className="py-[20px] pr-[16px] pl-[24px] [overflow-wrap:anywhere]">
+                <div className="text-[11px] font-semibold leading-[1.6] text-[#345c49]">{row.number || "Booking reference unavailable"}</div>
+                <div className="mt-[5px] text-[10px] leading-[1.7] text-[#8b9b90]">{row.event || "Event not provided"}</div>
+              </td>
+              <td className="px-[16px] py-[20px] [overflow-wrap:anywhere]">
+                <div className="text-[11px] font-medium leading-[1.6] text-[#4b6454]">{row.vendor || "Vendor not provided"}</div>
+                <div className="mt-[5px] whitespace-pre-wrap text-[10px] leading-[1.7] text-[#8b9b90]">{row.services || "Services not provided"}</div>
+              </td>
+              <td className="px-[16px] py-[20px] text-[11px] font-semibold leading-[1.6] text-[#345344] tabular-nums [overflow-wrap:anywhere]">
+                <Cell field="amount" value={row.amount} row={row} />
+              </td>
+              <td className="px-[16px] py-[20px]"><RecentBookingStatus value={row.paymentStatus} /></td>
+              <td className="px-[16px] py-[20px]"><RecentBookingStatus value={row.status} /></td>
+              <td className="py-[20px] pr-[24px] pl-[16px]">
+                {row.createdAt ? (
+                  <time dateTime={row.createdAt} className="block text-[10px] leading-[1.6] text-[#667d6e]">
+                    <span className="block">{date(row.createdAt)}</span>
+                    <span className="mt-[4px] block text-[9px] text-[#98a69d]">{new Date(row.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })}</span>
+                  </time>
+                ) : <span className="text-[10px] text-[#a0ada4]">Not recorded</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function Records({ id, section, version, compact = false }) {
   const [page, setPage] = useState(1),
     [result, setResult] = useState(null),
@@ -227,6 +293,9 @@ function Records({ id, section, version, compact = false }) {
         description="Records will appear here as this customer uses the marketplace."
       />
     );
+  if (compact && section === "bookings") {
+    return <RecentBookingsTable rows={result.rows} />;
+  }
   return (
     <>
       {section === "addresses" ? (
@@ -449,72 +518,67 @@ export default function CustomerDetailsPage() {
           <ShieldCheck size={14} /> Administrator access
         </span>
       </div>
-      <section className="ad-panel cd-header [background:white] [border-top-width:3px] [border-top-style:solid] [border-top-color:#397c69] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden] relative [padding:28px_28px_0] [@media(width<=600px)]:[padding:21px_17px_0]" aria-label="Customer details">
-        <div className="cd-header-main flex items-center [@media(width<=600px)]:items-start gap-[22px] [@media(width<=600px)]:gap-[14px] [@media(width>=1600px)]:min-h-[92px]">
-          <Avatar key={c.profilePhotoUrl || c.id} customer={c} />
-          <div className="cd-identity min-w-0">
-            <div className="ad-eyebrow text-[8px] [@media(width<=767px)]:text-[7px] tracking-[1.7px] text-[#7d9183] flex items-center gap-[6px] [&_>_span]:w-[5px] [&_>_span]:h-[5px] [&_>_span]:[background:#bfa471] [&_>_span]:rounded-[50%]">CUSTOMER PROFILE</div>
-            <div className="cd-name-row flex items-center gap-[12px] flex-wrap [margin:2px_0_6px]">
-              <h1>{fullName}</h1>
-              <Badge>{status}</Badge>
-              <span
-                className={`cd-verification inline-flex items-center gap-[4px] text-[11px] text-[#8d7241] [&.verified]:text-[#41816a] ${c.emailVerified ? "verified" : ""}`}
-              >
-                <BadgeCheck size={14} />
+      <section className="ad-panel cd-header min-w-0 overflow-hidden rounded-[14px] border border-[#e1e9e3] border-t-2 border-t-[#397c69] bg-white shadow-[0_4px_20px_#24483d05]" aria-label="Customer details">
+        <div className="cd-header-main grid grid-cols-[minmax(0,1fr)_360px] items-start gap-[32px] p-[28px] [@media(width<=1200px)]:grid-cols-[1fr] [@media(width<=600px)]:gap-[24px] [@media(width<=600px)]:p-[20px]">
+          <div className="flex min-w-0 items-start gap-[22px] [@media(width<=600px)]:gap-[16px]">
+            <Avatar key={c.profilePhotoUrl || c.id} customer={c} />
+            <div className="cd-identity min-w-0 flex-1">
+              <div className="text-[9px] font-medium uppercase tracking-[1.8px] text-[#8b9b90]">Customer profile</div>
+              <div className="cd-name-row mt-[7px] flex min-w-0 flex-wrap items-center gap-x-[12px] gap-y-[8px]">
+                <h1 className="m-0 text-[28px] font-semibold leading-[1.15] tracking-[-0.7px] text-[#24483d] [overflow-wrap:anywhere] [@media(width<=600px)]:text-[23px]">{fullName}</h1>
+                <Badge highlighted>{status}</Badge>
+              </div>
+              <span className={`cd-verification mt-[10px] inline-flex items-center gap-[6px] text-[11px] font-medium ${c.emailVerified ? "text-[#337b61]" : "text-[#977c45]"}`}>
+                <BadgeCheck size={14} className="shrink-0" />
                 {c.emailVerified ? "Email verified" : "Email unverified"}
               </span>
-            </div>
-            <div className="cd-contact flex items-center [&_>_span]:flex [&_>_span]:items-center gap-[22px] [@media(width<=600px)]:gap-[8px] text-[#697c73] flex-wrap [&_>_span]:gap-[7px] [&_>_span]:[overflow-wrap:anywhere] [&_>_span]:min-w-0 [@media(width<=600px)]:text-[11px]">
-              <span>
-                <Mail size={14} />
-                {c.email}
-              </span>
-              <span>
-                <Phone size={14} />
-                {c.phone || "Phone not provided"}
-              </span>
+              <dl className="cd-contact m-0 mt-[18px] flex min-w-0 flex-wrap gap-x-[28px] gap-y-[14px] [@media(width<=600px)]:flex-col">
+                <div className="min-w-0">
+                  <dt className="mb-[5px] text-[9px] font-medium uppercase tracking-[0.9px] text-[#8b9b90]">Email address</dt>
+                  <dd className="m-0 flex items-start gap-[7px] text-[12px] leading-[1.5] text-[#526b5d] [overflow-wrap:anywhere]">
+                    <Mail size={14} className="mt-[2px] shrink-0 text-[#8b9d90]" />
+                    <span className="min-w-0">{c.email}</span>
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="mb-[5px] text-[9px] font-medium uppercase tracking-[0.9px] text-[#8b9b90]">Phone number</dt>
+                  <dd className="m-0 flex items-start gap-[7px] text-[12px] leading-[1.5] text-[#526b5d] [overflow-wrap:anywhere]">
+                    <Phone size={14} className="mt-[2px] shrink-0 text-[#8b9d90]" />
+                    <span className="min-w-0">{c.phone || "Phone not provided"}</span>
+                  </dd>
+                </div>
+              </dl>
             </div>
           </div>
+          <div className="cd-actions grid min-w-0 grid-cols-6 gap-[8px]" role="group" aria-label="Customer actions">
+            <button type="button" className={`${profileActionClass} col-span-2 [@media(width<=600px)]:col-span-3 border-[#176b60] bg-[#176b60] text-white shadow-[0_2px_4px_#176b6015] hover:bg-[#11594f]`} onClick={() => open("Edit")}>
+              <Pencil size={14} /> Edit profile
+            </button>
+            <button type="button" className={`${profileSecondaryAction} col-span-2 [@media(width<=600px)]:col-span-3`} onClick={() => open(c.active ? "Deactivate" : "Activate")}>
+              <Power size={14} /> {c.active ? "Deactivate" : "Activate"}
+            </button>
+            <button type="button" className={`${profileActionClass} col-span-2 [@media(width<=600px)]:col-span-3 ${c.blocked ? "border-[#dfe7e1] bg-white text-[#526b5d] hover:bg-[#f6f9f6]" : "border-[#efdcd8] bg-[#fffaf8] text-[#b2645c] hover:bg-[#fcefeb]"}`} onClick={() => open(c.blocked ? "Unblock" : "Block")}>
+              <Ban size={14} /> {c.blocked ? "Unblock" : "Block"}
+            </button>
+            <button type="button" className={`${profileSecondaryAction} col-span-3`} onClick={() => open("Send notification")}>
+              <Bell size={14} /> Send notification
+            </button>
+            <button type="button" className={`${profileSecondaryAction} col-span-3 [@media(width<=600px)]:col-span-6`} onClick={() => selectTab("audit")}>
+              <History size={14} /> View audit history
+            </button>
+          </div>
         </div>
-        <div className="cd-actions flex items-center [margin:26px_0_22px] gap-[8px] [@media(width<=600px)]:gap-[7px] flex-wrap [@media(width<=600px)]:mt-[20px] [@media(width<=600px)]:[&_.ad-button]:text-[10px] [@media(width<=600px)]:[&_.ad-button]:[padding:8px_10px]">
-          <button className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" onClick={() => open("Edit")}>
-            <Pencil size={14} /> Edit
-          </button>
-          <button
-            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-            onClick={() => open(c.active ? "Deactivate" : "Activate")}
-          >
-            <Power size={14} />
-            {c.active ? "Deactivate" : "Activate"}
-          </button>
-          <button
-            className={`ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3] ${!c.blocked ? "cd-danger [&.cd-danger]:text-[#ae5b58]!" : ""}`}
-            onClick={() => open(c.blocked ? "Unblock" : "Block")}
-          >
-            <Ban size={14} />
-            {c.blocked ? "Unblock" : "Block"}
-          </button>
-          <button
-            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-            onClick={() => open("Send notification")}
-          >
-            <Bell size={14} /> Send notification
-          </button>
-          <button className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" onClick={() => selectTab("audit")}>
-            <History size={14} /> View audit history
-          </button>
-        </div>
-        <dl className="cd-header-meta grid grid-cols-[1.45fr_1fr_1fr_0.65fr] [@media(width<=600px)]:grid-cols-[1fr] [@media(600px<width<=1000px)]:grid-cols-[1fr_1fr] [@media(1000px<width<=1200px)]:grid-cols-[1.3fr_1fr_1fr] [padding:19px_0_23px] m-[0] gap-[20px] [@media(width<=600px)]:gap-[15px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#eaf0eb] [@media(width<=1200px)]:[&_.cd-info:last-child]:hidden">
+        <dl className="cd-header-meta m-0 grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)] gap-x-[28px] gap-y-[20px] border-t border-[#e9efea] bg-[#f8faf8] px-[28px] py-[22px] [@media(width<=1000px)]:grid-cols-[repeat(2,minmax(0,1fr))] [@media(width<=600px)]:grid-cols-[1fr] [@media(width<=600px)]:px-[20px]">
           <Info label="Customer ID">
-            <span className="cd-id [font-family:ui-monospace,_monospace] text-[11px] text-[#728078]">{c.id}</span>
+            <span className="cd-id font-mono text-[10px] leading-[1.7] text-[#6e8377]">{c.id}</span>
           </Info>
           <Info label="Registered on">{timestamp(c.createdAt)}</Info>
           <Info label="Last login">
             {c.lastLoginAt ? timestamp(c.lastLoginAt) : "No login recorded"}
           </Info>
           <Info label="Account type">
-            <span className="cd-type flex items-center gap-[6px]">
-              <Users size={14} /> Customer
+            <span className="cd-type flex items-center gap-[7px]">
+              <Users size={14} className="shrink-0 text-[#82998a]" /> Customer
             </span>
           </Info>
         </dl>
@@ -606,17 +670,21 @@ export default function CustomerDetailsPage() {
             </div>
             <div className="cd-overview-grid grid grid-cols-[minmax(0,_1fr)_330px] [@media(width<=1000px)]:grid-cols-[1fr] [@media(1000px<width<=1200px)]:grid-cols-[minmax(0,_1fr)_280px] gap-[22px] [@media(width<=1200px)]:gap-[16px] [align-items:start]">
               <div className="cd-overview-left grid gap-[22px] min-w-0">
-                <section className="ad-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]">
-                  <div className="ad-panel-heading flex items-center justify-between gap-[15px] [padding:21px_22px_17px] [@media(width<=767px)]:[padding:18px_16px] [@media(767px<width<=1200px)]:[padding:17px_16px] [&_p]:text-[10px] [@media(width<=1200px)]:[&_p]:text-[9px] [&_p]:mt-[4px] [@media(width<=767px)]:[&_h2]:text-[14px] [@media(767px<width<=1200px)]:[&_h2]:text-[13px] [@media(width<=767px)]:flex-wrap">
-                    <div>
-                      <h2>Recent bookings</h2>
-                      <p>The latest reservations and payment status.</p>
+                <section className="ad-panel min-w-0 overflow-hidden rounded-[14px] border border-[#e1e9e3] bg-white shadow-[0_4px_20px_#24483d04]" aria-labelledby="recent-bookings-heading">
+                  <div className="flex flex-wrap items-center justify-between gap-[16px] px-[24px] py-[22px] [@media(width<=600px)]:px-[20px]">
+                    <div className="flex min-w-0 items-center gap-[12px]">
+                      <span className="inline-flex size-[36px] shrink-0 items-center justify-center rounded-[10px] border border-[#e4ece5] bg-[#f1f6f1] text-[#6b8b75]" aria-hidden="true"><ShoppingBag size={17} strokeWidth={1.6} /></span>
+                      <div className="min-w-0">
+                        <h2 id="recent-bookings-heading" className="m-0 text-[15px] font-semibold leading-[1.5] tracking-[-0.2px] text-[#2f4f3f]">Recent bookings</h2>
+                        <p className="m-0 mt-[4px] text-[11px] leading-[1.6] text-[#93a196]">Latest reservations and payment activity.</p>
+                      </div>
                     </div>
                     <button
-                      className="ad-text-link flex items-center gap-[5px] text-[#5a8671] text-[10px] whitespace-nowrap"
+                      type="button"
+                      className="inline-flex shrink-0 items-center gap-[7px] rounded-[7px] border border-[#e2eae3] bg-white px-[11px] py-[7px] text-[10px] font-medium text-[#4f7b61] transition-colors hover:border-[#bed1c3] hover:bg-[#f4f8f3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60]"
                       onClick={() => selectTab("bookings")}
                     >
-                      View all <ArrowUpRight size={14} />
+                      View all <ArrowUpRight size={13} />
                     </button>
                   </div>
                   <Records

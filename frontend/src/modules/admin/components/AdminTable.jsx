@@ -6,13 +6,15 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Search, SlidersHorizontal, Download, ChevronLeft, ChevronRight,
   ArrowUpDown, Inbox, Eye, Check, X, Plus, Pencil,
-  FileDown, LoaderCircle, Tags, CircleCheck, CircleX, Users, ShieldBan, Store, Clock, SearchCheck, BadgeCheck, CreditCard, RefreshCw, RotateCcw,
+  FileDown, LoaderCircle, CircleCheck, CircleX, Clock, CreditCard, RefreshCw, RotateCcw,
 } from "lucide-react";
 import { adminRequest, saveBlob, date, money, number } from "../api";
 import { columnLabels } from "../navigation";
 import { useAuth } from "../../../context/AuthContext";
 import AdminDialog from "./AdminDialog";
 import RecordPicker from "./RecordPicker";
+import VendorFilters from "./VendorFilters";
+import ResourceStatistics from "./ResourceStatistics";
 import { categoryImages } from "../../../components/home/categoryImages";
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
@@ -408,34 +410,57 @@ export default function AdminTable({
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  const toolbarActions = (
+    <>
+      <div className="ad-columns relative">
+        <button type="button" className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+          onClick={() => setColumnsOpen((value) => !value)} aria-expanded={columnsOpen}>
+          <SlidersHorizontal size={15} /> Columns
+        </button>
+        {columnsOpen && (
+          <div className="ad-column-menu absolute top-[calc(100%_+_6px)] right-[0] z-[10] [background:white] [box-shadow:0_5px_25px_#24452b1a] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4eae0] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4eae0] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4eae0] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4eae0] rounded-[7px] [padding:10px_12px] w-[190px] max-h-[300px] overflow-y-auto [&_label]:flex [&_label]:gap-[8px] [&_label]:items-center [&_label]:[padding:5px_0] [&_label]:text-[11px] [&_input]:w-[13px] [&_input]:h-[13px] [&_input]:[accent-color:var(--ad-teal)]">
+            {listColumns.map((key) => (
+              <label key={key}>
+                <input type="checkbox" checked={cols.includes(key)}
+                  disabled={cols.length === 1 && cols.includes(key)}
+                  onChange={() => setVisible(cols.includes(key)
+                    ? cols.filter((column) => column !== key)
+                    : [...cols, key])} />
+                {label(key)}
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+      <button type="button" className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" onClick={exportData}
+        disabled={exporting || loading || !data?.total}>
+        {exporting ? <LoaderCircle className="animate-spin" size={15} /> : <Download size={15} />}
+        Export
+      </button>
+      {editable.length > 0 && (
+        <button type="button" className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+          onClick={() => open(null, "create")}>
+          <Plus size={15} /> Create
+        </button>
+      )}
+    </>
+  );
+
   return (
     <>
-      {["categories", "customers", "vendors", "payments"].includes(resource) && !compact && (
-        <div className={`mb-6 grid grid-cols-1 gap-4 ${["vendors", "payments"].includes(resource) ? "sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6" : resource === "customers" ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-3"}`} aria-label={resource === "payments" ? "Payment statistics" : resource === "vendors" ? "Vendor statistics" : resource === "customers" ? "Customer statistics" : "Category statistics"} aria-busy={loading}>
-          {(resource === "payments" ? [
+      {["categories", "sub-categories", "vendors", "customers"].includes(resource) && !compact && (
+        <ResourceStatistics resource={resource} summary={data?.summary} loading={loading} error={error} />
+      )}
+      {resource === "payments" && !compact && (
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6" aria-label="Payment statistics" aria-busy={loading}>
+          {[
             ["total", "All Payments", CreditCard, "bg-[#e7f0ed] text-[#176b60]"],
             ["pending", "Pending", Clock, "bg-[#faf3df] text-[#ac8a39]"],
             ["processing", "Processing", RefreshCw, "bg-[#eaf0fa] text-[#5c7fa8]"],
             ["success", "Success", CircleCheck, "bg-[#edf5e7] text-[#568447]"],
             ["failed", "Failed", CircleX, "bg-[#fae8e8] text-[#b65555]"],
             ["refunded", "Refunded", RotateCcw, "bg-[#f3eaf7] text-[#9568a6]"],
-          ] : resource === "vendors" ? [
-            ["total", "All Vendors", Store, "bg-[#e7f0ed] text-[#176b60]"],
-            ["pending", "Pending", Clock, "bg-[#faf3df] text-[#ac8a39]"],
-            ["underReview", "Under Review", SearchCheck, "bg-[#eaf0fa] text-[#5c7fa8]"],
-            ["approved", "Approved", BadgeCheck, "bg-[#edf5e7] text-[#568447]"],
-            ["rejected", "Rejected", CircleX, "bg-[#fae8e8] text-[#b65555]"],
-            ["suspended", "Suspended", ShieldBan, "bg-[#f3eaf7] text-[#9568a6]"],
-          ] : resource === "customers" ? [
-            ["total", "All Customers", Users, "bg-[#e7f0ed] text-[#176b60]"],
-            ["active", "Active", CircleCheck, "bg-[#edf5e7] text-[#568447]"],
-            ["inactive", "Inactive", CircleX, "bg-[#fbefea] text-[#b87c66]"],
-            ["blocked", "Blocked", ShieldBan, "bg-[#fae8e8] text-[#b65555]"],
-          ] : [
-            ["total", "Total Categories", Tags, "bg-[#e7f0ed] text-[#176b60]"],
-            ["active", "Active", CircleCheck, "bg-[#edf5e7] text-[#568447]"],
-            ["inactive", "Inactive", CircleX, "bg-[#fbefea] text-[#b87c66]"],
-          ]).map(([key, title, Icon, color]) => (
+          ].map(([key, title, Icon, color]) => (
             <article key={key} className="flex items-center justify-between gap-4 rounded-xl border border-[#e0e8e2] bg-white p-5 shadow-[0_3px_8px_#263f2d02]">
               <div>
                 <span className="text-xs font-medium text-[#819189]">{title}</span>
@@ -482,6 +507,19 @@ export default function AdminTable({
         </nav>
       )}
 
+      {resource === "vendors" && !compact ? (
+        <VendorFilters
+          query={q} onQueryChange={setQ}
+          location={locationFilter} onLocationChange={value => { setLocationFilter(value); setPage(1); }}
+          status={status} statuses={statuses} onStatusChange={value => { setStatus(value); setPage(1); }}
+          onCategoryChange={value => { setCategory(value); setPage(1); }}
+          from={from} to={to}
+          onFromChange={value => { setFrom(value); setPage(1); }}
+          onToChange={value => { setTo(value); setPage(1); }}
+        >
+          {toolbarActions}
+        </VendorFilters>
+      ) : (
       <div className="ad-table-toolbar flex items-center justify-between gap-[12px] [@media(width<=767px)]:gap-[10px] [padding:15px_20px] [@media(width<=767px)]:[padding:12px_15px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#f1f4ef] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#eef2ed] flex-wrap [@media(width<=767px)]:[&_>_.ad-search]:flex-1">
         <label className="ad-search flex items-center gap-[7px] min-w-[120px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe3] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe3] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe3] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe3] rounded-[7px] [background:#fff] text-[#99a699] [padding:0_9px] max-w-full [&_input]:[border-top-width:0] [&_input]:[border-top-style:none] [&_input]:[border-top-color:currentColor] [&_input]:[border-right-width:0] [&_input]:[border-right-style:none] [&_input]:[border-right-color:currentColor] [&_input]:[border-bottom-width:0] [&_input]:[border-bottom-style:none] [&_input]:[border-bottom-color:currentColor] [&_input]:[border-left-width:0] [&_input]:[border-left-style:none] [&_input]:[border-left-color:currentColor] [&_input]:[padding:8px_0] [&_input]:[outline:0] [&_input]:[background:none] [&_input]:text-[10px] [&_input]:w-[180px] [&_input]:max-w-full [&_input:focus]:[outline:0] [&_input:focus]:[border-top-width:0] [&_input:focus]:[border-top-style:none] [&_input:focus]:[border-top-color:currentColor] [&_input:focus]:[border-right-width:0] [&_input:focus]:[border-right-style:none] [&_input:focus]:[border-right-color:currentColor] [&_input:focus]:[border-bottom-width:0] [&_input:focus]:[border-bottom-style:none] [&_input:focus]:[border-bottom-color:currentColor] [&_input:focus]:[border-left-width:0] [&_input:focus]:[border-left-style:none] [&_input:focus]:[border-left-color:currentColor]">
           <Search size={17} />
@@ -526,41 +564,12 @@ export default function AdminTable({
                 <input aria-label="Created until" type="date" value={to} min={from || undefined}
                   onChange={(event) => { setTo(event.target.value); setPage(1); }} />
               </label>
-              <div className="ad-columns relative">
-                <button type="button" className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-                  onClick={() => setColumnsOpen((value) => !value)} aria-expanded={columnsOpen}>
-                  <SlidersHorizontal size={15} /> Columns
-                </button>
-                {columnsOpen && (
-                  <div className="ad-column-menu absolute top-[calc(100%_+_6px)] right-[0] z-[10] [background:white] [box-shadow:0_5px_25px_#24452b1a] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4eae0] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4eae0] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4eae0] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4eae0] rounded-[7px] [padding:10px_12px] w-[190px] max-h-[300px] overflow-y-auto [&_label]:flex [&_label]:gap-[8px] [&_label]:items-center [&_label]:[padding:5px_0] [&_label]:text-[11px] [&_input]:w-[13px] [&_input]:h-[13px] [&_input]:[accent-color:var(--ad-teal)]">
-                    {listColumns.map((key) => (
-                      <label key={key}>
-                        <input type="checkbox" checked={cols.includes(key)}
-                          disabled={cols.length === 1 && cols.includes(key)}
-                          onChange={() => setVisible(cols.includes(key)
-                            ? cols.filter((column) => column !== key)
-                            : [...cols, key])} />
-                        {label(key)}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button type="button" className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" onClick={exportData}
-                disabled={exporting || loading || !data?.total}>
-                {exporting ? <LoaderCircle className="animate-spin" size={15} /> : <Download size={15} />}
-                Export
-              </button>
-              {editable.length > 0 && (
-                <button type="button" className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-                  onClick={() => open(null, "create")}>
-                  <Plus size={15} /> Create
-                </button>
-              )}
+              {toolbarActions}
             </>
           )}
         </div>
       </div>
+      )}
 
       {loading ? (
         <Skeleton rows={compact ? 3 : 6} />

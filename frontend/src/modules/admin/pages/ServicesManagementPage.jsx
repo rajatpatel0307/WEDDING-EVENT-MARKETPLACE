@@ -20,7 +20,6 @@ import {
   useAdminData,
   useDebounced,
   money,
-  date,
   number,
   saveBlob,
   versionOf,
@@ -290,22 +289,27 @@ export default function ServicesManagementPage({ kind }) {
       </header>
       {!kind && (
         <>
-          <div className="asm-stats grid grid-cols-[repeat(5,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(767px<width<=1200px)]:grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[12px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e1e9e4] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e1e9e4] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e1e9e4] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e1e9e4] [&_article]:rounded-[12px] [&_article]:[background:#fff] [&_article]:p-[18px] [@media(width<=767px)]:[&_article]:p-[13px] [&_article]:min-w-0 [&_article_>_div]:flex [&_article_>_div]:justify-between [&_article_>_div]:items-center [&_article_>_div]:gap-[10px] [&_span]:text-[12px] [&_span]:text-[#71827a] [&_strong]:block [&_strong]:text-[25px] [@media(width<=767px)]:[&_strong]:text-[21px] [&_strong]:font-[650] [&_strong]:mt-[9px] [&_strong]:tracking-[-0.6px] [&_strong]:[overflow-wrap:anywhere] [&_svg]:text-[#73978b]">
-            {statCards.map(([key, label, Icon]) => (
-              <article key={key}>
-                <div>
-                  <span>{label}</span>
-                  <Icon size={17} />
-                </div>
-                <strong>
-                  {stats.data
-                    ? key === "revenue"
-                      ? money(stats.data[key])
-                      : number(stats.data[key])
-                    : "…"}
-                </strong>
-              </article>
-            ))}
+          <div className="asm-stats grid grid-cols-[repeat(4,minmax(0,1fr))] gap-[16px] [@media(width<=767px)]:grid-cols-[repeat(2,minmax(0,1fr))] [@media(width<=767px)]:gap-[10px] [@media(767px<width<=1200px)]:grid-cols-[repeat(3,minmax(0,1fr))] [@media(767px<width<=1200px)]:gap-[12px] [@media(width>=1500px)]:gap-[20px]" aria-label="Service statistics">
+            {statCards.map(([key, label, Icon]) => {
+              const featured = key === "revenue";
+              return (
+                <article key={key} className={`ad-panel ad-kpi min-w-0 overflow-hidden rounded-[12px] border px-[19px] py-[17px] shadow-[0_3px_8px_#263f2d02] transition-[box-shadow,transform] duration-200 hover:-translate-y-[2px] hover:shadow-[0_8px_20px_#243f3210] [@media(width<=1200px)]:p-[15px] [@media(width>=1500px)]:px-[23px] [@media(width>=1500px)]:py-[21px] ${featured ? "ad-kpi-featured border-[#176b60] bg-[#176b60] text-white" : "border-[#e5ebe6] bg-white text-[#2e4d40]"}`}>
+                  <div className={`ad-kpi-top flex min-h-[31px] items-center justify-between gap-[5px] text-[10px] [@media(width<=1200px)]:text-[9px] ${featured ? "text-[#abd2c3]" : "text-[#859289]"}`}>
+                    <span>{label}</span>
+                    <span className={`ad-kpi-icon grid size-[31px] shrink-0 place-items-center rounded-[8px] [@media(width<=767px)]:size-[28px] ${featured ? "bg-white/[0.09] text-[#c5e2d3]" : key === "pending" ? "bg-[#f9f5ec] text-[#ac8f59]" : "bg-[#f0f5ef] text-[#5e8975]"}`}>
+                      <Icon size={18} aria-hidden="true" />
+                    </span>
+                  </div>
+                  <strong className="mt-[7px] block text-[28px] leading-[1.3] font-semibold tracking-[-0.8px] tabular-nums [overflow-wrap:anywhere] [@media(width<=767px)]:text-[26px] [@media(767px<width<=1200px)]:text-[25px] [@media(width>=1500px)]:text-[32px]">
+                    {stats.data
+                      ? key === "revenue"
+                        ? money(stats.data[key])
+                        : number(stats.data[key])
+                      : "?"}
+                  </strong>
+                </article>
+              );
+            })}
           </div>
           {stats.error && (
             <p role="alert">
@@ -354,21 +358,24 @@ export default function ServicesManagementPage({ kind }) {
                 page: 1,
               });
             }}
-            className="asm-search flex items-center gap-[10px] flex-1 min-w-[260px] [@media(width<=767px)]:min-w-0 [&_>_svg]:text-[#89978f] [&_input]:min-w-[100px] [&_input]:flex-1 [&_input]:[border-top-width:0] [&_input]:[border-top-style:none] [&_input]:[border-top-color:currentColor] [&_input]:[border-right-width:0] [&_input]:[border-right-style:none] [&_input]:[border-right-color:currentColor] [&_input]:[border-bottom-width:0] [&_input]:[border-bottom-style:none] [&_input]:[border-bottom-color:currentColor] [&_input]:[border-left-width:0] [&_input]:[border-left-style:none] [&_input]:[border-left-color:currentColor] [&_input]:[background:transparent] [&_input]:text-[13px] [@media(width<=767px)]:[&_input]:text-[12px] [&_input]:[padding:10px_0] [@media(width<=767px)]:[flex-basis:100%]"
+            className="asm-search flex min-w-[260px] flex-1 items-center gap-[10px] [@media(width<=767px)]:min-w-0 [@media(width<=767px)]:basis-full"
           >
-            <Search size={18} />
-            <input
-              key={params.get("q")}
-              name="q"
-              defaultValue={params.get("q") || ""}
-              maxLength={200}
-              aria-label="Search services"
-              placeholder={
-                kind
-                  ? `Search ${kind}, service or vendor`
-                  : "Search service, ID, vendor, category or location"
-              }
-            />
+            <div className="flex min-w-0 flex-1 items-center gap-[10px] rounded-[9px] border-[1.5px] border-[#afcbb9] bg-[#f4f9f5] px-[14px] shadow-[0_1px_3px_#24483d04] transition-colors hover:border-[#7fa68e] focus-within:border-[#176b60] focus-within:bg-white focus-within:ring-[3px] focus-within:ring-[#176b6014]">
+              <Search size={18} className="shrink-0 text-[#6b947c]" aria-hidden="true" />
+              <input
+                className="min-w-0 flex-1 border-0! bg-transparent! px-0! py-[12px]! text-[13px] text-[#345746] outline-none! shadow-none! ring-0! placeholder:text-[#8fa397] [@media(width<=767px)]:text-[12px]"
+                key={params.get("q")}
+                name="q"
+                defaultValue={params.get("q") || ""}
+                maxLength={200}
+                aria-label="Search services"
+                placeholder={
+                  kind
+                    ? `Search ${kind}, service or vendor`
+                    : "Search service, ID, vendor, category or location"
+                }
+              />
+            </div>
             <button className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]">Search</button>
           </form>
           <div className="flex flex-wrap gap-2">
@@ -498,24 +505,22 @@ export default function ServicesManagementPage({ kind }) {
               </div>
             ) : (
               <>
-                <div className="asm-table-wrap asm-desktop [overflow-x:auto] overflow-y-auto pb-[8px] [@media(width<=767px)]:hidden [@media(768px<=width<=1200px)]:[&_th:nth-child(1)]:hidden [@media(768px<=width<=1200px)]:[&_td:nth-child(1)]:hidden [@media(768px<=width<=1200px)]:[&_th:nth-child(5)]:hidden [@media(768px<=width<=1200px)]:[&_td:nth-child(5)]:hidden [@media(768px<=width<=1200px)]:[&_th:nth-child(13)]:hidden [@media(768px<=width<=1200px)]:[&_td:nth-child(13)]:hidden">
-                  <table className="asm-table w-full border-collapse text-left text-[12px] [&_th]:font-[600] [&_th]:text-[10px] [&_th]:tracking-[0.6px] [&_th]:uppercase [&_th]:whitespace-nowrap [&_th]:[padding:13px_14px] [&_th]:[background:#f6f9f6] [&_th]:text-[#7b8b80] [&_th]:[border-bottom-width:1px] [&_th]:[border-bottom-style:solid] [&_th]:[border-bottom-color:#e5ebe6] [&_td]:[border-bottom-width:1px] [&_td]:[border-bottom-style:solid] [&_td]:[border-bottom-color:#edf1ed] [&_td]:[padding:16px_14px] [&_td]:[vertical-align:middle] [&_tbody_tr:hover]:[background:#fbfcfa] [@media(width<=1200px)]:[&_.asm-id]:max-w-[75px]">
+                <div className="asm-table-wrap asm-desktop w-full min-w-0 [@media(width<=1100px)]:hidden">
+                  <table className="asm-table w-full table-fixed border-collapse text-center text-[11px] [&_th]:font-semibold [&_th]:text-[9px] [&_th]:tracking-[0.3px] [&_th]:uppercase [&_th]:text-center [&_th]:[padding:10px_6px] [&_th]:[background:#f6f9f6] [&_th]:text-[#7b8b80] [&_th]:border-b [&_th]:border-[#e5ebe6] [&_th]:[overflow-wrap:normal] [&_td]:border-b [&_td]:border-[#edf1ed] [&_td]:[padding:12px_8px] [&_td]:align-middle [&_td]:[overflow-wrap:anywhere] [&_tbody_tr:hover]:bg-[#fbfcfa]">
+                    <colgroup>
+                      {[19, 10, 12, 8, 9, 10, 8, 7, 17].map((width, i) => <col key={i} style={{ width: `${width}%` }} />)}
+                    </colgroup>
                     <thead>
                       <tr>
                         {[
-                          "Service ID",
                           "Service",
                           "Vendor",
                           "Category",
-                          "Subcategory",
                           "Price",
                           "Location",
                           "Approval Status",
                           "Active Status",
                           "Bookings",
-                          "Rating",
-                          "Created Date",
-                          "Updated Date",
                           "Actions",
                         ].map((x) => (
                           <th key={x}>{x}</th>
@@ -525,22 +530,19 @@ export default function ServicesManagementPage({ kind }) {
                     <tbody>
                       {data.rows.map((row) => (
                         <tr key={row.id}>
-                          <td className="asm-id text-[10px] [font-family:ui-monospace,_monospace] max-w-[110px] [overflow-x:hidden] [overflow-y:hidden] [text-overflow:ellipsis] whitespace-nowrap text-[#84938a]" title={row.id}>
-                            {row.id}
-                          </td>
                           <td>
                             <Link
-                              className="asm-identity flex gap-[11px] items-center min-w-[180px] [&_img]:w-[48px] [&_img]:h-[48px] [&_img]:object-cover [&_img]:shrink-0 [&_img]:rounded-[9px] [&_img]:[background:#edf3ed] [&_img]:grid [&_img]:place-items-center [&_img]:text-[#77988b] [&_strong]:block [&_strong]:font-[600] [&_strong]:text-[13px] [&_small]:block [&_small]:text-[11px] [&_small]:text-[#88938c] [&_small]:mt-[4px] [&_small]:max-w-[190px] [&_small]:[overflow-x:hidden] [&_small]:[overflow-y:hidden] [&_small]:[text-overflow:ellipsis] [&_small]:whitespace-nowrap"
+                              className="asm-identity flex min-w-0 items-center justify-center gap-[8px] text-left [&_img]:size-[40px] [&_img]:shrink-0 [&_img]:rounded-[7px] [&_img]:object-cover [&_strong]:block [&_strong]:text-[12px] [&_strong]:font-semibold [&_strong]:leading-[1.5] [&_small]:mt-[3px] [&_small]:block [&_small]:overflow-hidden [&_small]:text-ellipsis [&_small]:whitespace-nowrap [&_small]:text-[10px] [&_small]:text-[#88938c]"
                               to={`/admin/services/${row.id}`}
                             >
                               {row.image ? (
                                 <img src={row.image} alt="" />
                               ) : (
-                                <span className="asm-image-placeholder w-[48px] h-[48px] object-cover shrink-0 rounded-[9px] [background:#edf3ed] grid place-items-center text-[#77988b]">
+                                <span className="asm-image-placeholder w-[40px] h-[40px] object-cover shrink-0 rounded-[9px] [background:#edf3ed] grid place-items-center text-[#77988b]">
                                   <BriefcaseBusiness size={22} />
                                 </span>
                               )}
-                              <span>
+                              <span className="min-w-0">
                                 <strong>{row.name}</strong>
                                 <small>
                                   {row.shortDescription ||
@@ -550,60 +552,38 @@ export default function ServicesManagementPage({ kind }) {
                             </Link>
                           </td>
                           <td>
-                            <div className="asm-identity flex gap-[11px] items-center min-w-[180px] [&_img]:w-[48px] [&_img]:h-[48px] [&_img]:object-cover [&_img]:shrink-0 [&_img]:rounded-[9px] [&_img]:[background:#edf3ed] [&_img]:grid [&_img]:place-items-center [&_img]:text-[#77988b] [&_strong]:block [&_strong]:font-[600] [&_strong]:text-[13px] [&_small]:block [&_small]:text-[11px] [&_small]:text-[#88938c] [&_small]:mt-[4px] [&_small]:max-w-[190px] [&_small]:[overflow-x:hidden] [&_small]:[overflow-y:hidden] [&_small]:[text-overflow:ellipsis] [&_small]:whitespace-nowrap">
-                              {row.vendorLogo && (
-                                <img src={row.vendorLogo} alt="" />
-                              )}
-                              <span>
-                                <Link to={`/admin/vendors/${row.vendorId}`}>
-                                  {row.vendor}
-                                </Link>
-                                <small className="asm-id text-[10px] [font-family:ui-monospace,_monospace] max-w-[110px] [overflow-x:hidden] [overflow-y:hidden] [text-overflow:ellipsis] whitespace-nowrap text-[#84938a]" title={row.vendorId}>
-                                  {row.vendorId}
-                                </small>
-                              </span>
-                            </div>
+                            <Link className="text-[#526f60] no-underline hover:text-[#176b60] hover:underline [overflow-wrap:anywhere]" to={`/admin/vendors/${row.vendorId}`}>
+                              {row.vendor}
+                            </Link>
                           </td>
                           <td>{row.category}</td>
-                          <td>{row.subcategory || "—"}</td>
-                          <td className="font-semibold whitespace-nowrap">
+                          <td className="font-semibold tabular-nums">
                             {money(row.price)}
                           </td>
                           <td>{row.location || "—"}</td>
-                          <td>
+                          <td className="[&>div]:justify-center">
                             <Status status={row.status} />
                           </td>
                           <td>
                             <span
-                              className={`asm-active whitespace-nowrap text-[11px] text-[#8a938e] [&:before]:[content:''] [&:before]:inline-block [&:before]:w-[6px] [&:before]:h-[6px] [&:before]:rounded-[50%] [&:before]:[background:#a6ada8] [&:before]:mr-[7px] [&.on]:text-[#2a7a58] [&.on:before]:[background:#4f976a] ${row.active ? "on" : ""}`}
+                              className={`asm-active text-[11px] text-[#8a938e] [&:before]:[content:''] [&:before]:inline-block [&:before]:w-[6px] [&:before]:h-[6px] [&:before]:rounded-[50%] [&:before]:[background:#a6ada8] [&:before]:mr-[7px] [&.on]:text-[#2a7a58] [&.on:before]:[background:#4f976a] ${row.active ? "on" : ""}`}
                             >
                               {row.active ? "Active" : "Inactive"}
                             </span>
                           </td>
                           <td>{number(row.bookings)}</td>
-                          <td>
-                            {row.rating
-                              ? `★ ${Number(row.rating).toFixed(1)}`
-                              : "No ratings"}
-                          </td>
-                          <td className="whitespace-nowrap">
-                            {date(row.createdAt)}
-                          </td>
-                          <td className="whitespace-nowrap">
-                            {date(row.updatedAt)}
-                          </td>
-                          <td>
-                            <ServiceActions row={row} action={action} />
+                          <td className="[&>div]:justify-center">
+                            <ServiceActions row={row} action={action} iconsOnly />
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <div className="asm-mobile hidden [@media(width<=767px)]:grid [@media(width<=767px)]:gap-[12px] [@media(width<=767px)]:[&_article]:p-[16px] [@media(width<=767px)]:[&_article]:[border-top-width:1px] [@media(width<=767px)]:[&_article]:[border-top-style:solid] [@media(width<=767px)]:[&_article]:[border-top-color:#e4ece6] [@media(width<=767px)]:[&_article]:[border-right-width:1px] [@media(width<=767px)]:[&_article]:[border-right-style:solid] [@media(width<=767px)]:[&_article]:[border-right-color:#e4ece6] [@media(width<=767px)]:[&_article]:[border-bottom-width:1px] [@media(width<=767px)]:[&_article]:[border-bottom-style:solid] [@media(width<=767px)]:[&_article]:[border-bottom-color:#e4ece6] [@media(width<=767px)]:[&_article]:[border-left-width:1px] [@media(width<=767px)]:[&_article]:[border-left-style:solid] [@media(width<=767px)]:[&_article]:[border-left-color:#e4ece6] [@media(width<=767px)]:[&_article]:rounded-[10px] [@media(width<=767px)]:[&_article]:text-[12px] [@media(width<=767px)]:[&_article]:relative [@media(width<=767px)]:[&_article_>_p]:text-[#8b9a90] [@media(width<=767px)]:[&_article_>_p]:[margin:12px_0] [@media(width<=767px)]:[&_article_>_small]:block [@media(width<=767px)]:[&_article_>_small]:mt-[14px] [@media(width<=767px)]:[&_article_>_small]:text-[#8b9a90] [@media(width<=767px)]:[&_.asm-menu[open]_>_div]:top-[100%] [@media(width<=767px)]:[&_.asm-menu[open]_>_div]:bottom-[auto] [@media(width<=767px)]:[&_.asm-identity]:min-w-0 [@media(width<=767px)]:[&_.asm-identity_small]:max-w-[160px]">
+                <div className="asm-mobile hidden [@media(width<=1100px)]:grid [@media(width<=1100px)]:gap-[12px] [@media(width<=1100px)]:[&_article]:p-[16px] [@media(width<=1100px)]:[&_article]:[border-top-width:1px] [@media(width<=1100px)]:[&_article]:[border-top-style:solid] [@media(width<=1100px)]:[&_article]:[border-top-color:#e4ece6] [@media(width<=1100px)]:[&_article]:[border-right-width:1px] [@media(width<=1100px)]:[&_article]:[border-right-style:solid] [@media(width<=1100px)]:[&_article]:[border-right-color:#e4ece6] [@media(width<=1100px)]:[&_article]:[border-bottom-width:1px] [@media(width<=1100px)]:[&_article]:[border-bottom-style:solid] [@media(width<=1100px)]:[&_article]:[border-bottom-color:#e4ece6] [@media(width<=1100px)]:[&_article]:[border-left-width:1px] [@media(width<=1100px)]:[&_article]:[border-left-style:solid] [@media(width<=1100px)]:[&_article]:[border-left-color:#e4ece6] [@media(width<=1100px)]:[&_article]:rounded-[10px] [@media(width<=1100px)]:[&_article]:text-[12px] [@media(width<=1100px)]:[&_article]:relative [@media(width<=1100px)]:[&_article_>_p]:text-[#8b9a90] [@media(width<=1100px)]:[&_article_>_p]:[margin:12px_0] [@media(width<=1100px)]:[&_article_>_small]:block [@media(width<=1100px)]:[&_article_>_small]:mt-[14px] [@media(width<=1100px)]:[&_article_>_small]:text-[#8b9a90] [@media(width<=1100px)]:[&_.asm-identity]:min-w-0 [@media(width<=1100px)]:[&_.asm-identity_small]:max-w-[160px]">
                   {data.rows.map((row) => (
                     <article key={row.id}>
-                      <div className="flex justify-between gap-3">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
                         <Link
                           className="asm-identity flex gap-[11px] items-center min-w-[180px] [&_img]:w-[48px] [&_img]:h-[48px] [&_img]:object-cover [&_img]:shrink-0 [&_img]:rounded-[9px] [&_img]:[background:#edf3ed] [&_img]:grid [&_img]:place-items-center [&_img]:text-[#77988b] [&_strong]:block [&_strong]:font-[600] [&_strong]:text-[13px] [&_small]:block [&_small]:text-[11px] [&_small]:text-[#88938c] [&_small]:mt-[4px] [&_small]:max-w-[190px] [&_small]:[overflow-x:hidden] [&_small]:[overflow-y:hidden] [&_small]:[text-overflow:ellipsis] [&_small]:whitespace-nowrap"
                           to={`/admin/services/${row.id}`}
@@ -614,7 +594,7 @@ export default function ServicesManagementPage({ kind }) {
                             <small>{row.vendor}</small>
                           </span>
                         </Link>
-                        <ServiceActions row={row} action={action} />
+                        <ServiceActions row={row} action={action} iconsOnly />
                       </div>
                       <p>{row.shortDescription}</p>
                       <Status status={row.status} active={!!row.active} />
@@ -624,13 +604,7 @@ export default function ServicesManagementPage({ kind }) {
                         </span>
                         <strong>{money(row.price)}</strong>
                       </div>
-                      <small>
-                        {number(row.bookings)} bookings ·{" "}
-                        {row.rating
-                          ? `★ ${Number(row.rating).toFixed(1)}`
-                          : "No ratings"}{" "}
-                        · Updated {date(row.updatedAt)}
-                      </small>
+                      <small>{number(row.bookings)} bookings</small>
                     </article>
                   ))}
                 </div>

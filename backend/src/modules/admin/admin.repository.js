@@ -83,7 +83,19 @@ export async function list(name, query) {
     replacements,
   );
   const summary = name === "categories" ? (await select(
-    "SELECT COUNT_BIG(*) AS total,COALESCE(SUM(CASE WHEN IsActive=1 THEN 1 ELSE 0 END),0) AS active,COALESCE(SUM(CASE WHEN IsActive=0 THEN 1 ELSE 0 END),0) AS inactive FROM dbo.Categories",
+    `SELECT COUNT_BIG(*) AS total,
+      COUNT_BIG(CASE WHEN c.IsActive=1 THEN 1 END) AS active,
+      COUNT_BIG(CASE WHEN c.IsActive=0 THEN 1 END) AS inactive,
+      (SELECT COUNT_BIG(*) FROM dbo.Services s
+        JOIN dbo.Categories linked ON linked.CategoryId=s.CategoryId) AS services
+      FROM dbo.Categories c`,
+  ))[0] : name === "sub-categories" ? (await select(
+    `SELECT COUNT_BIG(*) AS total,
+      COUNT_BIG(CASE WHEN sc.IsActive=1 THEN 1 END) AS active,
+      COUNT_BIG(CASE WHEN sc.IsActive=0 THEN 1 END) AS inactive,
+      (SELECT COUNT_BIG(*) FROM dbo.Services s
+        JOIN dbo.SubCategories linked ON linked.SubCategoryId=s.SubCategoryId) AS services
+      FROM dbo.SubCategories sc`,
   ))[0] : name === "customers" ? (await select(
     `SELECT COUNT_BIG(*) AS total,COALESCE(SUM(CASE WHEN t.IsActive=1 AND t.IsBlocked=0 THEN 1 ELSE 0 END),0) AS active,COALESCE(SUM(CASE WHEN t.IsActive=0 AND t.IsBlocked=0 THEN 1 ELSE 0 END),0) AS inactive,COALESCE(SUM(CASE WHEN t.IsBlocked=1 THEN 1 ELSE 0 END),0) AS blocked FROM dbo.Users t WHERE ${r.where}`,
   ))[0] : name === "vendors" ? (await select(

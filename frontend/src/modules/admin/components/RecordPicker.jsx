@@ -7,6 +7,12 @@ export default function RecordPicker({
   initialLabel = "",
   onChange,
   required = true,
+  showSearch = true,
+  searchLabel,
+  selectLabel,
+  searchPlaceholder = "Search to find a record…",
+  controlClassName,
+  labelClassName,
 }) {
   const [query, setQuery] = useState(""),
     [selected, setSelected] = useState(initialValue),
@@ -35,16 +41,19 @@ export default function RecordPicker({
       abort.abort();
     };
   }, [resource, query]);
-  return (
-    <>
+  const searchInput = (
       <input
         type="search"
+        className={controlClassName}
         aria-label={`Search ${resource}`}
-        placeholder="Search to find a record…"
+        placeholder={searchPlaceholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
+  );
+  const selectInput = (
       <select
+        className={controlClassName}
         name={name}
         value={selected}
         required={required}
@@ -73,6 +82,11 @@ export default function RecordPicker({
           </option>
         ))}
       </select>
+  );
+  return (
+    <>
+      {showSearch && (searchLabel ? <label className={labelClassName}><span>{searchLabel}</span>{searchInput}</label> : searchInput)}
+      {selectLabel ? <label className={labelClassName}><span>{selectLabel}</span>{selectInput}</label> : selectInput}
       {error && <span role="alert">{error}</span>}
     </>
   );
