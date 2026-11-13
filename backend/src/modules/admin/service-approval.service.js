@@ -111,7 +111,7 @@ export async function review(id, ctx) {
   requireRole(ctx, "ADMIN");
   z.guid().parse(id);
   const [row] = await repo.select(
-    `SELECT s.*,v.BusinessName,v.UserId AS VendorUserId,v.VerificationStatus,v.IsActive AS VendorActive,c.CategoryName ${source} WHERE s.ServiceId=:id`,
+    `SELECT s.*,v.BusinessName,v.UserId AS VendorUserId,v.VerificationStatus,v.VerificationRemarks AS VendorRejectionReason,v.VerifiedAt AS VendorVerifiedAt,v.IsActive AS VendorActive,c.CategoryName ${source} WHERE s.ServiceId=:id`,
     { id },
   );
   if (!row) fail("Service not found.", 404);
@@ -141,7 +141,7 @@ export async function review(id, ctx) {
       { id, vendor: row.VendorId },
     ),
     repo.select(
-      "SELECT VendorDocumentId AS id,DocumentType,VerificationStatus FROM dbo.VendorDocuments WHERE VendorId=:vendor",
+      "SELECT VendorDocumentId AS id,DocumentType,VerificationStatus,RejectionReason FROM dbo.VendorDocuments WHERE VendorId=:vendor",
       { vendor: row.VendorId },
     ),
     approvalHistory(id, ctx),
@@ -150,7 +150,7 @@ export async function review(id, ctx) {
       { id },
     ),
     repo.select(
-      "SELECT v.BusinessName,v.BusinessDescription,v.ContactEmail,v.ContactPhone,v.VerificationStatus,v.IsActive,CONCAT(u.FirstName,' ',u.LastName) AS OwnerName,u.Email AS OwnerEmail,u.PhoneNumber AS OwnerPhone FROM dbo.Vendors v JOIN dbo.Users u ON u.UserId=v.UserId WHERE v.VendorId=:id",
+      "SELECT v.BusinessName,v.BusinessDescription,v.ContactEmail,v.ContactPhone,v.VerificationStatus,v.VerificationRemarks,v.IsActive,CONCAT(u.FirstName,' ',u.LastName) AS OwnerName,u.Email AS OwnerEmail,u.PhoneNumber AS OwnerPhone,u.IsActive AS OwnerActive,u.IsBlocked AS OwnerBlocked,u.IsEmailVerified AS OwnerEmailVerified FROM dbo.Vendors v JOIN dbo.Users u ON u.UserId=v.UserId WHERE v.VendorId=:id",
       { id: row.VendorId },
     ),
   ]);

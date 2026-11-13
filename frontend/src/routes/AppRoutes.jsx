@@ -468,10 +468,10 @@ export default function AppRoutes() {
                 element={<VendorDashboardPage analyticsOnly />}
               />
               <Route path="business/profile" element={<VendorBusinessPage />} />
-              <Route path="settings" element={<VendorBusinessPage />} />
+              <Route path="settings" element={<Navigate to="/vendor/business/profile" replace />} />
               <Route
                 path="business/details"
-                element={<VendorBusinessPage mode="details" />}
+                element={<Navigate to="/vendor/business/profile" replace />}
               />
               <Route
                 path="verification"

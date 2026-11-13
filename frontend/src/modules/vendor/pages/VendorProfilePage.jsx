@@ -13,12 +13,16 @@ import {
   useVendorData,
 } from "../components/WorkspaceUI";
 import { save } from "../services/workspace.api";
-export default function VendorProfilePage() {
+export default function VendorProfilePage({ onBusyChange }) {
   const { user, setUser, reload, notify } = useAuth();
   const resource = useVendorData("/profile");
   const [values, setValues] = useState(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  useEffect(() => {
+    onBusyChange?.(busy);
+    return () => onBusyChange?.(false);
+  }, [busy, onBusyChange]);
   useEffect(() => {
     if (resource.data)
       setValues({
@@ -98,7 +102,12 @@ export default function VendorProfilePage() {
                 }
               />
             ))}
-            <Field label="Email" value={resource.data.email} disabled />
+            <Field
+              label="Sign-in email"
+              value={resource.data.email}
+              disabled
+              hint="Your verified sign-in email stays linked to your account. Edit the customer-facing email under Business details."
+            />
           </fieldset>
           <button
             type="submit"

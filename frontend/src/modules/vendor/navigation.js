@@ -1,4 +1,4 @@
-import { canAccessVendorWorkspace } from "../../routes/authNavigation";
+import { canAccessVendorWorkspace } from "../../routes/authNavigation.js";
 import {
   LayoutDashboard,
   Store,
@@ -29,10 +29,9 @@ export const vendorNavigation = [
     label: "BUSINESS",
     items: [
       ["business/profile", "Business Profile", Store],
-      ["business/details", "Vendor Details", ContactRound],
-      ["locations", "Locations", MapPin],
-      ["documents", "Documents", Files],
-      ["media", "Media Library", Files],
+      ["locations", "Locations", MapPin, { sidebarHidden: true }],
+      ["documents", "Documents", Files, { sidebarHidden: true }],
+      ["media", "Media Library", Files, { sidebarHidden: true }],
       ["verification", "Verification", ShieldCheck],
     ],
   },
@@ -61,8 +60,7 @@ export const vendorNavigation = [
   {
     label: "ACCOUNT",
     items: [
-      ["profile", "Profile", ContactRound],
-      ["settings", "Settings", ContactRound],
+      ["profile", "Account Profile", ContactRound],
       ["legal", "Legal & Privacy", Files],
     ],
   },
@@ -82,7 +80,7 @@ export const vendorNavigation = [
       ["coupons", "Coupons", TicketPercent],
       ["messages", "Messages", MessagesSquare],
       ["notifications", "Notifications", Bell],
-      ["analytics", "Analytics", ChartNoAxesCombined],
+      ["analytics", "Analytics", ChartNoAxesCombined, { sidebarHidden: true }],
     ],
   },
 ];

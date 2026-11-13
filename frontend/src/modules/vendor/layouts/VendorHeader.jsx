@@ -734,7 +734,7 @@ export default function VendorHeader({
 
               {/* Settings */}
               <Link
-                to={approved ? "/vendor/settings" : "/vendor/verification"}
+                to={approved ? "/vendor/profile" : "/vendor/verification"}
                 onClick={() => setProfileOpen(false)}
                 className="
                   flex items-center gap-3
@@ -746,7 +746,7 @@ export default function VendorHeader({
                 "
               >
                 <Settings size={17} />
-                <span>{approved ? "Settings" : "Verification"}</span>
+                <span>{approved ? "Account Profile" : "Verification"}</span>
               </Link>
 
               {/* Logout */}

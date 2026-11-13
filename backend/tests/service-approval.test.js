@@ -8,6 +8,7 @@ import {
   decisionReason,
   assertTransition,
   approvalHistory,
+  review,
 } from "../src/modules/admin/service-approval.service.js";
 import { createAdminRouter } from "../src/modules/admin/admin.routes.js";
 
@@ -79,6 +80,26 @@ test("service decisions validate custom rejection reasons and prevent field inje
     decisionInput.safeParse({ notes: "x".repeat(1001) }).success,
     false,
   );
+});
+
+test("service review includes separate vendor and document reasons with owner eligibility", async (t) => {
+  const vendor = { VerificationRemarks: "Business registration expired", OwnerActive: true, OwnerBlocked: false, OwnerEmailVerified: true };
+  const document = { id: owner, DocumentType: "Registration", VerificationStatus: "Rejected", RejectionReason: "Unreadable document" };
+  const query = t.mock.method(sequelize, "query", async (sql) => {
+    if (sql.startsWith("SELECT s.*")) return [{ ...row, VendorRejectionReason: vendor.VerificationRemarks }];
+    if (sql.startsWith("SELECT VendorId FROM dbo.Services")) return [{ VendorId: id }];
+    if (sql.includes("FROM dbo.VendorDocuments")) return [document];
+    if (sql.startsWith("SELECT v.BusinessName")) return [vendor];
+    return [];
+  });
+  const result = await review(id, ctx);
+  assert.equal(result.VendorRejectionReason, "Business registration expired");
+  assert.equal(result.documents[0].RejectionReason, "Unreadable document");
+  assert.equal(result.vendor.OwnerEmailVerified, true);
+  const sql = query.mock.calls.map((call) => call.arguments[0]).join("\n");
+  assert.match(sql, /v.VerificationRemarks AS VendorRejectionReason/);
+  assert.match(sql, /DocumentType,VerificationStatus,RejectionReason/);
+  assert.match(sql, /u.IsEmailVerified AS OwnerEmailVerified/);
 });
 test("review transitions reject drafts, repeated decisions and vendor attempts to activate suspension", () => {
   for (const status of ["Draft", "Rejected", "Approved", "Suspended"])

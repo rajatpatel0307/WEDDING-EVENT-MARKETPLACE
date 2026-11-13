@@ -313,7 +313,7 @@ export default function VendorSidebar({
 
               <div className="flex flex-col gap-[2px]">
                 {group.items.map(
-                  ([path, label, Icon]) => {
+                  ([path, label, Icon, options = {}]) => {
                     const active = activePath === path;
 
                     const showUnread =
@@ -323,6 +323,7 @@ export default function VendorSidebar({
                     return (
                       <Link
                         key={path}
+                        hidden={options.sidebarHidden}
                         to={`/vendor/${path}`}
                         onClick={onCloseMobile}
                         title={
@@ -337,6 +338,7 @@ export default function VendorSidebar({
                             : undefined
                         }
                         className={`
+                          ${options.sidebarHidden ? "hidden!" : ""}
                           group relative flex
                           min-h-[43px] w-full
                           items-center

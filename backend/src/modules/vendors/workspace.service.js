@@ -3,6 +3,7 @@ import { publicPredicate } from '../reviews/reviews.policy.js';
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { uploadAsset } from "../media/cloudinary.service.js";
+import { assertActiveLocation } from "../addresses/admin-locations.service.js";
 import { downloadDocument } from "./documents.service.js";
 import {
   loadVendorDetails,
@@ -203,7 +204,16 @@ export async function catalog(ctx) {
 }
 export async function business(ctx) {
   const { id } = scope(ctx);
-  return loadVendorDetails(id);
+  const details = await loadVendorDetails(id);
+  const availableCategories = await repo.select(
+    `SELECT c.CategoryId AS id,c.CategoryName AS name,c.IsActive AS active,
+      (SELECT COUNT(*) FROM dbo.Services s WHERE s.VendorId=:id AND s.CategoryId=c.CategoryId) AS serviceCount
+      FROM dbo.Categories c WHERE c.IsActive=1 OR EXISTS(
+        SELECT 1 FROM dbo.VendorCategories vc WHERE vc.VendorId=:id AND vc.CategoryId=c.CategoryId)
+      ORDER BY c.SortOrder,c.CategoryName`,
+    { id },
+  );
+  return { ...details, availableCategories };
 }
 export async function imageUpload(_input,ctx) {
  scope(ctx);fail('Use the Media Library to upload and moderate business images.',409);
@@ -218,6 +228,9 @@ export async function saveBusiness(input, ctx) {
       phone: z.string().regex(/^\+?[1-9]\d{7,14}$/),
       gst: z.string().trim().max(50),
       pan: z.string().trim().max(20),
+      categoryIds: z.array(z.number().int().positive()).min(1).max(100)
+        .refine((ids) => new Set(ids).size === ids.length, "Choose each category once.").optional(),
+      adminLocationId: z.guid().optional(),
       logoToken: z.string().max(4000).optional(),
       coverToken: z.string().max(4000).optional(),
       expectedUpdatedAt: z.iso.datetime(),
@@ -230,8 +243,47 @@ export async function saveBusiness(input, ctx) {
       { id },
       tx,
     );
+    if (!row) fail("Vendor profile not found.", 404);
     assertVersion(row, body.expectedUpdatedAt);
     if(body.logoToken||body.coverToken)fail('Manage business images through the Media Library.',409);
+    if (body.adminLocationId && body.adminLocationId !== row.AdminLocationId)
+      await assertActiveLocation(body.adminLocationId, tx);
+    let previousCategories;
+    if (body.categoryIds) {
+      const selected = await repo.select(
+        `SELECT c.CategoryId AS id FROM dbo.Categories c WITH(HOLDLOCK)
+          WHERE c.CategoryId IN (:categoryIds) AND (c.IsActive=1 OR EXISTS(
+            SELECT 1 FROM dbo.VendorCategories vc WHERE vc.VendorId=:id AND vc.CategoryId=c.CategoryId))`,
+        { id, categoryIds: body.categoryIds }, tx,
+      );
+      if (selected.length !== body.categoryIds.length)
+        fail("A selected service category is unavailable.");
+      const used = await repo.select(
+        "SELECT DISTINCT CategoryId AS id FROM dbo.Services WITH(UPDLOCK,HOLDLOCK) WHERE VendorId=:id AND CategoryId NOT IN (:categoryIds)",
+        { id, categoryIds: body.categoryIds }, tx,
+      );
+      if (used.length)
+        fail("Move existing services to another category before removing their category.", 409);
+      previousCategories = await repo.select(
+        "SELECT CategoryId AS id,IsPrimary AS isPrimary FROM dbo.VendorCategories WITH(UPDLOCK,HOLDLOCK) WHERE VendorId=:id",
+        { id }, tx,
+      );
+      await repo.select(
+        "DELETE FROM dbo.VendorCategories WHERE VendorId=:id AND CategoryId NOT IN (:categoryIds)",
+        { id, categoryIds: body.categoryIds }, tx,
+      );
+      for (const categoryId of body.categoryIds) {
+        if (!previousCategories.some((category) => category.id === categoryId))
+          await repo.insert(
+            { table: "VendorCategories", id: "VendorCategoryId" },
+            { VendorId: id, CategoryId: categoryId, IsPrimary: 0 }, tx,
+          );
+      }
+      await repo.select(
+        "UPDATE dbo.VendorCategories SET IsPrimary=CASE WHEN CategoryId=:primary THEN 1 ELSE 0 END WHERE VendorId=:id",
+        { id, primary: body.categoryIds[0] }, tx,
+      );
+    }
     const values = {
       BusinessName: body.name,
       BusinessDescription: body.description,
@@ -239,6 +291,7 @@ export async function saveBusiness(input, ctx) {
       ContactPhone: body.phone,
       GSTNumber: body.gst || null,
       PANNumber: body.pan || null,
+      ...(body.adminLocationId ? { AdminLocationId: body.adminLocationId } : {}),
       UpdatedAt: new Date(),
     };
     await repo.update({ table: "Vendors", id: "VendorId" }, id, values, tx);
@@ -247,8 +300,8 @@ export async function saveBusiness(input, ctx) {
       "BUSINESS_UPDATED",
       "Vendors",
       id,
-      { name: row.BusinessName },
-      { name: body.name },
+      { name: row.BusinessName, adminLocationId: row.AdminLocationId, ...(previousCategories ? { categories: previousCategories } : {}) },
+      { name: body.name, adminLocationId: body.adminLocationId || row.AdminLocationId, ...(body.categoryIds ? { categoryIds: body.categoryIds } : {}) },
       tx,
     );
     return { message: "Business profile updated." };

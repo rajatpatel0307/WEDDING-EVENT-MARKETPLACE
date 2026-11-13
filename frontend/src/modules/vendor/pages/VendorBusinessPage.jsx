@@ -1,379 +1,515 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { CheckCircle2, FileCheck2, MapPin, ShieldCheck } from "lucide-react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import {
+  Building2,
+  FileCheck2,
+  Info,
+  LoaderCircle,
+  Mail,
+  Save,
+} from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import {
-  Badge,
   ErrorView,
-  Field,
-  Heading,
   Loading,
-  Panel,
+  Modal,
   useVendorData,
 } from "../components/WorkspaceUI";
-import { ImageUpload } from "../components/WorkspaceForms";
-import { date, save } from "../services/workspace.api";
-export default function VendorBusinessPage({ mode = "profile" }) {
+import { save } from "../services/workspace.api";
+import BusinessProfileView from "../components/BusinessProfileView";
+import RegisteredLocationField from "../../../components/common/RegisteredLocationField";
+
+const AccountProfileEditor = lazy(() => import("./VendorProfilePage"));
+const LocationsEditor = lazy(() => import("./BusinessLocations"));
+const BrandImagesEditor = lazy(() => import("../../media/MediaLibrary"));
+const DocumentsEditor = lazy(() => import("./VendorResourcesPage"));
+const editorTabs = [
+  ["business", "Business details"],
+  ["account", "Owner & account"],
+  ["images", "Logo & images"],
+  ["locations", "Locations"],
+  ["documents", "Documents"],
+];
+
+const profileValues = (vendor, categories = []) => ({
+  name: vendor.businessName || "",
+  description: vendor.description || "",
+  email: vendor.businessEmail || vendor.email || "",
+  phone: vendor.businessPhone || vendor.phone || "",
+  gst: vendor.gst || "",
+  pan: vendor.pan || "",
+  categoryIds: categories.map((category) => Number(category.id)),
+  adminLocationId: vendor.adminLocationId || "",
+  expectedUpdatedAt: vendor.updatedAt,
+});
+
+function ProfileSection({ id, icon: Icon, title, description, children }) {
+  return (
+    <section
+      id={id}
+      className="scroll-mt-24 overflow-hidden rounded-2xl border border-[#dfe6dc] bg-white shadow-[0_3px_16px_#233c2b03]"
+    >
+      <header className="flex items-center gap-3 border-b border-[#edf0e9] px-6 py-5 max-sm:px-4">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#f0f4ec] text-[#55734b]">
+          <Icon size={19} strokeWidth={1.6} />
+        </span>
+        <div>
+          <h2 className="m-0! font-sans! text-[15px]! font-semibold! tracking-[-0.2px] text-[#2e4439]!">
+            {title}
+          </h2>
+          <p className="mt-0.5 text-xs leading-relaxed text-[#738072]">
+            {description}
+          </p>
+        </div>
+      </header>
+      <div className="grid gap-5 p-6 max-sm:p-4">{children}</div>
+    </section>
+  );
+}
+
+function ProfileField({ label, optional, hint, children }) {
+  return (
+    <label className="grid min-w-0 content-start gap-2 text-[13px] font-medium text-[#40533f]">
+      <span>
+        {label}
+        {optional && (
+          <span className="ml-1.5 text-[11px] font-normal text-[#7b8575]">
+            (optional)
+          </span>
+        )}
+      </span>
+      {children}
+      {hint && (
+        <span className="text-[11px] font-normal leading-relaxed text-[#74816e]">
+          {hint}
+        </span>
+      )}
+    </label>
+  );
+}
+
+export default function VendorBusinessPage() {
   const resource = useVendorData("/business"),
     { notify, reload } = useAuth();
   const [values, setValues] = useState(null),
     [busy, setBusy] = useState(false),
-    [uploading, setUploading] = useState(0),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [saved, setSaved] = useState(false),
+    [editing, setEditing] = useState(false),
+    [editorTab, setEditorTab] = useState("business"),
+    [visitedTabs, setVisitedTabs] = useState(["business"]),
+    [childBusy, setChildBusy] = useState(false);
   useEffect(() => {
     if (!resource.data) return;
-    const v = resource.data.vendor;
-    setValues({
-      name: v.businessName,
-      description: v.description || "",
-      email: v.businessEmail || v.email,
-      phone: v.businessPhone || v.phone || "",
-      gst: v.gst || "",
-      pan: v.pan || "",
-      expectedUpdatedAt: v.updatedAt,
-    });
+    setValues(profileValues(resource.data.vendor, resource.data.categories));
   }, [resource.data]);
   if (resource.error)
     return <ErrorView error={resource.error} retry={resource.retry} />;
   if (!resource.data || !values) return <Loading />;
-  const { vendor: v, categories, locations, summary } = resource.data,
-    update = (key, value) => setValues((old) => ({ ...old, [key]: value }));
-  if (mode === "verification")
-    return (
-      <>
-        <Heading
-          title="Verification status"
-          description="Your business identity, reviewed with care."
-        />
-        <Panel
-          title="Your vendor application"
-          action={<Badge>{v.status}</Badge>}
-        >
-          <div className="
-            flex items-center flex-col gap-[19px] p-[30px] text-center [&_>_span]:grid
-            [&_>_span]:place-items-center [&_>_span]:w-[88px] [&_>_span]:h-[88px] [&_>_span]:[background:#edf5e4]
-            [&_>_span]:text-[#92ad73] [&_>_span]:rounded-[50%] [&_>_h2]:text-[22px]
-            [&_>_h2]:[font-family:Georgia,_serif] [&_>_h2]:font-normal [&_>_h2]:text-[#8fa578]
-            [&_>_p]:max-w-[490px] [&_>_p]:text-[11px] [&_>_p]:leading-[1.9] [&_.vw-details]:w-[100%]
-            [&_.vw-details]:text-left [&_.vw-details]:[border-top:1px_solid_#e4eed7] [&_.vw-details]:pt-[22px]
-          ">
-            <span>
-              <ShieldCheck size={43} strokeWidth={1.3} />
-            </span>
-            <h2>
-              {v.status === "Approved"
-                ? "You're a verified MarryNest partner."
-                : "Your application is being reviewed."}
-            </h2>
-            <p>
-              Your application is approved. Keep your business information and
-              documents up to date.
-            </p>
-            <div className="
-              flex justify-center gap-[34px] flex-wrap [padding:10px_0_18px] [&_>_div]:flex [&_>_div]:items-center
-              [&_>_div]:gap-[8px] [&_>_div]:text-[#9bb780] [&_strong]:text-[9px] [&_strong]:font-medium
-            ">
-              <div>
-                <CheckCircle2 size={18} />
-                <strong>Email verified</strong>
-              </div>
-              <div>
-                <FileCheck2 size={18} />
-                <strong>
-                  {summary.approvedDocuments} / {summary.documents} documents
-                  approved
-                </strong>
-              </div>
-              <div>
-                <ShieldCheck size={18} />
-                <strong>Vendor approved</strong>
-              </div>
-            </div>
-            <dl className="
-              vw-details grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[23px] m-[0] [&_>_div]:min-w-[0]
-              [&_dt]:text-[#a0b18d] [&_dt]:uppercase [&_dt]:text-[8px] [&_dt]:tracking-[0.6px]
-              [&_dt]:[margin:0_0_5px] [&_dd]:text-[#7d9668] [&_dd]:text-[11px] [&_dd]:[overflow-wrap:anywhere]
-              [&_dd]:whitespace-pre-wrap [&_dd]:m-[0] vendor-mobile:gap-[20px] vendor-phone:grid-cols-[1fr]
-            ">
-              <div>
-                <dt>Verification cycle</dt>
-                <dd>{v.cycle}</dd>
-              </div>
-              <div>
-                <dt>Last approved</dt>
-                <dd>{v.verifiedAt ? date(v.verifiedAt) : "Not recorded"}</dd>
-              </div>
-              <div>
-                <dt>Vendor ID</dt>
-                <dd>{v.id}</dd>
-              </div>
-              <div>
-                <dt>Account status</dt>
-                <dd>
-                  <Badge>{v.active ? "Active" : "Inactive"}</Badge>
-                </dd>
-              </div>
-            </dl>
-            {v.remarks && <p className="
-              [background:#f4f7ee] [border-top:1px_solid_#e8eedc] [border-right:1px_solid_#e8eedc]
-              [border-bottom:1px_solid_#e8eedc] [border-left:1px_solid_#e8eedc] text-[#95a581]! [padding:12px_15px]
-              rounded-[6px] text-[10px]! leading-[1.8]
-            ">{v.remarks}</p>}
-            <Link className="
-              vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
-              [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
-              rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
-              font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
-              [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
-              [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
-              [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
-              [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
-            " to="/vendor/documents">
-              Manage documents
-            </Link>
-          </div>
-        </Panel>
-      </>
-    );
-  if (mode === "details")
-    return (
-      <>
-        <Heading
-          title="Vendor details"
-          description="The business identity behind your celebrations."
-        >
-          <Link to="/vendor/business/profile" className="
-            vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
-            [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
-            rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
-            font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
-            [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
-            [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
-            [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
-            [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
-            vw-primary
-          ">
-            Edit business profile
-          </Link>
-        </Heading>
-        <Panel title={v.businessName} action={<Badge>{v.status}</Badge>}>
-          <div className="[padding:0_24px_24px] grid gap-[19px] vendor-mobile:[padding:0_18px_20px]">
-            <p className="whitespace-pre-wrap leading-[1.9] text-[#9aa98b]!">{v.description}</p>
-            <dl className="
-              vw-details grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[23px] m-[0] [&_>_div]:min-w-[0]
-              [&_dt]:text-[#a0b18d] [&_dt]:uppercase [&_dt]:text-[8px] [&_dt]:tracking-[0.6px]
-              [&_dt]:[margin:0_0_5px] [&_dd]:text-[#7d9668] [&_dd]:text-[11px] [&_dd]:[overflow-wrap:anywhere]
-              [&_dd]:whitespace-pre-wrap [&_dd]:m-[0] vendor-mobile:gap-[20px] vendor-phone:grid-cols-[1fr]
-            ">
-              {[
-                ["Owner", v.owner],
-                ["Email", v.email],
-                ["Phone", v.phone],
-                ["GST", v.gst],
-                ["PAN", v.pan],
-                ["Registered", date(v.createdAt)],
-                ["Vendor ID", v.id],
-                ["Account", v.active ? "Active" : "Inactive"],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value || "Not provided"}</dd>
-                </div>
-              ))}
-            </dl>
-            <div className="flex flex-wrap gap-[7px] [&_span]:text-[9px] [&_span]:[padding:4px_8px] [&_span]:rounded-[4px] [&_span]:text-[#93a77d] [&_span]:[background:#f0f5e8]">
-              {categories.map((c) => (
-                <span key={c.id}>{c.name}</span>
-              ))}
-            </div>
-          </div>
-        </Panel>
-        <Panel title="Business locations">
-          <div className="
-            grid grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[20px] [padding:0_23px_23px]
-            [&_article]:[border-top:1px_solid_#e2ecd6] [&_article]:[border-right:1px_solid_#e2ecd6]
-            [&_article]:[border-bottom:1px_solid_#e2ecd6] [&_article]:[border-left:1px_solid_#e2ecd6]
-            [&_article]:rounded-[8px] [&_article]:p-[22px] [&_svg]:text-[#9bb183] [&_svg]:mb-[12px]
-            [&_h3]:text-[13px] [&_h3]:text-[#7c9567] [&_p]:[margin:9px_0_15px] [&_p]:text-[10px]
-            [&_p]:leading-[1.8] vendor-tablet:grid-cols-[repeat(2,_minmax(0,_1fr))] vendor-phone:grid-cols-[1fr]
-          ">
-            {locations.length ? (
-              locations.map((l) => (
-                <article key={l.id}>
-                  <MapPin size={20} />
-                  <h3>{l.city}</h3>
-                  <p>
-                    {l.address}
-                    <br />
-                    {l.state}, {l.country} {l.postalCode}
-                  </p>
-                  <Badge>
-                    {l.isPrimary ? "Primary" : l.active ? "Active" : "Inactive"}
-                  </Badge>
-                </article>
-              ))
-            ) : (
-              <p>No business locations provided.</p>
-            )}
-          </div>
-        </Panel>
-      </>
-    );
+  const { vendor: v, categories } = resource.data,
+    update = (key, value) => {
+      setSaved(false);
+      setValues((old) => ({ ...old, [key]: value }));
+    };
+  const original = profileValues(v, categories);
+  const hasChanges = JSON.stringify(values) !== JSON.stringify(original);
+  const categoryOptions = resource.data.availableCategories || categories;
+  const openEditor = (section = "business") => {
+    setValues(profileValues(v, categories));
+    setError("");
+    setSaved(false);
+    setEditorTab(section);
+    setVisitedTabs(["business", section]);
+    setEditing(true);
+  };
+  const closeEditor = () => {
+    if (busy || childBusy) return;
+    setEditing(false);
+    setValues(profileValues(v, categories));
+    setError("");
+    resource.retry();
+    reload().catch(() => {});
+  };
   return (
-    <>
-      <Heading
-        title="Business profile"
-        description="Tell your story. Help customers get to know the people behind the magic."
+    <div className="min-w-0 text-[#40533f] [&_button]:cursor-pointer [&_button:disabled]:cursor-not-allowed [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-4 [&_button:focus-visible]:outline-[#638650]">
+      <BusinessProfileView
+        data={resource.data}
+        onEdit={openEditor}
+        disabled={resource.loading || busy}
+        saved={saved}
       />
-      <form
-        className="
-          min-w-[0] [&_fieldset]:[border-top:0] [&_fieldset]:[border-right:0] [&_fieldset]:[border-bottom:0]
-          [&_fieldset]:[border-left:0] [&_fieldset]:p-[0] [&_fieldset]:m-[0] [&_fieldset]:min-w-[0]
-          [&_>_.vw-panel_+_.vw-panel]:mt-[22px]
-        "
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setBusy(true);
-          setError("");
-          try {
-            const result = await save("/business", "PUT", values);
-            notify(result.message);
-            resource.retry();
-            await reload();
-          } catch (err) {
-            setError(err.message);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        <div className="
-          grid grid-cols-[minmax(0,_1fr)_330px] gap-[22px] [align-items:start] [&_>_div]:grid
-          [&_>_div]:gap-[22px] [&_>_div]:min-w-[0] [&_>_aside]:grid [&_>_aside]:gap-[22px]
-          [&_>_aside]:min-w-[0] vendor-compact:grid-cols-[minmax(0,_1fr)_270px] vendor-compact:gap-[18px]
-          vendor-tablet:grid-cols-[1fr] vendor-tablet:[&_>_aside]:grid-cols-[1fr_1fr]
-          vendor-tablet:[&_>_aside]:[align-items:start] vendor-mobile:[&_>_aside]:grid-cols-[1fr]
-        ">
-          <Panel title="Business information">
-            <div className="[padding:0_24px_24px] grid gap-[19px] vendor-mobile:[padding:0_18px_20px]">
+      {editing && (
+        <Modal
+          title="Edit vendor profile"
+          close={closeEditor}
+          busy={busy || childBusy}
+          wide
+        >
+          <div className="border-b border-[#e3e9dc] px-5 pt-3">
+            <p className="mb-3 text-xs leading-relaxed text-[#78866e]">
+              Choose a section to edit. Save each section using its own save or
+              upload button.
+            </p>
+            <div
+              role="group"
+              aria-label="Profile sections"
+              className="flex flex-wrap gap-2 pb-3"
+            >
+              {editorTabs.map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={editorTab === key}
+                  disabled={busy || childBusy}
+                  onClick={() => {
+                    setEditorTab(key);
+                    setVisitedTabs((tabs) =>
+                      tabs.includes(key) ? tabs : [...tabs, key],
+                    );
+                  }}
+                  className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50 ${editorTab === key ? "border-[#385b3d] bg-[#385b3d] text-white" : "border-[#dfe6d8] bg-white text-[#66795a] hover:bg-[#f1f5eb]"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div hidden={editorTab !== "business"}>
+            <form
+              className="p-5 max-sm:p-3 min-w-0 [&_input]:min-h-11 [&_input]:w-full [&_input]:min-w-0 [&_input]:rounded-lg [&_input]:border [&_input]:border-[#dbe3d5] [&_input]:bg-[#fcfdfb] [&_input]:px-3.5 [&_input]:py-2.5 [&_input]:text-[13px] [&_input]:font-normal [&_input]:text-[#354c38] [&_input]:transition-colors [&_input::placeholder]:text-[#a0aa96] [&_textarea]:w-full [&_textarea]:resize-y [&_textarea]:rounded-lg [&_textarea]:border [&_textarea]:border-[#dbe3d5] [&_textarea]:bg-[#fcfdfb] [&_textarea]:px-3.5 [&_textarea]:py-3 [&_textarea]:text-[13px] [&_textarea]:font-normal [&_textarea]:leading-relaxed [&_textarea]:text-[#354c38] [&_textarea::placeholder]:text-[#a0aa96] [&_input:focus]:border-[#829e6b] [&_input:focus]:bg-white [&_input:focus]:outline-2 [&_input:focus]:outline-[#e2ebd9] [&_textarea:focus]:border-[#829e6b] [&_textarea:focus]:bg-white [&_textarea:focus]:outline-2 [&_textarea:focus]:outline-[#e2ebd9]"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                if (busy || !hasChanges || resource.loading) return;
+                setBusy(true);
+                setError("");
+                setSaved(false);
+                try {
+                  const { adminLocationId, categoryIds, ...details } = values;
+                  const result = await save("/business", "PUT", {
+                    ...details,
+                    ...(adminLocationId ? { adminLocationId } : {}),
+                    ...(JSON.stringify(categoryIds) !==
+                    JSON.stringify(original.categoryIds)
+                      ? { categoryIds }
+                      : {}),
+                  });
+                  notify(result.message);
+                  setSaved(true);
+                  setEditing(false);
+                  resource.retry();
+                  await reload().catch(() => {});
+                } catch (err) {
+                  setError(err.message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
               {error && (
-                <p className="
-                  vw-form-error [background:#fff4ee] [border-top:1px_solid_#f0ddcf] [border-right:1px_solid_#f0ddcf]
-                  [border-bottom:1px_solid_#f0ddcf] [border-left:1px_solid_#f0ddcf] text-[#b6836e]! [padding:12px_15px]
-                  rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]
-                " role="alert">
+                <p
+                  className="mb-5 flex items-start gap-2 rounded-xl border border-[#edd7cc] bg-[#fff7f2] p-4 text-xs leading-relaxed text-[#a15e45]"
+                  role="alert"
+                >
+                  <Info size={16} className="shrink-0" />
                   {error}
                 </p>
               )}
-              <Field label="Business name">
-                <input
-                  required
-                  minLength={2}
-                  maxLength={200}
-                  value={values.name}
-                  onChange={(e) => update("name", e.target.value)}
-                />
-              </Field>
-              <Field label="Business description">
-                <textarea
-                  rows={6}
-                  minLength={10}
-                  maxLength={10000}
-                  required
-                  value={values.description}
-                  onChange={(e) => update("description", e.target.value)}
-                />
-              </Field>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {[
-                  ["email", "Contact email", "email"],
-                  ["phone", "Contact phone", "tel"],
-                  ["gst", "GST number", "text"],
-                  ["pan", "PAN number", "text"],
-                ].map(([key, label, type]) => (
-                  <Field key={key} label={label}>
+
+              <p className="mb-5 text-xs leading-relaxed text-[#78866e]">
+                Update your business information below. Your changes will appear
+                on your profile after saving.
+              </p>
+              <fieldset
+                disabled={busy}
+                className="m-0 grid min-w-0 gap-5 border-0 p-0 disabled:opacity-70"
+              >
+                <legend className="sr-only">Edit your business profile</legend>
+                <ProfileSection
+                  id="edit-business-information"
+                  icon={Building2}
+                  title="Business information"
+                  description="Introduce the name and story behind your celebrations."
+                >
+                  <ProfileField label="Business name">
                     <input
-                      type={type}
-                      value={values[key]}
-                      required={["email", "phone"].includes(key)}
-                      pattern={
-                        key === "phone" ? "\\+?[1-9][0-9]{7,14}" : undefined
-                      }
-                      maxLength={
-                        key === "email" ? 320 : key === "gst" ? 50 : 20
-                      }
-                      onChange={(e) => update(key, e.target.value)}
+                      autoFocus
+                      name="businessName"
+                      autoComplete="organization"
+                      required
+                      minLength={2}
+                      maxLength={200}
+                      placeholder="Your business name"
+                      value={values.name}
+                      onChange={(event) => update("name", event.target.value)}
                     />
-                  </Field>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-[7px] [&_span]:text-[9px] [&_span]:[padding:4px_8px] [&_span]:rounded-[4px] [&_span]:text-[#93a77d] [&_span]:[background:#f0f5e8]">
-                {categories.map((c) => (
-                  <span key={c.id}>{c.name}</span>
-                ))}
-              </div>
+                  </ProfileField>
+                  <ProfileField
+                    label="Business description"
+                    hint="Share what you do, your experience, and what makes your service special."
+                  >
+                    <textarea
+                      name="description"
+                      rows={4}
+                      minLength={10}
+                      maxLength={10000}
+                      required
+                      placeholder="Tell couples a little about your business..."
+                      value={values.description}
+                      onChange={(event) =>
+                        update("description", event.target.value)
+                      }
+                    />
+                    <span className="text-right text-[10px] font-normal text-[#89957e]">
+                      {values.description.length.toLocaleString()} / 10,000
+                    </span>
+                  </ProfileField>
+                </ProfileSection>
+
+                <ProfileSection
+                  id="edit-contact-information"
+                  icon={Mail}
+                  title="Contact information"
+                  description="Help customers take the first step towards working with you."
+                >
+                  <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+                    <ProfileField label="Contact email">
+                      <input
+                        name="email"
+                        autoComplete="email"
+                        type="email"
+                        required
+                        maxLength={320}
+                        placeholder="hello@yourbusiness.com"
+                        value={values.email}
+                        onChange={(event) =>
+                          update("email", event.target.value)
+                        }
+                      />
+                    </ProfileField>
+                    <ProfileField label="Contact phone">
+                      <input
+                        name="phone"
+                        autoComplete="tel"
+                        type="tel"
+                        required
+                        pattern="\+?[1-9][0-9]{7,14}"
+                        maxLength={20}
+                        placeholder="e.g. +919876543210"
+                        title="Enter 8 to 15 digits, optionally starting with +"
+                        value={values.phone}
+                        onChange={(event) =>
+                          update("phone", event.target.value)
+                        }
+                      />
+                    </ProfileField>
+                  </div>
+                  <p className="flex items-start gap-2 rounded-lg bg-[#f5f7f1] px-3 py-2.5 text-[11px] leading-relaxed text-[#6c7e60]">
+                    <Info size={14} className="mt-0.5 shrink-0" />
+                    Used for customer enquiries and business communication.
+                  </p>
+                </ProfileSection>
+
+                <ProfileSection
+                  id="edit-business-registration"
+                  icon={FileCheck2}
+                  title="Business registration"
+                  description="Keep your business records accurate and up to date."
+                >
+                  <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+                    <ProfileField label="GST number" optional>
+                      <input
+                        name="gst"
+                        maxLength={50}
+                        placeholder="Enter your GST number"
+                        value={values.gst}
+                        onChange={(event) => update("gst", event.target.value)}
+                      />
+                    </ProfileField>
+                    <ProfileField label="PAN number" optional>
+                      <input
+                        name="pan"
+                        maxLength={20}
+                        placeholder="Enter your PAN number"
+                        value={values.pan}
+                        onChange={(event) => update("pan", event.target.value)}
+                      />
+                    </ProfileField>
+                  </div>
+                  <RegisteredLocationField
+                    value={values.adminLocationId}
+                    onChange={(value) => update("adminLocationId", value)}
+                    disabled={busy}
+                  />
+                </ProfileSection>
+                <ProfileSection
+                  id="edit-business-categories"
+                  icon={Building2}
+                  title="Service categories"
+                  description="Choose the categories your business offers and set your primary category."
+                >
+                  <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+                    {categoryOptions.map((category) => {
+                      const id = Number(category.id);
+                      const selected = values.categoryIds.includes(id);
+                      const used = Number(category.serviceCount || 0) > 0;
+                      const inactive =
+                        category.active === false || category.active === 0;
+                      return (
+                        <label
+                          key={id}
+                          className={`flex items-start gap-2.5 rounded-lg border p-3 text-xs leading-relaxed ${selected ? "border-[#baceaa] bg-[#f2f7eb] text-[#48623a]" : "border-[#e1e8da] text-[#7c8970]"}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            disabled={used || (inactive && !selected)}
+                            onChange={(event) =>
+                              update(
+                                "categoryIds",
+                                event.target.checked
+                                  ? [...values.categoryIds, id]
+                                  : values.categoryIds.filter(
+                                      (value) => value !== id,
+                                    ),
+                              )
+                            }
+                            className="mt-0.5 min-h-0! size-4! shrink-0 accent-[#5f7e49]"
+                          />
+                          <span>
+                            {category.name}
+                            {used && (
+                              <span className="block text-[10px] font-normal text-[#869577]">
+                                Used by {category.serviceCount} service(s)
+                              </span>
+                            )}
+                            {inactive && (
+                              <span className="block text-[10px]">
+                                Currently inactive
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {!values.categoryIds.length && (
+                    <p role="alert" className="text-xs text-[#a15e45]">
+                      Select at least one service category.
+                    </p>
+                  )}
+                  <ProfileField label="Primary category">
+                    <select
+                      required
+                      value={values.categoryIds[0] || ""}
+                      onChange={(event) => {
+                        const primary = Number(event.target.value);
+                        update("categoryIds", [
+                          primary,
+                          ...values.categoryIds.filter((id) => id !== primary),
+                        ]);
+                      }}
+                      className="min-h-11 w-full rounded-lg border border-[#dbe3d5] bg-[#fcfdfb] px-3.5 py-2.5 text-[13px] font-normal text-[#354c38]"
+                    >
+                      <option value="">Select a primary category</option>
+                      {categoryOptions
+                        .filter((category) =>
+                          values.categoryIds.includes(Number(category.id)),
+                        )
+                        .map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                    </select>
+                  </ProfileField>
+                  <p className="text-[11px] text-[#7b896f]">
+                    To remove a category used by your services, move those
+                    services to another category first.
+                  </p>
+                </ProfileSection>
+              </fieldset>
+              <footer className="sticky bottom-0 z-10 -mx-5 -mb-5 mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#e3e9dc] bg-white/95 px-5 py-4 backdrop-blur-md max-sm:-mx-3 max-sm:-mb-3 max-sm:px-3">
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="text-[11px] text-[#7b896f]"
+                >
+                  {busy
+                    ? "Saving your profile..."
+                    : hasChanges
+                      ? "You have unsaved changes"
+                      : "Make your changes, then save."}
+                </p>
+                <div className="flex items-center gap-3 max-sm:ml-auto">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={closeEditor}
+                    className="rounded-lg border border-[#dce4d5] px-4 py-2.5 text-xs text-[#617456] hover:bg-[#f3f6ee] disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={busy || !hasChanges || resource.loading}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#385b3d] bg-[#385b3d] px-5 py-2.5 text-xs font-medium text-white transition-colors hover:bg-[#2c4a31] disabled:opacity-50"
+                  >
+                    {busy ? (
+                      <LoaderCircle size={15} className="animate-spin" />
+                    ) : (
+                      <Save size={15} />
+                    )}
+                    {busy ? "Saving..." : "Save changes"}
+                  </button>
+                </div>
+              </footer>
+            </form>
+          </div>
+          {visitedTabs.includes("account") && (
+            <div hidden={editorTab !== "account"} className="p-5">
+              <Suspense fallback={<Loading />}>
+                <AccountProfileEditor onBusyChange={setChildBusy} />
+              </Suspense>
             </div>
-          </Panel>
-          <aside>
-            <Panel title="Business logo">
-              <div className="[padding:0_24px_24px] grid gap-[19px] vendor-mobile:[padding:0_18px_20px]">
-                <ImageUpload
-                  kind="logo"
-                  src={values.logoPreview || v.logoUrl}
-                  onBusy={(value) =>
-                    setUploading((count) =>
-                      Math.max(0, count + (value ? 1 : -1)),
-                    )
-                  }
-                  onUploaded={(image) =>
-                    setValues((old) => ({ ...old, logoToken: image.token }))
-                  }
+          )}
+          {visitedTabs.includes("images") && (
+            <div hidden={editorTab !== "images"} className="p-5">
+              <Suspense fallback={<Loading />}>
+                <BrandImagesEditor
+                  role="Vendor"
+                  fixedTarget={{ entityType: "Vendor", entityId: v.id }}
+                  embedded
                 />
-              </div>
-            </Panel>
-            <Panel title="Cover image">
-              <div className="[padding:0_24px_24px] grid gap-[19px] vendor-mobile:[padding:0_18px_20px]">
-                <ImageUpload
-                  kind="cover"
-                  src={v.coverUrl}
-                  onBusy={(value) =>
-                    setUploading((count) =>
-                      Math.max(0, count + (value ? 1 : -1)),
-                    )
-                  }
-                  onUploaded={(image) =>
-                    setValues((old) => ({ ...old, coverToken: image.token }))
-                  }
-                />
-              </div>
-            </Panel>
-          </aside>
-        </div>
-        <div className="
-          flex items-center justify-between gap-[20px] mt-[23px] [padding:18px_0] [&_>_p]:flex
-          [&_>_p]:items-center [&_>_p]:gap-[7px] [&_>_p]:text-[9px] [&_>_p]:text-[#a0b28e] [&_>_div]:flex
-          [&_>_div]:items-center [&_>_div]:gap-[9px] vendor-mobile:items-start vendor-mobile:flex-col
-          vendor-mobile:[&_>_div]:[align-self:flex-end] vendor-phone:[&_>_p]:text-[8px]
-        ">
-          <p>
-            Contact information is used for customer enquiries and business
-            communication.
-          </p>
-          <button className="
-            vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
-            [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
-            rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
-            font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
-            [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
-            [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
-            [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
-            [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
-            vw-primary
-          " disabled={busy || uploading}>
-            {busy ? "Saving…" : "Save business profile"}
-          </button>
-        </div>
-      </form>
-    </>
+              </Suspense>
+            </div>
+          )}
+          {visitedTabs.includes("locations") && (
+            <div hidden={editorTab !== "locations"} className="p-5">
+              <Suspense fallback={<Loading />}>
+                <LocationsEditor />
+              </Suspense>
+            </div>
+          )}
+          {visitedTabs.includes("documents") && (
+            <div hidden={editorTab !== "documents"} className="p-5">
+              <Suspense fallback={<Loading />}>
+                <DocumentsEditor section="documents" />
+              </Suspense>
+            </div>
+          )}
+          {editorTab !== "business" && (
+            <footer className="sticky bottom-0 border-t border-[#e3e9dc] bg-white/95 px-5 py-4 text-right backdrop-blur-md">
+              <button
+                type="button"
+                disabled={childBusy}
+                onClick={closeEditor}
+                className="rounded-lg border border-[#dce4d5] px-4 py-2.5 text-xs text-[#617456] hover:bg-[#f3f6ee] disabled:opacity-50"
+              >
+                Done
+              </button>
+            </footer>
+          )}
+        </Modal>
+      )}
+    </div>
   );
 }
