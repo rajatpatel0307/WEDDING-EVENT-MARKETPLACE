@@ -52,14 +52,14 @@ export default function MobileNavbar({ user, city, setCity, close }) {
               <summary>
                 Services <ChevronDown size={16} />
               </summary>
-              <Link to="/services" onClick={close}>
+              <Link to="/services" state={{ fromNavbarServices: true }} onClick={close}>
                 All services
               </Link>
               {serviceGroups.map((g) => (
                 <div className="mn-mobile-services pl-[14px] [&_h3]:text-[10px] [&_h3]:tracking-[1px] [&_h3]:uppercase [&_h3]:text-[#9c7b74] [&_h3]:mt-[20px] [&_h3]:mx-0 [&_h3]:mb-[5px] [&_a]:block [&_a]:text-[12px] [&_a]:p-[7px]" key={g.name}>
                   <h3>{g.name}</h3>
                   {g.items.map(([n]) => (
-                    <Link key={n} to={servicePath(n)} onClick={close}>
+                    <Link key={n} to={servicePath(n)} state={{ fromNavbarServices: true }} onClick={close}>
                       {n}
                     </Link>
                   ))}

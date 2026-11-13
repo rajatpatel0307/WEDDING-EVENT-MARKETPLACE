@@ -5,7 +5,7 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
-import { ShieldCheck, ShoppingBag, CalendarDays, ArrowLeft, ArrowRight, Check, MapPin, Package, ReceiptText, UserRound } from "lucide-react";
+import { ShieldCheck, ShoppingBag, CalendarDays, ArrowLeft, ArrowRight, Check, MapPin, Package, ReceiptText, UserRound, Clock3, Sparkles, LockKeyhole, CheckCircle2, Heart, ArrowUpRight, Minus, Plus, LoaderCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
   useCustomerData,
@@ -16,10 +16,13 @@ import {
   customerRequest,
   save,
   money,
+  date,
 } from "../customer/services/workspace.api";
 import { loadCheckout } from "../customer/services/checkout-loader";
 import { offerState } from "./offer-state";
+import { bookingQuantityState } from "./booking-quantity";
 import CartItem from "./CartItem";
+import { categoryImages } from "../../components/home/categoryImages";
 import "./commerce.css";
 
 function AddressPicker({ value, onChange, optional = false, disabled = false, className = "", selectClassName = "", linkClassName = "" }) {
@@ -101,7 +104,8 @@ function BookingForm({ id }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [accepted, setAccepted] = useState(false),
-    [success, setSuccess] = useState(null);
+    [success, setSuccess] = useState(null),
+    [imageFailed, setImageFailed] = useState(false);
   const set = (key, value) => {
     setBody((b) => ({ ...b, [key]: value || undefined }));
     setPreview(null);
@@ -112,7 +116,7 @@ function BookingForm({ id }) {
     if (service.data?.service.offer?.book)
       setBody((b) => ({
         ...b,
-        quantity: service.data.service.offer.book.minimum,
+        quantity: Number(service.data.service.offer.book.minimum),
       }));
   }, [service.data]);
   if (service.loading) return <Loading />;
@@ -122,11 +126,19 @@ function BookingForm({ id }) {
     book = item.offer?.book;
   if (!book || !offerState(item).canBook)
     return (
-      <div className="commerce-page">
+      <div className="mx-auto max-w-[1160px] p-6 [&_h1]:mb-5 [&_h1]:text-3xl">
         <h1>Booking unavailable</h1>
         <Link to={`/services/${id}`}>Return to listing</Link>
       </div>
     );
+  const quantityState = bookingQuantityState(body.quantity, book);
+  const validQuantity = quantityState.valid;
+  const estimatedSubtotal = validQuantity
+    ? Math.round(Number(book.price) * 100) * body.quantity / 100
+    : null;
+  const bookingImage = (!imageFailed && item.image) || categoryImages[item.category] || categoryImages["Religious & Ceremony Services"];
+  const bookingDuration = book.duration === "Custom" ? `${book.durationMinutes} minutes` : book.duration;
+  const currentStep = success ? 2 : preview ? 1 : 0;
   async function review(e) {
     e.preventDefault();
     setBusy(true);
@@ -159,207 +171,192 @@ function BookingForm({ id }) {
     }
   }
   return (
-    <main className="commerce commerce-page">
-      <Link to={`/services/${id}`}>← Back to {item.name}</Link>
-      <h1>
-        <CalendarDays className="inline" /> Booking Checkout
-      </h1>
+    <main className="mx-auto min-w-0 max-w-[1240px] px-7 pt-7 pb-8 text-[#422d36] max-[900px]:px-5 max-[600px]:px-4 [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-4 [&_a:focus-visible]:outline-[#b98979] [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-4 [&_button:focus-visible]:outline-[#b98979]">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <Link className="group inline-flex min-w-0 items-center gap-2 text-xs text-[#88767d] transition-colors hover:text-[#8c414e]" to={`/services/${id}`}>
+          <ArrowLeft size={15} className="transition-transform group-hover:-translate-x-1" aria-hidden="true" />
+          <span className="truncate">Back to {item.name}</span>
+        </Link>
+        <span className="inline-flex items-center gap-[6px] text-[10px] tracking-wide text-[#98877e]"><LockKeyhole size={12} aria-hidden="true" /> PRIVATE & SECURE</span>
+      </div>
+
+      <header className="relative isolate mb-7 overflow-hidden rounded-[24px] bg-[#482632] shadow-[0_18px_45px_-24px_#48263280] max-[600px]:rounded-[18px]">
+        <div aria-hidden="true" className="pointer-events-none absolute -left-36 -top-52 size-[500px] rounded-full border border-[#c49b7f]/15" />
+        <div aria-hidden="true" className="pointer-events-none absolute -left-24 -top-40 size-[500px] rounded-full border border-[#c49b7f]/10" />
+        <div className="relative grid grid-cols-[minmax(0,1.6fr)_minmax(240px,1fr)] max-[700px]:grid-cols-1">
+          <div className="relative z-10 px-9 py-9 max-[900px]:px-7 max-[600px]:px-6 max-[600px]:py-7">
+            <span className="mb-5 inline-flex items-center gap-2 text-[9px] font-medium tracking-[2.5px] text-[#dbb899]"><span className="h-px w-6 bg-[#dbb899]" /> THE MARRYNEST EXPERIENCE</span>
+            <h1 className="m-0 text-[clamp(36px,4.2vw,55px)] leading-[1.08] tracking-[-1.8px] text-[#fff9ef]">Beautiful moments<br />begin <em className="font-normal text-[#dfb99b]">here.</em></h1>
+            <p className="mt-4 max-w-[340px] text-xs leading-[1.8] text-[#e1ced3]!">Your vision, your details. Let’s bring your celebration one step closer.</p>
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] text-[#e2cbd0]"><span className="inline-flex items-center gap-[6px]"><ShieldCheck size={14} className="text-[#d8b497]" aria-hidden="true" /> Review before you reserve</span><span className="inline-flex items-center gap-[6px]"><Heart size={13} className="text-[#d8b497]" aria-hidden="true" /> Planned around you</span></div>
+          </div>
+          <div className="relative min-h-[260px] overflow-hidden max-[700px]:hidden">
+            <img src={bookingImage} onError={imageFailed ? undefined : () => setImageFailed(true)} alt="" className="absolute inset-0 size-full object-cover opacity-75" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,#482632,transparent_55%),linear-gradient(0deg,#482632bb,transparent_70%)]" />
+            <div className="absolute right-7 bottom-7 rounded-xl border border-white/20 bg-[#fff8ee]/10 px-5 py-4 backdrop-blur-md">
+              <Sparkles size={17} className="mb-2 text-[#e5c8ac]" aria-hidden="true" />
+              <p className="font-[Georgia,serif] text-xl leading-[1.25] text-[#fff8ee]!">A celebration.<br />Entirely yours.</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="mb-7 flex items-center justify-between gap-4 max-[600px]:flex-col max-[600px]:items-start">
+        <div><span className="text-[9px] font-semibold tracking-[2px] text-[#ac8a75]">YOUR RESERVATION</span><h2 className="mt-1 text-[29px] tracking-[-0.8px]">Booking checkout</h2></div>
+        <ol className="m-0 flex list-none items-center gap-0 p-0" aria-label="Booking progress">
+          {["Details", "Review", "Request sent"].map((label, index) => (
+            <li key={label} aria-current={index === currentStep ? "step" : undefined} className="flex items-center text-[11px]">
+              {index > 0 && <span aria-hidden="true" className={`mx-3 h-px w-7 max-[400px]:mx-2 max-[400px]:w-4 ${index <= currentStep ? "bg-[#b9848d]" : "bg-[#e5dcd6]"}`} />}
+              <span className={`mr-2 grid size-7 shrink-0 place-items-center rounded-full text-[10px] transition-colors ${index < currentStep ? "bg-[#f1e5e6] text-[#8c414e]" : index === currentStep ? "bg-[#8c414e] text-white shadow-[0_0_0_4px_#8c414e0d]" : "border border-[#e5dcd6] text-[#aa979d]"}`}>{index < currentStep ? <Check size={13} aria-hidden="true" /> : index + 1}</span>
+              <span className={index === currentStep ? "font-medium text-[#7b3946]" : "text-[#9b8990]"}>{label}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {error && <p className="mb-5 whitespace-pre-wrap rounded-xl border border-[#edc6bc] bg-[#fff1ed] p-4 text-xs leading-relaxed text-[#994a42]!" role="alert">{error}</p>}
       {success ? (
-        <section className="commerce-panel commerce-success" role="status">
-          <h2>Booking requested · {success.number}</h2>
-          <p>
-            Your booking availability is reserved. The vendor will review your
-            request before payment.
-          </p>
-          <Link
-            className="commerce-button primary"
-            to={`/customer/bookings/${success.id}`}
-          >
-            View booking and payment status
-          </Link>
+        <section className="relative overflow-hidden rounded-[22px] border border-[#e8dfd8] bg-white px-7 py-14 text-center shadow-[0_10px_40px_-20px_#48263230]" role="status">
+          <span className="mx-auto mb-6 grid size-20 place-items-center rounded-full bg-[#f2f5ed] text-[#71835a] shadow-[0_0_0_10px_#f7f8f3]"><CheckCircle2 size={35} strokeWidth={1.3} aria-hidden="true" /></span>
+          <span className="text-[10px] font-medium tracking-[2px] text-[#b18b74]">THE NEXT CHAPTER IS ON ITS WAY</span>
+          <h2 className="mt-3 text-[clamp(30px,4vw,42px)] tracking-[-1px]">Your request, beautifully received.</h2>
+          <p className="mx-auto mt-4 max-w-[410px] text-[13px] leading-[1.9] text-[#8c7981]!">Your availability is reserved. Your vendor will review your request before you make a payment.</p>
+          <span className="mt-5 inline-block rounded-lg border border-dashed border-[#ded0c6] bg-[#fcf9f5] px-5 py-3 text-xs tracking-wide text-[#806571]">{success.number}</span>
+          <div><Link className="group mt-7 inline-flex min-h-[50px] items-center gap-5 rounded-xl bg-[#8c414e] px-7 py-3 text-xs font-medium text-white! shadow-[0_8px_20px_#8c414e25] hover:bg-[#74333f]" to={`/customer/bookings/${success.id}`}>View your booking <ArrowUpRight size={17} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" /></Link></div>
         </section>
       ) : (
-        <div className="commerce-summary">
-          <section className="commerce-panel">
-            <h2>{item.name}</h2>
-            <p>By {item.vendor}</p>
-            <p>
-              Booking Price <strong>{money(book.price)}</strong> per unit /{" "}
-              {book.duration.toLowerCase()} duration
-            </p>
-            <p>{book.instructions}</p>
-            <CustomerLabel />
-            <form onSubmit={review}>
-              <div className="commerce-grid">
-                <label>
-                  Booking Quantity
-                  <input
-                    type="number"
-                    required
-                    min={book.minimum}
-                    max={book.maximum}
-                    step={1}
-                    value={body.quantity}
-                    onChange={(e) => set("quantity", Number(e.target.value))}
-                  />
-                </label>
-                {book.mode === "Scheduled" && (
-                  <>
-                    <label>
-                      Booking Date
-                      <input
-                        type="date"
-                        required
-                        min={
-                          book.startDate >
-                          new Date().toLocaleDateString("en-CA", {
-                            timeZone: "Asia/Kolkata",
-                          })
-                            ? book.startDate
-                            : new Date().toLocaleDateString("en-CA", {
-                                timeZone: "Asia/Kolkata",
-                              })
-                        }
-                        max={book.endDate || undefined}
-                        value={body.date || ""}
-                        onChange={(e) => set("date", e.target.value)}
-                      />
+        <div className="grid grid-cols-[minmax(0,1.55fr)_minmax(320px,1fr)] items-start gap-7 max-[1000px]:gap-5 max-[800px]:grid-cols-1">
+          <div className="min-w-0 space-y-5">
+            <section aria-label="Selected service" className="overflow-hidden rounded-[18px] border border-[#e8dfd8] bg-white shadow-[0_5px_24px_-12px_#694b3b12]">
+              <div className="flex gap-5 p-5 max-[450px]:gap-4 max-[450px]:p-4">
+                <div className="relative h-[124px] w-[108px] shrink-0 overflow-hidden rounded-xl bg-[#eee5dc] max-[450px]:h-[110px] max-[450px]:w-[85px]">
+                  <img src={bookingImage} onError={imageFailed ? undefined : () => setImageFailed(true)} alt={item.image && !imageFailed ? item.name : `${item.category || "Wedding"} inspiration`} className="size-full object-cover" />
+                  <span className="absolute right-2 bottom-2 grid size-7 place-items-center rounded-full border border-white/30 bg-white/90 text-[#8c414e] backdrop-blur-sm"><Heart size={12} strokeWidth={1.5} aria-hidden="true" /></span>
+                </div>
+                <div className="min-w-0 flex-1 py-1">
+                  <span className="mb-2 inline-flex rounded-md bg-[#f8f1e9] px-2 py-1 text-[8px] font-semibold tracking-[1.3px] text-[#a47c5e]">{item.category || "YOUR SELECTED SERVICE"}</span>
+                  <h3 className="m-0! font-[Georgia,serif] text-[27px]! leading-tight font-normal! tracking-[-0.6px] [overflow-wrap:anywhere] max-[450px]:text-[23px]!">{item.name}</h3>
+                  <p className="mt-[5px] text-xs text-[#8c7981]!">by <span className="font-medium text-[#66505b]">{item.vendor}</span></p>
+                  <div className="mt-3 flex flex-wrap items-baseline gap-[6px]"><strong className="text-lg font-semibold tracking-[-0.6px] text-[#8c414e]">{money(book.price)}</strong><span className="text-[10px] text-[#a18e96]">/ unit · {book.duration.toLowerCase()}</span></div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 border-t border-[#efe8e2] bg-[#fcfaf7] px-5 py-[14px]">
+                <span className="grid size-8 shrink-0 place-items-center rounded-full border border-[#e9ded3] bg-white text-[#a48068]"><UserRound size={15} aria-hidden="true" /></span>
+                <div className="min-w-0"><span className="text-[9px] font-medium uppercase tracking-[1px] text-[#a08d82]">Reserved for you</span><CustomerLabel className="mt-[2px] text-[11px] leading-[1.8] text-[#7f6a74]! [overflow-wrap:anywhere]" /></div>
+              </div>
+            </section>
+
+            <form id="booking-details-form" onSubmit={review} className="overflow-hidden rounded-[18px] border border-[#e8dfd8] bg-white shadow-[0_5px_24px_-12px_#694b3b12]">
+              <fieldset disabled={busy} className="m-0 min-w-0 border-0 p-0">
+                <section className="p-7 max-[600px]:p-5" aria-labelledby="booking-schedule-heading">
+                  <div className="mb-6 flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#ead8d9] bg-[#faf0f0] font-[Georgia,serif] text-[17px] text-[#9a5a66]">01</span><div><h3 id="booking-schedule-heading" className="m-0! text-[15px]! font-semibold">The when & how many</h3><p className="mt-1 text-[11px] text-[#9b8790]!">A date to look forward to. Details made for you.</p></div></div>
+                  <div className="grid grid-cols-2 gap-x-5 gap-y-5 max-[450px]:grid-cols-1">
+                    <label className="flex min-w-0 flex-col gap-[9px] text-[11px] font-medium text-[#6e5661]">
+                      Booking quantity
+                      {quantityState.min === quantityState.max ? (
+                        <span className="flex min-h-[50px] items-center gap-3 rounded-xl border border-[#e8ded8] bg-[#f6f3ee] px-[14px]">
+                          <LockKeyhole size={15} className="shrink-0 text-[#a18b78]" aria-hidden="true" />
+                          <input readOnly value={`${quantityState.min} ${quantityState.min === 1 ? "unit" : "units"}`} aria-label="Booking quantity" aria-describedby="booking-quantity-help" className="w-full min-w-0 border-0 bg-transparent p-0 text-xs font-medium text-[#6e5661] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4aeb5]" />
+                          <span className="shrink-0 rounded-md border border-[#e5d9ce] bg-white/70 px-2 py-1 text-[9px] font-normal text-[#9a8270]">Fixed quantity</span>
+                        </span>
+                      ) : (
+                      <span className="flex min-h-[50px] items-center rounded-xl border border-[#e8ded8] bg-[#fdfbf9] p-[5px] focus-within:border-[#b47f87] focus-within:ring-[3px] focus-within:ring-[#8c414e0a]">
+                        <button type="button" disabled={busy || quantityState.decrease === null} onClick={() => set("quantity", quantityState.decrease)} aria-label="Decrease booking quantity" className="grid size-9 shrink-0 place-items-center rounded-lg bg-white text-[#8c414e] shadow-[0_2px_7px_#5740330a] transition-colors hover:bg-[#f5e9e9] disabled:cursor-not-allowed disabled:opacity-30"><Minus size={14} aria-hidden="true" /></button>
+                        <input type="number" required min={quantityState.min} max={quantityState.max} step={1} value={body.quantity ?? ""} onChange={(e) => set("quantity", Number(e.target.value))} aria-label="Booking quantity" aria-invalid={!validQuantity} aria-describedby="booking-quantity-help" className="h-9 w-full min-w-0 appearance-none border-0 bg-transparent px-1 text-center text-sm font-semibold text-[#654650] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]" />
+                        <button type="button" disabled={busy || quantityState.increase === null} onClick={() => set("quantity", quantityState.increase)} aria-label="Increase booking quantity" className="grid size-9 shrink-0 place-items-center rounded-lg bg-white text-[#8c414e] shadow-[0_2px_7px_#5740330a] transition-colors hover:bg-[#f5e9e9] disabled:cursor-not-allowed disabled:opacity-30"><Plus size={14} aria-hidden="true" /></button>
+                      </span>
+                      )}
+                      <span id="booking-quantity-help" className={`text-[10px] leading-relaxed font-normal ${validQuantity ? "text-[#a18b94]" : "text-[#a44545]"}`}>
+                        {quantityState.min === quantityState.max
+                          ? `This service allows ${quantityState.min} ${quantityState.min === 1 ? "unit" : "units"} per booking.`
+                          : `Choose a whole number from ${quantityState.min} to ${quantityState.max}.`}
+                      </span>
                     </label>
-                    {book.slots.length ? (
-                      <label>
-                        Booking Time Slot
-                        <select
-                          required
-                          value={body.start || ""}
-                          onChange={(e) => set("start", e.target.value)}
-                        >
-                          <option value="">Choose a time slot</option>
-                          {book.slots.map((s) => (
-                            <option key={s.start} value={s.start}>
-                              {s.start}–{s.end}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    ) : book.duration === "Hourly" ||
-                      book.duration === "Custom" ? (
-                      <label>
-                        Start Time
-                        <input
-                          required
-                          type="time"
-                          value={body.start || ""}
-                          onChange={(e) => set("start", e.target.value)}
-                        />
-                      </label>
-                    ) : null}
-                  </>
-                )}
-                <label>
-                  Booking Duration
-                  <input
-                    readOnly
-                    value={
-                      book.duration === "Custom"
-                        ? `${book.durationMinutes} minutes`
-                        : book.duration
-                    }
-                  />
-                </label>
-              </div>
-              <div className="my-5">
-                <AddressPicker
-                  optional
-                  value={body.addressId || ""}
-                  onChange={(v) => set("addressId", v)}
-                />
-              </div>
-              <label>
-                Special Instructions
-                <textarea
-                  rows={3}
-                  maxLength={2000}
-                  value={body.instructions || ""}
-                  onChange={(e) => set("instructions", e.target.value)}
-                />
-              </label>
-              <div className="commerce-actions">
-                <button className="primary" disabled={busy}>
-                  {busy
-                    ? "Checking availability…"
-                    : "Check availability & review"}
-                </button>
-              </div>
+                    {book.mode === "Scheduled" && (
+                      <>
+                        <label className="flex min-w-0 flex-col gap-[9px] text-[11px] font-medium text-[#6e5661]">Booking date
+                          <input type="date" required min={book.startDate > new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) ? book.startDate : new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })} max={book.endDate || undefined} value={body.date || ""} onChange={(e) => set("date", e.target.value)} className="min-h-[50px] w-full min-w-0 rounded-xl border border-[#e8ded8] bg-[#fdfbf9] px-[14px] py-3 text-xs font-normal text-[#6e5661] transition-[border-color,box-shadow] hover:border-[#c6a4a7] focus-visible:border-[#b47f87] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4aeb5] disabled:opacity-60" />
+                        </label>
+                        {book.slots.length ? (
+                          <label className="flex min-w-0 flex-col gap-[9px] text-[11px] font-medium text-[#6e5661]">Booking time slot
+                            <select required value={body.start || ""} onChange={(e) => set("start", e.target.value)} className="min-h-[50px] w-full min-w-0 rounded-xl border border-[#e8ded8] bg-[#fdfbf9] px-[14px] py-3 text-xs font-normal text-[#6e5661] hover:border-[#c6a4a7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4aeb5]">
+                              <option value="">Choose a time slot</option>{book.slots.map((slot) => <option key={slot.start} value={slot.start}>{slot.start}–{slot.end}</option>)}
+                            </select>
+                          </label>
+                        ) : book.duration === "Hourly" || book.duration === "Custom" ? (
+                          <label className="flex min-w-0 flex-col gap-[9px] text-[11px] font-medium text-[#6e5661]">Start time
+                            <input required type="time" value={body.start || ""} onChange={(e) => set("start", e.target.value)} className="min-h-[50px] w-full min-w-0 rounded-xl border border-[#e8ded8] bg-[#fdfbf9] px-[14px] py-3 text-xs font-normal text-[#6e5661] hover:border-[#c6a4a7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4aeb5]" />
+                          </label>
+                        ) : null}
+                      </>
+                    )}
+                    <label className="flex min-w-0 flex-col gap-[9px] text-[11px] font-medium text-[#6e5661]">Booking duration
+                      <span className="flex min-h-[50px] items-center gap-[10px] rounded-xl border border-[#ece5df] bg-[#f6f3ee] px-[14px]"><Clock3 size={16} className="shrink-0 text-[#a18b78]" aria-hidden="true" /><input readOnly value={bookingDuration} aria-label="Booking duration" className="w-full min-w-0 border-0 bg-transparent p-0 text-xs font-normal text-[#897669] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4aeb5]" /></span>
+                    </label>
+                  </div>
+                  {book.instructions && <p className="mt-5 whitespace-pre-wrap rounded-xl border border-[#ece3d7] bg-[#fcf8f0] px-4 py-3 text-[11px] leading-[1.8] text-[#97816b]! [overflow-wrap:anywhere]">{book.instructions}</p>}
+                </section>
+                <section className="border-t border-[#f0e7e1] p-7 max-[600px]:p-5" aria-labelledby="booking-personalize-heading">
+                  <div className="mb-6 flex items-start gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#e9dfd2] bg-[#f8f3ea] font-[Georgia,serif] text-[17px] text-[#a88a68]">02</span><div><h3 id="booking-personalize-heading" className="m-0! text-[15px]! font-semibold">A few personal touches</h3><p className="mt-1 text-[11px] text-[#9b8790]!">The little things that make a celebration yours.</p></div></div>
+                  <AddressPicker optional value={body.addressId || ""} onChange={(v) => set("addressId", v)} className="flex flex-col gap-[9px] text-[11px] font-medium text-[#6e5661]" selectClassName="min-h-[50px] w-full min-w-0 rounded-xl border border-[#e8ded8] bg-[#fdfbf9] px-[14px] py-3 text-xs font-normal text-[#6e5661] hover:border-[#c6a4a7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4aeb5]" linkClassName="mt-px self-end text-[10px] font-normal text-[#9a5b68] underline decoration-[#dcc3c6] underline-offset-4 hover:decoration-[#9a5b68]" />
+                  <label className="mt-5 flex flex-col gap-[9px] text-[11px] font-medium text-[#6e5661]"><span>Note to your vendor <span className="font-normal text-[#b29ea6]">(optional)</span></span>
+                    <textarea rows={3} maxLength={2000} value={body.instructions || ""} onChange={(e) => set("instructions", e.target.value)} placeholder="A special request, a preference, a little detail…" className="min-h-[110px] w-full min-w-0 resize-y rounded-xl border border-[#e8ded8] bg-[#fdfbf9] px-[14px] py-3 text-xs leading-[1.8] font-normal text-[#6e5661] transition-[border-color,box-shadow] placeholder:text-[#b8a6ac] hover:border-[#c6a4a7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4aeb5] disabled:opacity-60" />
+                  </label>
+                  <div className="mt-[6px] flex justify-between gap-3 text-[9px] text-[#b6a49f]"><span>Shared with your vendor for this booking.</span><span>{(body.instructions || "").length}/2000</span></div>
+                </section>
+              </fieldset>
             </form>
-          </section>
-          <aside className="commerce-panel">
-            <h2>Booking Summary</h2>
-            {preview ? (
-              <>
-                <p>
-                  {preview.quantity} × {money(preview.price)}
-                </p>
-                <p>
-                  {preview.date || "Quantity reservation"} {preview.start || ""}{" "}
-                  · {preview.duration}
-                </p>
-                {preview.startsAt && (
-                  <p>
-                    Reserved from {preview.startsAt.replace("T", " ")} to{" "}
-                    {preview.endsAt.replace("T", " ")} (India time)
-                  </p>
+          </div>
+
+          <aside className="sticky top-6 min-w-0 max-[800px]:static" aria-label="Booking summary">
+            <section className="overflow-hidden rounded-[20px] border border-[#e6d8cf] bg-white shadow-[0_16px_45px_-22px_#683f4580]">
+              <div className="relative overflow-hidden bg-[#f2e8dc] px-7 pt-7 pb-6 max-[600px]:px-5">
+                <ReceiptText size={76} strokeWidth={0.7} className="pointer-events-none absolute -right-2 top-2 -rotate-12 text-[#b39670]/15" aria-hidden="true" />
+                <span className="relative text-[9px] font-semibold tracking-[2px] text-[#9f805e]">A LITTLE SOMETHING TO LOOK FORWARD TO</span>
+                <h2 className="relative mt-2 text-[28px] tracking-[-0.8px]">Your booking, at a glance.</h2>
+                <div className="mt-5 flex items-end justify-between gap-3"><div><span className="text-[10px] text-[#9b7e68]">{preview ? "Your booking total" : "Estimated subtotal"}</span><div className="mt-[3px] font-[Georgia,serif] text-[42px] leading-[1.1] tracking-[-1.5px] text-[#724150] [overflow-wrap:anywhere]">{preview ? money(preview.total) : estimatedSubtotal === null ? "—" : money(estimatedSubtotal)}</div></div><span className="mb-1 rounded-md border border-[#d9c8b3] px-2 py-1 text-[9px] tracking-[1px] text-[#9c8069]">INR</span></div>
+                <p className="mt-3 text-[10px] leading-[1.7] text-[#a08977]!">{preview ? "Current price checked. Review the details below." : "Final pricing and applicable taxes are shown after review."}</p>
+              </div>
+              <div className="relative mx-0 border-t border-dashed border-[#d9c9bd] before:absolute before:-left-[7px] before:-top-[7px] before:size-[14px] before:rounded-full before:border before:border-[#e6d8cf] before:bg-[#faf8f5] after:absolute after:-right-[7px] after:-top-[7px] after:size-[14px] after:rounded-full after:border after:border-[#e6d8cf] after:bg-[#faf8f5]" aria-hidden="true" />
+              <div className="px-7 pt-6 pb-7 max-[600px]:px-5">
+                <div className="mb-5 border-b border-[#f0e7e1] pb-5"><span className="text-[9px] uppercase tracking-[1.4px] text-[#af9789]">The experience</span><h3 className="mt-[5px] mb-0! text-[14px]! font-semibold [overflow-wrap:anywhere]">{item.name}</h3><p className="mt-1 text-[11px] text-[#a18b94]!">by {item.vendor}</p></div>
+                <dl className="m-0 space-y-4 text-[11px] [&>div]:flex [&>div]:items-center [&>div]:justify-between [&>div]:gap-4 [&_dt]:flex [&_dt]:items-center [&_dt]:gap-2 [&_dt]:text-[#a38b94] [&_dt>svg]:text-[#ba9b89] [&_dd]:m-0 [&_dd]:text-right [&_dd]:font-medium [&_dd]:text-[#71545f]">
+                  {book.mode === "Scheduled" && <div><dt><CalendarDays size={14} aria-hidden="true" /> Date</dt><dd>{body.date ? date(body.date) : <span className="font-normal text-[#b8a9ac]">Not selected yet</span>}</dd></div>}
+                  <div><dt><ShoppingBag size={14} aria-hidden="true" /> Quantity</dt><dd>{body.quantity || "—"} {Number(body.quantity) === 1 ? "unit" : "units"}</dd></div>
+                  <div><dt><Clock3 size={14} aria-hidden="true" /> Duration</dt><dd>{bookingDuration}</dd></div>
+                  {body.start && <div><dt><Clock3 size={14} aria-hidden="true" /> Start time</dt><dd>{body.start} IST</dd></div>}
+                  <div><dt><MapPin size={14} aria-hidden="true" /> Address</dt><dd>{body.addressId ? "Address selected" : "Not required"}</dd></div>
+                </dl>
+                {preview ? (
+                  <>
+                    <p className="mt-6 mb-4 inline-flex w-full items-center gap-2 rounded-lg border border-[#dce7d6] bg-[#f3f7f0] px-3 py-[10px] text-[10px] text-[#738860]!" role="status"><CheckCircle2 size={14} aria-hidden="true" /> Price & availability checked</p>
+                    {preview.startsAt && <p className="mb-3 text-[10px] leading-[1.8] text-[#a18b94]! [overflow-wrap:anywhere]">Reservation window: {preview.startsAt.replace("T", " ")} to {preview.endsAt.replace("T", " ")} (India time).</p>}
+                    <p className="mb-4 text-[10px] text-[#a18b94]!">{preview.remaining} available before this request</p>
+                    <dl className="m-0 border-t border-[#eee5de] pt-4 text-[11px] [&>div]:mb-3 [&>div]:flex [&>div]:justify-between [&>div]:gap-4 [&_dt]:text-[#a18b94] [&_dd]:m-0 [&_dd]:text-right [&_dd]:font-medium">
+                      <div><dt>Subtotal</dt><dd>{money(preview.subtotal)}</dd></div>{preview.shipping != null && <div><dt>Delivery charges</dt><dd>{money(preview.shipping)}</dd></div>}<div><dt>Tax</dt><dd>{money(preview.tax)}</dd></div>
+                      <div className="border-t border-[#eee5de] pt-3 text-sm"><dt className="font-semibold text-[#71545f]!">Booking total</dt><dd className="text-[#8c414e]">{money(preview.total)}</dd></div>
+                    </dl>
+                    <p className="mt-3 rounded-lg bg-[#faf6f0] px-3 py-[10px] text-[10px] leading-[1.8] text-[#9a8270]!">Advance available: <strong>{money(preview.advance)}</strong>. Track your remaining balance in My Bookings.</p>
+                    <div className="mt-5 space-y-3 rounded-xl border border-[#eee5de] p-[14px]"><div><h3 className="mb-1! text-[10px]! font-semibold">Cancellation policy</h3><p className="whitespace-pre-wrap text-[10px] leading-[1.8] text-[#a18b94]! [overflow-wrap:anywhere]">{preview.terms.cancellation}</p></div><div><h3 className="mb-1! text-[10px]! font-semibold">Refund policy</h3><p className="whitespace-pre-wrap text-[10px] leading-[1.8] text-[#a18b94]! [overflow-wrap:anywhere]">{preview.terms.refund}</p></div></div>
+                    <label className="my-5 flex items-start gap-[10px] text-[11px] leading-[1.8] text-[#957c87]"><input type="checkbox" checked={accepted} disabled={busy} onChange={(e) => setAccepted(e.target.checked)} className="mt-[3px] size-4 shrink-0 accent-[#8c414e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4aeb5]" />I accept the cancellation and refund policies.</label>
+                    <button disabled={busy || !accepted} onClick={confirm} className="group flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl border border-[#8c414e] bg-[linear-gradient(110deg,#8c414e,#713447)] px-5 py-[14px] text-xs font-medium text-white shadow-[0_8px_18px_#8c414e25] transition-[box-shadow,transform] enabled:hover:-translate-y-0.5 enabled:hover:shadow-[0_12px_24px_#8c414e35] disabled:cursor-not-allowed disabled:opacity-45">{busy ? "Sending your request…" : "Confirm booking request"}{busy ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <ArrowUpRight size={18} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" />}</button>
+                  </>
+                ) : (
+                  <div className="mt-6 border-t border-[#eee5de] pt-5"><button type="submit" form="booking-details-form" disabled={busy} className="group flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl border border-[#8c414e] bg-[linear-gradient(110deg,#8c414e,#713447)] px-5 py-[14px] text-xs font-medium text-white shadow-[0_8px_18px_#8c414e25] transition-[box-shadow,transform] enabled:hover:-translate-y-0.5 enabled:hover:shadow-[0_12px_24px_#8c414e35] disabled:cursor-not-allowed disabled:opacity-45">{busy ? "Checking availability…" : "Check availability & review"}{busy ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <ArrowUpRight size={18} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden="true" />}</button></div>
                 )}
-                <p>{preview.remaining} available before this request</p>
-                <Totals data={preview} />
-                <p>
-                  Advance available: {money(preview.advance)}. The remaining
-                  balance is tracked in My Bookings.
-                </p>
-                <p>
-                  After vendor confirmation, choose advance or full payment
-                  using the existing payment methods.
-                </p>
-                <h3>Cancellation Policy</h3>
-                <p>{preview.terms.cancellation}</p>
-                <h3>Refund Policy</h3>
-                <p>{preview.terms.refund}</p>
-                <label className="commerce-check">
-                  <input
-                    type="checkbox"
-                    checked={accepted}
-                    onChange={(e) => setAccepted(e.target.checked)}
-                  />
-                  I accept the cancellation and refund policies.
-                </label>
-                <button
-                  className="primary"
-                  disabled={busy || !accepted}
-                  onClick={confirm}
-                >
-                  {busy ? "Reserving…" : "Confirm booking request"}
-                </button>
-              </>
-            ) : (
-              <p>
-                Review the current price and availability before confirming your
-                reservation.
-              </p>
-            )}
-            <p>
-              <ShieldCheck className="inline" size={16} /> Availability and
-              prices are verified by the server.
-            </p>
+                <p className="mt-[14px] flex items-center justify-center gap-[5px] text-[9px] text-[#ad989e]!"><LockKeyhole size={11} aria-hidden="true" /> No payment needed just yet</p>
+                <div className="mt-6 flex items-start gap-3 rounded-xl bg-[#faf8f4] p-[14px]"><ShieldCheck size={21} strokeWidth={1.4} className="mt-[2px] text-[#a99074]" aria-hidden="true" /><div><strong className="text-[11px] font-medium text-[#846954]">Thoughtfully booked. Peacefully planned.</strong><p className="mt-1 text-[10px] leading-[1.8] text-[#a38f81]!">{preview ? "Your vendor reviews your request before you choose an advance or full payment." : "Review current pricing, availability and policies before confirming your request."}</p></div></div>
+              </div>
+            </section>
+            <div className="mt-5 px-[6px]"><span className="text-[9px] font-medium tracking-[1.6px] text-[#b29b8d]">YOUR NEXT CHAPTER, IN THREE STEPS</span><div className="mt-[14px] space-y-3">{["Review the details & policies", "Send your request to the vendor", "Pay after vendor confirmation"].map((step, index) => <div key={step} className="flex items-center gap-[10px] text-[10px] text-[#a18b94]"><span className="grid size-[21px] place-items-center rounded-full border border-[#e4d8cc] bg-[#f6f0e7] text-[8px] text-[#ac8b6e]">0{index + 1}</span>{step}</div>)}</div></div>
           </aside>
         </div>
       )}
-      {error && (
-        <p className="commerce-error" role="alert">
-          {error}
-        </p>
-      )}
+      <footer className="mt-9 flex flex-wrap items-center justify-between gap-4 border-t border-[#e9dfd6] pt-5 max-[600px]:justify-center max-[600px]:text-center"><span className="font-[Georgia,serif] text-[22px] tracking-[-0.7px] text-[#936b65]">MarryNest<span className="text-[#c6a384]">.</span></span><span className="text-[10px] tracking-wide text-[#b29e99]">For the day. For the memories. For you.</span><span className="inline-flex items-center gap-[6px] text-[10px] text-[#b29e99]"><ShieldCheck size={13} aria-hidden="true" /> Your celebration is in good company</span></footer>
     </main>
   );
 }
+
 export function CartCheckout() {
   const navigate = useNavigate(),
     [params, setParams] = useSearchParams(),

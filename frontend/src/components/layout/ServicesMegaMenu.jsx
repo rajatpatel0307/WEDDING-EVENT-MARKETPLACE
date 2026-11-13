@@ -9,7 +9,7 @@ export default function ServicesMegaMenu({ close }) {
           <section key={group.name}>
             <h3>{group.name}</h3>
             {group.items.map(([name, description, Icon]) => (
-              <Link to={servicePath(name)} onClick={close} key={name}>
+              <Link to={servicePath(name)} state={{ fromNavbarServices: true }} onClick={close} key={name}>
                 <Icon size={19} strokeWidth={1.5} />
                 <span>
                   <strong>{name}</strong>
