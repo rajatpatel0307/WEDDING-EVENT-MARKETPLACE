@@ -174,7 +174,7 @@ export default function ServiceAvailability() {
           title={editing ? "Edit date override" : "Block a date or set timing"}
         >
           <form
-            className="p-[25px] service-mobile:p-[18px]"
+            className="service-form p-[25px] service-mobile:p-[18px]"
             onSubmit={(e) => {
               e.preventDefault();
               run(() =>

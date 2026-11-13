@@ -64,6 +64,7 @@ export function MediaPreview({ title, close, children }) {
       ref={ref}
       className="mm-dialog mm-module"
       aria-labelledby={id}
+      onSubmit={(e) => e.stopPropagation()}
       onCancel={(e) => {
         e.preventDefault();
         close();
@@ -100,7 +101,7 @@ export function ImageLightbox({ images, index = 0, close }) {
         alt={image.fileName || "Gallery image"}
       />
       <div className="mt-4 flex items-center justify-between">
-        <button
+        <button type="button"
           className={button}
           onClick={() =>
             setCurrent((current + images.length - 1) % images.length)
@@ -112,7 +113,7 @@ export function ImageLightbox({ images, index = 0, close }) {
         <span>
           {current + 1} / {images.length}
         </span>
-        <button
+        <button type="button"
           className={button}
           onClick={() => setCurrent((current + 1) % images.length)}
         >
@@ -396,7 +397,7 @@ export function MediaUploader({
               <p className="break-words text-[11px]">{item.status}</p>
               {!busy && item.status !== "Uploaded" && (
                 <div className="flex flex-wrap gap-1">
-                  <button
+                  <button type="button"
                     className={button}
                     onClick={() => {
                       URL.revokeObjectURL(item.preview);
@@ -407,7 +408,7 @@ export function MediaUploader({
                     Remove
                   </button>
                   {item.restart && (
-                    <button
+                    <button type="button"
                       className={button}
                       onClick={() =>
                         setFiles((old) =>
@@ -441,7 +442,7 @@ export function MediaUploader({
           {error}
         </p>
       )}
-      <button
+      <button type="button"
         className={primary}
         disabled={
           busy || !files.length || files.every((f) => f.status === "Uploaded")
@@ -590,7 +591,7 @@ function Confirmation({ action, close, done }) {
           </p>
         )}
         <div className="flex gap-2">
-          <button className={primary} disabled={busy}>
+          <button type="submit" className={primary} disabled={busy}>
             {busy ? "Saving…" : "Confirm"}
           </button>
           <button
@@ -756,13 +757,13 @@ export default function MediaLibrary({
               : "Manage your profile, services and package galleries in one place."}
           </p>
         </div>
-        <button
+        <button type="button"
           className={primary}
           disabled={disabled || metadata.loading}
           onClick={() => setUploading({})}
         >
           <ImagePlus size={17} />
-          Upload images
+          {embedded ? "Add images" : "Upload images"}
         </button>
       </div>
       {notice && (
@@ -814,7 +815,7 @@ export default function MediaLibrary({
                 </div>
               ))}
               {stats.data.statuses.map((s) => (
-                <button
+                <button type="button"
                   className={button}
                   key={s.status}
                   onClick={() => choose("status", s.status)}
@@ -949,14 +950,14 @@ export default function MediaLibrary({
           )}
         </div>
         <div className="mt-4 flex gap-2">
-          <button
+          <button type="button"
             className={button}
             onClick={() => setView(view === "grid" ? "list" : "grid")}
           >
             <Images size={14} />
             {view === "grid" ? "List view" : "Grid view"}
           </button>
-          <button className={button} onClick={() => setVersion((v) => v + 1)}>
+          <button type="button" className={button} onClick={() => setVersion((v) => v + 1)}>
             <RefreshCw size={14} />
             Refresh
           </button>
@@ -973,6 +974,15 @@ export default function MediaLibrary({
             No media matches your selection. Upload an image or adjust the
             filters.
           </p>
+          <button
+            type="button"
+            className={`${primary} mt-5 min-h-11`}
+            disabled={disabled || metadata.loading}
+            onClick={() => setUploading({})}
+          >
+            <ImagePlus size={17} aria-hidden="true" />
+            Add images
+          </button>
         </div>
       )}
       <div
@@ -987,7 +997,7 @@ export default function MediaLibrary({
             key={r.id}
             className={`overflow-hidden rounded-2xl border border-[#e0e7db] bg-white ${view === "list" ? "sm:grid sm:grid-cols-[200px_1fr]" : ""}`}
           >
-            <button
+            <button type="button"
               className="block w-full text-left"
               onClick={() => setLightbox(index)}
               disabled={r.uploadStatus !== "Ready" || !!r.deletedAt}
@@ -1027,13 +1037,13 @@ export default function MediaLibrary({
               )}
               {r.error && <p className="text-xs text-red-700">{r.error}</p>}
               <div className="flex flex-wrap gap-2">
-                <button className={button} onClick={() => setDetails(r.id)}>
+                <button type="button" className={button} onClick={() => setDetails(r.id)}>
                   <Info size={13} />
                   Details
                 </button>
                 {!r.deletedAt && r.uploadStatus === "Ready" && (
                   <>
-                    <button
+                    <button type="button"
                       className={button}
                       disabled={disabled}
                       onClick={() => perform(r, "primary")}
@@ -1041,7 +1051,7 @@ export default function MediaLibrary({
                       <Star size={13} />
                       Primary
                     </button>
-                    <button
+                    <button type="button"
                       className={button}
                       disabled={disabled}
                       onClick={() => {
@@ -1059,14 +1069,14 @@ export default function MediaLibrary({
                     >
                       Replace
                     </button>
-                    <button
+                    <button type="button"
                       className={button}
                       disabled={disabled}
                       onClick={() => perform(r, "rename")}
                     >
                       Rename
                     </button>
-                    <button
+                    <button type="button"
                       className={button}
                       disabled={disabled}
                       onClick={() => move(r, -1)}
@@ -1074,7 +1084,7 @@ export default function MediaLibrary({
                     >
                       <ArrowLeft size={13} />
                     </button>
-                    <button
+                    <button type="button"
                       className={button}
                       disabled={disabled}
                       onClick={() => move(r, 1)}
@@ -1085,7 +1095,7 @@ export default function MediaLibrary({
                   </>
                 )}
                 {!r.deletedAt && (
-                  <button
+                  <button type="button"
                     className={`${button} !text-red-700`}
                     disabled={disabled}
                     onClick={() => perform(r, "delete")}
@@ -1098,7 +1108,7 @@ export default function MediaLibrary({
                   !r.deletedAt &&
                   r.uploadStatus === "Ready" &&
                   ["approve", "reject", "hide", "restore"].map((name) => (
-                    <button
+                    <button type="button"
                       className={button}
                       key={name}
                       onClick={() => perform(r, name)}
@@ -1114,7 +1124,7 @@ export default function MediaLibrary({
       </div>
       {state.data && state.data.total > state.data.pageSize && (
         <nav className="flex items-center gap-3" aria-label="Media pages">
-          <button
+          <button type="button"
             className={button}
             disabled={page <= 1}
             onClick={() => setPage(page - 1)}
@@ -1124,7 +1134,7 @@ export default function MediaLibrary({
           <span className="text-xs">
             Page {page} of {Math.ceil(state.data.total / state.data.pageSize)}
           </span>
-          <button
+          <button type="button"
             className={button}
             disabled={page * state.data.pageSize >= state.data.total}
             onClick={() => setPage(page + 1)}

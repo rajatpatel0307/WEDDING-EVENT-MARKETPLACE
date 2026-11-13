@@ -39,8 +39,22 @@ import {
   Notice,
 } from "./shared";
 import { validateService } from "./service-validation";
+import { bookingAdvanceError } from "../../commerce/offer-validation.js";
 import MediaManager from "./MediaManager";
 import { ServicePreview } from "./ServiceDetails";
+import RequiredMark from "../../../components/ui/RequiredMark";
+
+const requiredFields = new Set([
+  "location.city",
+  "pricing.basePrice", "pricing.unitPrice", "pricing.minimumQuantity",
+  "pricing.maximumQuantity", "pricing.discount", "pricing.taxRate",
+  "pricing.additionalCharges",
+  "availability.start", "availability.end", "availability.advanceDays",
+  "availability.noticeHours",
+  "policies.advancePercentage", "policies.travelCharges", "policies.setupTime",
+  "policies.duration",
+  "seo.slug",
+]);
 
 const fieldHints = {
   "pricing.basePrice": "Starting amount before per-unit costs, discounts and tax.",
@@ -109,6 +123,12 @@ export default function ServiceEditor() {
 
   const validateCurrentStep = () => {
     if (!form.current) return false;
+    const advanceError = step === 2 && bookingAdvanceError(data.offer?.book);
+    if (advanceError) {
+      setStepError(advanceError);
+      form.current.querySelector('[aria-invalid="true"]')?.focus();
+      return false;
+    }
     for (const input of form.current.querySelectorAll("input[required], textarea[required]")) {
       const textInput = input.tagName === "TEXTAREA" || input.type === "text";
       if (textInput) {
@@ -197,7 +217,12 @@ export default function ServiceEditor() {
     change(section, { ...data[section], [key]: value });
 
   const field = (section, key, label, type = "text", extra = {}) => (
-    <Field key={key} label={label} hint={fieldHints[`${section}.${key}`]}>
+    <Field
+      key={key}
+      label={label}
+      hint={fieldHints[`${section}.${key}`]}
+      requiredForSubmission={requiredFields.has(`${section}.${key}`)}
+    >
       <input
         type={type}
         value={data[section][key] ?? ""}
@@ -220,7 +245,12 @@ export default function ServiceEditor() {
   );
 
   const area = (section, key, label) => (
-    <Field key={key} label={label} hint={fieldHints[`${section}.${key}`]}>
+    <Field
+      key={key}
+      label={label}
+      hint={fieldHints[`${section}.${key}`]}
+      requiredForSubmission={section === "policies" && key === "cancellation" && !data.offer}
+    >
       <textarea
         rows={3}
         maxLength={key === "terms" ? 10000 : 2000}
@@ -266,6 +296,11 @@ export default function ServiceEditor() {
       }
       return savedId;
     } catch (e) {
+      if (e.message.includes("Advance per unit cannot exceed the booking price.")) {
+        setStep(2);
+        setError("Advance booking amount per unit cannot exceed the booking price. Lower the advance amount or increase the booking price in Pricing.");
+        return null;
+      }
       if (submit) {
         const stepForError = {
           "Add this category to your business profile before using it.": 0,
@@ -286,6 +321,9 @@ export default function ServiceEditor() {
     if (id) {
       const fresh = await vendorRequest(`/services/${id}`);
       setCurrent(fresh);
+      if (fresh.images?.length && error === "Add at least one service image before submitting.") {
+        setError("");
+      }
     }
   };
 
@@ -523,7 +561,7 @@ export default function ServiceEditor() {
         <form
           ref={form}
           noValidate
-          className="min-w-[0] service-mobile:w-[100%]"
+          className="service-form min-w-[0] service-mobile:w-[100%]"
           onInput={(e) => {
             e.target.setCustomValidity?.("");
             setStepError("");
@@ -534,6 +572,9 @@ export default function ServiceEditor() {
             else if (validateCurrentStep()) persist(true);
           }}
         >
+          <p className="mb-4 text-xs text-[#617366]">
+            <RequiredMark /> Required before submitting. You can save an incomplete draft.
+          </p>
           {stepError && (
             <div role="alert" className="mb-4 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
               <AlertTriangle size={16} className="shrink-0" />
@@ -556,7 +597,7 @@ export default function ServiceEditor() {
                   [&_textarea]:resize-y [&_.vw-field]:m-[0] service-mobile:grid-cols-[1fr] service-mobile:gap-[18px]
                 "
                 >
-                  <Field label="Service listing name *" hint="Enter the name customers will see for this service.">
+                  <Field label="Service listing name" hint="Enter the name customers will see for this service.">
                     <input
                       required
                       minLength={2}
@@ -578,7 +619,7 @@ export default function ServiceEditor() {
                       )}
                     </select>
                   </Field>
-                  <Field label="Service category *" hint="Choose the category that best describes this service.">
+                  <Field label="Service category" hint="Choose the category that best describes this service.">
                     <select
                       required
                       value={data.categoryId || ""}
@@ -682,6 +723,7 @@ export default function ServiceEditor() {
                   </Field>
                   <Field
                     label="Short service summary"
+                    requiredForSubmission
                     hint="Briefly explain what you offer, in up to 500 characters. Required before submission."
                   >
                     <textarea
@@ -695,6 +737,7 @@ export default function ServiceEditor() {
                   </Field>
                   <Field
                     label="Full service description"
+                    requiredForSubmission
                     hint="Describe what is included, your experience and what customers can expect. At least 20 characters are required before submission."
                   >
                     <textarea

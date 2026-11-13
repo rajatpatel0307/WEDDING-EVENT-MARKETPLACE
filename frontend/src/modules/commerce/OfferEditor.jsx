@@ -1,4 +1,7 @@
 import { ShoppingBag, CalendarDays, Layers } from "lucide-react";
+import { useId } from "react";
+import RequiredMark from "../../components/ui/RequiredMark";
+import { bookingAdvanceError } from "./offer-validation.js";
 import "./commerce.css";
 export const offerLabel = (type) =>
   ({ Sell: "Sell Only", Book: "Book Only", Both: "Sell & Book Both" })[type] ||
@@ -98,12 +101,14 @@ export function OfferSelection({ value, category, onChange }) {
   );
 }
 export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
+  const advanceHintId = useId();
   if (!value) return null;
+  const advanceError = bookingAdvanceError(value.book);
   const set = (kind, key, v) =>
     onChange({ ...value, [kind]: { ...value[kind], [key]: v } });
   const field = (kind, key, label, type = "number", optional = false) => (
     <label key={`${kind}-${key}`}>
-      {label}
+      <span>{label}{!optional && <RequiredMark />}</span>
       <input
         type={type}
         value={value[kind][key] ?? ""}
@@ -128,7 +133,13 @@ export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
               : 0
             : undefined
         }
-        max={type === "number" ? 10000000 : undefined}
+        max={type === "number"
+          ? kind === "book" && key === "advance" && Number.isFinite(value.book.price)
+            ? value.book.price
+            : 10000000
+          : undefined}
+        aria-invalid={kind === "book" && key === "advance" && advanceError ? true : undefined}
+        aria-describedby={kind === "book" && key === "advance" ? advanceHintId : undefined}
         maxLength={type === "text" ? 100 : undefined}
         onChange={(e) =>
           set(
@@ -142,6 +153,15 @@ export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
           )
         }
       />
+      {kind === "book" && key === "advance" && (
+        <small
+          id={advanceHintId}
+          className={advanceError ? "text-[#b34242]" : "text-[#617366]"}
+          role={advanceError ? "alert" : undefined}
+        >
+          {advanceError || "Enter an INR amount from 0 to the booking price per unit. Use 0 if no advance is needed."}
+        </small>
+      )}
     </label>
   );
   return (
@@ -251,7 +271,7 @@ export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
             {field(
               "book",
               "advance",
-              "Advance Booking Amount per unit (INR, optional)",
+              "Advance Booking Amount per unit (INR)",
             )}
             <label>
               Booking Availability Status
@@ -267,13 +287,13 @@ export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
             </label>
             {["cancellation", "refund", "instructions"].map((key) => (
               <label key={key}>
-                {
+                <span>{
                   {
                     cancellation: "Cancellation Policy",
                     refund: "Refund Policy",
                     instructions: "Booking Instructions",
                   }[key]
-                }
+                }{key !== "instructions" && <RequiredMark />}</span>
                 <textarea
                   rows={3}
                   required={key !== "instructions"}
@@ -293,7 +313,7 @@ export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
               {value.book.slots.map((slot, i) => (
                 <div className="commerce-slot" key={i}>
                   <label>
-                    Start
+                    <span>Start<RequiredMark /></span>
                     <input
                       type="time"
                       required
@@ -310,7 +330,7 @@ export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
                     />
                   </label>
                   <label>
-                    End
+                    <span>End<RequiredMark /></span>
                     <input
                       type="time"
                       required
@@ -357,7 +377,7 @@ export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
         </section>
       )}
       <label>
-        Applicable Tax (%)
+        <span>Applicable Tax (%)<RequiredMark /></span>
         <input
           type="number"
           required

@@ -1,3 +1,5 @@
+import { Children, isValidElement } from "react";
+import RequiredMark from "../../../components/ui/RequiredMark";
 import {
   AlertCircle,
   Inbox,
@@ -169,9 +171,12 @@ export function ServiceActions({ row, action, inline = false, iconsOnly = false 
   );
 }
 export function Field({ label, children, ...props }) {
+  const required = props.required || Children.toArray(children).some(
+    (child) => isValidElement(child) && child.props.required,
+  );
   return (
     <label className="asm-field flex flex-col gap-[8px] [margin:0_0_16px] text-[12px] text-[#587466] [&_>_span]:font-[550] [&_input]:w-full [&_input]:[padding:11px_12px] [&_input]:[border-top-width:1px] [&_input]:[border-top-style:solid] [&_input]:[border-top-color:#dce5df] [&_input]:[border-right-width:1px] [&_input]:[border-right-style:solid] [&_input]:[border-right-color:#dce5df] [&_input]:[border-bottom-width:1px] [&_input]:[border-bottom-style:solid] [&_input]:[border-bottom-color:#dce5df] [&_input]:[border-left-width:1px] [&_input]:[border-left-style:solid] [&_input]:[border-left-color:#dce5df] [&_input]:rounded-[7px] [&_input]:text-[#2d4b3b] [&_input]:[background:#fff] [&_input]:text-[13px] [&_select]:w-full [&_select]:[padding:11px_12px] [&_select]:[border-top-width:1px] [&_select]:[border-top-style:solid] [&_select]:[border-top-color:#dce5df] [&_select]:[border-right-width:1px] [&_select]:[border-right-style:solid] [&_select]:[border-right-color:#dce5df] [&_select]:[border-bottom-width:1px] [&_select]:[border-bottom-style:solid] [&_select]:[border-bottom-color:#dce5df] [&_select]:[border-left-width:1px] [&_select]:[border-left-style:solid] [&_select]:[border-left-color:#dce5df] [&_select]:rounded-[7px] [&_select]:text-[#2d4b3b] [&_select]:[background:#fff] [&_select]:text-[13px] [&_textarea]:w-full [&_textarea]:[padding:11px_12px] [&_textarea]:[border-top-width:1px] [&_textarea]:[border-top-style:solid] [&_textarea]:[border-top-color:#dce5df] [&_textarea]:[border-right-width:1px] [&_textarea]:[border-right-style:solid] [&_textarea]:[border-right-color:#dce5df] [&_textarea]:[border-bottom-width:1px] [&_textarea]:[border-bottom-style:solid] [&_textarea]:[border-bottom-color:#dce5df] [&_textarea]:[border-left-width:1px] [&_textarea]:[border-left-style:solid] [&_textarea]:[border-left-color:#dce5df] [&_textarea]:rounded-[7px] [&_textarea]:text-[#2d4b3b] [&_textarea]:[background:#fff] [&_textarea]:text-[13px] [&_textarea]:[resize:vertical] [&_textarea]:min-h-[85px] [&_input:focus]:[outline:2px_solid_#a7c3b6] [&_input:focus]:[outline-offset:2px] [&_textarea:focus]:[outline:2px_solid_#a7c3b6] [&_textarea:focus]:[outline-offset:2px] [&_select:focus]:[outline:2px_solid_#a7c3b6] [&_select:focus]:[outline-offset:2px]">
-      <span>{label}</span>
+      <span>{label}{required && <RequiredMark />}</span>
       {children || <input {...props} />}
     </label>
   );

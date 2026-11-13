@@ -347,7 +347,7 @@ export default function ServicePackages({
             }
           }}
         >
-          <form onSubmit={saveForm}>
+          <form className="service-form" onSubmit={saveForm}>
             <fieldset disabled={viewOnly || !canEdit}>
               <div className="
                 p-[25px] service-mobile:p-[18px] grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px]
@@ -442,20 +442,22 @@ export default function ServicePackages({
                     [&_button]:[border-right:0] [&_button]:[border-bottom:0] [&_button]:[border-left:0]
                     [&_button]:text-[#b17e70] service-mobile:grid-cols-[1fr_1fr]
                   " key={i}>
-                    <input
-                      aria-label="Item name"
-                      required
-                      value={item.name}
-                      placeholder="Item name"
-                      onChange={(e) =>
-                        change(
-                          "items",
-                          form.items.map((x, n) =>
-                            n === i ? { ...x, name: e.target.value } : x,
-                          ),
-                        )
-                      }
-                    />
+                    <Field label="Item name">
+                      <input
+                        aria-label="Item name"
+                        required
+                        value={item.name}
+                        placeholder="Item name"
+                        onChange={(e) =>
+                          change(
+                            "items",
+                            form.items.map((x, n) =>
+                              n === i ? { ...x, name: e.target.value } : x,
+                            ),
+                          )
+                        }
+                      />
+                    </Field>
                     <input
                       aria-label="Item description"
                       value={item.description || ""}

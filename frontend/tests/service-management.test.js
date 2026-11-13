@@ -97,3 +97,38 @@ test("draft validation rejects invalid pricing, dates, items and slugs", () => {
     assert.equal(validateService(data).step, step);
   }
 });
+
+test("saving a draft for image uploads points excessive booking advances to Pricing", () => {
+  for (const type of ["Book", "Both"]) {
+    const data = valid();
+    data.offer = { type, book: { price: 1000, advance: 1500 } };
+    const issue = validateService(data);
+    assert.equal(issue.step, 2);
+    assert.match(issue.message, /advance booking amount per unit cannot exceed the booking price/i);
+    assert.equal(validateService(data, { submit: true, imageCount: 1 }).step, 2);
+  }
+});
+
+test("booking advances allow zero, a partial amount and the full booking price", () => {
+  for (const advance of [0, 250.50, 1000]) {
+    const data = valid();
+    data.offer = { type: "Book", book: { price: 1000, advance } };
+    assert.equal(validateService(data), null);
+  }
+});
+
+test("lowering the booking price revalidates the existing advance", () => {
+  const data = valid();
+  data.offer = { type: "Book", book: { price: 1000, advance: 800 } };
+  assert.equal(validateService(data), null);
+  data.offer.book.price = 500;
+  assert.equal(validateService(data).step, 2);
+});
+
+test("booking advances reject invalid money values", () => {
+  for (const advance of [-1, null, NaN, Infinity, 0.001, 10000001]) {
+    const data = valid();
+    data.offer = { type: "Book", book: { price: 1000, advance } };
+    assert.equal(validateService(data).step, 2);
+  }
+});

@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { Children, isValidElement, useEffect, useId, useRef, useState } from "react";
+import RequiredMark from "../../../components/ui/RequiredMark";
 import { Link } from "react-router-dom";
 import { AlertCircle, ArrowRight, Inbox, LoaderCircle, X } from "lucide-react";
 import { vendorRequest } from "../services/workspace.api";
@@ -257,7 +258,11 @@ export function Modal({ title, close, busy, children, wide = false }) {
     </dialog>
   );
 }
-export function Field({ label, hint, children, ...props }) {
+export function Field({ label, hint, children, requiredForSubmission = false, ...props }) {
+  const required = props.required || requiredForSubmission || Children.toArray(children).some(
+    (child) => isValidElement(child) && child.props.required,
+  );
+  const alreadyMarked = typeof label === "string" && label.trimEnd().endsWith("*");
   return (
     <label className="
       vw-field grid gap-[7px] min-w-[0] text-[#6f845e] text-[10px] font-medium [&_>_span:first-child]:block
@@ -266,7 +271,7 @@ export function Field({ label, hint, children, ...props }) {
       [&_textarea]:w-[100%] [&_textarea]:text-[11px] [&_textarea]:font-normal [&_textarea]:text-[#536d43]
       [&_small]:text-[#aebc9e] [&_small]:text-[8px] [&_small]:font-normal
     ">
-      <span>{label}</span>
+      <span>{label}{required && !alreadyMarked && <RequiredMark />}</span>
       {children || <input {...props} />}
       {hint && <small>{hint}</small>}
     </label>

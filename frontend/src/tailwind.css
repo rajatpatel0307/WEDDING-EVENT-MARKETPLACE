@@ -39,6 +39,69 @@
 @custom-variant service-tablet (@media (max-width: 1150px));
 @custom-variant service-mobile (@media (max-width: 760px));
 
+/* Shared controls for service creation, editing, packages and availability. */
+.service-form.service-form :is(
+  input:where(:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="color"], [type="file"])),
+  select,
+  textarea
+) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #7b8d81;
+  border-radius: 8px;
+  padding: 11px 12px;
+  background: #fff;
+  color: #304d3f;
+  font-size: 14px;
+  line-height: 1.5;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.service-form.service-form textarea {
+  resize: vertical;
+}
+
+.service-form.service-form :is(input, textarea)::placeholder {
+  color: #68796e;
+  opacity: 1;
+}
+
+.service-form.service-form :is(input, select, textarea):enabled:hover {
+  border-color: #486b58;
+}
+
+.service-form.service-form :is(input, select, textarea):focus-visible {
+  border-color: #226e56;
+  outline: 2px solid #226e56;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px #226e5614;
+}
+
+.service-form.service-form :is(input, select, textarea):user-invalid,
+.service-form.service-form [aria-invalid="true"] {
+  border-color: #b34242;
+}
+
+.service-form.service-form :is(input, select, textarea):disabled {
+  background: #f1f4f1;
+  color: #68796e;
+  cursor: not-allowed;
+}
+
+.service-form .vw-field,
+.service-form .asm-field {
+  color: #405e4d;
+  font-size: 13px;
+}
+
+.service-form .vw-field > small {
+  color: #617366;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 @theme static {
   --animate-mn-fade: mn-fade 0.16s ease;
   --animate-mn-overlay: mn-fade 0.18s ease;

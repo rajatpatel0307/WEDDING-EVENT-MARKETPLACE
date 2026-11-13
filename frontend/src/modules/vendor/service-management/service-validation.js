@@ -1,3 +1,5 @@
+import { bookingAdvanceError } from "../../commerce/offer-validation.js";
+
 const amountIsValid = (value, max = 100000000) =>
   Number.isFinite(value) &&
   value >= 0 &&
@@ -47,6 +49,9 @@ export function validateService(data, { submit = false, imageCount = 0 } = {}) {
     data.seo.keywords.length > 500
   )
     return { step: 7, message: "SEO fields exceed their allowed length." };
+
+  const advanceError = bookingAdvanceError(data.offer?.book);
+  if (advanceError) return { step: 2, message: advanceError };
 
   const pricing = data.pricing;
   if (
