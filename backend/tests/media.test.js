@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import express from "express";
+import helmet from "helmet";
+import { sequelize } from "../src/config/database.js";
 import { prepareImage } from "../src/modules/media/media.storage.js";
 import {
   uploadInput,
@@ -136,4 +138,66 @@ test("media REST rejects anonymous, wrong-role, and cross-origin writes before u
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+test("private image responses allow the same-site frontend while retaining ownership checks", async (t) => {
+  const ownerId = randomUUID();
+  const id = randomUUID();
+  const image = await sharp({
+    create: { width: 20, height: 12, channels: 3, background: "#43744c" },
+  }).webp().toBuffer();
+  const row = {
+    MediaId: id,
+    OwnerId: ownerId,
+    EntityType: "Service",
+    MediaType: "Image",
+    ModerationStatus: "Pending",
+    UploadStatus: "Ready",
+    ResourceType: "image",
+    StorageKey: `cloudinary:image:authenticated:wedding-marketplace/services/gallery/${id}`,
+    PublicId: `wedding-marketplace/services/gallery/${id}`,
+  };
+  t.mock.method(sequelize, "query", async () => [row]);
+  for (const key of ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"]) {
+    const previous = process.env[key];
+    process.env[key] = "test";
+    t.after(() => {
+      if (previous === undefined) delete process.env[key];
+      else process.env[key] = previous;
+    });
+  }
+  const realFetch = globalThis.fetch;
+  let storageReads = 0;
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    if (String(url).startsWith("https://res.cloudinary.com/")) {
+      storageReads++;
+      return new Response(image, { headers: { "Content-Type": "image/webp" } });
+    }
+    return realFetch(url, options);
+  });
+  const app = express();
+  app.use(helmet());
+  app.use("/api", createMediaRouter({
+    authenticateRequest: async (req) => req.get("x-test-user") ? {
+      user: { id: req.get("x-test-user"), active: true, emailVerified: true, roles: [{ code: "VENDOR", active: true }] },
+    } : null,
+  }));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}/api`;
+  const path = `${base}/media/${id}/content?variant=thumb`;
+  const response = await fetch(path, { headers: { "x-test-user": ownerId } });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Cross-Origin-Resource-Policy"), "same-site");
+  assert.equal(response.headers.get("Content-Type"), "image/webp");
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+  assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");
+  assert.deepEqual(Buffer.from(await response.arrayBuffer()), image);
+  assert.equal((await fetch(path)).status, 401);
+  assert.equal((await fetch(path, { headers: { "x-test-user": randomUUID() } })).status, 404);
+  assert.equal(storageReads, 1);
+  const metadata = await fetch(`${base}/media/metadata`);
+  assert.equal(metadata.status, 401);
+  assert.equal(metadata.headers.get("Cross-Origin-Resource-Policy"), "same-origin");
 });

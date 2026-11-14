@@ -7,12 +7,12 @@ import {
   money,
 } from "../customer/services/workspace.api";
 import { offerState } from "./offer-state";
-import "./commerce.css";
+
 export function OfferPrices({ item }) {
   const s = offerState(item);
   if (!s.type) return null;
   return (
-    <div className="commerce-price">
+    <div className="commerce-price my-3 flex flex-wrap gap-[18px] [&_small]:mb-1 [&_small]:block [&_small]:text-[11px] [&_strong]:text-[17px] [&_p]:my-1 [&_p]:text-[12px]">
       {s.type !== "Book" && (
         <div>
           <small>Selling Price</small>
@@ -64,7 +64,7 @@ export default function OfferActions({ item }) {
   }
   const book = `/customer/booking-checkout/${id}`;
   return (
-    <div className="commerce-offer-actions cm-actions">
+    <div className="commerce-offer-actions my-[14px] flex flex-wrap gap-[10px] [&_button]:cursor-pointer [&_button]:rounded-[7px] [&_button]:border [&_button]:border-[#dde4d7] [&_button]:bg-white [&_button]:px-[15px] [&_button]:py-[10px] [&_button]:text-[12px] [&_button]:text-[#48664e] [&_a]:cursor-pointer [&_a]:rounded-[7px] [&_a]:border [&_a]:border-[#dde4d7] [&_a]:bg-white [&_a]:px-[15px] [&_a]:py-[10px] [&_a]:text-[12px] [&_a]:text-[#48664e] [&_a]:no-underline [&_.cm-primary]:border-[#355d43] [&_.cm-primary]:bg-[#355d43] [&_.cm-primary]:text-white [&_button:disabled]:cursor-wait [&_button:disabled]:opacity-50 [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-offset-3 [&_:focus-visible]:outline-[#688b70] cm-actions">
       {s.canSell && (
         <>
           <button disabled={busy} onClick={() => add(false)}>

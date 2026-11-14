@@ -235,6 +235,23 @@ export async function decide(id, action, input, ctx) {
         AdminNote: body.notes || null,
       });
     await repo.update(resource, id, values, tx);
+    if (action === "approve") {
+      const images = await repo.select(
+        "UPDATE dbo.Media SET ModerationStatus='Approved',ModeratedBy=:admin,ModeratedAt=:now,ModerationReason=NULL,UpdatedAt=:now OUTPUT inserted.MediaId AS id WHERE EntityType='Service' AND EntityId=:id AND MediaType='Image' AND ModerationStatus='Pending' AND UploadStatus='Ready' AND DeletedAt IS NULL",
+        { id, admin: admin.id, now },
+        tx,
+      );
+      for (const image of images)
+        await repo.auditAdmin(
+          ctx,
+          "MEDIA_APPROVE",
+          "Media",
+          image.id,
+          { status: "Pending" },
+          { status: "Approved", serviceId: id, source: "ServiceApproval" },
+          tx,
+        );
+    }
     if (
       old.ApprovalStatus === "Pending" &&
       ["approve", "reject"].includes(action)

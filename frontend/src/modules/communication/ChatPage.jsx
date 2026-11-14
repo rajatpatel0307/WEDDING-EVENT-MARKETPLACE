@@ -18,7 +18,7 @@ import { communicationRequest } from "./api";
 import { useCommunicationSocket } from "./useCommunicationSocket";
 import { readFile, download } from "../customer/services/workspace.api";
 import { mergeChatMessages } from "../../services/chat-sync";
-import "./communication.css";
+
 const date = (v) =>
   new Date(v).toLocaleDateString(undefined, {
     day: "numeric",
@@ -346,8 +346,8 @@ export default function ChatPage({ role }) {
     [preview],
   );
   return (
-    <div className="comm-root">
-      <div className="comm-title">
+    <div className="comm-root [&&]:text-[#263e35] [&&]:[font-family:inherit] [&&]:min-w-0 [&&_button]:cursor-pointer [&&_button:disabled]:opacity-45 [&&_button:disabled]:cursor-default [&&_button:focus-visible]:outline-2 [&&_button:focus-visible]:outline-[#72917e] [&&_button:focus-visible]:outline-offset-[3px] [&&_a:focus-visible]:outline-2 [&&_a:focus-visible]:outline-[#72917e] [&&_a:focus-visible]:outline-offset-[3px] [&&_input:focus-visible]:outline-2 [&&_input:focus-visible]:outline-[#72917e] [&&_input:focus-visible]:outline-offset-[3px] [&&_textarea:focus-visible]:outline-2 [&&_textarea:focus-visible]:outline-[#72917e] [&&_textarea:focus-visible]:outline-offset-[3px] [&&_.comm-filters]:flex [&&_.comm-filters]:items-center [&&_.comm-filters]:flex-wrap [&&_.comm-filters]:gap-[12px] [&&_.comm-filters]:py-[12px] [&&_.comm-filters]:px-[16px] [&&_.comm-filters]:text-[12px] [&&_.comm-send]:inline-flex [&&_.comm-send]:items-center [&&_.comm-send]:justify-center [&&_.comm-send]:gap-[9px] [&&_.comm-send]:bg-[#365f4d] [&&_.comm-send]:text-white [&&_.comm-send]:py-[11px] [&&_.comm-send]:px-[18px] [&&_.comm-send]:rounded-[8px] [&&_.comm-send]:text-[12px] max-[640.001px]:[&&_.comm-send]:p-[10px]">
+      <div className="comm-title [&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-[20px] [&&]:mb-[25px] [&&_p]:text-[10px] [&&_p]:tracking-[2px] [&&_p]:text-[#8a7961] [&&_p]:mb-[8px] [&&_h1]:text-[30px] [&&_h1]:mt-0 [&&_h1]:mx-0 [&&_h1]:mb-[8px] [&&_h1]:font-semibold [&&_span]:text-[13px] [&&_span]:text-[#7b857f] [&&_>_a]:flex [&&_>_a]:items-center [&&_>_a]:gap-[8px] [&&_>_a]:text-[13px] [&&_.comm-connection]:text-[11px] [&&_.comm-connection]:border [&&_.comm-connection]:border-[#e3e8e2] [&&_.comm-connection]:py-[9px] [&&_.comm-connection]:px-[13px] [&&_.comm-connection]:rounded-[25px] [&&_.comm-connection]:bg-white max-[900.001px]:[&&_.comm-connection]:hidden max-[640.001px]:[&&_h1]:text-[25px] max-[640.001px]:[&&]:gap-[10px] max-[640.001px]:[&&_>_a]:text-[11px]">
         <div>
           <p>YOUR PLANNING SPACE</p>
           <h1>Messages</h1>
@@ -360,7 +360,7 @@ export default function ChatPage({ role }) {
         </span>
       </div>
       {error && (
-        <div className="comm-error" role="alert">
+        <div className="comm-error [&&]:flex [&&]:flex-wrap [&&]:gap-[10px] [&&]:items-center [&&]:bg-[#fff3ef] [&&]:text-[#914d3c] [&&]:py-[12px] [&&]:px-[16px] [&&]:rounded-[8px] [&&]:text-[12px] [&&]:mb-[12px] [&&_button]:underline" role="alert">
           {error}{" "}
           <button
             onClick={() => {
@@ -372,10 +372,10 @@ export default function ChatPage({ role }) {
           </button>
         </div>
       )}
-      <div className={`comm-chat ${selected ? "comm-selected" : ""}`}>
-        <aside className="comm-conversations">
+      <div className={`comm-chat [&&]:grid [&&]:grid-cols-[310px_minmax(0,_1fr)] [&&]:h-[min(740px,_calc(100dvh_-_220px))] [&&]:min-h-[480px] [&&]:border [&&]:border-[#e3e8e2] [&&]:rounded-[16px] [&&]:overflow-hidden [&&]:bg-white [&&]:shadow-[0_8px_28px_#263e3506] max-[900.001px]:[&&]:grid-cols-[250px_minmax(0,_1fr)] max-[640.001px]:[&&]:flex max-[640.001px]:[&&]:h-[calc(100dvh_-_190px)] max-[640.001px]:[&&]:min-h-[420px] ${selected ? "comm-selected max-[640.001px]:[&&_.comm-conversations]:hidden max-[640.001px]:[&&_.comm-window]:flex" : ""}`}>
+        <aside className="comm-conversations [&&]:flex [&&]:flex-col [&&]:border-r [&&]:border-r-[#e3e8e2] [&&]:min-h-0 [&&_h2]:text-[16px] [&&_h2]:font-semibold [&&_h2]:pt-[22px] [&&_h2]:px-[20px] [&&_h2]:pb-[5px] max-[640.001px]:[&&]:w-full max-[640.001px]:[&&]:border-0">
           <h2>Your conversations</h2>
-          <label className="comm-search">
+          <label className="comm-search [&&]:flex [&&]:items-center [&&]:gap-[9px] [&&]:my-[12px] [&&]:mx-[16px] [&&]:p-[10px] [&&]:border [&&]:border-[#e3e8e2] [&&]:rounded-[8px] [&&]:text-[#7b857f] [&&_input]:min-w-0 [&&_input]:w-full [&&_input]:border-0 [&&_input]:bg-transparent [&&_input]:text-[12px] [&&_input]:outline-none">
             <Search size={17} />
             <input
               aria-label="Search conversations"
@@ -387,7 +387,7 @@ export default function ChatPage({ role }) {
               }}
             />
           </label>
-          <div className="comm-filters">
+          <div className="comm-filters [&&_button]:py-[6px] [&&_button]:px-[10px] [&&_button]:border [&&_button]:border-[#e3e8e2] [&&_button]:rounded-[6px] [&&_button]:bg-white [&&_button[aria-pressed=true]]:bg-[#edf3ee] [&&_button[aria-pressed=true]]:text-[#365f4d] [&&_button[aria-pressed=true]]:border-[#b9cdbf] [&&_label]:flex [&&_label]:gap-[6px] [&&_label]:items-center [&&_select]:border [&&_select]:border-[#e3e8e2] [&&_select]:p-[7px] [&&_select]:rounded-[6px]">
             <button
               aria-pressed={!archived}
               onClick={() => {
@@ -418,13 +418,13 @@ export default function ChatPage({ role }) {
               Unread
             </label>
           </div>
-          <div className="comm-thread-list">
+          <div className="comm-thread-list [&&]:flex-1 [&&]:overflow-auto">
             {listLoading ? (
               <p role="status">Loading conversations…</p>
             ) : rows.length ? (
               rows.map((c) => (
                 <button
-                  className={`comm-thread ${c.id === selected ? "active" : ""}`}
+                  className={`comm-thread [&&]:flex [&&]:gap-[11px] [&&]:text-left [&&]:w-full [&&]:p-[16px] [&&]:items-center [&&]:border-b [&&]:border-b-[#f0f2ef] [&&]:bg-white [&&.active]:bg-[#f2f6f1] [&&:hover]:bg-[#f2f6f1] [&&_>_img]:w-[39px] [&&_>_img]:h-[39px] [&&_>_img]:object-cover [&&_>_img]:shrink-0 [&&_>_img]:rounded-[50%] [&&_>_img]:bg-[#e8eee5] [&&_>_img]:text-[#587052] [&&_>_img]:inline-flex [&&_>_img]:items-center [&&_>_img]:justify-center [&&_>_img]:text-[16px] [&&_>_span:nth-child(2)]:flex-1 [&&_>_span:nth-child(2)]:min-w-0 [&&_strong]:block [&&_strong]:text-[13px] [&&_strong]:font-semibold [&&_small]:block [&&_small]:overflow-hidden [&&_small]:whitespace-nowrap [&&_small]:text-ellipsis [&&_small]:text-[#849087] [&&_small]:text-[12px] [&&_small]:my-[5px] [&&_small]:mx-0 [&&_time]:text-[10px] [&&_time]:text-[#9ba39d] [&&_em]:bg-[#40674f] [&&_em]:text-white [&&_em]:rounded-[12px] [&&_em]:py-[2px] [&&_em]:px-[6px] [&&_em]:text-[10px] [&&_em]:not-italic ${c.id === selected ? "active" : ""}`}
                   key={c.id}
                   onClick={() => setParams({ conversation: c.id })}
                   disabled={busy || uploading}
@@ -432,7 +432,7 @@ export default function ChatPage({ role }) {
                   {c.image ? (
                     <img src={c.image} alt="" />
                   ) : (
-                    <span className="comm-avatar">{c.customer?.[0]}</span>
+                    <span className="comm-avatar [&&]:w-[39px] [&&]:h-[39px] [&&]:object-cover [&&]:shrink-0 [&&]:rounded-[50%] [&&]:bg-[#e8eee5] [&&]:text-[#587052] [&&]:inline-flex [&&]:items-center [&&]:justify-center [&&]:text-[16px]">{c.customer?.[0]}</span>
                   )}
                   <span>
                     <strong>{c.customer}</strong>
@@ -445,7 +445,7 @@ export default function ChatPage({ role }) {
                 </button>
               ))
             ) : (
-              <div className="comm-empty">
+              <div className="comm-empty [&&]:flex [&&]:flex-1 [&&]:flex-col [&&]:items-center [&&]:justify-center [&&]:text-center [&&]:py-[35px] [&&]:px-[25px] [&&]:gap-[12px] [&&]:text-[#879380] [&&_h2]:font-medium [&&_h2]:text-[#53644f] [&&_h2]:text-[18px] [&&_h3]:font-medium [&&_h3]:text-[#53644f] [&&_h3]:text-[18px] [&&_p]:text-[12px] [&&_p]:max-w-[280px] [&&_p]:leading-[1.8]">
                 <MessageCircle />
                 <h3>No conversations here</h3>
                 <p>
@@ -455,7 +455,7 @@ export default function ChatPage({ role }) {
               </div>
             )}
           </div>
-          <div className="comm-pagination">
+          <div className="comm-pagination [&&]:flex [&&]:justify-between [&&]:items-center [&&]:gap-[10px] [&&]:p-[15px] [&&]:text-[12px] [&&_button]:border [&&_button]:border-[#e3e8e2] [&&_button]:py-[6px] [&&_button]:px-[9px] [&&_button]:rounded-[6px]">
             <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
               Previous
             </button>
@@ -465,9 +465,9 @@ export default function ChatPage({ role }) {
             </button>
           </div>
         </aside>
-        <section className="comm-window">
+        <section className="comm-window [&&]:flex [&&]:flex-col [&&]:min-h-0 [&&]:min-w-0 [&&]:bg-[#fbfcf9] max-[640.001px]:[&&]:hidden max-[640.001px]:[&&]:w-full">
           {!selected ? (
-            <div className="comm-empty">
+            <div className="comm-empty [&&]:flex [&&]:flex-1 [&&]:flex-col [&&]:items-center [&&]:justify-center [&&]:text-center [&&]:py-[35px] [&&]:px-[25px] [&&]:gap-[12px] [&&]:text-[#879380] [&&_h2]:font-medium [&&_h2]:text-[#53644f] [&&_h2]:text-[18px] [&&_h3]:font-medium [&&_h3]:text-[#53644f] [&&_h3]:text-[18px] [&&_p]:text-[12px] [&&_p]:max-w-[280px] [&&_p]:leading-[1.8]">
               <MessageCircle size={42} />
               <h2>Let’s plan something special</h2>
               <p>
@@ -476,7 +476,7 @@ export default function ChatPage({ role }) {
             </div>
           ) : (
             <>
-              <header className="comm-chat-header">
+              <header className="comm-chat-header [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:py-[17px] [&&]:px-[20px] [&&]:border-b [&&]:border-b-[#e3e8e2] [&&]:bg-white [&&_>_div]:flex-1 [&&_>_div]:min-w-0 [&&_h2]:text-[15px] [&&_h2]:font-semibold [&&_h2]:wrap-anywhere [&&_small]:flex [&&_small]:items-center [&&_small]:gap-[5px] [&&_small]:text-[11px] [&&_small]:text-[#8a938c] [&&_small]:my-[4px] [&&_small]:mx-0 [&&_i]:w-[6px] [&&_i]:h-[6px] [&&_i]:rounded-[100%] [&&_i]:bg-[#b5bcb6] [&&_i.online]:bg-[#62a875] [&&_nav]:flex [&&_nav]:flex-wrap [&&_nav]:gap-[10px] [&&_nav]:text-[11px] [&&_nav]:underline [&&_>_button]:p-[5px] [&&_>_button]:text-[#718374] max-[900.001px]:[&&]:p-[12px] max-[900.001px]:[&&]:gap-[8px] max-[640.001px]:[&&_.comm-avatar]:hidden">
                 <button
                   aria-label="Back to conversations"
                   disabled={busy || uploading}
@@ -486,12 +486,12 @@ export default function ChatPage({ role }) {
                 </button>
                 {conversation?.image ? (
                   <img
-                    className="comm-avatar"
+                    className="comm-avatar [&&]:w-[39px] [&&]:h-[39px] [&&]:object-cover [&&]:shrink-0 [&&]:rounded-[50%] [&&]:bg-[#e8eee5] [&&]:text-[#587052] [&&]:inline-flex [&&]:items-center [&&]:justify-center [&&]:text-[16px]"
                     src={conversation.image}
                     alt=""
                   />
                 ) : (
-                  <span className="comm-avatar">
+                  <span className="comm-avatar [&&]:w-[39px] [&&]:h-[39px] [&&]:object-cover [&&]:shrink-0 [&&]:rounded-[50%] [&&]:bg-[#e8eee5] [&&]:text-[#587052] [&&]:inline-flex [&&]:items-center [&&]:justify-center [&&]:text-[16px]">
                     {conversation?.customer?.[0] || "C"}
                   </span>
                 )}
@@ -563,7 +563,7 @@ export default function ChatPage({ role }) {
                 </button>
               </header>
               <div
-                className="comm-message-scroll"
+                className="comm-message-scroll [&&]:flex-1 [&&]:overflow-auto [&&]:p-[24px] [&&]:flex [&&]:flex-col [&&]:items-start [&&]:gap-[8px] [&&]:overscroll-contain max-[900.001px]:[&&]:p-[16px]"
                 ref={scroll}
                 onScroll={(e) => {
                   stick.current =
@@ -574,14 +574,14 @@ export default function ChatPage({ role }) {
                 }}
               >
                 {more && (
-                  <button className="comm-older" onClick={earlier}>
+                  <button className="comm-older [&&]:self-center [&&]:text-[11px] [&&]:underline [&&]:p-[8px]" onClick={earlier}>
                     Load earlier messages
                   </button>
                 )}
                 {loading ? (
                   <p role="status">Loading messages…</p>
                 ) : !messages.length ? (
-                  <div className="comm-empty">
+                  <div className="comm-empty [&&]:flex [&&]:flex-1 [&&]:flex-col [&&]:items-center [&&]:justify-center [&&]:text-center [&&]:py-[35px] [&&]:px-[25px] [&&]:gap-[12px] [&&]:text-[#879380] [&&_h2]:font-medium [&&_h2]:text-[#53644f] [&&_h2]:text-[18px] [&&_h3]:font-medium [&&_h3]:text-[#53644f] [&&_h3]:text-[18px] [&&_p]:text-[12px] [&&_p]:max-w-[280px] [&&_p]:leading-[1.8]">
                     <h3>A warm hello goes a long way</h3>
                     <p>Share your first idea below.</p>
                   </div>
@@ -591,14 +591,14 @@ export default function ChatPage({ role }) {
                       {(index === 0 ||
                         date(messages[index - 1].createdAt) !==
                           date(m.createdAt)) && (
-                        <div className="comm-date">{date(m.createdAt)}</div>
+                        <div className="comm-date [&&]:self-center [&&]:text-[10px] [&&]:text-[#939b90] [&&]:py-[7px] [&&]:px-[14px] [&&]:bg-[#f0f2eb] [&&]:rounded-[20px] [&&]:my-[8px] [&&]:mx-0">{date(m.createdAt)}</div>
                       )}
                       <article
-                        className={`comm-bubble ${m.mine ? "mine" : ""}`}
+                        className={`comm-bubble [&&]:max-w-[80%] [&&]:py-[12px] [&&]:px-[14px] [&&]:bg-white [&&]:border [&&]:border-[#e9ede6] [&&]:rounded-[13px_13px_13px_3px] [&&]:shadow-[0_2px_4px_#263e3503] [&&]:wrap-anywhere [&&.mine]:self-end [&&.mine]:bg-[#edf3e7] [&&.mine]:border-[#e1e9da] [&&.mine]:rounded-[13px_13px_3px_13px] [&&_>_p]:text-[13px] [&&_>_p]:leading-[1.7] [&&_>_p]:whitespace-pre-wrap [&&_>_p]:m-0 [&&_footer]:flex [&&_footer]:items-center [&&_footer]:justify-end [&&_footer]:gap-[9px] [&&_footer]:text-[9px] [&&_footer]:text-[#8c9889] [&&_footer]:mt-[7px] [&&_footer_span]:flex [&&_footer_span]:items-center [&&_footer_span]:gap-[3px] max-[900.001px]:[&&]:max-w-[90%] max-[640.001px]:[&&]:max-w-[88%] ${m.mine ? "mine" : ""}`}
                       >
                         <p>{m.deletedAt ? "Message deleted" : m.text}</p>
                         {!!m.hasAttachment && (
-                          <div className="comm-file">
+                          <div className="comm-file [&&]:flex [&&]:flex-col [&&]:gap-[6px] [&&]:my-[5px] [&&]:mx-0 [&&_button]:flex [&&_button]:gap-[6px] [&&_button]:items-center [&&_button]:text-[12px] [&&_button]:underline [&&_button]:text-left">
                             <button onClick={() => openFile(m)}>
                               <FileText size={16} />
                               {m.attachmentName || "Attachment"}
@@ -617,7 +617,7 @@ export default function ChatPage({ role }) {
                           {m.mine && (
                             <span title={m.status}>
                               {m.status === "Read" ? (
-                                <CheckCheck size={14} className="comm-read" />
+                                <CheckCheck size={14} className="comm-read [&&]:text-[#2678a5]" />
                               ) : m.status === "Delivered" ? (
                                 <CheckCheck size={14} />
                               ) : (
@@ -652,11 +652,11 @@ export default function ChatPage({ role }) {
                   ))
                 )}
               </div>
-              <div className="comm-typing" role="status">
+              <div className="comm-typing [&&]:h-[23px] [&&]:py-0 [&&]:px-[22px] [&&]:text-[#849180] [&&]:text-[11px]" role="status">
                 {typing ? "Typing…" : " "}
               </div>
               {failed && (
-                <div className="comm-error">
+                <div className="comm-error [&&]:flex [&&]:flex-wrap [&&]:gap-[10px] [&&]:items-center [&&]:bg-[#fff3ef] [&&]:text-[#914d3c] [&&]:py-[12px] [&&]:px-[16px] [&&]:rounded-[8px] [&&]:text-[12px] [&&]:mb-[12px] [&&_button]:underline">
                   Failed to confirm delivery. Your draft is preserved.{" "}
                   <button disabled={busy} onClick={() => send(failed)}>
                     Retry safely
@@ -664,7 +664,7 @@ export default function ChatPage({ role }) {
                 </div>
               )}
               {attachment && (
-                <div className="comm-staged">
+                <div className="comm-staged [&&]:flex [&&]:gap-[8px] [&&]:items-center [&&]:py-[8px] [&&]:px-[24px] [&&]:text-[12px]">
                   <Paperclip size={14} />
                   {attachment.name}
                   <button
@@ -677,7 +677,7 @@ export default function ChatPage({ role }) {
                 </div>
               )}
               <form
-                className="comm-compose"
+                className="comm-compose [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:my-0 [&&]:mx-[18px] [&&]:py-[10px] [&&]:px-[12px] [&&]:bg-white [&&]:border [&&]:border-[#dce5d8] [&&]:rounded-[11px] [&&_textarea]:flex-1 [&&_textarea]:min-w-0 [&&_textarea]:resize-none [&&_textarea]:border-0 [&&_textarea]:[font-family:inherit] [&&_textarea]:text-[13px] [&&_textarea]:outline-none [&&_textarea]:p-[4px] [&&_textarea]:bg-transparent max-[640.001px]:[&&]:my-0 max-[640.001px]:[&&]:mx-[10px] max-[640.001px]:[&&]:gap-[8px]"
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!text.trim() && !attachment) return;
@@ -693,7 +693,7 @@ export default function ChatPage({ role }) {
                   });
                 }}
               >
-                <label className="comm-attach" title="Attach PDF, PNG or JPEG">
+                <label className="comm-attach [&&]:relative [&&]:text-[#91a085] [&&]:cursor-pointer [&&]:inline-flex [&&_input]:absolute [&&_input]:w-full [&&_input]:h-full [&&_input]:opacity-0 [&&_input]:inset-0 [&&_input]:cursor-pointer" title="Attach PDF, PNG or JPEG">
                   <Paperclip size={21} />
                   <input
                     aria-label="Attach a file"
@@ -749,14 +749,14 @@ export default function ChatPage({ role }) {
                   }
                 />
                 <button
-                  className="comm-send"
+                  className="comm-send max-[640.001px]:[&&_>_span]:hidden"
                   disabled={busy || uploading || (!text.trim() && !attachment)}
                 >
                   <Send size={18} />
                   <span>{busy ? "Sending…" : "Send"}</span>
                 </button>
               </form>
-              <p className="comm-note">
+              <p className="comm-note [&&]:text-[10px] [&&]:text-[#a0a897] [&&]:text-center [&&]:mt-[9px] [&&]:mx-0 [&&]:mb-[14px] max-[640.001px]:[&&]:text-[9px]">
                 Private attachments · PDF, PNG or JPEG · Up to 5 MB
               </p>
             </>
@@ -765,7 +765,7 @@ export default function ChatPage({ role }) {
       </div>
       {preview && (
         <div
-          className="comm-preview"
+          className="comm-preview [&&]:fixed [&&]:z-[1000] [&&]:inset-0 [&&]:bg-[#13261ee6] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:p-[40px] [&&_img]:max-w-full [&&_img]:max-h-[90dvh] [&&_img]:object-contain [&&_>_button]:absolute [&&_>_button]:right-[20px] [&&_>_button]:top-[20px] [&&_>_button]:text-white"
           role="dialog"
           aria-modal="true"
           aria-label="Image preview"

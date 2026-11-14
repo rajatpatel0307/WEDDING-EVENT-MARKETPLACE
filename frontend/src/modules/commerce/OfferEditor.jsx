@@ -2,7 +2,7 @@ import { ShoppingBag, CalendarDays, Layers } from "lucide-react";
 import { useId } from "react";
 import RequiredMark from "../../components/ui/RequiredMark";
 import { bookingAdvanceError } from "./offer-validation.js";
-import "./commerce.css";
+
 export const offerLabel = (type) =>
   ({ Sell: "Sell Only", Book: "Book Only", Both: "Sell & Book Both" })[type] ||
   "Booking";
@@ -49,11 +49,11 @@ export function OfferSelection({ value, category, onChange }) {
     });
   }
   return (
-    <section className="commerce">
+    <section className="commerce min-w-0 text-inherit [&_h3]:my-4 [&_h3]:text-[18px] [&_p]:my-3 [&_p]:text-[13px] [&_p]:leading-[1.7] [&_p]:text-[#748171] [&_label]:flex [&_label]:flex-col [&_label]:gap-2 [&_label]:text-[12px] [&_input]:box-border [&_input]:w-full [&_input]:min-w-0 [&_input]:rounded-[7px] [&_input]:border [&_input]:border-[#dfe5da] [&_input]:bg-white [&_input]:px-3 [&_input]:py-[11px] [&_input]:text-inherit [&_select]:box-border [&_select]:w-full [&_select]:min-w-0 [&_select]:rounded-[7px] [&_select]:border [&_select]:border-[#dfe5da] [&_select]:bg-white [&_select]:px-3 [&_select]:py-[11px] [&_select]:text-inherit [&_textarea]:box-border [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:rounded-[7px] [&_textarea]:border [&_textarea]:border-[#dfe5da] [&_textarea]:bg-white [&_textarea]:px-3 [&_textarea]:py-[11px] [&_textarea]:text-inherit [&_input[type=checkbox]]:w-[18px] [&_input:focus-visible]:outline-2 [&_input:focus-visible]:outline-offset-3 [&_input:focus-visible]:outline-[#688b70] [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-3 [&_button:focus-visible]:outline-[#688b70] [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-offset-3 [&_select:focus-visible]:outline-[#688b70] [&_textarea:focus-visible]:outline-2 [&_textarea:focus-visible]:outline-offset-3 [&_textarea:focus-visible]:outline-[#688b70]">
       <h3>How would you like to offer this product/service?</h3>
       <p>Available options are set by the category administrator.</p>
       <div
-        className="offer-cards"
+        className="offer-cards my-[18px] grid grid-cols-3 gap-[14px] max-[700px]:grid-cols-1 [&_button]:flex [&_button]:cursor-pointer [&_button]:flex-col [&_button]:items-start [&_button]:gap-3 [&_button]:rounded-xl [&_button]:border [&_button]:border-[#e1e7dc] [&_button]:bg-white [&_button]:p-5 [&_button]:text-left [&_button]:transition-[background,border-color,box-shadow] [&_button]:duration-180 [&_button[aria-pressed=true]]:border-[#53765a] [&_button[aria-pressed=true]]:bg-[#f0f6ed] [&_button[aria-pressed=true]]:shadow-[0_0_0_1px_#53765a] [&_span]:text-[12px] [&_span]:text-[#7c8979]"
         role="group"
         aria-label="Product service options"
       >
@@ -165,11 +165,11 @@ export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
     </label>
   );
   return (
-    <div className="commerce">
+    <div className="commerce min-w-0 text-inherit [&_h3]:my-4 [&_h3]:text-[18px] [&_p]:my-3 [&_p]:text-[13px] [&_p]:leading-[1.7] [&_p]:text-[#748171] [&_label]:flex [&_label]:flex-col [&_label]:gap-2 [&_label]:text-[12px] [&_input]:box-border [&_input]:w-full [&_input]:min-w-0 [&_input]:rounded-[7px] [&_input]:border [&_input]:border-[#dfe5da] [&_input]:bg-white [&_input]:px-3 [&_input]:py-[11px] [&_input]:text-inherit [&_select]:box-border [&_select]:w-full [&_select]:min-w-0 [&_select]:rounded-[7px] [&_select]:border [&_select]:border-[#dfe5da] [&_select]:bg-white [&_select]:px-3 [&_select]:py-[11px] [&_select]:text-inherit [&_textarea]:box-border [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:rounded-[7px] [&_textarea]:border [&_textarea]:border-[#dfe5da] [&_textarea]:bg-white [&_textarea]:px-3 [&_textarea]:py-[11px] [&_textarea]:text-inherit [&_input[type=checkbox]]:w-[18px] [&_input:focus-visible]:outline-2 [&_input:focus-visible]:outline-offset-3 [&_input:focus-visible]:outline-[#688b70] [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-3 [&_button:focus-visible]:outline-[#688b70] [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-offset-3 [&_select:focus-visible]:outline-[#688b70] [&_textarea:focus-visible]:outline-2 [&_textarea:focus-visible]:outline-offset-3 [&_textarea:focus-visible]:outline-[#688b70]">
       {value.sell && (
-        <section className="commerce-panel">
+        <section className="commerce-panel my-[18px] rounded-xl border border-[#e3e7dc] bg-white p-6 max-[700px]:p-[18px]">
           <h3>Sell Configuration</h3>
-          <div className="commerce-grid">
+          <div className="commerce-grid grid grid-cols-2 gap-[18px] max-[700px]:grid-cols-1">
             {field("sell", "price", "Selling Price (INR)")}
             {field("sell", "stock", "Available Selling Quantity / Stock")}
             {field("sell", "minimum", "Minimum Order Quantity")}
@@ -232,9 +232,9 @@ export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
         </section>
       )}
       {value.book && (
-        <section className="commerce-panel">
+        <section className="commerce-panel my-[18px] rounded-xl border border-[#e3e7dc] bg-white p-6 max-[700px]:p-[18px]">
           <h3>Book Configuration</h3>
-          <div className="commerce-grid">
+          <div className="commerce-grid grid grid-cols-2 gap-[18px] max-[700px]:grid-cols-1">
             {field("book", "price", "Booking Price per unit / duration (INR)")}
             {field("book", "capacity", "Available Booking Quantity / Slots")}
             {field("book", "minimum", "Minimum Booking Quantity")}
@@ -311,7 +311,7 @@ export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
                 A selected time slot determines the reserved start and end time.
               </p>
               {value.book.slots.map((slot, i) => (
-                <div className="commerce-slot" key={i}>
+                <div className="commerce-slot my-3 flex items-end gap-3 max-[700px]:flex-wrap" key={i}>
                   <label>
                     <span>Start<RequiredMark /></span>
                     <input
@@ -397,7 +397,7 @@ export function OfferConfiguration({ value, onChange, taxRate, onTaxChange }) {
 export function OfferReview({ offer }) {
   if (!offer) return null;
   return (
-    <section className="commerce commerce-panel">
+    <section className="commerce min-w-0 text-inherit [&_h3]:my-4 [&_h3]:text-[18px] [&_p]:my-3 [&_p]:text-[13px] [&_p]:leading-[1.7] [&_p]:text-[#748171] [&_label]:flex [&_label]:flex-col [&_label]:gap-2 [&_label]:text-[12px] [&_input]:box-border [&_input]:w-full [&_input]:min-w-0 [&_input]:rounded-[7px] [&_input]:border [&_input]:border-[#dfe5da] [&_input]:bg-white [&_input]:px-3 [&_input]:py-[11px] [&_input]:text-inherit [&_select]:box-border [&_select]:w-full [&_select]:min-w-0 [&_select]:rounded-[7px] [&_select]:border [&_select]:border-[#dfe5da] [&_select]:bg-white [&_select]:px-3 [&_select]:py-[11px] [&_select]:text-inherit [&_textarea]:box-border [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:rounded-[7px] [&_textarea]:border [&_textarea]:border-[#dfe5da] [&_textarea]:bg-white [&_textarea]:px-3 [&_textarea]:py-[11px] [&_textarea]:text-inherit [&_input[type=checkbox]]:w-[18px] [&_input:focus-visible]:outline-2 [&_input:focus-visible]:outline-offset-3 [&_input:focus-visible]:outline-[#688b70] [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-3 [&_button:focus-visible]:outline-[#688b70] [&_select:focus-visible]:outline-2 [&_select:focus-visible]:outline-offset-3 [&_select:focus-visible]:outline-[#688b70] [&_textarea:focus-visible]:outline-2 [&_textarea:focus-visible]:outline-offset-3 [&_textarea:focus-visible]:outline-[#688b70] commerce-panel my-[18px] rounded-xl border border-[#e3e7dc] bg-white p-6 max-[700px]:p-[18px]">
       <h3>{offerLabel(offer.type)}</h3>
       {["sell", "book"]
         .filter((k) => offer[k])
@@ -406,7 +406,7 @@ export function OfferReview({ offer }) {
             <h4>
               {kind === "sell" ? "Sell Configuration" : "Book Configuration"}
             </h4>
-            <dl className="commerce-review">
+            <dl className="commerce-review grid grid-cols-2 gap-3 max-[700px]:grid-cols-1 [&_dt]:text-[11px] [&_dt]:text-[#81917b] [&_dt]:capitalize [&_dd]:my-[5px] [&_dd]:whitespace-pre-wrap [&_dd]:wrap-anywhere">
               {Object.entries(offer[kind]).map(([k, v]) => (
                 <div key={k}>
                   <dt>{k.replace(/([A-Z])/g, " $1")}</dt>

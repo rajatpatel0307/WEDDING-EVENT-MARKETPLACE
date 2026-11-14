@@ -30,17 +30,15 @@ test("reconciliation never regresses receipts or restores deleted private conten
   assert.equal(merged.text, null);
   assert.equal(merged.hasAttachment, false);
 });
-test("communication styles remain scoped after navigating to the Home Page", () => {
-  const css = readFileSync(
-    new URL("../src/modules/communication/communication.css", import.meta.url),
-    "utf8",
-  );
-  for (const match of css.matchAll(/(?:^|(?<=[{}]))\s*([^{}]+)\{/g)) {
-    const selector = match[1].trim();
-    if (selector.startsWith("@media")) continue;
-    assert.ok(
-      selector.split(",").every((s) => s.trim().startsWith(".comm-")),
-      `Unscoped communication selector: ${selector}`,
+test("communication components keep styles local without loading global CSS", () => {
+  for (const name of ["ChatPage", "CommunicationOverview", "NotificationTable", "Notifications"]) {
+    const source = readFileSync(
+      new URL(`../src/modules/communication/${name}.jsx`, import.meta.url),
+      "utf8",
     );
+    assert.doesNotMatch(source, /import\s+(?:[^;]*?\s+from\s+)?["'][^"']+\.css["']/,
+      `${name} must keep its styles in Tailwind classes`);
+    assert.doesNotMatch(source, /<style\b|createElement\(\s*["']style["']/,
+      `${name} must not inject global styles`);
   }
 });

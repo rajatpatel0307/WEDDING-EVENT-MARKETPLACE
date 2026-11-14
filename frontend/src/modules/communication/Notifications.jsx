@@ -5,7 +5,7 @@ import { communicationRequest } from "./api";
 import { useCommunicationSocket } from "./useCommunicationSocket";
 import ResourceStatistics from "../admin/components/ResourceStatistics";
 import NotificationTable from "./NotificationTable";
-import "./communication.css";
+
 export function relativeTime(value) {
   const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000),
     abs = Math.abs(seconds);
@@ -81,7 +81,7 @@ function useInbox(role, query = "") {
 }
 function NotificationCard({ item, action, onOpen }) {
   return (
-    <article className={`comm-notification ${item.isRead ? "" : "unread"}`}>
+    <article className={`comm-notification [&&]:flex [&&]:gap-[18px] [&&]:p-[20px] [&&]:border-b [&&]:border-b-[#e9ede6] [&&]:text-[#34493d] [&&.unread]:bg-[#f0f5ec] [&&.unread]:border-l-3 [&&.unread]:border-l-[#72917e] [&&_>_div:first-child]:flex-1 [&&_>_div:first-child]:min-w-0 [&&_a]:no-underline [&&_a]:text-inherit [&&_strong]:text-[13px] [&&_strong]:font-semibold [&&_p]:text-[12px] [&&_p]:text-[#778371] [&&_p]:my-[6px] [&&_p]:mx-0 [&&_p]:leading-[1.6] [&&_small]:text-[10px] [&&_small]:text-[#97a08f] max-[640.001px]:[&&]:p-[15px] ${item.isRead ? "" : "unread"}`}>
       <div>
         <Link
           to={item.actionUrl}
@@ -98,7 +98,7 @@ function NotificationCard({ item, action, onOpen }) {
           <time dateTime={item.createdAt}>{relativeTime(item.createdAt)}</time>
         </small>
       </div>
-      <div className="comm-notification-actions">
+      <div className="comm-notification-actions [&&]:flex [&&]:items-center [&&]:gap-[12px]">
         {!item.isRead && (
           <button
             aria-label="Mark notification as read"
@@ -141,7 +141,7 @@ export function NotificationBell({ role, unreadOnly = false }) {
     };
   }, [open]);
   return (
-    <div className="comm-bell" ref={root}>
+    <div className="comm-bell [&&_button]:cursor-pointer [&&_button:focus-visible]:outline-2 [&&_button:focus-visible]:outline-[#72917e] [&&_button:focus-visible]:outline-offset-[3px] [&&]:relative [&&]:inline-flex [&&]:text-[#64745f] [&&_>_button]:relative [&&_>_button]:p-[8px] [&&_>_button]:flex [&&_>_button]:items-center [&&_em]:absolute [&&_em]:right-[-3px] [&&_em]:top-[-2px] [&&_em]:text-[9px] [&&_em]:not-italic [&&_em]:rounded-[10px] [&&_em]:bg-[#40674f] [&&_em]:text-white [&&_em]:py-[2px] [&&_em]:px-[5px]" ref={root}>
       <button
         aria-label={`Notifications: ${count} unread`}
         aria-expanded={open}
@@ -151,7 +151,7 @@ export function NotificationBell({ role, unreadOnly = false }) {
         {count > 0 && <em>{count > 99 ? "99+" : count}</em>}
       </button>
       {open && (
-        <section className="comm-dropdown" aria-label={unreadOnly ? "Unread notifications" : "Recent notifications"}>
+        <section className="comm-dropdown [&&]:absolute [&&]:right-0 [&&]:top-[43px] [&&]:w-[min(360px,_calc(100vw_-_30px))] [&&]:border [&&]:border-[#e0e7da] [&&]:bg-white [&&]:shadow-[0_10px_35px_#263e3520] [&&]:rounded-[12px] [&&]:z-[100] [&&]:max-h-[70dvh] [&&]:overflow-auto [&&_>_header]:flex [&&_>_header]:justify-between [&&_>_header]:p-[16px] [&&_>_header]:border-b [&&_>_header]:border-b-[#e0e7da] [&&_>_header_h3]:text-[14px] [&&_>_header_h3]:font-semibold [&&_>_p]:block [&&_>_p]:p-[16px] [&&_>_p]:text-[12px] [&&_>_a]:block [&&_>_a]:p-[16px] [&&_>_a]:text-[12px] [&&_.comm-notification]:p-[14px] [&&_.comm-notification_strong]:text-[12px] [&&_.comm-notification_p]:text-[11px] [&&_.comm-notification-actions]:gap-[7px]" aria-label={unreadOnly ? "Unread notifications" : "Recent notifications"}>
           <header>
             <h3>{unreadOnly ? "Unread notifications" : "Notifications"}</h3>
             <button
@@ -202,8 +202,8 @@ export default function NotificationCenter({ role }) {
     `?${new URLSearchParams({ page, category, unread: unread ? "1" : "0" })}`,
   );
   return (
-    <div className="comm-root">
-      <div className="comm-title">
+    <div className="comm-root [&&]:text-[#263e35] [&&]:[font-family:inherit] [&&]:min-w-0 [&&_button]:cursor-pointer [&&_button:disabled]:opacity-45 [&&_button:disabled]:cursor-default [&&_button:focus-visible]:outline-2 [&&_button:focus-visible]:outline-[#72917e] [&&_button:focus-visible]:outline-offset-[3px] [&&_a:focus-visible]:outline-2 [&&_a:focus-visible]:outline-[#72917e] [&&_a:focus-visible]:outline-offset-[3px] [&&_input:focus-visible]:outline-2 [&&_input:focus-visible]:outline-[#72917e] [&&_input:focus-visible]:outline-offset-[3px] [&&_textarea:focus-visible]:outline-2 [&&_textarea:focus-visible]:outline-[#72917e] [&&_textarea:focus-visible]:outline-offset-[3px] [&&_.comm-filters]:flex [&&_.comm-filters]:items-center [&&_.comm-filters]:flex-wrap [&&_.comm-filters]:gap-[12px] [&&_.comm-filters]:py-[12px] [&&_.comm-filters]:px-[16px] [&&_.comm-filters]:text-[12px] [&&_.comm-send]:inline-flex [&&_.comm-send]:items-center [&&_.comm-send]:justify-center [&&_.comm-send]:gap-[9px] [&&_.comm-send]:bg-[#365f4d] [&&_.comm-send]:text-white [&&_.comm-send]:py-[11px] [&&_.comm-send]:px-[18px] [&&_.comm-send]:rounded-[8px] [&&_.comm-send]:text-[12px] max-[640.001px]:[&&_.comm-send]:p-[10px]">
+      <div className="comm-title [&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-[20px] [&&]:mb-[25px] [&&_p]:text-[10px] [&&_p]:tracking-[2px] [&&_p]:text-[#8a7961] [&&_p]:mb-[8px] [&&_h1]:text-[30px] [&&_h1]:mt-0 [&&_h1]:mx-0 [&&_h1]:mb-[8px] [&&_h1]:font-semibold [&&_span]:text-[13px] [&&_span]:text-[#7b857f] [&&_>_a]:flex [&&_>_a]:items-center [&&_>_a]:gap-[8px] [&&_>_a]:text-[13px] [&&_.comm-connection]:text-[11px] [&&_.comm-connection]:border [&&_.comm-connection]:border-[#e3e8e2] [&&_.comm-connection]:py-[9px] [&&_.comm-connection]:px-[13px] [&&_.comm-connection]:rounded-[25px] [&&_.comm-connection]:bg-white max-[900.001px]:[&&_.comm-connection]:hidden max-[640.001px]:[&&_h1]:text-[25px] max-[640.001px]:[&&]:gap-[10px] max-[640.001px]:[&&_>_a]:text-[11px]">
         <div>
           <p>STAY IN THE LOOP</p>
           <h1>Notifications</h1>
@@ -214,7 +214,7 @@ export default function NotificationCenter({ role }) {
         </Link>
       </div>
       <ResourceStatistics resource="notifications" summary={data.summary} loading={loading} error={error} />
-      <div className="comm-filters">
+      <div className="comm-filters [&&_button]:py-[6px] [&&_button]:px-[10px] [&&_button]:border [&&_button]:border-[#e3e8e2] [&&_button]:rounded-[6px] [&&_button]:bg-white [&&_button[aria-pressed=true]]:bg-[#edf3ee] [&&_button[aria-pressed=true]]:text-[#365f4d] [&&_button[aria-pressed=true]]:border-[#b9cdbf] [&&_label]:flex [&&_label]:gap-[6px] [&&_label]:items-center [&&_select]:border [&&_select]:border-[#e3e8e2] [&&_select]:p-[7px] [&&_select]:rounded-[6px]">
         <label>
           Type{" "}
           <select
@@ -248,7 +248,7 @@ export default function NotificationCenter({ role }) {
         </button>
       </div>
       {error ? (
-        <div className="comm-error" role="alert">
+        <div className="comm-error [&&]:flex [&&]:flex-wrap [&&]:gap-[10px] [&&]:items-center [&&]:bg-[#fff3ef] [&&]:text-[#914d3c] [&&]:py-[12px] [&&]:px-[16px] [&&]:rounded-[8px] [&&]:text-[12px] [&&]:mb-[12px] [&&_button]:underline" role="alert">
           {error}
           <button onClick={reload}>Retry</button>
         </div>
@@ -257,13 +257,13 @@ export default function NotificationCenter({ role }) {
       ) : data.rows.length ? (
         <NotificationTable rows={data.rows} action={action} />
       ) : (
-        <div className="comm-empty">
+        <div className="comm-empty [&&]:flex [&&]:flex-1 [&&]:flex-col [&&]:items-center [&&]:justify-center [&&]:text-center [&&]:py-[35px] [&&]:px-[25px] [&&]:gap-[12px] [&&]:text-[#879380] [&&_h2]:font-medium [&&_h2]:text-[#53644f] [&&_h2]:text-[18px] [&&_h3]:font-medium [&&_h3]:text-[#53644f] [&&_h3]:text-[18px] [&&_p]:text-[12px] [&&_p]:max-w-[280px] [&&_p]:leading-[1.8]">
           <Bell size={36} />
           <h2>You’re all caught up</h2>
           <p>New updates will appear here.</p>
         </div>
       )}
-      <div className="comm-pagination">
+      <div className="comm-pagination [&&]:flex [&&]:justify-between [&&]:items-center [&&]:gap-[10px] [&&]:p-[15px] [&&]:text-[12px] [&&_button]:border [&&_button]:border-[#e3e8e2] [&&_button]:py-[6px] [&&_button]:px-[9px] [&&_button]:rounded-[6px]">
         <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
           Previous
         </button>
@@ -291,8 +291,8 @@ export function NotificationSettings({ role }) {
     load();
   }, [load]);
   return (
-    <div className="comm-root">
-      <div className="comm-title">
+    <div className="comm-root [&&]:text-[#263e35] [&&]:[font-family:inherit] [&&]:min-w-0 [&&_button]:cursor-pointer [&&_button:disabled]:opacity-45 [&&_button:disabled]:cursor-default [&&_button:focus-visible]:outline-2 [&&_button:focus-visible]:outline-[#72917e] [&&_button:focus-visible]:outline-offset-[3px] [&&_a:focus-visible]:outline-2 [&&_a:focus-visible]:outline-[#72917e] [&&_a:focus-visible]:outline-offset-[3px] [&&_input:focus-visible]:outline-2 [&&_input:focus-visible]:outline-[#72917e] [&&_input:focus-visible]:outline-offset-[3px] [&&_textarea:focus-visible]:outline-2 [&&_textarea:focus-visible]:outline-[#72917e] [&&_textarea:focus-visible]:outline-offset-[3px] [&&_.comm-filters]:flex [&&_.comm-filters]:items-center [&&_.comm-filters]:flex-wrap [&&_.comm-filters]:gap-[12px] [&&_.comm-filters]:py-[12px] [&&_.comm-filters]:px-[16px] [&&_.comm-filters]:text-[12px] [&&_.comm-send]:inline-flex [&&_.comm-send]:items-center [&&_.comm-send]:justify-center [&&_.comm-send]:gap-[9px] [&&_.comm-send]:bg-[#365f4d] [&&_.comm-send]:text-white [&&_.comm-send]:py-[11px] [&&_.comm-send]:px-[18px] [&&_.comm-send]:rounded-[8px] [&&_.comm-send]:text-[12px] max-[640.001px]:[&&_.comm-send]:p-[10px]">
+      <div className="comm-title [&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-[20px] [&&]:mb-[25px] [&&_p]:text-[10px] [&&_p]:tracking-[2px] [&&_p]:text-[#8a7961] [&&_p]:mb-[8px] [&&_h1]:text-[30px] [&&_h1]:mt-0 [&&_h1]:mx-0 [&&_h1]:mb-[8px] [&&_h1]:font-semibold [&&_span]:text-[13px] [&&_span]:text-[#7b857f] [&&_>_a]:flex [&&_>_a]:items-center [&&_>_a]:gap-[8px] [&&_>_a]:text-[13px] [&&_.comm-connection]:text-[11px] [&&_.comm-connection]:border [&&_.comm-connection]:border-[#e3e8e2] [&&_.comm-connection]:py-[9px] [&&_.comm-connection]:px-[13px] [&&_.comm-connection]:rounded-[25px] [&&_.comm-connection]:bg-white max-[900.001px]:[&&_.comm-connection]:hidden max-[640.001px]:[&&_h1]:text-[25px] max-[640.001px]:[&&]:gap-[10px] max-[640.001px]:[&&_>_a]:text-[11px]">
         <div>
           <p>MAKE IT YOURS</p>
           <h1>Notification preferences</h1>
@@ -300,7 +300,7 @@ export function NotificationSettings({ role }) {
         </div>
       </div>
       {error && (
-        <p className="comm-error" role="alert">
+        <p className="comm-error [&&]:flex [&&]:flex-wrap [&&]:gap-[10px] [&&]:items-center [&&]:bg-[#fff3ef] [&&]:text-[#914d3c] [&&]:py-[12px] [&&]:px-[16px] [&&]:rounded-[8px] [&&]:text-[12px] [&&]:mb-[12px] [&&_button]:underline" role="alert">
           {error}
           <button onClick={load}>Retry</button>
         </p>
@@ -309,7 +309,7 @@ export function NotificationSettings({ role }) {
         <p role="status">Loading preferences…</p>
       ) : (
         <form
-          className="comm-settings"
+          className="comm-settings [&&]:p-[25px] [&&]:bg-white [&&]:max-w-[650px] [&&]:border [&&]:border-[#e3e8e2] [&&]:rounded-[14px] [&&_>_label]:flex [&&_>_label]:justify-between [&&_>_label]:gap-[15px] [&&_>_label]:py-[20px] [&&_>_label]:px-0 [&&_>_label]:border-b [&&_>_label]:border-b-[#e3e8e2] [&&_strong]:text-[14px] [&&_strong]:block [&&_small]:block [&&_small]:text-[12px] [&&_small]:mt-[7px] [&&_small]:text-[#83917c] [&&_>_p]:text-[12px] [&&_>_p]:leading-[1.7] [&&_>_p]:text-[#83917c] [&&_>_p]:my-[25px] [&&_>_p]:mx-0 [&&_>_span]:m-[15px] [&&_>_span]:text-[12px] max-[640.001px]:[&&]:p-[18px]"
           onSubmit={async (e) => {
             e.preventDefault();
             setBusy(true);
@@ -362,7 +362,7 @@ export function NotificationSettings({ role }) {
             Essential account, booking and quotation status changes are always
             delivered in-app.
           </p>
-          <button className="comm-send" disabled={busy}>
+          <button className="comm-send max-[640.001px]:[&&_>_span]:hidden" disabled={busy}>
             {busy ? "Saving…" : "Save preferences"}
           </button>
           {saved && <span role="status">Preferences saved.</span>}

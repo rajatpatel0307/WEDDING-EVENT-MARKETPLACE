@@ -24,7 +24,7 @@ import {
   date,
 } from "./api";
 import { AboutView, ContactView, LegalView } from "./InfoPages";
-import "./content.css";
+
 const titles = {
   "about-us": "About Us",
   contact: "Contact Us",
@@ -41,7 +41,7 @@ function Dialog({ title, close, children }) {
   }, []);
   return (
     <dialog
-      className="cms-dialog cms-workspace"
+      className="cms-dialog [&&]:fixed [&&]:inset-0 [&&]:w-[min(1000px,calc(100%_-_32px))] [&&]:max-h-[90dvh] [&&]:m-auto [&&]:overflow-auto [&&]:border [&&]:border-[#e2dfd5] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:bg-white [&&]:text-[#3b503d] [&&]:z-[2200] [&&::backdrop]:bg-[#132217a8] cms-workspace text-[#3b503d] leading-[1.6] min-w-0 [font-family:inherit] [&_pre]:whitespace-pre-wrap [&_pre]:wrap-anywhere"
       ref={ref}
       aria-labelledby={id}
       onCancel={(e) => {
@@ -675,7 +675,7 @@ export default function AdminContent() {
     }
   }
   return (
-    <main className="cms-workspace space-y-5">
+    <main className="cms-workspace text-[#3b503d] leading-[1.6] min-w-0 [font-family:inherit] [&_pre]:whitespace-pre-wrap [&_pre]:wrap-anywhere space-y-5">
       <header>
         <p className="text-xs tracking-widest text-[#829179]">
           ADMIN / CONTENT MANAGEMENT
@@ -930,7 +930,7 @@ export function ContactManagement() {
   for (const [k, v] of Object.entries(filters)) if (v) params.set(k, v);
   const list = useContent(`/admin/contact-inquiries?${params}`, version);
   return (
-    <main className="cms-workspace space-y-5">
+    <main className="cms-workspace text-[#3b503d] leading-[1.6] min-w-0 [font-family:inherit] [&_pre]:whitespace-pre-wrap [&_pre]:wrap-anywhere space-y-5">
       <header>
         <p className="text-xs tracking-widest text-[#829179]">
           ADMIN / CONTACT MANAGEMENT
@@ -1264,7 +1264,7 @@ export function PrivacyManagement() {
     state = useContent(`/admin/privacy-requests?page=${page}`, version),
     staff = useContent("/admin/contact-inquiries/staff");
   return (
-    <main className="cms-workspace space-y-5">
+    <main className="cms-workspace text-[#3b503d] leading-[1.6] min-w-0 [font-family:inherit] [&_pre]:whitespace-pre-wrap [&_pre]:wrap-anywhere space-y-5">
       <header>
         <p className="text-xs tracking-widest text-[#829179]">
           ADMIN / PRIVACY REQUESTS

@@ -22,8 +22,10 @@ import { loadCheckout } from "../customer/services/checkout-loader";
 import { offerState } from "./offer-state";
 import { bookingQuantityState } from "./booking-quantity";
 import CartItem from "./CartItem";
+import CustomerOrdersPage from "./CustomerOrdersPage";
+import PurchaseOrderDetails from "./PurchaseOrderDetails";
 import { categoryImages } from "../../components/home/categoryImages";
-import "./commerce.css";
+
 
 function AddressPicker({ value, onChange, optional = false, disabled = false, className = "", selectClassName = "", linkClassName = "" }) {
   const state = useCustomerData("/addresses?pageSize=50");
@@ -70,21 +72,21 @@ function CustomerLabel({ className = "" }) {
 function Totals({ data }) {
   return (
     <>
-      <div className="commerce-line">
+      <div className="commerce-line flex justify-between gap-4 border-b border-[#edf0e9] py-[15px]">
         <span>Subtotal</span>
         <span>{money(data.subtotal)}</span>
       </div>
       {data.shipping != null && (
-        <div className="commerce-line">
+        <div className="commerce-line flex justify-between gap-4 border-b border-[#edf0e9] py-[15px]">
           <span>Delivery charges</span>
           <span>{money(data.shipping)}</span>
         </div>
       )}
-      <div className="commerce-line">
+      <div className="commerce-line flex justify-between gap-4 border-b border-[#edf0e9] py-[15px]">
         <span>Tax</span>
         <span>{money(data.tax)}</span>
       </div>
-      <p className="commerce-total">Total {money(data.total)}</p>
+      <p className="commerce-total my-5 text-[21px] font-semibold">Total {money(data.total)}</p>
     </>
   );
 }
@@ -670,82 +672,16 @@ export function PurchaseOrder() {
   }
   if (state.loading) return <Loading />;
   if (state.error) return <ErrorView error={state.error} retry={state.retry} />;
-  const d = state.data;
-  return (
-    <main className="commerce commerce-page">
-      <Link to="/customer/orders">← My Orders</Link>
-      <h1>{d.number}</h1>
-      {d.paymentStatus === "Paid" && (
-        <p className="commerce-success" role="status">
-          Payment verified. Your purchase is confirmed.
-        </p>
-      )}
-      <p>
-        {d.status} · Payment {d.paymentStatus}
-      </p>
-      <section className="commerce-panel">
-        {d.lines.map((l, i) => (
-          <div className="commerce-line" key={i}>
-            <span>
-              {l.name} × {l.quantity} · Selling Price {money(l.price)}
-            </span>
-            <span>{money(l.total)}</span>
-          </div>
-        ))}
-        <Totals data={d} />
-        <p>
-          {d.address.fullName} · {d.address.line1} · {d.address.city}{" "}
-          {d.address.postalCode}
-        </p>
-      </section>
-      {error && (
-        <p role="alert" className="commerce-error">
-          {error}
-        </p>
-      )}
-      {notice && <p role="status">{notice}</p>}
-      {d.paymentStatus !== "Paid" && (
-        <div className="commerce-actions">
-          <button
-            className="primary"
-            disabled={busy}
-            onClick={() => action(true)}
-          >
-            Pay {money(d.total)}
-          </button>
-          <button disabled={busy} onClick={() => action(false)}>
-            Check server status
-          </button>
-        </div>
-      )}
-    </main>
-  );
+  return <PurchaseOrderDetails
+    data={state.data}
+    busy={busy}
+    error={error}
+    notice={notice}
+    onPay={() => action(true)}
+    onRefresh={() => action(false)}
+  />;
 }
+
 export function MyOrders() {
-  const state = useCustomerData("/orders");
-  if (state.loading) return <Loading />;
-  if (state.error) return <ErrorView error={state.error} retry={state.retry} />;
-  return (
-    <main className="commerce commerce-page">
-      <h1>My Orders</h1>
-      <Link to="/customer/cart">View cart</Link>
-      {state.data.length ? (
-        <section className="commerce-panel">
-          {state.data.map((o) => (
-            <div className="commerce-line" key={o.id}>
-              <Link to={`/customer/orders/${o.id}`}>{o.number}</Link>
-              <span>
-                {o.status} · {o.paymentStatus} · {money(o.total)}
-              </span>
-            </div>
-          ))}
-        </section>
-      ) : (
-        <section className="commerce-panel">
-          <p>No purchases yet.</p>
-          <Link to="/services">Explore products</Link>
-        </section>
-      )}
-    </main>
-  );
+  return <CustomerOrdersPage />;
 }

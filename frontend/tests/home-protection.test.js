@@ -22,36 +22,28 @@ test("finalized Home Page, navigation, footer, global styles, shared components 
     );
   }
 });
-test("new marketplace styles stay inside their page root after navigating back Home", () => {
-  const css = readFileSync(
-    new URL("src/modules/marketplace/marketplace.css", root),
-    "utf8",
-  );
-  for (const match of css.matchAll(/(?:^|(?<=[{}]))\s*([^{}]+)\{/g)) {
-    const selector = match[1].trim();
-    if (selector.startsWith("@media")) continue;
-    assert.ok(
-      selector
-        .split(",")
-        .every((s) => s.trim().startsWith(".customer-marketplace")),
-      `Unscoped selector: ${selector}`,
+test("marketplace pages keep styles local in inline Tailwind classes", () => {
+  for (const name of ["BrowsePage", "DetailPage"]) {
+    const source = readFileSync(
+      new URL(`src/modules/marketplace/${name}.jsx`, root),
+      "utf8",
     );
+    assert.doesNotMatch(source, /import\s+(?:[^;]*?\s+from\s+)?["'][^"']+\.css["']/,
+      `${name} must keep its styles in Tailwind classes`);
+    assert.doesNotMatch(source, /<style\b|createElement\(\s*["']style["']/,
+      `${name} must not inject global styles`);
   }
 });
 
-test("quotation styles stay scoped to quotation pages, including print and mobile rules", () => {
-  const css = readFileSync(
-    new URL("src/modules/quotations/quotations.css", root),
-    "utf8",
-  );
-  for (const match of css.matchAll(/(?:^|(?<=[{}]))\s*([^{}]+)\{/g)) {
-    const selector = match[1].trim();
-    if (selector.startsWith("@media")) continue;
-    assert.ok(
-      selector
-        .split(",")
-        .every((s) => s.trim().startsWith(".quotation-workspace")),
-      `Unscoped quotation selector: ${selector}`,
+test("quotation pages and builder keep styles local in inline Tailwind classes", () => {
+  for (const name of ["QuotationPages", "QuotationBuilder"]) {
+    const source = readFileSync(
+      new URL(`src/modules/quotations/${name}.jsx`, root),
+      "utf8",
     );
+    assert.doesNotMatch(source, /import\s+(?:[^;]*?\s+from\s+)?["'][^"']+\.css["']/,
+      `${name} must keep its styles in Tailwind classes`);
+    assert.doesNotMatch(source, /<style\b|createElement\(\s*["']style["']/,
+      `${name} must not inject global styles`);
   }
 });

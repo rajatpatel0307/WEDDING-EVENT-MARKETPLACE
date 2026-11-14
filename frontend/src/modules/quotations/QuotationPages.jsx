@@ -19,16 +19,16 @@ import {
   timestamp,
   workspace,
 } from "./quotation.api";
-import "./quotations.css";
+
 export function QuoteState({ state }) {
   return state.loading ? (
     <div
-      className="qt-skeleton"
+      className="qt-skeleton [&&]:h-[250px] [&&]:bg-[#f2eeeb] [&&]:rounded-[14px]"
       role="status"
       aria-label="Loading quotations"
     />
   ) : state.error ? (
-    <section role="alert" className="qt-panel qt-error">
+    <section role="alert" className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid] qt-error [&&]:text-[#a22d40]">
       <p>{state.error.message}</p>
       <button onClick={state.retry}>Try again</button>
     </section>
@@ -43,7 +43,7 @@ function Dialog({ title, close, busy, children }) {
     <dialog
       ref={ref}
       aria-label={title}
-      className="quotation-workspace qt-dialog"
+      className="quotation-workspace [&]:text-[#342d2a] [&]:min-w-0 [&]:wrap-anywhere [&_h1]:[font:clamp(28px,_4vw,_42px)/1.2_Georgia,_serif] [&_h1]:my-[12px] [&_h1]:mx-0 [&_h2]:[font:25px/1.3_Georgia,_serif] [&_h2]:my-[12px] [&_h2]:mx-0 [&_h3]:text-[17px] [&_h3]:my-[12px] [&_h3]:mx-0 [&_p]:leading-[1.7] [&_button]:inline-flex [&_button]:items-center [&_button]:gap-[8px] [&_button]:border [&_button]:border-[#ded2cd] [&_button]:rounded-[8px] [&_button]:py-[10px] [&_button]:px-[15px] [&_button]:bg-white [&_button]:text-inherit [&_button]:[font:inherit] [&_button]:no-underline [&_button]:cursor-pointer [&_button:disabled]:opacity-45 [&_button:disabled]:[cursor:not-allowed] [&_input]:w-full [&_input]:border [&_input]:border-[#ded2cd] [&_input]:rounded-[8px] [&_input]:p-[10px] [&_input]:bg-white [&_input]:text-inherit [&_input]:[font:inherit] [&_input]:min-w-0 [&_select]:w-full [&_select]:border [&_select]:border-[#ded2cd] [&_select]:rounded-[8px] [&_select]:p-[10px] [&_select]:bg-white [&_select]:text-inherit [&_select]:[font:inherit] [&_select]:min-w-0 [&_textarea]:w-full [&_textarea]:border [&_textarea]:border-[#ded2cd] [&_textarea]:rounded-[8px] [&_textarea]:p-[10px] [&_textarea]:bg-white [&_textarea]:text-inherit [&_textarea]:[font:inherit] [&_textarea]:min-w-0 [&_label]:grid [&_label]:gap-[7px] [&_label]:text-[13px] [&_table]:w-full [&_table]:border-collapse [&_td]:text-left [&_td]:p-[12px] [&_td]:border-b [&_td]:border-b-[#e7dfda] [&_td]:min-w-[110px] [&_td]:[vertical-align:top] [&_th]:text-left [&_th]:p-[12px] [&_th]:border-b [&_th]:border-b-[#e7dfda] [&_th]:min-w-[110px] [&_th]:[vertical-align:top] [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-[#8c414e] [&_:focus-visible]:outline-offset-[3px] print:[&_button]:hidden print:[&_nav]:hidden qt-dialog [&&]:m-auto [&&]:max-w-[620px] [&&]:w-[calc(100%_-_32px)] [&&]:max-h-[90dvh] [&&]:border [&&]:border-[#e7dfda] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:overflow-auto [&&::backdrop]:bg-[rgb(35_22_25_/_0.45)]"
       onCancel={(e) => (busy ? e.preventDefault() : close())}
     >
       <h2>{title}</h2>
@@ -57,11 +57,11 @@ function Dialog({ title, close, busy, children }) {
 export function QuotationOverview({ role = "Customer" }) {
   const stats = useQuotation(role, "/quotations/statistics");
   return (
-    <section className="quotation-workspace" aria-label="Quotation overview">
+    <section className="quotation-workspace [&]:text-[#342d2a] [&]:min-w-0 [&]:wrap-anywhere [&_h1]:[font:clamp(28px,_4vw,_42px)/1.2_Georgia,_serif] [&_h1]:my-[12px] [&_h1]:mx-0 [&_h2]:[font:25px/1.3_Georgia,_serif] [&_h2]:my-[12px] [&_h2]:mx-0 [&_h3]:text-[17px] [&_h3]:my-[12px] [&_h3]:mx-0 [&_p]:leading-[1.7] [&_button]:inline-flex [&_button]:items-center [&_button]:gap-[8px] [&_button]:border [&_button]:border-[#ded2cd] [&_button]:rounded-[8px] [&_button]:py-[10px] [&_button]:px-[15px] [&_button]:bg-white [&_button]:text-inherit [&_button]:[font:inherit] [&_button]:no-underline [&_button]:cursor-pointer [&_button:disabled]:opacity-45 [&_button:disabled]:[cursor:not-allowed] [&_input]:w-full [&_input]:border [&_input]:border-[#ded2cd] [&_input]:rounded-[8px] [&_input]:p-[10px] [&_input]:bg-white [&_input]:text-inherit [&_input]:[font:inherit] [&_input]:min-w-0 [&_select]:w-full [&_select]:border [&_select]:border-[#ded2cd] [&_select]:rounded-[8px] [&_select]:p-[10px] [&_select]:bg-white [&_select]:text-inherit [&_select]:[font:inherit] [&_select]:min-w-0 [&_textarea]:w-full [&_textarea]:border [&_textarea]:border-[#ded2cd] [&_textarea]:rounded-[8px] [&_textarea]:p-[10px] [&_textarea]:bg-white [&_textarea]:text-inherit [&_textarea]:[font:inherit] [&_textarea]:min-w-0 [&_label]:grid [&_label]:gap-[7px] [&_label]:text-[13px] [&_table]:w-full [&_table]:border-collapse [&_td]:text-left [&_td]:p-[12px] [&_td]:border-b [&_td]:border-b-[#e7dfda] [&_td]:min-w-[110px] [&_td]:[vertical-align:top] [&_th]:text-left [&_th]:p-[12px] [&_th]:border-b [&_th]:border-b-[#e7dfda] [&_th]:min-w-[110px] [&_th]:[vertical-align:top] [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-[#8c414e] [&_:focus-visible]:outline-offset-[3px] print:[&_button]:hidden print:[&_nav]:hidden" aria-label="Quotation overview">
       <h2>Quotation overview</h2>
       <QuoteState state={stats} />
       {stats.data && (
-        <div className="qt-stats">
+        <div className="qt-stats [&&]:grid [&&]:grid-cols-[repeat(auto-fit,_minmax(130px,_1fr))] [&&]:gap-[12px] [&&]:my-[20px] [&&]:mx-0">
           {[
             ["Requests", stats.data.requests.total],
             ["Pending requests", stats.data.requests.pending],
@@ -74,7 +74,7 @@ export function QuotationOverview({ role = "Customer" }) {
             ["Converted bookings", stats.data.converted],
             ["Quotation value", money(stats.data.quotes.value)],
           ].map(([label, value]) => (
-            <div className="qt-stat" key={label}>
+            <div className="qt-stat [&&]:p-[16px] [&&]:border [&&]:border-[#e7dfda] [&&]:bg-white [&&]:rounded-[12px] [&&_strong]:block [&&_strong]:text-[24px] [&&_span]:text-[12px] [&&_span]:text-[#7c6c65]" key={label}>
               <strong>{value || 0}</strong>
               <span>{label}</span>
             </div>
@@ -110,31 +110,31 @@ export function QuotationList({
       return next;
     });
   return (
-    <div className="quotation-workspace">
+    <div className="quotation-workspace [&]:text-[#342d2a] [&]:min-w-0 [&]:wrap-anywhere [&_h1]:[font:clamp(28px,_4vw,_42px)/1.2_Georgia,_serif] [&_h1]:my-[12px] [&_h1]:mx-0 [&_h2]:[font:25px/1.3_Georgia,_serif] [&_h2]:my-[12px] [&_h2]:mx-0 [&_h3]:text-[17px] [&_h3]:my-[12px] [&_h3]:mx-0 [&_p]:leading-[1.7] [&_button]:inline-flex [&_button]:items-center [&_button]:gap-[8px] [&_button]:border [&_button]:border-[#ded2cd] [&_button]:rounded-[8px] [&_button]:py-[10px] [&_button]:px-[15px] [&_button]:bg-white [&_button]:text-inherit [&_button]:[font:inherit] [&_button]:no-underline [&_button]:cursor-pointer [&_button:disabled]:opacity-45 [&_button:disabled]:[cursor:not-allowed] [&_input]:w-full [&_input]:border [&_input]:border-[#ded2cd] [&_input]:rounded-[8px] [&_input]:p-[10px] [&_input]:bg-white [&_input]:text-inherit [&_input]:[font:inherit] [&_input]:min-w-0 [&_select]:w-full [&_select]:border [&_select]:border-[#ded2cd] [&_select]:rounded-[8px] [&_select]:p-[10px] [&_select]:bg-white [&_select]:text-inherit [&_select]:[font:inherit] [&_select]:min-w-0 [&_textarea]:w-full [&_textarea]:border [&_textarea]:border-[#ded2cd] [&_textarea]:rounded-[8px] [&_textarea]:p-[10px] [&_textarea]:bg-white [&_textarea]:text-inherit [&_textarea]:[font:inherit] [&_textarea]:min-w-0 [&_label]:grid [&_label]:gap-[7px] [&_label]:text-[13px] [&_table]:w-full [&_table]:border-collapse [&_td]:text-left [&_td]:p-[12px] [&_td]:border-b [&_td]:border-b-[#e7dfda] [&_td]:min-w-[110px] [&_td]:[vertical-align:top] [&_th]:text-left [&_th]:p-[12px] [&_th]:border-b [&_th]:border-b-[#e7dfda] [&_th]:min-w-[110px] [&_th]:[vertical-align:top] [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-[#8c414e] [&_:focus-visible]:outline-offset-[3px] print:[&_button]:hidden print:[&_nav]:hidden">
       <h1>{requests ? "Quotation requests" : "Your quotations"}</h1>
       <p>
         From the first idea to a clear agreement. Every sent version stays in
         your history.
       </p>
-      <nav className="qt-actions">
-        <Link className="qt-button" to={requestsPath}>
+      <nav className="qt-actions [&&]:flex [&&]:gap-[12px] [&&]:flex-wrap [&&]:items-center [&&]:my-[16px] [&&]:mx-0 print:[&&]:hidden">
+        <Link className="qt-button [&&]:inline-flex [&&]:items-center [&&]:gap-[8px] [&&]:border [&&]:border-[#ded2cd] [&&]:rounded-[8px] [&&]:py-[10px] [&&]:px-[15px] [&&]:bg-white [&&]:text-inherit [&&]:[font:inherit] [&&]:no-underline [&&]:cursor-pointer" to={requestsPath}>
           Requests
         </Link>
         <Link
-          className="qt-button"
+          className="qt-button [&&]:inline-flex [&&]:items-center [&&]:gap-[8px] [&&]:border [&&]:border-[#ded2cd] [&&]:rounded-[8px] [&&]:py-[10px] [&&]:px-[15px] [&&]:bg-white [&&]:text-inherit [&&]:[font:inherit] [&&]:no-underline [&&]:cursor-pointer"
           to={`${base}/quotations${role === "Vendor" ? "/sent" : ""}`}
         >
           Quotations
         </Link>
         {role === "Vendor" && (
-          <Link className="qt-button qt-primary" to="/vendor/quotations/new">
+          <Link className="qt-button [&&]:inline-flex [&&]:items-center [&&]:gap-[8px] [&&]:border [&&]:border-[#ded2cd] [&&]:rounded-[8px] [&&]:py-[10px] [&&]:px-[15px] [&&]:bg-white [&&]:text-inherit [&&]:[font:inherit] [&&]:no-underline [&&]:cursor-pointer qt-primary [&&&]:bg-[#8c414e] [&&&]:border-[#8c414e] [&&&]:text-white" to="/vendor/quotations/new">
             Create quotation
           </Link>
         )}
       </nav>
       <QuotationOverview role={role} />
       <form
-        className="qt-toolbar"
+        className="qt-toolbar [&&]:flex [&&]:gap-[12px] [&&]:flex-wrap [&&]:items-center [&&]:my-[16px] [&&]:mx-0 max-[700.001px]:[&&_>_label]:flex-1 max-[700.001px]:[&&_>_label]:min-w-[140px]"
         onSubmit={(e) => {
           e.preventDefault();
           change("q", new FormData(e.currentTarget).get("q"));
@@ -211,7 +211,7 @@ export function QuotationList({
       <QuoteState state={state} />
       {state.data &&
         (state.data.rows.length ? (
-          <section className="qt-panel qt-table">
+          <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid] qt-table [&&]:overflow-auto [&&]:max-w-full">
             <table>
               <thead>
                 <tr>
@@ -248,7 +248,7 @@ export function QuotationList({
                     </td>
                     <td>{requests ? row.service : money(row.amount)}</td>
                     <td>
-                      <span className="qt-badge">
+                      <span className="qt-badge [&&]:[display:inline-block] [&&]:rounded-[6px] [&&]:bg-[#f6ecee] [&&]:text-[#8c414e] [&&]:py-[5px] [&&]:px-[9px] [&&]:text-[12px]">
                         {row.bookingId
                           ? "Converted"
                           : row.negotiating
@@ -258,7 +258,7 @@ export function QuotationList({
                     </td>
                     <td>
                       <Link
-                        className="qt-button"
+                        className="qt-button [&&]:inline-flex [&&]:items-center [&&]:gap-[8px] [&&]:border [&&]:border-[#ded2cd] [&&]:rounded-[8px] [&&]:py-[10px] [&&]:px-[15px] [&&]:bg-white [&&]:text-inherit [&&]:[font:inherit] [&&]:no-underline [&&]:cursor-pointer"
                         to={`${base}/${requests ? (role === "Admin" ? "quotation-requests" : "requests") : "quotations"}/${row.id}`}
                       >
                         View details
@@ -270,7 +270,7 @@ export function QuotationList({
             </table>
           </section>
         ) : (
-          <section className="qt-panel">
+          <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid]">
             <FileText />
             <h2>No matching {requests ? "requests" : "quotations"} yet.</h2>
             <p>
@@ -282,7 +282,7 @@ export function QuotationList({
           </section>
         ))}
       {state.data && (
-        <div className="qt-pagination">
+        <div className="qt-pagination [&&]:flex [&&]:gap-[14px] [&&]:items-center [&&]:justify-center [&&]:my-[18px] [&&]:mx-0">
           <button
             disabled={state.data.page <= 1}
             onClick={() => change("page", state.data.page - 1)}
@@ -303,15 +303,15 @@ export function QuotationList({
 }
 function Timeline({ rows }) {
   return (
-    <section className="qt-panel">
+    <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid]">
       <h2>Negotiation and history</h2>
-      <ol className="qt-timeline">
+      <ol className="qt-timeline [&&]:[list-style:none] [&&]:p-0 [&&_li]:border-l-2 [&&_li]:border-l-[#ead5da] [&&_li]:pt-0 [&&_li]:pr-0 [&&_li]:pb-[22px] [&&_li]:pl-[18px] [&&_li]:ml-[8px]">
         {rows.map((h, i) => (
           <li key={h.id || i}>
             <strong>{h.action}</strong> · {h.role} · {timestamp(h.createdAt)}
             <p>{h.message}</p>
             {h.visibility === "Internal" && (
-              <span className="qt-badge">Internal administrator note</span>
+              <span className="qt-badge [&&]:[display:inline-block] [&&]:rounded-[6px] [&&]:bg-[#f6ecee] [&&]:text-[#8c414e] [&&]:py-[5px] [&&]:px-[9px] [&&]:text-[12px]">Internal administrator note</span>
             )}
           </li>
         ))}
@@ -331,7 +331,7 @@ export function RequestDetails({ role = "Customer" }) {
     navigate = useNavigate();
   if (state.loading || state.error)
     return (
-      <div className="quotation-workspace">
+      <div className="quotation-workspace [&]:text-[#342d2a] [&]:min-w-0 [&]:wrap-anywhere [&_h1]:[font:clamp(28px,_4vw,_42px)/1.2_Georgia,_serif] [&_h1]:my-[12px] [&_h1]:mx-0 [&_h2]:[font:25px/1.3_Georgia,_serif] [&_h2]:my-[12px] [&_h2]:mx-0 [&_h3]:text-[17px] [&_h3]:my-[12px] [&_h3]:mx-0 [&_p]:leading-[1.7] [&_button]:inline-flex [&_button]:items-center [&_button]:gap-[8px] [&_button]:border [&_button]:border-[#ded2cd] [&_button]:rounded-[8px] [&_button]:py-[10px] [&_button]:px-[15px] [&_button]:bg-white [&_button]:text-inherit [&_button]:[font:inherit] [&_button]:no-underline [&_button]:cursor-pointer [&_button:disabled]:opacity-45 [&_button:disabled]:[cursor:not-allowed] [&_input]:w-full [&_input]:border [&_input]:border-[#ded2cd] [&_input]:rounded-[8px] [&_input]:p-[10px] [&_input]:bg-white [&_input]:text-inherit [&_input]:[font:inherit] [&_input]:min-w-0 [&_select]:w-full [&_select]:border [&_select]:border-[#ded2cd] [&_select]:rounded-[8px] [&_select]:p-[10px] [&_select]:bg-white [&_select]:text-inherit [&_select]:[font:inherit] [&_select]:min-w-0 [&_textarea]:w-full [&_textarea]:border [&_textarea]:border-[#ded2cd] [&_textarea]:rounded-[8px] [&_textarea]:p-[10px] [&_textarea]:bg-white [&_textarea]:text-inherit [&_textarea]:[font:inherit] [&_textarea]:min-w-0 [&_label]:grid [&_label]:gap-[7px] [&_label]:text-[13px] [&_table]:w-full [&_table]:border-collapse [&_td]:text-left [&_td]:p-[12px] [&_td]:border-b [&_td]:border-b-[#e7dfda] [&_td]:min-w-[110px] [&_td]:[vertical-align:top] [&_th]:text-left [&_th]:p-[12px] [&_th]:border-b [&_th]:border-b-[#e7dfda] [&_th]:min-w-[110px] [&_th]:[vertical-align:top] [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-[#8c414e] [&_:focus-visible]:outline-offset-[3px] print:[&_button]:hidden print:[&_nav]:hidden">
         <QuoteState state={state} />
       </div>
     );
@@ -355,7 +355,7 @@ export function RequestDetails({ role = "Customer" }) {
     }
   }
   return (
-    <div className="quotation-workspace">
+    <div className="quotation-workspace [&]:text-[#342d2a] [&]:min-w-0 [&]:wrap-anywhere [&_h1]:[font:clamp(28px,_4vw,_42px)/1.2_Georgia,_serif] [&_h1]:my-[12px] [&_h1]:mx-0 [&_h2]:[font:25px/1.3_Georgia,_serif] [&_h2]:my-[12px] [&_h2]:mx-0 [&_h3]:text-[17px] [&_h3]:my-[12px] [&_h3]:mx-0 [&_p]:leading-[1.7] [&_button]:inline-flex [&_button]:items-center [&_button]:gap-[8px] [&_button]:border [&_button]:border-[#ded2cd] [&_button]:rounded-[8px] [&_button]:py-[10px] [&_button]:px-[15px] [&_button]:bg-white [&_button]:text-inherit [&_button]:[font:inherit] [&_button]:no-underline [&_button]:cursor-pointer [&_button:disabled]:opacity-45 [&_button:disabled]:[cursor:not-allowed] [&_input]:w-full [&_input]:border [&_input]:border-[#ded2cd] [&_input]:rounded-[8px] [&_input]:p-[10px] [&_input]:bg-white [&_input]:text-inherit [&_input]:[font:inherit] [&_input]:min-w-0 [&_select]:w-full [&_select]:border [&_select]:border-[#ded2cd] [&_select]:rounded-[8px] [&_select]:p-[10px] [&_select]:bg-white [&_select]:text-inherit [&_select]:[font:inherit] [&_select]:min-w-0 [&_textarea]:w-full [&_textarea]:border [&_textarea]:border-[#ded2cd] [&_textarea]:rounded-[8px] [&_textarea]:p-[10px] [&_textarea]:bg-white [&_textarea]:text-inherit [&_textarea]:[font:inherit] [&_textarea]:min-w-0 [&_label]:grid [&_label]:gap-[7px] [&_label]:text-[13px] [&_table]:w-full [&_table]:border-collapse [&_td]:text-left [&_td]:p-[12px] [&_td]:border-b [&_td]:border-b-[#e7dfda] [&_td]:min-w-[110px] [&_td]:[vertical-align:top] [&_th]:text-left [&_th]:p-[12px] [&_th]:border-b [&_th]:border-b-[#e7dfda] [&_th]:min-w-[110px] [&_th]:[vertical-align:top] [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-[#8c414e] [&_:focus-visible]:outline-offset-[3px] print:[&_button]:hidden print:[&_nav]:hidden">
       <Link
         to={
           role === "Vendor"
@@ -371,8 +371,8 @@ export function RequestDetails({ role = "Customer" }) {
       <p>
         {r.VendorName} - {r.CustomerName}
       </p>
-      <span className="qt-badge">{r.Status}</span>
-      <section className="qt-panel">
+      <span className="qt-badge [&&]:[display:inline-block] [&&]:rounded-[6px] [&&]:bg-[#f6ecee] [&&]:text-[#8c414e] [&&]:py-[5px] [&&]:px-[9px] [&&]:text-[12px]">{r.Status}</span>
+      <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid]">
         <h2>Event requirements</h2>
         <p>
           {e.EventName} · {e.EventType} · {e.EventDate} {e.StartTime}–
@@ -393,7 +393,7 @@ export function RequestDetails({ role = "Customer" }) {
           </p>
         ))}
         {r.DecisionReason && <p>Response: {r.DecisionReason}</p>}
-        <div className="qt-actions">
+        <div className="qt-actions [&&]:flex [&&]:gap-[12px] [&&]:flex-wrap [&&]:items-center [&&]:my-[16px] [&&]:mx-0 print:[&&]:hidden">
           {role !== "Admin" && (
             <button disabled={busy} onClick={chat}>
               <MessageSquare size={16} />
@@ -403,7 +403,7 @@ export function RequestDetails({ role = "Customer" }) {
           {role === "Vendor" && r.Status === "Pending" && (
             <>
               <Link
-                className="qt-button qt-primary"
+                className="qt-button [&&]:inline-flex [&&]:items-center [&&]:gap-[8px] [&&]:border [&&]:border-[#ded2cd] [&&]:rounded-[8px] [&&]:py-[10px] [&&]:px-[15px] [&&]:bg-white [&&]:text-inherit [&&]:[font:inherit] [&&]:no-underline [&&]:cursor-pointer qt-primary [&&&]:bg-[#8c414e] [&&&]:border-[#8c414e] [&&&]:text-white"
                 to={`/vendor/quotations/new?event=${r.EventId}&request=${id}`}
               >
                 Create quotation
@@ -421,7 +421,7 @@ export function RequestDetails({ role = "Customer" }) {
           )}
         </div>
       </section>
-      <section className="qt-panel">
+      <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid]">
         <h2>Related quotations</h2>
         {d.quotations.map((q) => (
           <p key={q.id}>
@@ -435,7 +435,7 @@ export function RequestDetails({ role = "Customer" }) {
       </section>
       <Timeline rows={d.history} />
       {error && (
-        <p className="qt-error" role="alert">
+        <p className="qt-error [&&]:text-[#a22d40]" role="alert">
           {error}
         </p>
       )}
@@ -470,7 +470,7 @@ export function RequestDetails({ role = "Customer" }) {
             }}
           >
             {error && (
-              <p role="alert" className="qt-error">
+              <p role="alert" className="qt-error [&&]:text-[#a22d40]">
                 {error}
               </p>
             )}
@@ -478,7 +478,7 @@ export function RequestDetails({ role = "Customer" }) {
               Reason shared with the other party
               <textarea name="reason" minLength={3} maxLength={1000} required />
             </label>
-            <button className="qt-primary" disabled={busy}>
+            <button className="qt-primary [&&&]:bg-[#8c414e] [&&&]:border-[#8c414e] [&&&]:text-white" disabled={busy}>
               Confirm
             </button>
             {error && <p role="alert">{error}</p>}
@@ -490,7 +490,7 @@ export function RequestDetails({ role = "Customer" }) {
 }
 export function QuoteItems({ items }) {
   return (
-    <div className="qt-table">
+    <div className="qt-table [&&]:overflow-auto [&&]:max-w-full">
       <table>
         <thead>
           <tr>
@@ -512,7 +512,7 @@ export function QuoteItems({ items }) {
               <td>
                 <strong>{i.name}</strong>
                 <p>{i.description}</p>
-                <span className="qt-note">{i.kind}</span>
+                <span className="qt-note [&&]:text-[13px] [&&]:text-[#75665e]">{i.kind}</span>
               </td>
               <td>
                 {Number(i.quantity)} {i.unit}
@@ -543,7 +543,7 @@ function Expiry({ until, serverTime }) {
     return () => clearInterval(timer);
   }, [start]);
   return (
-    <p className="qt-note">
+    <p className="qt-note [&&]:text-[13px] [&&]:text-[#75665e]">
       <Clock3 size={14} /> Valid until {timestamp(until)} ·{" "}
       {remaining > 0
         ? `${Math.floor(remaining / 3600000)}h ${Math.floor(remaining / 60000) % 60}m ${Math.floor(remaining / 1000) % 60}s remaining`
@@ -568,7 +568,7 @@ export function QuotationDetails({ role = "Customer" }) {
     navigate = useNavigate();
   if (state.loading || state.error)
     return (
-      <div className="quotation-workspace">
+      <div className="quotation-workspace [&]:text-[#342d2a] [&]:min-w-0 [&]:wrap-anywhere [&_h1]:[font:clamp(28px,_4vw,_42px)/1.2_Georgia,_serif] [&_h1]:my-[12px] [&_h1]:mx-0 [&_h2]:[font:25px/1.3_Georgia,_serif] [&_h2]:my-[12px] [&_h2]:mx-0 [&_h3]:text-[17px] [&_h3]:my-[12px] [&_h3]:mx-0 [&_p]:leading-[1.7] [&_button]:inline-flex [&_button]:items-center [&_button]:gap-[8px] [&_button]:border [&_button]:border-[#ded2cd] [&_button]:rounded-[8px] [&_button]:py-[10px] [&_button]:px-[15px] [&_button]:bg-white [&_button]:text-inherit [&_button]:[font:inherit] [&_button]:no-underline [&_button]:cursor-pointer [&_button:disabled]:opacity-45 [&_button:disabled]:[cursor:not-allowed] [&_input]:w-full [&_input]:border [&_input]:border-[#ded2cd] [&_input]:rounded-[8px] [&_input]:p-[10px] [&_input]:bg-white [&_input]:text-inherit [&_input]:[font:inherit] [&_input]:min-w-0 [&_select]:w-full [&_select]:border [&_select]:border-[#ded2cd] [&_select]:rounded-[8px] [&_select]:p-[10px] [&_select]:bg-white [&_select]:text-inherit [&_select]:[font:inherit] [&_select]:min-w-0 [&_textarea]:w-full [&_textarea]:border [&_textarea]:border-[#ded2cd] [&_textarea]:rounded-[8px] [&_textarea]:p-[10px] [&_textarea]:bg-white [&_textarea]:text-inherit [&_textarea]:[font:inherit] [&_textarea]:min-w-0 [&_label]:grid [&_label]:gap-[7px] [&_label]:text-[13px] [&_table]:w-full [&_table]:border-collapse [&_td]:text-left [&_td]:p-[12px] [&_td]:border-b [&_td]:border-b-[#e7dfda] [&_td]:min-w-[110px] [&_td]:[vertical-align:top] [&_th]:text-left [&_th]:p-[12px] [&_th]:border-b [&_th]:border-b-[#e7dfda] [&_th]:min-w-[110px] [&_th]:[vertical-align:top] [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-[#8c414e] [&_:focus-visible]:outline-offset-[3px] print:[&_button]:hidden print:[&_nav]:hidden">
         <QuoteState state={state} />
       </div>
     );
@@ -606,7 +606,7 @@ export function QuotationDetails({ role = "Customer" }) {
     }
   }
   return (
-    <div className="quotation-workspace">
+    <div className="quotation-workspace [&]:text-[#342d2a] [&]:min-w-0 [&]:wrap-anywhere [&_h1]:[font:clamp(28px,_4vw,_42px)/1.2_Georgia,_serif] [&_h1]:my-[12px] [&_h1]:mx-0 [&_h2]:[font:25px/1.3_Georgia,_serif] [&_h2]:my-[12px] [&_h2]:mx-0 [&_h3]:text-[17px] [&_h3]:my-[12px] [&_h3]:mx-0 [&_p]:leading-[1.7] [&_button]:inline-flex [&_button]:items-center [&_button]:gap-[8px] [&_button]:border [&_button]:border-[#ded2cd] [&_button]:rounded-[8px] [&_button]:py-[10px] [&_button]:px-[15px] [&_button]:bg-white [&_button]:text-inherit [&_button]:[font:inherit] [&_button]:no-underline [&_button]:cursor-pointer [&_button:disabled]:opacity-45 [&_button:disabled]:[cursor:not-allowed] [&_input]:w-full [&_input]:border [&_input]:border-[#ded2cd] [&_input]:rounded-[8px] [&_input]:p-[10px] [&_input]:bg-white [&_input]:text-inherit [&_input]:[font:inherit] [&_input]:min-w-0 [&_select]:w-full [&_select]:border [&_select]:border-[#ded2cd] [&_select]:rounded-[8px] [&_select]:p-[10px] [&_select]:bg-white [&_select]:text-inherit [&_select]:[font:inherit] [&_select]:min-w-0 [&_textarea]:w-full [&_textarea]:border [&_textarea]:border-[#ded2cd] [&_textarea]:rounded-[8px] [&_textarea]:p-[10px] [&_textarea]:bg-white [&_textarea]:text-inherit [&_textarea]:[font:inherit] [&_textarea]:min-w-0 [&_label]:grid [&_label]:gap-[7px] [&_label]:text-[13px] [&_table]:w-full [&_table]:border-collapse [&_td]:text-left [&_td]:p-[12px] [&_td]:border-b [&_td]:border-b-[#e7dfda] [&_td]:min-w-[110px] [&_td]:[vertical-align:top] [&_th]:text-left [&_th]:p-[12px] [&_th]:border-b [&_th]:border-b-[#e7dfda] [&_th]:min-w-[110px] [&_th]:[vertical-align:top] [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-[#8c414e] [&_:focus-visible]:outline-offset-[3px] print:[&_button]:hidden print:[&_nav]:hidden">
       <Link to={`${base}/quotations${role === "Vendor" ? "/sent" : ""}`}>
         ← Quotations
       </Link>
@@ -617,7 +617,7 @@ export function QuotationDetails({ role = "Customer" }) {
       <p>
         {q.QuotationNumber} · Version {q.RevisionNumber}
       </p>
-      <span className="qt-badge">
+      <span className="qt-badge [&&]:[display:inline-block] [&&]:rounded-[6px] [&&]:bg-[#f6ecee] [&&]:text-[#8c414e] [&&]:py-[5px] [&&]:px-[9px] [&&]:text-[12px]">
         {d.booking
           ? "Converted"
           : q.Negotiating
@@ -633,7 +633,7 @@ export function QuotationDetails({ role = "Customer" }) {
         until={q.ValidUntil}
         serverTime={d.serverTime}
       />
-      <div className="qt-actions">
+      <div className="qt-actions [&&]:flex [&&]:gap-[12px] [&&]:flex-wrap [&&]:items-center [&&]:my-[16px] [&&]:mx-0 print:[&&]:hidden">
         <button onClick={() => setRevision((v) => v + 1)}>
           Refresh status
         </button>
@@ -662,7 +662,7 @@ export function QuotationDetails({ role = "Customer" }) {
         )}
         {role === "Vendor" && q.Status === "Draft" && (
           <>
-            <Link className="qt-button" to={`/vendor/quotations/${id}/edit`}>
+            <Link className="qt-button [&&]:inline-flex [&&]:items-center [&&]:gap-[8px] [&&]:border [&&]:border-[#ded2cd] [&&]:rounded-[8px] [&&]:py-[10px] [&&]:px-[15px] [&&]:bg-white [&&]:text-inherit [&&]:[font:inherit] [&&]:no-underline [&&]:cursor-pointer" to={`/vendor/quotations/${id}/edit`}>
               Edit draft
             </Link>
             <button onClick={() => setAction("Send")}>Send quotation</button>
@@ -675,14 +675,14 @@ export function QuotationDetails({ role = "Customer" }) {
           !d.booking &&
           q.Status !== "Accepted" && (
             <Link
-              className="qt-button"
+              className="qt-button [&&]:inline-flex [&&]:items-center [&&]:gap-[8px] [&&]:border [&&]:border-[#ded2cd] [&&]:rounded-[8px] [&&]:py-[10px] [&&]:px-[15px] [&&]:bg-white [&&]:text-inherit [&&]:[font:inherit] [&&]:no-underline [&&]:cursor-pointer"
               to={`/vendor/quotations/new?event=${q.EventId}&previous=${id}`}
             >
               Create revision / counteroffer
             </Link>
           )}
       </div>
-      <section className="qt-panel">
+      <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid]">
         <h2>Agreed event details</h2>
         <p>
           {e.EventName} · {e.EventType} · {e.EventDate} {e.StartTime}–
@@ -720,11 +720,11 @@ export function QuotationDetails({ role = "Customer" }) {
         {q.CustomerMessage && <p>Customer response: {q.CustomerMessage}</p>}
         {role === "Customer" && (
           <>
-            <p className="qt-note">{d.actions.reason}</p>
-            <div className="qt-actions">
+            <p className="qt-note [&&]:text-[13px] [&&]:text-[#75665e]">{d.actions.reason}</p>
+            <div className="qt-actions [&&]:flex [&&]:gap-[12px] [&&]:flex-wrap [&&]:items-center [&&]:my-[16px] [&&]:mx-0 print:[&&]:hidden">
               {d.actions.accept && (
                 <button
-                  className="qt-primary"
+                  className="qt-primary [&&&]:bg-[#8c414e] [&&&]:border-[#8c414e] [&&&]:text-white"
                   onClick={() => setAction("Accept")}
                 >
                   Review and accept
@@ -740,7 +740,7 @@ export function QuotationDetails({ role = "Customer" }) {
               )}
               {d.actions.convert && (
                 <button
-                  className="qt-primary"
+                  className="qt-primary [&&&]:bg-[#8c414e] [&&&]:border-[#8c414e] [&&&]:text-white"
                   onClick={() => setAction("Convert")}
                 >
                   Convert accepted quotation to booking
@@ -751,7 +751,7 @@ export function QuotationDetails({ role = "Customer" }) {
         )}
         {d.booking && (
           <Link
-            className="qt-button qt-primary"
+            className="qt-button [&&]:inline-flex [&&]:items-center [&&]:gap-[8px] [&&]:border [&&]:border-[#ded2cd] [&&]:rounded-[8px] [&&]:py-[10px] [&&]:px-[15px] [&&]:bg-white [&&]:text-inherit [&&]:[font:inherit] [&&]:no-underline [&&]:cursor-pointer qt-primary [&&&]:bg-[#8c414e] [&&&]:border-[#8c414e] [&&&]:text-white"
             to={`${base}/bookings/${d.booking.id}`}
           >
             Booking {d.booking.number} · {d.booking.status} · Payment{" "}
@@ -759,14 +759,14 @@ export function QuotationDetails({ role = "Customer" }) {
           </Link>
         )}
       </section>
-      <section className="qt-panel">
+      <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid]">
         <h2>
           <GitCompareArrows size={20} /> Revision comparison
         </h2>
-        <div className="qt-actions">
+        <div className="qt-actions [&&]:flex [&&]:gap-[12px] [&&]:flex-wrap [&&]:items-center [&&]:my-[16px] [&&]:mx-0 print:[&&]:hidden">
           {d.versions.map((v) => (
             <Link
-              className="qt-button"
+              className="qt-button [&&]:inline-flex [&&]:items-center [&&]:gap-[8px] [&&]:border [&&]:border-[#ded2cd] [&&]:rounded-[8px] [&&]:py-[10px] [&&]:px-[15px] [&&]:bg-white [&&]:text-inherit [&&]:[font:inherit] [&&]:no-underline [&&]:cursor-pointer"
               key={v.id}
               to={`${base}/quotations/${v.id}`}
             >
@@ -813,7 +813,7 @@ export function QuotationDetails({ role = "Customer" }) {
       </section>
       <Timeline rows={d.history} />
       {role === "Admin" && (
-        <section className="qt-panel">
+        <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid]">
           <h2>Internal administrative note</h2>
           <p>
             Prices and sent versions cannot be edited through administration.
@@ -849,7 +849,7 @@ export function QuotationDetails({ role = "Customer" }) {
         </section>
       )}
       {error && (
-        <p role="alert" className="qt-error">
+        <p role="alert" className="qt-error [&&]:text-[#a22d40]">
           {error}
         </p>
       )}
@@ -896,11 +896,11 @@ export function QuotationDetails({ role = "Customer" }) {
                 />
               </label>
             )}
-            <label className="qt-check">
+            <label className="qt-check [&&]:flex [&&]:[align-items:start] [&&]:gap-[10px] [&&]:my-[16px] [&&]:mx-0 [&&_input]:w-[18px] [&&_input]:mt-[4px]">
               <input type="checkbox" required />I have reviewed the items,
               total, event details, expiry and terms and confirm this action.
             </label>
-            <button disabled={busy} className="qt-primary">
+            <button disabled={busy} className="qt-primary [&&&]:bg-[#8c414e] [&&&]:border-[#8c414e] [&&&]:text-white">
               Confirm {action.toLowerCase()}
             </button>
           </form>

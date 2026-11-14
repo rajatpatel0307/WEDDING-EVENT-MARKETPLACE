@@ -1,7 +1,6 @@
-import "./approval-timeline.css";
 export default function ApprovalTimeline({ rows = [] }) {
   return rows.length ? (
-    <ol className="sa-timeline">
+    <ol className="pl-[22px] [&_li]:border-l-2 [&_li]:border-[#d7e6db] [&_li]:pt-1 [&_li]:pr-0 [&_li]:pb-5 [&_li]:pl-3 [&_p]:my-[7px] [&_p]:text-[#64716a]">
       {rows.map((row) => {
         let detail = {};
         try {

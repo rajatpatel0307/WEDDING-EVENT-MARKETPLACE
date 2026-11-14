@@ -21,7 +21,7 @@ import {
   mediaSave,
   uploadMedia,
 } from "./api";
-import "./media.css";
+
 const button =
   "inline-flex items-center justify-center gap-2 rounded-lg border border-[#dce5d7] bg-white px-3 py-2 text-xs font-medium text-[#36513c] hover:bg-[#f0f5ec] disabled:cursor-not-allowed disabled:opacity-50";
 const primary = `${button} !bg-[#36583e] !text-white hover:!bg-[#28452e]`;
@@ -62,7 +62,7 @@ export function MediaPreview({ title, close, children }) {
   return (
     <dialog
       ref={ref}
-      className="mm-dialog mm-module"
+      className="mm-dialog [&&]:w-[min(850px,calc(100%_-_32px))] [&&]:max-h-[90dvh] [&&]:overflow-auto [&&]:border [&&]:border-[#dce5d7] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:bg-white [&&]:text-[#354b3b] [&&]:fixed [&&]:inset-0 [&&]:m-auto [&&]:z-[2100] [&&::backdrop]:bg-[#14271cb3] max-[600.001px]:[&&]:p-[16px] mm-module min-w-0 text-[#354b3b] [font-family:inherit] text-[14px] leading-[1.5] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#6f916b] [&_:focus-visible]:outline-offset-3"
       aria-labelledby={id}
       onSubmit={(e) => e.stopPropagation()}
       onCancel={(e) => {
@@ -96,7 +96,7 @@ export function ImageLightbox({ images, index = 0, close }) {
       close={close}
     >
       <img
-        className="mm-full rounded-xl"
+        className="mm-full [&&]:w-full [&&]:max-h-[65dvh] [&&]:object-contain [&&]:bg-[#f3f5ee] rounded-xl"
         src={mediaContent(image.id, "gallery")}
         alt={image.fileName || "Gallery image"}
       />
@@ -131,7 +131,7 @@ export function MediaGallery({ type, id, variant, fallbackImage, title }) {
     const images = state.data?.rows || [];
     return (
       <section
-        className="mm-module cm-editorial-gallery"
+        className="mm-module min-w-0 text-[#354b3b] [font-family:inherit] text-[14px] leading-[1.5] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#6f916b] [&_:focus-visible]:outline-offset-3 cm-editorial-gallery"
         aria-label="Image gallery"
         data-empty={!state.loading && !images.length && !fallbackImage ? "true" : undefined}
       >
@@ -194,7 +194,7 @@ export function MediaGallery({ type, id, variant, fallbackImage, title }) {
     );
   }
   return (
-    <section className="mm-module my-6" aria-label="Image gallery">
+    <section className="mm-module min-w-0 text-[#354b3b] [font-family:inherit] text-[14px] leading-[1.5] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#6f916b] [&_:focus-visible]:outline-offset-3 my-6" aria-label="Image gallery">
       <State state={state} />
       {state.data?.rows.length > 0 && (
         <>
@@ -209,7 +209,7 @@ export function MediaGallery({ type, id, variant, fallbackImage, title }) {
                 aria-label={`View ${image.fileName || "gallery photo"}`}
               >
                 <img
-                  className="mm-image"
+                  className="mm-image [&&]:w-full [&&]:aspect-[4/3] [&&]:object-cover [&&]:bg-[#f3f5ee] max-[600.001px]:[&&]:aspect-square"
                   src={mediaContent(image.id, "card")}
                   srcSet={`${mediaContent(image.id, "thumb")} 320w, ${mediaContent(image.id, "card")} 720w`}
                   sizes="(max-width:600px) 45vw, 250px"
@@ -385,7 +385,7 @@ export function MediaUploader({
             key={item.key}
             className="min-w-0 overflow-hidden rounded-xl border border-[#e0e7db]"
           >
-            <img src={item.preview} className="mm-image" alt={item.file.name} />
+            <img src={item.preview} className="mm-image [&&]:w-full [&&]:aspect-[4/3] [&&]:object-cover [&&]:bg-[#f3f5ee] max-[600.001px]:[&&]:aspect-square" alt={item.file.name} />
             <div className="space-y-2 p-3">
               <p className="truncate text-xs">{item.file.name}</p>
               <progress
@@ -469,7 +469,7 @@ function MediaDetails({ id, close }) {
         <>
           {r.uploadStatus === "Ready" ? (
             <img
-              className="mm-full rounded-xl"
+              className="mm-full [&&]:w-full [&&]:max-h-[65dvh] [&&]:object-contain [&&]:bg-[#f3f5ee] rounded-xl"
               src={mediaContent(r.id)}
               alt={r.fileName || "Media preview"}
             />
@@ -740,7 +740,7 @@ export default function MediaLibrary({
     }
   }
   return (
-    <section className="mm-module space-y-5" aria-label="Media management">
+    <section className="mm-module min-w-0 text-[#354b3b] [font-family:inherit] text-[14px] leading-[1.5] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#6f916b] [&_:focus-visible]:outline-offset-3 space-y-5" aria-label="Media management">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           {!embedded && (
@@ -1006,12 +1006,12 @@ export default function MediaLibrary({
               {r.uploadStatus === "Ready" && !r.deletedAt ? (
                 <img
                   src={r.thumbnail}
-                  className="mm-image"
+                  className="mm-image [&&]:w-full [&&]:aspect-[4/3] [&&]:object-cover [&&]:bg-[#f3f5ee] max-[600.001px]:[&&]:aspect-square"
                   alt={r.fileName || "Uploaded image"}
                   loading="lazy"
                 />
               ) : (
-                <div className="mm-image flex items-center justify-center">
+                <div className="mm-image [&&]:w-full [&&]:aspect-[4/3] [&&]:object-cover [&&]:bg-[#f3f5ee] max-[600.001px]:[&&]:aspect-square flex items-center justify-center">
                   <Info size={28} />
                 </div>
               )}

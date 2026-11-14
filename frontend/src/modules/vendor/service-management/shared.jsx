@@ -127,7 +127,7 @@ export function editableDocument(data) {
               ...data.seo,
               slug: data.slug || data.seo?.slug || slugify(data.name || ""),
             }
-          : typeof defaults[key] === "object" && !Array.isArray(defaults[key])
+          : defaults[key] !== null && typeof defaults[key] === "object" && !Array.isArray(defaults[key])
             ? { ...defaults[key], ...data[key] }
             : (data[key] ?? defaults[key]),
     ]),

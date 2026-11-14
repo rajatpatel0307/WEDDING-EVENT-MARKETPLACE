@@ -39,7 +39,6 @@ import AdminDialog from "../components/AdminDialog";
 import { BookingStatus } from "../components/BookingUI";
 import { useAuth } from "../../../context/AuthContext";
 import { categoryImages } from "../../../components/home/categoryImages";
-import "./vendor-bookings.css";
 
 const tabs = [
   ["overview", "Overview"],
@@ -413,8 +412,8 @@ function VendorBookingRecords({ rows, page, size, total, onPageChange }) {
   const pagerButton = "inline-flex size-[32px] items-center justify-center rounded-[7px] border border-[#e1e9e3] bg-white text-[#6e8876] transition-colors hover:border-[#b8cebf] hover:bg-[#f3f7f2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-not-allowed disabled:opacity-40";
   return (
     <>
-      <div className="vd-bookings-layout w-full min-w-0">
-        <table className="vd-bookings-table w-full table-fixed border-collapse text-left">
+      <div className="@container/vendor-bookings w-full min-w-0">
+        <table className="w-full table-fixed border-collapse text-left [&_th]:min-w-0 [&_th]:wrap-anywhere [&_td]:min-w-0 [&_td]:wrap-anywhere [@container_vendor-bookings_(max-width:1100px)]:block [@container_vendor-bookings_(max-width:1100px)]:[&_tbody]:block [@container_vendor-bookings_(max-width:1100px)]:[&_tbody]:w-full [@container_vendor-bookings_(max-width:1100px)]:[&_colgroup]:hidden [@container_vendor-bookings_(max-width:1100px)]:[&_thead]:hidden [@container_vendor-bookings_(max-width:1100px)]:[&_tbody_tr]:grid [@container_vendor-bookings_(max-width:1100px)]:[&_tbody_tr]:grid-cols-2 [@container_vendor-bookings_(max-width:1100px)]:[&_tbody_tr]:gap-x-7 [@container_vendor-bookings_(max-width:1100px)]:[&_tbody_tr]:gap-y-[22px] [@container_vendor-bookings_(max-width:1100px)]:[&_tbody_tr]:p-6 [@container_vendor-bookings_(max-width:1100px)]:[&_td]:block [@container_vendor-bookings_(max-width:1100px)]:[&_td]:p-0! [@container_vendor-bookings_(max-width:1100px)]:[&_td]:before:mb-2 [@container_vendor-bookings_(max-width:1100px)]:[&_td]:before:block [@container_vendor-bookings_(max-width:1100px)]:[&_td]:before:text-[9px] [@container_vendor-bookings_(max-width:1100px)]:[&_td]:before:font-medium [@container_vendor-bookings_(max-width:1100px)]:[&_td]:before:tracking-[.7px] [@container_vendor-bookings_(max-width:1100px)]:[&_td]:before:text-[#8b9c90] [@container_vendor-bookings_(max-width:1100px)]:[&_td]:before:uppercase [@container_vendor-bookings_(max-width:1100px)]:[&_td]:before:content-[attr(data-label)] [@container_vendor-bookings_(max-width:520px)]:[&_tbody_tr]:grid-cols-[minmax(0,1fr)] [@container_vendor-bookings_(max-width:520px)]:[&_tbody_tr]:gap-5 [@container_vendor-bookings_(max-width:520px)]:[&_tbody_tr]:p-5">
           <caption className="sr-only">Vendor bookings with customer and event details, services, payment balances, statuses, notes and creation dates.</caption>
           <colgroup>
             {[160, 150, 200, 170, 130, 120, 210, 140].map((width, i) => <col key={i} style={{ width: `${width / 1280 * 100}%` }} />)}

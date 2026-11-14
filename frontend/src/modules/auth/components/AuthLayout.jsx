@@ -1,19 +1,15 @@
 import { Heart, ShieldCheck } from "lucide-react";
-import "./auth-layout.css";
 
 export default function AuthLayout({ children, wide = false, centered = false, compact = false }) {
   if (centered) {
     return (
       <div
-        className={`auth-shell relative isolate grid min-h-dvh place-items-center overflow-hidden px-4 py-8 sm:px-6 sm:py-12 ${compact ? "auth-compact" : ""}`}
+        className={`auth-shell relative isolate grid min-h-dvh place-items-center overflow-hidden px-4 py-8 sm:px-6 sm:py-12 ${compact ? "auth-compact [&.auth-compact]:py-6 max-[480.001px]:[&.auth-compact]:py-4 [&_.auth-main]:max-w-[520px] [&_.auth-main]:px-9 [&_.auth-main]:py-6 [&_.auth-main]:text-[#30262a] max-[480.001px]:[&_.auth-main]:px-5 max-[480.001px]:[&_.auth-main]:py-[22px] [&_.form-content_h2]:text-[30px] max-[480.001px]:[&_.form-content_h2]:text-[28px] [&_.form-eyebrow]:mb-[6px] [&_.form-intro]:mt-2 [&_.form-intro]:mr-0 [&_.form-intro]:mb-4 [&_.form-intro]:ml-0 [&_.role-picker]:mb-4 [&_.role-picker_button]:px-[10px] [&_.role-picker_button]:py-2 [&_.field]:mb-3 [&_.field>span]:mb-1 [&_.field_input]:min-h-[38px] [&_.field_input]:px-[10px] [&_.field_input]:py-[7px] [&_.password-hint]:mt-[-3px] [&_.password-hint]:mr-0 [&_.password-hint]:mb-3 [&_.password-hint]:ml-0 [&_.agreements]:mt-2 [&_.agreements]:mr-0 [&_.agreements]:mb-[14px] [&_.agreements]:ml-0 [&_.agreements]:gap-[6px] [&_.step-actions]:mt-3 [&_.primary-button]:min-h-10 [&_.primary-button]:py-2 [&_.signup-prompt]:mt-[14px] [&_.form-trust]:mt-4 [&_.auth-main_:is(.form-intro,.session-note,.form-trust,.or-divider,.password-hint,.agreements,.signup-prompt,.field,.field_small,.role-picker_small,.vendor-invite_p,.resend-line,.otp-fieldset_legend)]:text-[#403238] [&_.auth-main_.form-eyebrow]:text-[#682b39] [&_.auth-main_.text-link]:text-[#682b39] [&_.auth-main_.back-link]:text-[#682b39] [&_.auth-main_.resend-line_button]:text-[#682b39] [&_.auth-main_.signup-prompt_a]:text-[#682b39] [&_.auth-main_.agreements_a]:text-[#682b39] [&_.auth-main_.vendor-invite>a]:text-[#682b39] [&_.auth-main_.field_input::placeholder]:text-[#74646a] [&_.auth-main_.field_input::placeholder]:opacity-100 [&_.auth-main_.password-toggle]:text-[#59424b] [&_.auth-main_.role-picker_button]:text-[#59424b] [&_.auth-main_.role-picker_button.selected]:text-[#682b39] [&_.form-icon]:mb-4 [&_.otp-fieldset]:my-4 [&_.otp-inputs_input]:h-11 [&_.otp-inputs_input]:text-[20px] [&_.resend-line]:mt-4 [&_.back-link]:mt-4" : ""}`}
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-4 -z-10 bg-cover bg-center bg-no-repeat blur-[8px]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(45, 35, 26, 0.18), rgba(45, 35, 26, 0.28)), url('/images/wedding-garden-1024.webp')",
-          }}
+          className="pointer-events-none absolute -inset-4 -z-10 bg-[linear-gradient(rgba(45,35,26,0.18),rgba(45,35,26,0.28)),url('/images/wedding-garden-1024.webp')] bg-cover bg-center bg-no-repeat blur-[8px]"
+
         />
         <main
           id="main-content"

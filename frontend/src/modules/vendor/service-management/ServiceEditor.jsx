@@ -575,6 +575,12 @@ export default function ServiceEditor() {
           <p className="mb-4 text-xs text-[#617366]">
             <RequiredMark /> Required before submitting. You can save an incomplete draft.
           </p>
+          {error && (
+            <div role="alert" className="mb-4 flex items-center gap-2 rounded-xl border border-[#efd4cd] bg-[#fff0ed] p-4 text-sm text-[#ab4b3c]">
+              <AlertTriangle size={16} className="shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
           {stepError && (
             <div role="alert" className="mb-4 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
               <AlertTriangle size={16} className="shrink-0" />
@@ -1535,20 +1541,6 @@ export default function ServiceEditor() {
               )}
             </div>
           </Panel>
-
-          {error && (
-            <div
-              className="
-              rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fff0ed] text-[#ab4b3c]
-              mt-4 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex
-              items-center gap-2
-            "
-              role="alert"
-            >
-              <AlertTriangle size={16} className="shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
 
           {/* Enhanced Sticky Actions Bar */}
           <div

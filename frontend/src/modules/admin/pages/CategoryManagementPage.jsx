@@ -12,7 +12,7 @@ import { adminRequest, date } from "../api";
 import { useAdminData } from "../services-management.api";
 import { Badge, ErrorState, Skeleton } from "../components/AdminTable";
 import CategoryImageUpload from "../components/CategoryImageUpload";
-import "./category-details.css";
+
 
 export default function CategoryManagementPage({
   create = false,
@@ -21,8 +21,8 @@ export default function CategoryManagementPage({
   const { id } = useParams();
   const state = useAdminData(create ? null : `/categories/${id}`, edit ? "edit" : "view");
   return (
-    <main className="category-page">
-      <Link className="category-back" to="/admin/categories">
+    <main className="min-w-0 text-[#354e43] [&_label]:flex [&_label]:flex-col [&_label]:gap-[9px] [&_label]:text-[12px] [&_label]:text-[#6c8272] [&_label_small]:text-[11px] [&_label_small]:leading-[1.7] [&_label_small]:text-[#8a9b8d] [&_input:not([type=file])]:box-border [&_input:not([type=file])]:w-full [&_input:not([type=file])]:min-w-0 [&_input:not([type=file])]:rounded-lg [&_input:not([type=file])]:border [&_input:not([type=file])]:border-[#dce5db] [&_input:not([type=file])]:bg-white [&_input:not([type=file])]:px-[13px] [&_input:not([type=file])]:py-[11px] [&_input:not([type=file])]:text-[#354e43] [&_select]:box-border [&_select]:w-full [&_select]:min-w-0 [&_select]:rounded-lg [&_select]:border [&_select]:border-[#dce5db] [&_select]:bg-white [&_select]:px-[13px] [&_select]:py-[11px] [&_select]:text-[#354e43] [&_textarea]:box-border [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:resize-y [&_textarea]:rounded-lg [&_textarea]:border [&_textarea]:border-[#dce5db] [&_textarea]:bg-white [&_textarea]:px-[13px] [&_textarea]:py-[11px] [&_textarea]:text-[#354e43] [&_input[readonly]]:bg-[#f6f8f3]! [&_input[readonly]]:text-[#7c8b7e]! [&_button:disabled]:cursor-wait [&_button:disabled]:opacity-55 [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-offset-3 [&_:focus-visible]:outline-[#70a99b]">
+      <Link className="mb-6 inline-flex items-center gap-2 text-[12px] text-[#6b8375]" to="/admin/categories">
         <ArrowLeft size={16} /> All categories
       </Link>
       {!create && state.loading ? (
@@ -92,9 +92,9 @@ function CategoryEditor({ category }) {
   }
   return (
     <>
-      <header className="category-heading">
+      <header className="mb-7 flex items-center justify-between gap-5 [&_h1]:my-2 [&_h1]:text-[28px] [&_h1]:font-semibold [&_p]:text-[12px] [&_p]:text-[#7b8e80] max-[767px]:flex-col max-[767px]:items-start max-[767px]:[&_h1]:text-[24px]">
         <div>
-          <p className="category-eyebrow">MARKETPLACE MANAGEMENT</p>
+          <p className="text-[9px]! tracking-[1.5px] text-[#789080]!">MARKETPLACE MANAGEMENT</p>
           <h1>{category ? "Edit category" : "Create category"}</h1>
           <p>
             Manage category information, imagery and product service options.
@@ -103,10 +103,10 @@ function CategoryEditor({ category }) {
         <Tags size={27} />
       </header>
       <form onSubmit={submit}>
-        <fieldset disabled={busy} className="category-form-layout">
-          <section className="category-panel">
+        <fieldset disabled={busy} className="m-0 grid min-w-0 grid-cols-[minmax(0,1.6fr)_minmax(260px,1fr)] gap-6 border-0 p-0 max-[767px]:grid-cols-1">
+          <section className="min-w-0 rounded-[14px] border border-[#e0e8df] bg-white p-[26px] [&_h2]:mt-0 [&_h2]:mb-5 [&_h2]:text-[17px] [&_h2]:font-semibold [&_h3]:mt-6 [&_h3]:mb-[10px] [&_h3]:text-[13px] [&_h3]:font-semibold [&_p]:text-[12px] [&_p]:leading-[1.8] [&_p]:text-[#7a8c7c] max-[767px]:p-5">
             <h2>Category information</h2>
-            <div className="category-field-grid">
+            <div className="grid grid-cols-2 gap-5 max-[420px]:grid-cols-1">
               <label>
                 Category name
                 <input
@@ -153,7 +153,7 @@ function CategoryEditor({ category }) {
                   defaultValue={category?.sortOrder ?? 0}
                 />
               </label>
-              <label className="category-full-width">
+              <label className="col-span-full">
                 Description
                 <textarea
                   name="description"
@@ -164,17 +164,17 @@ function CategoryEditor({ category }) {
               </label>
             </div>
           </section>
-          <aside className="category-panel">
+          <aside className="min-w-0 rounded-[14px] border border-[#e0e8df] bg-white p-[26px] [&_h2]:mt-0 [&_h2]:mb-5 [&_h2]:text-[17px] [&_h2]:font-semibold [&_h3]:mt-6 [&_h3]:mb-[10px] [&_h3]:text-[13px] [&_h3]:font-semibold [&_p]:text-[12px] [&_p]:leading-[1.8] [&_p]:text-[#7a8c7c] max-[767px]:p-5">
             <h2>Category image</h2>
             <CategoryImageUpload
               image={category?.image}
               onReadingChange={setReadingImage}
             />
           </aside>
-          <section className="category-panel category-full-width">
+          <section className="min-w-0 rounded-[14px] border border-[#e0e8df] bg-white p-[26px] [&_h2]:mt-0 [&_h2]:mb-5 [&_h2]:text-[17px] [&_h2]:font-semibold [&_h3]:mt-6 [&_h3]:mb-[10px] [&_h3]:text-[13px] [&_h3]:font-semibold [&_p]:text-[12px] [&_p]:leading-[1.8] [&_p]:text-[#7a8c7c] max-[767px]:p-5 col-span-full">
             <h2>Product Service Options</h2>
             <p>Choose the services vendors can offer in this category.</p>
-            <div className="category-service-options">
+            <div className="mt-5 grid grid-cols-3 gap-6 max-[767px]:grid-cols-1">
               <label>
                 Enable Sell (Buy Online)
                 <select
@@ -195,7 +195,7 @@ function CategoryEditor({ category }) {
                   <option value="false">No</option>
                 </select>
               </label>
-              <div className="category-permission-summary">
+              <div className="rounded-[10px] border border-[#dfe9dc] bg-[#f5f8f0] p-[17px] text-[13px] [&_p]:mt-2 [&_p]:mr-0 [&_p]:mb-0 [&_p]:ml-0">
                 <strong>
                   {sell && book
                     ? "Sell & Book Both"
@@ -217,16 +217,16 @@ function CategoryEditor({ category }) {
           </section>
         </fieldset>
         {error && (
-          <p role="alert" className="category-error">
+          <p role="alert" className="my-5 rounded-lg bg-[#fff1ed] p-[15px] text-[13px]! text-[#a6554a]!">
             {error}
           </p>
         )}
-        <footer className="category-form-actions">
-          <Link className="category-button" to={back}>
+        <footer className="mt-6 flex flex-wrap justify-end gap-3">
+          <Link className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#dbe4dc] bg-white px-[17px] py-[11px] text-[12px] font-normal! text-[#5d7668] no-underline" to={back}>
             Cancel
           </Link>
           <button
-            className="category-button category-primary"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#dbe4dc] bg-white px-[17px] py-[11px] text-[12px] font-normal! text-[#5d7668] no-underline border-[#176b60]! bg-[#176b60]! text-white! hover:bg-[#11594f]! hover:text-white!"
             disabled={busy || readingImage}
             type="submit"
           >
@@ -280,26 +280,26 @@ function CategoryDetails({ category, reload }) {
   }
   return (
     <>
-      <header className="category-heading">
+      <header className="mb-7 flex items-center justify-between gap-5 [&_h1]:my-2 [&_h1]:text-[28px] [&_h1]:font-semibold [&_p]:text-[12px] [&_p]:text-[#7b8e80] max-[767px]:flex-col max-[767px]:items-start max-[767px]:[&_h1]:text-[24px]">
         <div>
-          <p className="category-eyebrow">CATEGORY DETAILS</p>
+          <p className="text-[9px]! tracking-[1.5px] text-[#789080]!">CATEGORY DETAILS</p>
           <h1>{category.name}</h1>
           <p>Review category information and the services vendors can offer.</p>
         </div>
         <Link
-          className="category-button category-primary"
+          className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#dbe4dc] bg-white px-[17px] py-[11px] text-[12px] font-normal! text-[#5d7668] no-underline border-[#176b60]! bg-[#176b60]! text-white! hover:bg-[#11594f]! hover:text-white!"
           to={`/admin/categories/${category.id}/edit`}
         >
           <Pencil size={16} /> Edit category
         </Link>
       </header>
-      <div className="category-form-layout">
-        <section className="category-panel">
-          <div className="category-panel-heading">
+      <div className="m-0 grid min-w-0 grid-cols-[minmax(0,1.6fr)_minmax(260px,1fr)] gap-6 border-0 p-0 max-[767px]:grid-cols-1">
+        <section className="min-w-0 rounded-[14px] border border-[#e0e8df] bg-white p-[26px] [&_h2]:mt-0 [&_h2]:mb-5 [&_h2]:text-[17px] [&_h2]:font-semibold [&_h3]:mt-6 [&_h3]:mb-[10px] [&_h3]:text-[13px] [&_h3]:font-semibold [&_p]:text-[12px] [&_p]:leading-[1.8] [&_p]:text-[#7a8c7c] max-[767px]:p-5">
+          <div className="flex items-baseline justify-between gap-4">
             <h2>Category information</h2>
             <Badge>{category.status}</Badge>
           </div>
-          <dl className="category-facts">
+          <dl className="m-0 grid grid-cols-2 gap-5 [&_dt]:text-[11px] [&_dt]:text-[#8a9b8b] [&_dd]:mt-[7px] [&_dd]:mr-0 [&_dd]:mb-0 [&_dd]:ml-0 [&_dd]:text-[13px] [&_dd]:wrap-anywhere max-[420px]:grid-cols-1">
             {[
               ["Category code", category.code],
               ["Icon", category.icon || "Not specified"],
@@ -315,15 +315,15 @@ function CategoryDetails({ category, reload }) {
             ))}
           </dl>
           <h3>Description</h3>
-          <p className="category-description">
+          <p className="whitespace-pre-wrap">
             {category.description || "No description provided."}
           </p>
         </section>
-        <aside className="category-panel">
+        <aside className="min-w-0 rounded-[14px] border border-[#e0e8df] bg-white p-[26px] [&_h2]:mt-0 [&_h2]:mb-5 [&_h2]:text-[17px] [&_h2]:font-semibold [&_h3]:mt-6 [&_h3]:mb-[10px] [&_h3]:text-[13px] [&_h3]:font-semibold [&_p]:text-[12px] [&_p]:leading-[1.8] [&_p]:text-[#7a8c7c] max-[767px]:p-5">
           <h2>Category image</h2>
           {image ? (
             <img
-              className="category-cover"
+              className="h-60 w-full rounded-[10px] object-cover"
               src={image}
               alt={`${category.name} category`}
             />
@@ -331,9 +331,9 @@ function CategoryDetails({ category, reload }) {
             <p>No category image uploaded.</p>
           )}
         </aside>
-        <section className="category-panel category-full-width">
+        <section className="min-w-0 rounded-[14px] border border-[#e0e8df] bg-white p-[26px] [&_h2]:mt-0 [&_h2]:mb-5 [&_h2]:text-[17px] [&_h2]:font-semibold [&_h3]:mt-6 [&_h3]:mb-[10px] [&_h3]:text-[13px] [&_h3]:font-semibold [&_p]:text-[12px] [&_p]:leading-[1.8] [&_p]:text-[#7a8c7c] max-[767px]:p-5 col-span-full">
           <h2>Product Service Options</h2>
-          <dl className="category-facts">
+          <dl className="m-0 grid grid-cols-2 gap-5 [&_dt]:text-[11px] [&_dt]:text-[#8a9b8b] [&_dd]:mt-[7px] [&_dd]:mr-0 [&_dd]:mb-0 [&_dd]:ml-0 [&_dd]:text-[13px] [&_dd]:wrap-anywhere max-[420px]:grid-cols-1">
             <div>
               <dt>Sell (Buy Online)</dt>
               <dd>{category.sellEnabled ? "Enabled" : "Disabled"}</dd>
@@ -354,7 +354,7 @@ function CategoryDetails({ category, reload }) {
         </section>
       </div>
       {changingStatus ? (
-        <section className="category-panel category-status-change">
+        <section className="min-w-0 rounded-[14px] border border-[#e0e8df] bg-white p-[26px] [&_h2]:mt-0 [&_h2]:mb-5 [&_h2]:text-[17px] [&_h2]:font-semibold [&_h3]:mt-6 [&_h3]:mb-[10px] [&_h3]:text-[13px] [&_h3]:font-semibold [&_p]:text-[12px] [&_p]:leading-[1.8] [&_p]:text-[#7a8c7c] max-[767px]:p-5 mt-6">
           <h2>Confirm change to {action}</h2>
           <p>
             This category is used by {category.usageCount || 0} services.{" "}
@@ -374,10 +374,10 @@ function CategoryDetails({ category, reload }) {
                 disabled={busy}
               />
             </label>
-            <div className="category-form-actions">
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
-                className="category-button"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#dbe4dc] bg-white px-[17px] py-[11px] text-[12px] font-normal! text-[#5d7668] no-underline"
                 disabled={busy}
                 onClick={() => {
                   setParams({}, { replace: true });
@@ -387,7 +387,7 @@ function CategoryDetails({ category, reload }) {
                 Cancel
               </button>
               <button
-                className="category-button category-primary"
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#dbe4dc] bg-white px-[17px] py-[11px] text-[12px] font-normal! text-[#5d7668] no-underline border-[#176b60]! bg-[#176b60]! text-white! hover:bg-[#11594f]! hover:text-white!"
                 disabled={busy}
               >
                 {busy ? "Updating..." : `Confirm ${action}`}
@@ -395,15 +395,15 @@ function CategoryDetails({ category, reload }) {
             </div>
           </form>
           {error && (
-            <p role="alert" className="category-error">
+            <p role="alert" className="my-5 rounded-lg bg-[#fff1ed] p-[15px] text-[13px]! text-[#a6554a]!">
               {error}
             </p>
           )}
         </section>
       ) : (
-        <footer className="category-form-actions">
+        <footer className="mt-6 flex flex-wrap justify-end gap-3">
           <button
-            className="category-button"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#dbe4dc] bg-white px-[17px] py-[11px] text-[12px] font-normal! text-[#5d7668] no-underline"
             onClick={() => {
               setParams({
                 action: category.status === "Active" ? "Inactive" : "Active",

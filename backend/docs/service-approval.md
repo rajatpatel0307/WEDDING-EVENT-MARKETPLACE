@@ -2,6 +2,8 @@
 
 Vendor approval and service approval are independent. Vendor approval never publishes services.
 
+Approving a service also approves its pending, fully uploaded service photos in the same transaction, recording the reviewing administrator and a media audit entry for each photo. Hidden, rejected, deleted and incomplete photos retain their status. Photos uploaded after approval still require a new review. This behavior applies to new service approvals; existing approved services with pending photos need a one-time reconciliation.
+
 Apply `011-service-approval` using `npm run db:migrate` in `backend`, after inspecting and backing up the database as described in the project README. It adds approval/rejection reviewer fields, the `UnderReview` state, and a queue index. The integration verifier applies migrations in a transaction and rolls them back; it does not install them permanently.
 
 Admin pages:

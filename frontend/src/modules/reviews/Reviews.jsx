@@ -13,7 +13,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useCommunicationSocket } from "../communication/useCommunicationSocket";
 import { reviewRequest, reviewSave, imageUrl, useReviews } from "./api";
-import "./reviews.css";
+
 const ratingLabels = ["Poor", "Fair", "Good", "Very Good", "Excellent"];
 const reportReasons = [
   "Spam",
@@ -30,14 +30,14 @@ export function Stars({ value, onChange, label = "Overall rating" }) {
   return (
     <div>
       <div
-        className="rr-stars"
+        className="rr-stars [&&]:flex [&&]:gap-[3px] [&&]:items-center [&&]:text-[#b78d3c]"
         role={onChange ? "radiogroup" : "img"}
         aria-label={`${label}: ${value || 0} out of 5`}
       >
         {[1, 2, 3, 4, 5].map((n) =>
           onChange ? (
             <button
-              className="rr-star"
+              className="rr-star [&&]:border-0 [&&]:p-[5px] [&&]:text-[#b78d3c] [&&]:bg-transparent [&&_svg]:w-[25px] [&&_svg]:h-[25px]"
               type="button"
               role="radio"
               aria-checked={value === n}
@@ -76,7 +76,7 @@ export function Stars({ value, onChange, label = "Overall rating" }) {
         )}
       </div>
       {onChange && (
-        <span className="rr-muted">
+        <span className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
           {value ? ratingLabels[value - 1] : "Choose a star rating"}
         </span>
       )}
@@ -92,17 +92,17 @@ function Dialog({ title, close, children }) {
     return () => dialog.close();
   }, []);
   return (
-    <div className="rr-overlay">
+    <div className="rr-overlay [&&]:fixed [&&]:inset-0 [&&]:z-[2000] [&&]:bg-[#14251899] [&&]:flex [&&]:items-center [&&]:justify-center [&&]:p-[16px]">
       <dialog
         ref={ref}
-        className="rr-dialog rr-module"
+        className="rr-dialog [&&]:border-0 [&&]:w-[min(700px,_100%)] [&&]:max-h-[90dvh] [&&]:overflow-auto [&&]:rounded-[16px] [&&]:p-[24px] [&&]:bg-[#fff] [&&]:shadow-[0_20px_80px_#0003] [&&]:m-auto max-[600.001px]:[&&]:p-[18px] rr-module [&&]:text-[#344936] [&&]:[font-family:inherit] [&&]:text-[14px] [&&]:leading-[1.6] [&&]:min-w-0 [&&]:w-full [&_*]:box-border [&_h1]:text-[clamp(25px,_3vw,_34px)] [&_h1]:font-semibold [&_h1]:leading-[1.25] [&_h1]:mt-0 [&_h1]:mx-0 [&_h1]:mb-[10px] [&_h2]:text-[20px] [&_h2]:font-semibold [&_h2]:mt-0 [&_h2]:mx-0 [&_h2]:mb-[12px] [&_h3]:text-[16px] [&_h3]:font-semibold [&_h3]:my-[10px] [&_h3]:mx-0 [&_p]:my-[8px] [&_p]:mx-0 [&_p]:wrap-anywhere [&_button]:border [&_button]:border-[#dce4d7] [&_button]:rounded-[8px] [&_button]:py-[9px] [&_button]:px-[15px] [&_button]:bg-[#fff] [&_button]:text-[#36533d] [&_button]:text-[13px] [&_button]:cursor-pointer [&_button]:no-underline [&_button]:inline-flex [&_button]:gap-[7px] [&_button]:items-center [&_button]:justify-center [&_button:hover]:bg-[#f2f6ee] [&_button:disabled]:[cursor:wait] [&_button:disabled]:opacity-55 [&_label]:grid [&_label]:gap-[6px] [&_label]:text-[13px] [&_label]:font-medium [&_label]:min-w-0 [&_input]:w-full [&_input]:min-w-0 [&_input]:border [&_input]:border-[#dce4d7] [&_input]:rounded-[8px] [&_input]:py-[10px] [&_input]:px-[12px] [&_input]:[font:inherit] [&_input]:bg-[#fff] [&_input]:text-[#344936] [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:border [&_textarea]:border-[#dce4d7] [&_textarea]:rounded-[8px] [&_textarea]:py-[10px] [&_textarea]:px-[12px] [&_textarea]:[font:inherit] [&_textarea]:bg-[#fff] [&_textarea]:text-[#344936] [&_textarea]:[resize:vertical] [&_select]:w-full [&_select]:min-w-0 [&_select]:border [&_select]:border-[#dce4d7] [&_select]:rounded-[8px] [&_select]:py-[10px] [&_select]:px-[12px] [&_select]:[font:inherit] [&_select]:bg-[#fff] [&_select]:text-[#344936] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#648d66] [&_:focus-visible]:outline-offset-[3px] [&_progress]:w-full [&_progress]:h-[8px] [&_progress]:[accent-color:#8b9e72] [&_table]:border-collapse [&_table]:w-full [&_table]:text-[13px] [&_th]:text-left [&_th]:p-[10px] [&_th]:border-b [&_th]:border-b-[#e2e8dd] [&_th]:whitespace-nowrap [&_td]:text-left [&_td]:p-[10px] [&_td]:border-b [&_td]:border-b-[#e2e8dd] [&_td]:whitespace-nowrap"
         aria-labelledby={titleId}
         onCancel={(e) => {
           e.preventDefault();
           close();
         }}
       >
-        <div className="rr-row rr-between">
+        <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap rr-between [&&]:justify-between">
           <h2 id={titleId}>{title}</h2>
           <button type="button" aria-label="Close dialog" onClick={close}>
             <X size={18} />
@@ -115,11 +115,11 @@ function Dialog({ title, close, children }) {
 }
 function State({ state }) {
   return state.loading ? (
-    <p role="status" className="rr-panel rr-muted">
+    <p role="status" className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px] rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
       Loading reviews…
     </p>
   ) : state.error ? (
-    <p role="alert" className="rr-error">
+    <p role="alert" className="rr-error [&&]:bg-[#fff0ed] [&&]:text-[#9d4646] [&&]:py-[12px] [&&]:px-[16px] [&&]:rounded-[8px] [&&]:my-[12px] [&&]:mx-0">
       {state.error}
     </p>
   ) : null;
@@ -127,27 +127,27 @@ function State({ state }) {
 export function RatingSummary({ data }) {
   if (!data) return null;
   return (
-    <section className="rr-panel" aria-label="Rating overview">
-      <div className="rr-row" style={{ gap: 32 }}>
+    <section className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]" aria-label="Rating overview">
+      <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap [&&&]:gap-[32px]" >
         <div>
-          <div className="rr-score">
+          <div className="rr-score [&&]:text-[46px] [&&]:font-semibold [&&]:leading-[1.2] max-[600.001px]:[&&]:text-[38px]">
             {Number(data.averageRating || 0).toFixed(1)}
-            <span className="rr-muted"> / 5</span>
+            <span className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]"> / 5</span>
           </div>
           <Stars value={data.averageRating} />
-          <p className="rr-muted">
+          <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
             {data.totalReviews || 0} reviews · {data.verifiedReviews || 0}{" "}
             verified bookings
           </p>
         </div>
-        <div className="rr-distribution">
+        <div className="rr-distribution [&&]:grid [&&]:gap-[7px] [&&]:min-w-[160px] [&&]:flex-1">
           {[5, 4, 3, 2, 1].map((n) => {
             const count = Number(
               data.distribution?.find((d) => Number(d.rating) === n)?.count ||
                 0,
             );
             return (
-              <div className="rr-bar" key={n}>
+              <div className="rr-bar [&&]:flex [&&]:gap-[10px] [&&]:items-center [&&]:text-[12px]" key={n}>
                 <span>{n}★</span>
                 <progress
                   value={count}
@@ -167,7 +167,7 @@ function ReviewImages({ images = [] }) {
   const [selected, setSelected] = useState(null);
   return (
     <>
-      <div className="rr-images">
+      <div className="rr-images [&&]:flex [&&]:gap-[10px] [&&]:flex-wrap [&&_img]:h-[88px] [&&_img]:w-[88px] [&&_img]:object-cover [&&_img]:rounded-[8px] [&&_button]:p-0 [&&_button]:border-0 [&&_button]:block">
         {images.map((img) => (
           <button
             type="button"
@@ -186,11 +186,11 @@ function ReviewImages({ images = [] }) {
       {selected && (
         <Dialog title="Customer photo" close={() => setSelected(null)}>
           <img
-            className="rr-lightbox"
+            className="rr-lightbox [&&]:w-full [&&]:max-h-[70dvh] [&&]:object-contain"
             src={imageUrl(selected.id)}
             alt={selected.name || "Customer review photo"}
           />
-          <div className="rr-row">
+          <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap">
             <button
               type="button"
               onClick={() =>
@@ -222,15 +222,15 @@ function ReviewImages({ images = [] }) {
 }
 function ReviewCard({ review: r, children, report }) {
   return (
-    <article className="rr-panel">
-      <div className="rr-row rr-between">
-        <div className="rr-row">
-          <span className="rr-avatar" aria-hidden="true">
+    <article className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]">
+      <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap rr-between [&&]:justify-between">
+        <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap">
+          <span className="rr-avatar [&&]:w-[42px] [&&]:h-[42px] [&&]:rounded-[50%] [&&]:grid [&&]:[place-items:center] [&&]:bg-[#f1eee4] [&&]:text-[#857350] [&&]:font-semibold [&&]:shrink-0" aria-hidden="true">
             {r.customer?.[0] || "C"}
           </span>
           <div>
             <strong>{r.customer}</strong>
-            <div className="rr-muted">
+            <div className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
               {date(r.createdAt)} · {r.vendor}
               {r.service ? ` / ${r.service}` : ""}
               {r.package ? ` / ${r.package}` : ""}
@@ -238,23 +238,23 @@ function ReviewCard({ review: r, children, report }) {
           </div>
         </div>
         {r.status && (
-          <span className="rr-badge" data-status={r.status}>
+          <span className="rr-badge [&&]:inline-flex [&&]:gap-[5px] [&&]:items-center [&&]:text-[11px] [&&]:bg-[#edf3e9] [&&]:rounded-[20px] [&&]:py-[4px] [&&]:px-[10px] [&&]:text-[#496442] [&&[data-status='Pending']]:bg-[#fff4dc] [&&[data-status='Pending']]:text-[#98722c] [&&[data-status='Flagged']]:bg-[#fff4dc] [&&[data-status='Flagged']]:text-[#98722c] [&&[data-status='Rejected']]:bg-[#fcebea] [&&[data-status='Rejected']]:text-[#9d4646] [&&[data-status='Hidden']]:bg-[#fcebea] [&&[data-status='Hidden']]:text-[#9d4646]" data-status={r.status}>
             {r.deleted ? "Deleted" : r.status}
           </span>
         )}
       </div>
-      <div className="rr-row" style={{ marginTop: 14 }}>
+      <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap [&&&]:mt-[14px]" >
         <Stars value={r.rating} />
         {r.verified && (
-          <span className="rr-badge">
+          <span className="rr-badge [&&]:inline-flex [&&]:gap-[5px] [&&]:items-center [&&]:text-[11px] [&&]:bg-[#edf3e9] [&&]:rounded-[20px] [&&]:py-[4px] [&&]:px-[10px] [&&]:text-[#496442] [&&[data-status='Pending']]:bg-[#fff4dc] [&&[data-status='Pending']]:text-[#98722c] [&&[data-status='Flagged']]:bg-[#fff4dc] [&&[data-status='Flagged']]:text-[#98722c] [&&[data-status='Rejected']]:bg-[#fcebea] [&&[data-status='Rejected']]:text-[#9d4646] [&&[data-status='Hidden']]:bg-[#fcebea] [&&[data-status='Hidden']]:text-[#9d4646]">
             <ShieldCheck size={12} />
             Verified booking
           </span>
         )}
       </div>
       <h3>{r.title}</h3>
-      <p className="rr-break">{r.text}</p>
-      <div className="rr-row rr-muted">
+      <p className="rr-break [&&]:whitespace-pre-wrap [&&]:wrap-anywhere">{r.text}</p>
+      <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
         {[
           ["Service quality", r.serviceQualityRating],
           ["Communication", r.communicationRating],
@@ -269,15 +269,15 @@ function ReviewCard({ review: r, children, report }) {
           ))}
       </div>
       <ReviewImages images={r.images} />
-      {r.reason && <p className="rr-muted">Moderation: {r.reason}</p>}
+      {r.reason && <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">Moderation: {r.reason}</p>}
       {r.response && (
-        <div className="rr-response">
+        <div className="rr-response [&&]:py-[16px] [&&]:px-[20px] [&&]:border-l-3 [&&]:border-l-[#b4c5a3] [&&]:bg-[#f6f8f2] [&&]:rounded-[0_8px_8px_0] [&&]:my-[16px] [&&]:mx-0">
           <strong>
-            <MessageSquare size={14} style={{ display: "inline" }} /> Response
+            <MessageSquare size={14} className="[&&&]:inline" /> Response
             from {r.vendor}
           </strong>
-          <p className="rr-break">{r.response.text}</p>
-          <div className="rr-muted">
+          <p className="rr-break [&&]:whitespace-pre-wrap [&&]:wrap-anywhere">{r.response.text}</p>
+          <div className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
             {date(r.response.updatedAt)}
             {r.response.status === "Hidden" ? " · Hidden by moderation" : ""}
           </div>
@@ -289,7 +289,7 @@ function ReviewCard({ review: r, children, report }) {
           )}
         </div>
       )}
-      <div className="rr-row rr-between">
+      <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap rr-between [&&]:justify-between">
         {children}
         {report && (
           <button type="button" onClick={() => report(r)}>
@@ -303,11 +303,11 @@ function ReviewCard({ review: r, children, report }) {
 }
 function Pagination({ data, page, setPage }) {
   return data && data.total > data.pageSize ? (
-    <nav aria-label="Review pages" className="rr-row">
+    <nav aria-label="Review pages" className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap">
       <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
         Previous
       </button>
-      <span className="rr-muted">
+      <span className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
         Page {page} of {Math.ceil(data.total / data.pageSize)}
       </span>
       <button
@@ -324,12 +324,12 @@ function ReportForm({ target, close, done }) {
     [error, setError] = useState("");
   return (
     <Dialog title="Report content" close={close}>
-      <p className="rr-muted">
+      <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
         A moderator will review your report. Reporting does not automatically
         remove content.
       </p>
       <form
-        className="rr-stack"
+        className="rr-stack [&&]:grid [&&]:gap-[16px]"
         onSubmit={async (e) => {
           e.preventDefault();
           const b = Object.fromEntries(new FormData(e.currentTarget));
@@ -360,11 +360,11 @@ function ReportForm({ target, close, done }) {
           <textarea name="description" rows={4} maxLength={2000} />
         </label>
         {error && (
-          <p role="alert" className="rr-error">
+          <p role="alert" className="rr-error [&&]:bg-[#fff0ed] [&&]:text-[#9d4646] [&&]:py-[12px] [&&]:px-[16px] [&&]:rounded-[8px] [&&]:my-[12px] [&&]:mx-0">
             {error}
           </p>
         )}
-        <button className="rr-primary" disabled={busy}>
+        <button className="rr-primary [&&&]:bg-[#36583e] [&&&]:text-[#fff] [&&&]:border-[#36583e] [&&&:hover]:bg-[#294730]" disabled={busy}>
           Submit report
         </button>
       </form>
@@ -382,11 +382,11 @@ export function PublicReviews({ type, id }) {
     ),
     summary = useReviews(`/${type}/${id}/rating-summary`);
   return (
-    <section className="rr-module" aria-label="Customer reviews">
+    <section className="rr-module [&&]:text-[#344936] [&&]:[font-family:inherit] [&&]:text-[14px] [&&]:leading-[1.6] [&&]:min-w-0 [&&]:w-full [&_*]:box-border [&_h1]:text-[clamp(25px,_3vw,_34px)] [&_h1]:font-semibold [&_h1]:leading-[1.25] [&_h1]:mt-0 [&_h1]:mx-0 [&_h1]:mb-[10px] [&_h2]:text-[20px] [&_h2]:font-semibold [&_h2]:mt-0 [&_h2]:mx-0 [&_h2]:mb-[12px] [&_h3]:text-[16px] [&_h3]:font-semibold [&_h3]:my-[10px] [&_h3]:mx-0 [&_p]:my-[8px] [&_p]:mx-0 [&_p]:wrap-anywhere [&_button]:border [&_button]:border-[#dce4d7] [&_button]:rounded-[8px] [&_button]:py-[9px] [&_button]:px-[15px] [&_button]:bg-[#fff] [&_button]:text-[#36533d] [&_button]:text-[13px] [&_button]:cursor-pointer [&_button]:no-underline [&_button]:inline-flex [&_button]:gap-[7px] [&_button]:items-center [&_button]:justify-center [&_button:hover]:bg-[#f2f6ee] [&_button:disabled]:[cursor:wait] [&_button:disabled]:opacity-55 [&_label]:grid [&_label]:gap-[6px] [&_label]:text-[13px] [&_label]:font-medium [&_label]:min-w-0 [&_input]:w-full [&_input]:min-w-0 [&_input]:border [&_input]:border-[#dce4d7] [&_input]:rounded-[8px] [&_input]:py-[10px] [&_input]:px-[12px] [&_input]:[font:inherit] [&_input]:bg-[#fff] [&_input]:text-[#344936] [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:border [&_textarea]:border-[#dce4d7] [&_textarea]:rounded-[8px] [&_textarea]:py-[10px] [&_textarea]:px-[12px] [&_textarea]:[font:inherit] [&_textarea]:bg-[#fff] [&_textarea]:text-[#344936] [&_textarea]:[resize:vertical] [&_select]:w-full [&_select]:min-w-0 [&_select]:border [&_select]:border-[#dce4d7] [&_select]:rounded-[8px] [&_select]:py-[10px] [&_select]:px-[12px] [&_select]:[font:inherit] [&_select]:bg-[#fff] [&_select]:text-[#344936] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#648d66] [&_:focus-visible]:outline-offset-[3px] [&_progress]:w-full [&_progress]:h-[8px] [&_progress]:[accent-color:#8b9e72] [&_table]:border-collapse [&_table]:w-full [&_table]:text-[13px] [&_th]:text-left [&_th]:p-[10px] [&_th]:border-b [&_th]:border-b-[#e2e8dd] [&_th]:whitespace-nowrap [&_td]:text-left [&_td]:p-[10px] [&_td]:border-b [&_td]:border-b-[#e2e8dd] [&_td]:whitespace-nowrap" aria-label="Customer reviews">
       <h2>Customer experiences</h2>
       <State state={summary} />
       <RatingSummary data={summary.data} />
-      <label style={{ maxWidth: 220, marginBottom: 16 }}>
+      <label className="[&&&]:max-w-[220px] [&&&]:mb-[16px]">
         Filter by rating
         <select
           value={rating}
@@ -404,7 +404,7 @@ export function PublicReviews({ type, id }) {
         </select>
       </label>
       {notice && (
-        <p className="rr-notice" role="status">
+        <p className="rr-notice [&&]:bg-[#edf5e9] [&&]:py-[12px] [&&]:px-[16px] [&&]:rounded-[8px] [&&]:my-[12px] [&&]:mx-0" role="status">
           {notice}
         </p>
       )}
@@ -421,10 +421,10 @@ export function PublicReviews({ type, id }) {
         />
       ))}
       {state.data && !state.data.rows.length && (
-        <div className="rr-panel">
+        <div className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]">
           <Star size={26} />
           <h3>Every celebration has a story</h3>
-          <p className="rr-muted">
+          <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
             No approved reviews match this selection yet.
           </p>
         </div>
@@ -516,13 +516,13 @@ export function ReviewForm({ review, bookingId, close, done }) {
         if (!busy) close();
       }}
     >
-      <p className="rr-muted">
+      <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
         Reviews are verified against your completed booking and checked before
         publication.
       </p>
       <State state={eligible} />
       <form
-        className="rr-stack"
+        className="rr-stack [&&]:grid [&&]:gap-[16px]"
         onSubmit={async (e) => {
           e.preventDefault();
           if (!rating) {
@@ -585,7 +585,7 @@ export function ReviewForm({ review, bookingId, close, done }) {
               ))}
             </select>
             {eligible.data && !targets.length && (
-              <span className="rr-muted">
+              <span className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
                 Complete a booking to share your experience.
               </span>
             )}
@@ -616,7 +616,7 @@ export function ReviewForm({ review, bookingId, close, done }) {
         </label>
         <details>
           <summary>Rate the details (optional)</summary>
-          <div className="rr-grid">
+          <div className="rr-grid [&&]:grid [&&]:grid-cols-[repeat(auto-fit,_minmax(180px,_1fr))] [&&]:gap-[16px] max-[600.001px]:[&&]:grid-cols-[1fr]">
             {[
               ["serviceQualityRating", "Service quality"],
               ["communicationRating", "Communication"],
@@ -638,7 +638,7 @@ export function ReviewForm({ review, bookingId, close, done }) {
           </div>
         </details>
         <label>
-          <span className="rr-row">
+          <span className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap">
             <ImagePlus size={18} />
             Add photos (up to five, 2 MB each)
           </span>
@@ -652,7 +652,7 @@ export function ReviewForm({ review, bookingId, close, done }) {
             }}
           />
         </label>
-        <div className="rr-images">
+        <div className="rr-images [&&]:flex [&&]:gap-[10px] [&&]:flex-wrap [&&_img]:h-[88px] [&&_img]:w-[88px] [&&_img]:object-cover [&&_img]:rounded-[8px] [&&_button]:p-0 [&&_button]:border-0 [&&_button]:block">
           {keep.map((i) => (
             <div key={i.id}>
               <img src={imageUrl(i.id)} alt="Existing review" />
@@ -679,13 +679,13 @@ export function ReviewForm({ review, bookingId, close, done }) {
           ))}
         </div>
         {error && (
-          <p className="rr-error" role="alert">
+          <p className="rr-error [&&]:bg-[#fff0ed] [&&]:text-[#9d4646] [&&]:py-[12px] [&&]:px-[16px] [&&]:rounded-[8px] [&&]:my-[12px] [&&]:mx-0" role="alert">
             {error}
           </p>
         )}
-        <div className="rr-row">
+        <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap">
           <button
-            className="rr-primary"
+            className="rr-primary [&&&]:bg-[#36583e] [&&&]:text-[#fff] [&&&]:border-[#36583e] [&&&:hover]:bg-[#294730]"
             disabled={busy || (!review && !targets.length)}
           >
             {busy
@@ -713,7 +713,7 @@ function ActionDialog({ action, close, done }) {
       }}
     >
       <form
-        className="rr-stack"
+        className="rr-stack [&&]:grid [&&]:gap-[16px]"
         onSubmit={async (e) => {
           e.preventDefault();
           const b = Object.fromEntries(new FormData(e.currentTarget));
@@ -766,12 +766,12 @@ function ActionDialog({ action, close, done }) {
           </label>
         )}
         {error && (
-          <p className="rr-error" role="alert">
+          <p className="rr-error [&&]:bg-[#fff0ed] [&&]:text-[#9d4646] [&&]:py-[12px] [&&]:px-[16px] [&&]:rounded-[8px] [&&]:my-[12px] [&&]:mx-0" role="alert">
             {error}
           </p>
         )}
-        <div className="rr-row">
-          <button className="rr-primary" disabled={busy}>
+        <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap">
+          <button className="rr-primary [&&&]:bg-[#36583e] [&&&]:text-[#fff] [&&&]:border-[#36583e] [&&&:hover]:bg-[#294730]" disabled={busy}>
             {busy ? "Saving…" : "Confirm"}
           </button>
           <button type="button" onClick={close} disabled={busy}>
@@ -784,10 +784,10 @@ function ActionDialog({ action, close, done }) {
 }
 function Trends({ trends = [], services = [] }) {
   return (
-    <details className="rr-panel">
+    <details className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]">
       <summary>Rating analytics</summary>
       {trends.length ? (
-        <div className="rr-table">
+        <div className="rr-table [&&]:overflow-auto">
           <table>
             <thead>
               <tr>
@@ -808,7 +808,7 @@ function Trends({ trends = [], services = [] }) {
           </table>
         </div>
       ) : (
-        <p className="rr-muted">No approved review trends yet.</p>
+        <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">No approved review trends yet.</p>
       )}
       {services.length > 0 && (
         <>
@@ -908,15 +908,15 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
       required: ["reject", "hide", "flag"].includes(name),
     });
   return (
-    <main className="rr-module">
+    <main className="rr-module [&&]:text-[#344936] [&&]:[font-family:inherit] [&&]:text-[14px] [&&]:leading-[1.6] [&&]:min-w-0 [&&]:w-full [&_*]:box-border [&_h1]:text-[clamp(25px,_3vw,_34px)] [&_h1]:font-semibold [&_h1]:leading-[1.25] [&_h1]:mt-0 [&_h1]:mx-0 [&_h1]:mb-[10px] [&_h2]:text-[20px] [&_h2]:font-semibold [&_h2]:mt-0 [&_h2]:mx-0 [&_h2]:mb-[12px] [&_h3]:text-[16px] [&_h3]:font-semibold [&_h3]:my-[10px] [&_h3]:mx-0 [&_p]:my-[8px] [&_p]:mx-0 [&_p]:wrap-anywhere [&_button]:border [&_button]:border-[#dce4d7] [&_button]:rounded-[8px] [&_button]:py-[9px] [&_button]:px-[15px] [&_button]:bg-[#fff] [&_button]:text-[#36533d] [&_button]:text-[13px] [&_button]:cursor-pointer [&_button]:no-underline [&_button]:inline-flex [&_button]:gap-[7px] [&_button]:items-center [&_button]:justify-center [&_button:hover]:bg-[#f2f6ee] [&_button:disabled]:[cursor:wait] [&_button:disabled]:opacity-55 [&_label]:grid [&_label]:gap-[6px] [&_label]:text-[13px] [&_label]:font-medium [&_label]:min-w-0 [&_input]:w-full [&_input]:min-w-0 [&_input]:border [&_input]:border-[#dce4d7] [&_input]:rounded-[8px] [&_input]:py-[10px] [&_input]:px-[12px] [&_input]:[font:inherit] [&_input]:bg-[#fff] [&_input]:text-[#344936] [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:border [&_textarea]:border-[#dce4d7] [&_textarea]:rounded-[8px] [&_textarea]:py-[10px] [&_textarea]:px-[12px] [&_textarea]:[font:inherit] [&_textarea]:bg-[#fff] [&_textarea]:text-[#344936] [&_textarea]:[resize:vertical] [&_select]:w-full [&_select]:min-w-0 [&_select]:border [&_select]:border-[#dce4d7] [&_select]:rounded-[8px] [&_select]:py-[10px] [&_select]:px-[12px] [&_select]:[font:inherit] [&_select]:bg-[#fff] [&_select]:text-[#344936] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#648d66] [&_:focus-visible]:outline-offset-[3px] [&_progress]:w-full [&_progress]:h-[8px] [&_progress]:[accent-color:#8b9e72] [&_table]:border-collapse [&_table]:w-full [&_table]:text-[13px] [&_th]:text-left [&_th]:p-[10px] [&_th]:border-b [&_th]:border-b-[#e2e8dd] [&_th]:whitespace-nowrap [&_td]:text-left [&_td]:p-[10px] [&_td]:border-b [&_td]:border-b-[#e2e8dd] [&_td]:whitespace-nowrap">
       {role === "Customer" && (
-        <Link className="rr-link" to="/customer/media">
+        <Link className="rr-link [&&]:border [&&]:border-[#dce4d7] [&&]:rounded-[8px] [&&]:py-[9px] [&&]:px-[15px] [&&]:bg-[#fff] [&&]:text-[#36533d] [&&]:text-[13px] [&&]:cursor-pointer [&&]:no-underline [&&]:inline-flex [&&]:gap-[7px] [&&]:items-center [&&]:justify-center" to="/customer/media">
           Manage review photos
         </Link>
       )}
-      <div className="rr-row rr-between" style={{ marginBottom: 24 }}>
+      <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap rr-between [&&]:justify-between [&&&]:mb-[24px]" >
         <div>
-          <p className="rr-muted">{role.toUpperCase()} / REVIEWS & RATINGS</p>
+          <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">{role.toUpperCase()} / REVIEWS & RATINGS</p>
           <h1>
             {role === "Customer"
               ? "Your celebrations, your stories"
@@ -924,7 +924,7 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
                 ? "Customer experiences"
                 : "Review moderation"}
           </h1>
-          <p className="rr-muted">
+          <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
             {role === "Customer"
               ? "Share the details that help another celebration find its perfect match."
               : role === "Vendor"
@@ -933,14 +933,14 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
           </p>
         </div>
         {role === "Customer" && (
-          <button className="rr-primary" onClick={() => setEditing({})}>
+          <button className="rr-primary [&&&]:bg-[#36583e] [&&&]:text-[#fff] [&&&]:border-[#36583e] [&&&:hover]:bg-[#294730]" onClick={() => setEditing({})}>
             <Plus size={16} />
             Write a review
           </button>
         )}
       </div>
       {notice && (
-        <p className="rr-notice" role="status">
+        <p className="rr-notice [&&]:bg-[#edf5e9] [&&]:py-[12px] [&&]:px-[16px] [&&]:rounded-[8px] [&&]:my-[12px] [&&]:mx-0" role="status">
           {notice}
         </p>
       )}
@@ -950,7 +950,7 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
           <State state={summary} />
           <RatingSummary data={summary.data} />
           {summary.data && (
-            <p className="rr-muted">
+            <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
               Response rate: {Number(summary.data.responseRate).toFixed(0)}% ·
               Vendor overall ratings shown above. Service ratings below.
             </p>
@@ -963,10 +963,10 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
       )}
       {role === "Admin" && summary.data && (
         <>
-          <div className="rr-grid">
+          <div className="rr-grid [&&]:grid [&&]:grid-cols-[repeat(auto-fit,_minmax(180px,_1fr))] [&&]:gap-[16px] max-[600.001px]:[&&]:grid-cols-[1fr]">
             {summary.data.counts.map((c) => (
               <button
-                className="rr-panel"
+                className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]"
                 key={c.status}
                 onClick={() => choose("status", c.status)}
               >
@@ -974,13 +974,13 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
               </button>
             ))}
           </div>
-          <p className="rr-panel">
+          <p className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]">
             Approved average:{" "}
             {Number(summary.data.averageRating || 0).toFixed(2)} / 5 · Reports
             awaiting review: {summary.data.pendingReports}
           </p>
           <Trends trends={summary.data.trends} />
-          <details className="rr-panel">
+          <details className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]">
             <summary>Vendor rankings</summary>
             <h3>Highest rated</h3>
             {summary.data.vendors.slice(0, 5).map((v) => (
@@ -1000,10 +1000,10 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
           </details>
         </>
       )}
-      <section className="rr-panel">
-        <div className="rr-grid">
+      <section className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]">
+        <div className="rr-grid [&&]:grid [&&]:grid-cols-[repeat(auto-fit,_minmax(180px,_1fr))] [&&]:gap-[16px] max-[600.001px]:[&&]:grid-cols-[1fr]">
           <label>
-            <span className="rr-row">
+            <span className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap">
               <Search size={14} />
               Search experiences
             </span>
@@ -1062,9 +1062,9 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
           </label>
         </div>
         {role === "Admin" && (
-          <details style={{ marginTop: 16 }}>
+          <details className="[&&&]:mt-[16px]">
             <summary>Vendor, service and report filters</summary>
-            <div className="rr-grid">
+            <div className="rr-grid [&&]:grid [&&]:grid-cols-[repeat(auto-fit,_minmax(180px,_1fr))] [&&]:gap-[16px] max-[600.001px]:[&&]:grid-cols-[1fr]">
               {[
                 ["vendorId", "Vendor", "vendors"],
                 ["serviceId", "Service", "services"],
@@ -1118,14 +1118,14 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
               : null
           }
         >
-          <div className="rr-row">
+          <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap">
             {role === "Customer" && (
               <>
                 {r.canEdit && (
                   <button onClick={() => setEditing(r)}>Edit review</button>
                 )}
                 <button
-                  className="rr-danger"
+                  className="rr-danger [&&]:text-[#9d4646]"
                   onClick={() =>
                     setAction({
                       title: "Delete your review?",
@@ -1144,7 +1144,7 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
             {role === "Vendor" && (
               <>
                 <Link
-                  className="rr-link"
+                  className="rr-link [&&]:border [&&]:border-[#dce4d7] [&&]:rounded-[8px] [&&]:py-[9px] [&&]:px-[15px] [&&]:bg-[#fff] [&&]:text-[#36533d] [&&]:text-[13px] [&&]:cursor-pointer [&&]:no-underline [&&]:inline-flex [&&]:gap-[7px] [&&]:items-center [&&]:justify-center"
                   to={`/vendor/bookings/${r.bookingId}`}
                 >
                   View booking
@@ -1166,7 +1166,7 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
                 </button>
                 {r.response && (
                   <button
-                    className="rr-danger"
+                    className="rr-danger [&&]:text-[#9d4646]"
                     onClick={() =>
                       setAction({
                         title: "Delete response?",
@@ -1238,10 +1238,10 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
         </ReviewCard>
       ))}
       {state.data && !state.data.rows.length && (
-        <div className="rr-panel">
+        <div className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]">
           <Star size={28} />
           <h3>No reviews here yet</h3>
-          <p className="rr-muted">
+          <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
             {role === "Customer"
               ? "Complete a booking to tell your story."
               : "Reviews matching your filters will appear here."}
@@ -1250,36 +1250,36 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
       )}
       <Pagination data={state.data} page={page} setPage={setPage} />
       {role === "Admin" && (
-        <section className="rr-panel">
+        <section className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]">
           <h2>Reported content</h2>
           <State state={reports} />
           {reports.data?.rows.length === 0 && (
-            <p className="rr-muted">No reported content.</p>
+            <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">No reported content.</p>
           )}
           {reports.data?.rows.map((r) => (
             <article
               key={r.ReportId}
-              style={{ borderBottom: "1px solid #e2e8dd", padding: "16px 0" }}
+              className="[&&&]:border-b [&&&]:border-b-[#e2e8dd] [&&&]:py-[16px] [&&&]:px-0"
             >
-              <div className="rr-row rr-between">
+              <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap rr-between [&&]:justify-between">
                 <strong>
                   {r.vendor} ·{" "}
                   {r.ResponseId ? "Vendor response" : "Customer review"}
                 </strong>
-                <span className="rr-badge">{r.ReportStatus}</span>
+                <span className="rr-badge [&&]:inline-flex [&&]:gap-[5px] [&&]:items-center [&&]:text-[11px] [&&]:bg-[#edf3e9] [&&]:rounded-[20px] [&&]:py-[4px] [&&]:px-[10px] [&&]:text-[#496442] [&&[data-status='Pending']]:bg-[#fff4dc] [&&[data-status='Pending']]:text-[#98722c] [&&[data-status='Flagged']]:bg-[#fff4dc] [&&[data-status='Flagged']]:text-[#98722c] [&&[data-status='Rejected']]:bg-[#fcebea] [&&[data-status='Rejected']]:text-[#9d4646] [&&[data-status='Hidden']]:bg-[#fcebea] [&&[data-status='Hidden']]:text-[#9d4646]">{r.ReportStatus}</span>
               </div>
               <p>
                 {r.ReportReason}: {r.ReportDescription}
               </p>
-              <p className="rr-muted">
+              <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
                 Reported by {r.reporter} · {date(r.CreatedAt)}
               </p>
-              <p className="rr-break">
+              <p className="rr-break [&&]:whitespace-pre-wrap [&&]:wrap-anywhere">
                 {r.ResponseId ? r.ResponseText : r.ReviewText}
               </p>
               {r.AdminNotes && <p>Decision notes: {r.AdminNotes}</p>}
               {r.ReportStatus === "Pending" && (
-                <div className="rr-row">
+                <div className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap">
                   {["resolve", "dismiss"].map((name) => (
                     <button
                       key={name}
@@ -1383,7 +1383,7 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
               {date(h.CreatedAt)} · {h.PreviousStatus} → {h.NewStatus} ·{" "}
               {h.ModerationReason} · Administrator {h.ModeratedBy}
               {h.InternalNotes && (
-                <span className="rr-response">
+                <span className="rr-response [&&]:py-[16px] [&&]:px-[20px] [&&]:border-l-3 [&&]:border-l-[#b4c5a3] [&&]:bg-[#f6f8f2] [&&]:rounded-[0_8px_8px_0] [&&]:my-[16px] [&&]:mx-0">
                   Internal note: {h.InternalNotes}
                 </span>
               )}
@@ -1395,8 +1395,8 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
               <summary>
                 {date(a.CreatedAt)} · {a.ActionType}
               </summary>
-              <pre className="rr-break">{a.OldValue}</pre>
-              <pre className="rr-break">{a.NewValue}</pre>
+              <pre className="rr-break [&&]:whitespace-pre-wrap [&&]:wrap-anywhere">{a.OldValue}</pre>
+              <pre className="rr-break [&&]:whitespace-pre-wrap [&&]:wrap-anywhere">{a.NewValue}</pre>
             </details>
           ))}
         </Dialog>

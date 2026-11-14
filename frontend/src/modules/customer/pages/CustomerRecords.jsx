@@ -6,7 +6,6 @@ import {
   useParams,
   useLocation,
   useNavigate,
-  useSearchParams,
 } from "react-router-dom";
 import {
   Plus,
@@ -16,7 +15,6 @@ import {
   Check,
   MessagesSquare,
   ShieldCheck,
-  Star,
 } from "lucide-react";
 import { gql } from "@apollo/client";
 import { useAuth } from "../../../context/AuthContext";
@@ -40,8 +38,9 @@ import {
   timestamp,
   customerRequest,
 } from "../services/workspace.api";
-import BookingChanges from "../../bookings/BookingChanges";
 import BookingItemDetails from "../../bookings/BookingItemDetails";
+import CustomerBookingDetails from "./CustomerBookingDetails";
+import CustomerBookingsPage from "./CustomerBookingsPage";
 const columns = {
   bookings: [
     ["number", "Booking"],
@@ -110,10 +109,12 @@ function Cell({ name, value, row }) {
   return value || "—";
 }
 export default function CustomerRecords({ section: explicit }) {
-  const [filterParams, setFilterParams] = useSearchParams();
-  const location = useLocation(),
-    section = explicit || location.pathname.split("/")[2],
-    [page, setPage] = useState(1),
+  const location = useLocation();
+  const section = explicit || location.pathname.split("/")[2];
+  return section === "bookings" ? <CustomerBookingsPage /> : <CustomerRecordList section={section} />;
+}
+function CustomerRecordList({ section }) {
+  const [page, setPage] = useState(1),
     [search, setSearch] = useState(""),
     [version, setVersion] = useState(0),
     [edit, setEdit] = useState(null),
@@ -123,7 +124,7 @@ export default function CustomerRecords({ section: explicit }) {
     r = useCustomerData(
       section === "wishlist"
         ? "/wishlist"
-        : `/records/${section}?${new URLSearchParams({ page, q: search, status: section === "bookings" ? filterParams.get("status") || "" : "" })}`,
+        : `/records/${section}?${new URLSearchParams({ page, q: search })}`,
       version,
     );
   useEffect(() => {
@@ -170,30 +171,6 @@ export default function CustomerRecords({ section: explicit }) {
             setPage(1);
           }}
         />
-      )}
-      {section === "bookings" && (
-        <nav className="cw-inline-tabs flex gap-[25px] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e8ded5] mb-[25px] [&_>_a]:pt-[13px] [&_>_a]:pr-[3px] [&_>_a]:pb-[13px] [&_>_a]:pl-[3px] [&_>_a]:text-[12px] [&_>_a]:text-[#a38a7b] [&_>_a.active]:text-[#9a5b70] [&_>_a.active]:[border-bottom-width:2px] [&_>_a.active]:[border-bottom-style:solid] [&_>_a.active]:[border-bottom-color:#9a5b70]" aria-label="Booking status">
-          {[
-            "",
-            "Pending",
-            "Confirmed",
-            "Upcoming",
-            "Completed",
-            "Cancelled",
-          ].map((status) => (
-            <button
-              key={status}
-              className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-              aria-pressed={(filterParams.get("status") || "") === status}
-              onClick={() => {
-                setFilterParams(status ? { status } : {});
-                setPage(1);
-              }}
-            >
-              {status || "All bookings"}
-            </button>
-          ))}
-        </nav>
       )}
       {section === "quotations" && (
         <div className="cw-inline-tabs flex gap-[25px] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e8ded5] mb-[25px] [&_>_a]:pt-[13px] [&_>_a]:pr-[3px] [&_>_a]:pb-[13px] [&_>_a]:pl-[3px] [&_>_a]:text-[12px] [&_>_a]:text-[#a38a7b] [&_>_a.active]:text-[#9a5b70] [&_>_a.active]:[border-bottom-width:2px] [&_>_a.active]:[border-bottom-style:solid] [&_>_a.active]:[border-bottom-color:#9a5b70]">
@@ -557,6 +534,26 @@ export function CustomerRecordDetails({ quote = false }) {
       setBusy(false);
     }
   }
+  if (!quote) return (
+    <>
+      <CustomerBookingDetails
+        id={id}
+        data={r.data}
+        config={config}
+        busy={busy}
+        setBusy={setBusy}
+        error={error}
+        setError={setError}
+        message={message}
+        refresh={(notice) => {
+          if (notice) notify(notice);
+          setVersion((v) => v + 1);
+        }}
+        onReview={() => setReview(true)}
+      />
+      {review && <ReviewForm bookingId={id} close={() => setReview(false)} />}
+    </>
+  );
   return (
     <>
       <Link
@@ -617,72 +614,7 @@ export function CustomerRecordDetails({ quote = false }) {
                     <BookingItemDetails description={i.description} />
                   </td>
                   <td>
-                    {!quote &&
-                    b.BookingStatus === "Pending" &&
-                    i.serviceItemId ? (
-                      <form
-                        className="flex flex-wrap gap-2"
-                        onSubmit={async (event) => {
-                          event.preventDefault();
-                          const quantity = Number(
-                            new FormData(event.currentTarget).get("quantity"),
-                          );
-                          setBusy(true);
-                          setError("");
-                          try {
-                            await save(
-                              `/bookings/${id}/items/${i.id}`,
-                              "PATCH",
-                              { quantity },
-                            );
-                            setVersion((v) => v + 1);
-                          } catch (err) {
-                            setError(err.message);
-                          } finally {
-                            setBusy(false);
-                          }
-                        }}
-                      >
-                        <input
-                          aria-label={`${i.name} quantity`}
-                          className="w-20 rounded border p-1"
-                          type="number"
-                          name="quantity"
-                          defaultValue={Number(i.quantity)}
-                          min={1}
-                          max={100000}
-                          required
-                        />
-                        <button className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" disabled={busy}>
-                          Update
-                        </button>
-                        <button
-                          className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-                          type="button"
-                          disabled={busy}
-                          onClick={async () => {
-                            setBusy(true);
-                            setError("");
-                            try {
-                              await save(
-                                `/bookings/${id}/items/${i.id}`,
-                                "DELETE",
-                                {},
-                              );
-                              setVersion((v) => v + 1);
-                            } catch (err) {
-                              setError(err.message);
-                            } finally {
-                              setBusy(false);
-                            }
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </form>
-                    ) : (
-                      Number(i.quantity)
-                    )}
+                    {Number(i.quantity)}
                   </td>
                   <td>{money(i.price)}</td>
                   <td>{money(i.total)}</td>
@@ -698,12 +630,7 @@ export function CustomerRecordDetails({ quote = false }) {
           <dd>{money(b.DiscountAmount)}</dd>
           <dt>Tax</dt>
           <dd>{money(b.TaxAmount)}</dd>
-          {!quote && (
-            <>
-              <dt>Platform fee</dt>
-              <dd>{money(b.PlatformFee)}</dd>
-            </>
-          )}
+
         </dl>
         {b.VendorMessage && <p>{b.VendorMessage}</p>}
         {b.CustomerMessage && <p>Your note: {b.CustomerMessage}</p>}
@@ -743,97 +670,12 @@ export function CustomerRecordDetails({ quote = false }) {
             </button>
           </div>
         )}
-        {!quote &&
-          Number(b.RemainingAmount) > 0 &&
-          ["Accepted", "PaymentPending", "Confirmed", "InProgress"].includes(
-            b.BookingStatus,
-          ) && (
-            <div className="cw-payment-action mt-[25px] mr-[0] mb-[25px] ml-[0]">
-              <Link
-                className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-                to={`/customer/bookings/${id}/checkout`}
-              >
-                Review checkout and payment terms
-              </Link>
-              <button
-                className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-                disabled={busy || !config.data?.enabled}
-                onClick={async () => {
-                  setBusy(true);
-                  setError("");
-                  try {
-                    navigate(`/customer/bookings/${id}/checkout`);
-                  } catch (e) {
-                    setError(e.message);
-                    setVersion((v) => v + 1);
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              >
-                <ShieldCheck size={16} />
-                {busy
-                  ? "Opening secure checkout…"
-                  : `Pay ${money(b.RemainingAmount)}`}
-              </button>
-              {!config.loading && !config.data?.enabled && (
-                <p>
-                  Online payment is currently unavailable. Please contact
-                  support.
-                </p>
-              )}
-              {config.error && (
-                <ErrorView error={config.error} retry={config.retry} />
-              )}
-            </div>
-          )}
-        {!quote && b.BookingStatus === "Pending" && (
-          <p>
-            Your vendor is reviewing this request. Payment will become available
-            after acceptance.
-          </p>
-        )}
-        {!quote && b.BookingStatus === "Completed" && (
-          <button
-            className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-            onClick={() => setReview(true)}
-          >
-            <Star size={16} /> Write a review
-          </button>
-        )}
         {error && (
           <p className="cw-form-error [background:#fff4ee] [border-top-width:1px] [border-top-style:solid] [border-top-color:#f0ddcf] [border-right-width:1px] [border-right-style:solid] [border-right-color:#f0ddcf] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#f0ddcf] [border-left-width:1px] [border-left-style:solid] [border-left-color:#f0ddcf] text-[#b6836e]! pt-[12px] pr-[15px] pb-[12px] pl-[15px] rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]" role="alert">
             {error}
           </p>
         )}
       </section>
-      {!quote && (
-        <section className="cw-panel cw-prose [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4eade] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4eade] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4eade] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4eade] rounded-[10px] min-w-0 overflow-x-hidden overflow-y-hidden pt-[25px] [@media(width<=520px)]:pt-[23px] pr-[28px] [@media(width<=520px)]:pr-[20px] pb-[25px] [@media(width<=520px)]:pb-[23px] pl-[28px] [@media(width<=520px)]:pl-[20px] mb-[24px] [&_>_h2]:mb-[20px] [&_>_h3]:mt-[24px] [&_p]:[white-space:pre-line]">
-          <BookingChanges
-            id={id}
-            data={r.data}
-            request={customerRequest}
-            saved={(message) => {
-              notify(message);
-              setVersion((v) => v + 1);
-            }}
-          />
-          <h2>Booking journey</h2>
-          <ol className="cw-timeline [list-style:none] pt-[0] pr-[0] pb-[0] pl-[10px] mt-[0] mr-[0] mb-[0] ml-[0] [&_li]:[border-left-width:1px] [&_li]:[border-left-style:solid] [&_li]:[border-left-color:#e3d5c8] [&_li]:pt-[0] [&_li]:pr-[0] [&_li]:pb-[22px] [&_li]:pl-[23px] [&_li:last-child]:pb-[0] [&_time]:text-[10px] [&_time]:text-[#b3a095] [&_time]:ml-[15px] [&_p]:mt-[7px] [&_p]:mr-[0] [&_p]:mb-[0] [&_p]:ml-[0]">
-            {r.data.history.map((h, i) => (
-              <li key={i}>
-                <Badge>{h.status}</Badge>
-                <span>
-                  {h.action} · {h.role || "System"}
-                  {h.previous ? ` · ${h.previous} → ${h.status}` : ""}
-                </span>
-                <time>{timestamp(h.createdAt)}</time>
-                <p>{h.note}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
       {decision && (
         <Modal
           title={
@@ -916,13 +758,12 @@ export function CustomerRecordDetails({ quote = false }) {
           </form>
         </Modal>
       )}
-      {review && <ReviewForm bookingId={id} close={() => setReview(false)} />}
     </>
   );
 }
 function ReviewForm({bookingId,close}) {
  const {notify}=useAuth();
- return <div className="rr-module"><CompleteReviewForm bookingId={bookingId} close={close} done={message=>{notify(message);close();}} /></div>;
+ return <div className="rr-module [&&]:text-[#344936] [&&]:[font-family:inherit] [&&]:text-[14px] [&&]:leading-[1.6] [&&]:min-w-0 [&&]:w-full [&_*]:box-border [&_h1]:text-[clamp(25px,_3vw,_34px)] [&_h1]:font-semibold [&_h1]:leading-[1.25] [&_h1]:mt-0 [&_h1]:mx-0 [&_h1]:mb-[10px] [&_h2]:text-[20px] [&_h2]:font-semibold [&_h2]:mt-0 [&_h2]:mx-0 [&_h2]:mb-[12px] [&_h3]:text-[16px] [&_h3]:font-semibold [&_h3]:my-[10px] [&_h3]:mx-0 [&_p]:my-[8px] [&_p]:mx-0 [&_p]:wrap-anywhere [&_button]:border [&_button]:border-[#dce4d7] [&_button]:rounded-[8px] [&_button]:py-[9px] [&_button]:px-[15px] [&_button]:bg-[#fff] [&_button]:text-[#36533d] [&_button]:text-[13px] [&_button]:cursor-pointer [&_button]:no-underline [&_button]:inline-flex [&_button]:gap-[7px] [&_button]:items-center [&_button]:justify-center [&_button:hover]:bg-[#f2f6ee] [&_button:disabled]:[cursor:wait] [&_button:disabled]:opacity-55 [&_label]:grid [&_label]:gap-[6px] [&_label]:text-[13px] [&_label]:font-medium [&_label]:min-w-0 [&_input]:w-full [&_input]:min-w-0 [&_input]:border [&_input]:border-[#dce4d7] [&_input]:rounded-[8px] [&_input]:py-[10px] [&_input]:px-[12px] [&_input]:[font:inherit] [&_input]:bg-[#fff] [&_input]:text-[#344936] [&_textarea]:w-full [&_textarea]:min-w-0 [&_textarea]:border [&_textarea]:border-[#dce4d7] [&_textarea]:rounded-[8px] [&_textarea]:py-[10px] [&_textarea]:px-[12px] [&_textarea]:[font:inherit] [&_textarea]:bg-[#fff] [&_textarea]:text-[#344936] [&_textarea]:[resize:vertical] [&_select]:w-full [&_select]:min-w-0 [&_select]:border [&_select]:border-[#dce4d7] [&_select]:rounded-[8px] [&_select]:py-[10px] [&_select]:px-[12px] [&_select]:[font:inherit] [&_select]:bg-[#fff] [&_select]:text-[#344936] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#648d66] [&_:focus-visible]:outline-offset-[3px] [&_progress]:w-full [&_progress]:h-[8px] [&_progress]:[accent-color:#8b9e72] [&_table]:border-collapse [&_table]:w-full [&_table]:text-[13px] [&_th]:text-left [&_th]:p-[10px] [&_th]:border-b [&_th]:border-b-[#e2e8dd] [&_th]:whitespace-nowrap [&_td]:text-left [&_td]:p-[10px] [&_td]:border-b [&_td]:border-b-[#e2e8dd] [&_td]:whitespace-nowrap"><CompleteReviewForm bookingId={bookingId} close={close} done={message=>{notify(message);close();}} /></div>;
 }
 export function CustomerProfile({ settings = false }) {
   const { user, setUser, reload, notify } = useAuth(),

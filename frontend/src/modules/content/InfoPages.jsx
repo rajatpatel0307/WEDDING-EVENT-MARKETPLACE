@@ -27,7 +27,7 @@ import {
   date,
 } from "./api";
 import { mediaContent } from "../media/api";
-import "./content.css";
+
 const routes = {
   "about-us": "/about",
   contact: "/contact",
@@ -113,12 +113,12 @@ function CTAs({ ctas = [] }) {
 export function AboutView({ page }) {
   const c = page.content;
   return (
-    <div className="info-site">
-      <section className="info-wrap info-hero info-reveal">
+    <div className="info-site text-[#4b4840] bg-[#fcfaf6] [font-family:inherit] leading-[1.75] min-w-0 [&_h1]:text-[length:clamp(34px,5vw,64px)] [&_h1]:leading-[1.15] [&_h1]:tracking-[-1.6px] [&_h1]:font-medium [&_h1]:text-[#654a4c] [&_h1]:mt-[12px] [&_h1]:mx-0 [&_h1]:mb-[22px] [&_h2]:text-[length:clamp(24px,3vw,35px)] [&_h2]:leading-[1.3] [&_h2]:text-[#654a4c] [&_h2]:mb-[18px] [&_h2]:font-medium [&_h3]:text-[19px] [&_h3]:font-semibold [&_h3]:mb-[10px] print:bg-white print:text-black print:[&_h1]:text-[30px] print:[&_h1]:tracking-normal print:[&_h2]:text-[22px]">
+      <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0 info-hero [&&]:grid [&&]:grid-cols-[1fr_1fr] [&&]:gap-[48px] [&&]:items-center [&&_img]:w-full [&&_img]:h-[530px] [&&_img]:object-cover [&&_img]:rounded-[160px_160px_12px_12px] max-[760.001px]:[&&]:grid-cols-[1fr] max-[760.001px]:[&&]:gap-[28px] max-[760.001px]:[&&_img]:h-[330px] max-[760.001px]:[&&_img]:rounded-[90px_90px_10px_10px] info-reveal motion-safe:transition-[opacity,translate] motion-safe:duration-450 motion-safe:ease-[ease] motion-safe:starting:opacity-0 motion-safe:starting:translate-y-[6px]">
         <div>
-          <p className="info-kicker">OUR PURPOSE, YOUR CELEBRATION</p>
+          <p className="info-kicker [&&]:text-[10px] [&&]:tracking-[3px] [&&]:uppercase [&&]:text-[#8c7762]">OUR PURPOSE, YOUR CELEBRATION</p>
           <h1>{c.title}</h1>
-          <p className="info-intro info-body">{c.introduction}</p>
+          <p className="info-intro [&&]:text-[17px] [&&]:leading-[1.9] [&&]:text-[#7c776c] [&&]:max-w-[700px] info-body [&&]:whitespace-pre-line [&&]:wrap-anywhere">{c.introduction}</p>
           <CTAs ctas={c.ctas} />
         </div>
         <img
@@ -131,22 +131,22 @@ export function AboutView({ page }) {
           fetchPriority="high"
         />
       </section>
-      <section className="info-wrap">
+      <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0">
         <div className="grid gap-8 md:grid-cols-3">
           {c.sections.map((s) => (
-            <article key={s.id} className="info-feature">
+            <article key={s.id} className="info-feature [&&]:p-[30px] [&&]:border [&&]:border-[#e9dfd0] [&&]:rounded-[14px] [&&]:bg-white">
               <HeartHandshake
                 className="mb-5 text-[#9b8468]"
                 strokeWidth={1.3}
               />
               <h2>{s.title}</h2>
-              <p className="info-body text-sm text-[#7b786e]">{s.body}</p>
+              <p className="info-body [&&]:whitespace-pre-line [&&]:wrap-anywhere text-sm text-[#7b786e]">{s.body}</p>
             </article>
           ))}
         </div>
       </section>
-      <section className="info-wrap">
-        <p className="info-kicker">SERVICES FOR EVERY DETAIL</p>
+      <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0">
+        <p className="info-kicker [&&]:text-[10px] [&&]:tracking-[3px] [&&]:uppercase [&&]:text-[#8c7762]">SERVICES FOR EVERY DETAIL</p>
         <h2 className="mt-3">Find the people who bring it together.</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {page.categories?.map((category) => {
@@ -155,7 +155,7 @@ export function AboutView({ page }) {
             );
             return (
               <Link
-                className="info-feature block transition-transform hover:-translate-y-1"
+                className="info-feature [&&]:p-[30px] [&&]:border [&&]:border-[#e9dfd0] [&&]:rounded-[14px] [&&]:bg-white block transition-transform hover:-translate-y-1"
                 to={`/services?category=${category.id}`}
                 key={category.id}
               >
@@ -182,22 +182,22 @@ export function AboutView({ page }) {
           })}
         </div>
       </section>
-      <section className="info-wrap">
+      <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0">
         <h2>Why plan with us?</h2>
         <div className="grid gap-4 md:grid-cols-3">
           {c.benefits.map((b) => (
-            <article key={b.id} className="info-feature">
+            <article key={b.id} className="info-feature [&&]:p-[30px] [&&]:border [&&]:border-[#e9dfd0] [&&]:rounded-[14px] [&&]:bg-white">
               <h3>{b.title}</h3>
-              <p className="info-body text-sm text-[#7b786e]">{b.body}</p>
+              <p className="info-body [&&]:whitespace-pre-line [&&]:wrap-anywhere text-sm text-[#7b786e]">{b.body}</p>
             </article>
           ))}
         </div>
       </section>
-      <section className="info-wrap">
+      <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0">
         <h2>From the first idea to the final detail.</h2>
         <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {c.steps.map((s, i) => (
-            <li className="info-feature" key={i}>
+            <li className="info-feature [&&]:p-[30px] [&&]:border [&&]:border-[#e9dfd0] [&&]:rounded-[14px] [&&]:bg-white" key={i}>
               <span className="mb-3 block text-3xl text-[#bfa888]">
                 {String(i + 1).padStart(2, "0")}
               </span>
@@ -206,12 +206,12 @@ export function AboutView({ page }) {
           ))}
         </ol>
       </section>
-      <section className="info-wrap grid gap-6 md:grid-cols-2">
+      <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0 grid gap-6 md:grid-cols-2">
         {[
           ["For customers", c.customerBenefits],
           ["For vendors", c.vendorBenefits],
         ].map(([title, list]) => (
-          <div className="info-feature" key={title}>
+          <div className="info-feature [&&]:p-[30px] [&&]:border [&&]:border-[#e9dfd0] [&&]:rounded-[14px] [&&]:bg-white" key={title}>
             <h2>{title}</h2>
             <ul className="space-y-3">
               {list.map((s, i) => (
@@ -227,7 +227,7 @@ export function AboutView({ page }) {
           </div>
         ))}
       </section>
-      <section className="info-wrap text-center">
+      <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0 text-center">
         <h2>Your next chapter starts with a conversation.</h2>
         <div className="flex justify-center">
           <CTAs ctas={c.ctas} />
@@ -239,7 +239,7 @@ export function AboutView({ page }) {
 export function AboutPage() {
   const state = useContent("/cms/about-us");
   return (
-    <main id="main-content" className="info-site">
+    <main id="main-content" className="info-site text-[#4b4840] bg-[#fcfaf6] [font-family:inherit] leading-[1.75] min-w-0 [&_h1]:text-[length:clamp(34px,5vw,64px)] [&_h1]:leading-[1.15] [&_h1]:tracking-[-1.6px] [&_h1]:font-medium [&_h1]:text-[#654a4c] [&_h1]:mt-[12px] [&_h1]:mx-0 [&_h1]:mb-[22px] [&_h2]:text-[length:clamp(24px,3vw,35px)] [&_h2]:leading-[1.3] [&_h2]:text-[#654a4c] [&_h2]:mb-[18px] [&_h2]:font-medium [&_h3]:text-[19px] [&_h3]:font-semibold [&_h3]:mb-[10px] print:bg-white print:text-black print:[&_h1]:text-[30px] print:[&_h1]:tracking-normal print:[&_h2]:text-[22px]">
       <ContentMeta
         pageKey="about-us"
         page={state.data}
@@ -423,13 +423,13 @@ export function ContactView({ page, preview = false }) {
   const c = page.content,
     info = c.contact;
   return (
-    <div className="info-site">
-      <header className="info-wrap max-w-4xl text-center">
-        <p className="info-kicker">HERE TO HELP</p>
+    <div className="info-site text-[#4b4840] bg-[#fcfaf6] [font-family:inherit] leading-[1.75] min-w-0 [&_h1]:text-[length:clamp(34px,5vw,64px)] [&_h1]:leading-[1.15] [&_h1]:tracking-[-1.6px] [&_h1]:font-medium [&_h1]:text-[#654a4c] [&_h1]:mt-[12px] [&_h1]:mx-0 [&_h1]:mb-[22px] [&_h2]:text-[length:clamp(24px,3vw,35px)] [&_h2]:leading-[1.3] [&_h2]:text-[#654a4c] [&_h2]:mb-[18px] [&_h2]:font-medium [&_h3]:text-[19px] [&_h3]:font-semibold [&_h3]:mb-[10px] print:bg-white print:text-black print:[&_h1]:text-[30px] print:[&_h1]:tracking-normal print:[&_h2]:text-[22px]">
+      <header className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0 max-w-4xl text-center">
+        <p className="info-kicker [&&]:text-[10px] [&&]:tracking-[3px] [&&]:uppercase [&&]:text-[#8c7762]">HERE TO HELP</p>
         <h1>{c.title}</h1>
-        <p className="info-intro mx-auto info-body">{c.introduction}</p>
+        <p className="info-intro [&&]:text-[17px] [&&]:leading-[1.9] [&&]:text-[#7c776c] [&&]:max-w-[700px] mx-auto info-body [&&]:whitespace-pre-line [&&]:wrap-anywhere">{c.introduction}</p>
       </header>
-      <section className="info-wrap !pt-0">
+      <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0 !pt-0">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             [
@@ -456,7 +456,7 @@ export function ContactView({ page, preview = false }) {
                     {value}
                   </a>
                 ) : (
-                  <p className="info-body text-sm">{value}</p>
+                  <p className="info-body [&&]:whitespace-pre-line [&&]:wrap-anywhere text-sm">{value}</p>
                 )
               ) : (
                 <p className="text-sm text-[#8a8375]">Not published yet</p>
@@ -477,7 +477,7 @@ export function ContactView({ page, preview = false }) {
             <ContactForm settings={info} />
           )}
           <aside className={`${panel} space-y-6`}>
-            <p className="info-kicker">{info.companyName}</p>
+            <p className="info-kicker [&&]:text-[10px] [&&]:tracking-[3px] [&&]:uppercase [&&]:text-[#8c7762]">{info.companyName}</p>
             <h2>A little guidance. A clearer next step.</h2>
             <p className="text-sm text-[#7b786e]">
               For a booking or quotation inquiry, include the reference number
@@ -520,7 +520,7 @@ export function ContactView({ page, preview = false }) {
           </aside>
         </div>
       </section>
-      <section className="info-wrap">
+      <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0">
         <h2>Helpful answers</h2>
         <div className="space-y-3">
           {c.faqs.map((f) => (
@@ -528,7 +528,7 @@ export function ContactView({ page, preview = false }) {
               <summary className="cursor-pointer font-medium">
                 {f.title}
               </summary>
-              <p className="info-body mt-4 text-sm">{f.body}</p>
+              <p className="info-body [&&]:whitespace-pre-line [&&]:wrap-anywhere mt-4 text-sm">{f.body}</p>
             </details>
           ))}
         </div>
@@ -539,7 +539,7 @@ export function ContactView({ page, preview = false }) {
 export function ContactPage() {
   const state = useContent("/cms/contact");
   return (
-    <main id="main-content" className="info-site">
+    <main id="main-content" className="info-site text-[#4b4840] bg-[#fcfaf6] [font-family:inherit] leading-[1.75] min-w-0 [&_h1]:text-[length:clamp(34px,5vw,64px)] [&_h1]:leading-[1.15] [&_h1]:tracking-[-1.6px] [&_h1]:font-medium [&_h1]:text-[#654a4c] [&_h1]:mt-[12px] [&_h1]:mx-0 [&_h1]:mb-[22px] [&_h2]:text-[length:clamp(24px,3vw,35px)] [&_h2]:leading-[1.3] [&_h2]:text-[#654a4c] [&_h2]:mb-[18px] [&_h2]:font-medium [&_h3]:text-[19px] [&_h3]:font-semibold [&_h3]:mb-[10px] print:bg-white print:text-black print:[&_h1]:text-[30px] print:[&_h1]:tracking-normal print:[&_h2]:text-[22px]">
       <ContentMeta
         pageKey="contact"
         page={state.data}
@@ -553,30 +553,30 @@ export function ContactPage() {
 export function LegalView({ page }) {
   const c = page.content;
   return (
-    <div className="info-site">
-      <header className="info-wrap">
-        <p className="info-kicker">THE DETAILS THAT MATTER</p>
+    <div className="info-site text-[#4b4840] bg-[#fcfaf6] [font-family:inherit] leading-[1.75] min-w-0 [&_h1]:text-[length:clamp(34px,5vw,64px)] [&_h1]:leading-[1.15] [&_h1]:tracking-[-1.6px] [&_h1]:font-medium [&_h1]:text-[#654a4c] [&_h1]:mt-[12px] [&_h1]:mx-0 [&_h1]:mb-[22px] [&_h2]:text-[length:clamp(24px,3vw,35px)] [&_h2]:leading-[1.3] [&_h2]:text-[#654a4c] [&_h2]:mb-[18px] [&_h2]:font-medium [&_h3]:text-[19px] [&_h3]:font-semibold [&_h3]:mb-[10px] print:bg-white print:text-black print:[&_h1]:text-[30px] print:[&_h1]:tracking-normal print:[&_h2]:text-[22px]">
+      <header className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0">
+        <p className="info-kicker [&&]:text-[10px] [&&]:tracking-[3px] [&&]:uppercase [&&]:text-[#8c7762]">THE DETAILS THAT MATTER</p>
         <h1>{c.title}</h1>
         <div className="mb-5 flex flex-wrap gap-x-7 gap-y-2 text-sm text-[#85786b]">
           <span>Version {page.version}</span>
           <span>Last updated: {date(page.publishedAt || page.updatedAt)}</span>
           <span>Effective: {date(page.effectiveDate)}</span>
           <button
-            className="info-print-hide inline-flex items-center gap-2 underline"
+            className="info-print-hide print:[&&]:hidden inline-flex items-center gap-2 underline"
             onClick={() => window.print()}
           >
             <Printer size={14} />
             Print
           </button>
         </div>
-        <p className="info-intro info-body">{c.introduction}</p>
+        <p className="info-intro [&&]:text-[17px] [&&]:leading-[1.9] [&&]:text-[#7c776c] [&&]:max-w-[700px] info-body [&&]:whitespace-pre-line [&&]:wrap-anywhere">{c.introduction}</p>
       </header>
-      <div className="info-wrap info-legal !pt-0">
+      <div className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0 info-legal [&&]:grid [&&]:grid-cols-[240px_minmax(0,1fr)] [&&]:gap-[60px] [&&]:items-start max-[760.001px]:[&&]:grid-cols-[1fr] max-[760.001px]:[&&]:gap-[24px] print:[&&]:block !pt-0">
         <nav
-          className="info-toc info-print-hide"
+          className="info-toc [&&]:sticky [&&]:top-[110px] [&&]:max-h-[75vh] [&&]:overflow-auto [&&]:text-[12px] [&&_a]:block [&&_a]:py-[7px] [&&_a]:px-0 [&&_a]:text-[#817565] max-[760.001px]:[&&]:static max-[760.001px]:[&&]:max-h-[260px] max-[760.001px]:[&&]:border-b max-[760.001px]:[&&]:border-b-[#e6dfd5] max-[760.001px]:[&&]:pb-[20px] info-print-hide print:[&&]:hidden"
           aria-label="Document table of contents"
         >
-          <p className="info-kicker mb-3">ON THIS PAGE</p>
+          <p className="info-kicker [&&]:text-[10px] [&&]:tracking-[3px] [&&]:uppercase [&&]:text-[#8c7762] mb-3">ON THIS PAGE</p>
           {c.sections.map((s, i) => (
             <a
               key={s.id}
@@ -598,13 +598,13 @@ export function LegalView({ page }) {
             </a>
           ))}
         </nav>
-        <article className="info-document">
+        <article className="info-document [&&]:max-w-[760px] [&&_section]:scroll-mt-[120px] [&&_section]:pt-[10px] [&&_section]:px-0 [&&_section]:pb-[28px] [&&_section_h2]:text-[25px] [&&_p]:text-[15px] print:[&&]:max-w-none print:[&&_section]:break-inside-avoid">
           {c.sections.map((s, i) => (
             <section key={s.id} id={`document-${s.id}`} tabIndex={-1}>
               <h2>
                 {i + 1}. {s.title}
               </h2>
-              <p className="info-body">{s.body}</p>
+              <p className="info-body [&&]:whitespace-pre-line [&&]:wrap-anywhere">{s.body}</p>
             </section>
           ))}
         </article>
@@ -615,7 +615,7 @@ export function LegalView({ page }) {
 export function LegalPage({ documentKey = "privacy" }) {
   const state = useContent(`/cms/${documentKey}`);
   return (
-    <main id="main-content" className="info-site">
+    <main id="main-content" className="info-site text-[#4b4840] bg-[#fcfaf6] [font-family:inherit] leading-[1.75] min-w-0 [&_h1]:text-[length:clamp(34px,5vw,64px)] [&_h1]:leading-[1.15] [&_h1]:tracking-[-1.6px] [&_h1]:font-medium [&_h1]:text-[#654a4c] [&_h1]:mt-[12px] [&_h1]:mx-0 [&_h1]:mb-[22px] [&_h2]:text-[length:clamp(24px,3vw,35px)] [&_h2]:leading-[1.3] [&_h2]:text-[#654a4c] [&_h2]:mb-[18px] [&_h2]:font-medium [&_h3]:text-[19px] [&_h3]:font-semibold [&_h3]:mb-[10px] print:bg-white print:text-black print:[&_h1]:text-[30px] print:[&_h1]:tracking-normal print:[&_h2]:text-[22px]">
       <ContentMeta
         pageKey={documentKey}
         page={state.data}
@@ -626,19 +626,19 @@ export function LegalPage({ documentKey = "privacy" }) {
       ) : state.data ? (
         <LegalView page={state.data} />
       ) : state.status && state.status !== 404 ? (
-        <section className="info-wrap">
+        <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0">
           <h1>
             {documentKey === "terms" ? "Terms & Conditions" : "Privacy Policy"}
           </h1>
           <State state={state} />
         </section>
       ) : (
-        <section className="info-wrap">
+        <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0">
           <ShieldCheck className="text-[#94836b]" />
           <h1>
             {documentKey === "terms" ? "Terms & Conditions" : "Privacy Policy"}
           </h1>
-          <p className="info-intro">
+          <p className="info-intro [&&]:text-[17px] [&&]:leading-[1.9] [&&]:text-[#7c776c] [&&]:max-w-[700px]">
             The platform owner has not published this document yet.
           </p>
           <p className="mt-5 max-w-2xl text-sm text-[#817769]">
@@ -651,7 +651,7 @@ export function LegalPage({ documentKey = "privacy" }) {
         </section>
       )}
       {documentKey === "privacy" && (
-        <section className="info-wrap info-print-hide" id="privacy-requests">
+        <section className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0 info-print-hide print:[&&]:hidden" id="privacy-requests">
           <PrivacyCenter />
         </section>
       )}
@@ -818,11 +818,11 @@ export function PrivacyCenter() {
           <p className="my-2 text-xs text-[#7b786e]">
             {r.status} · {date(r.createdAt)}
           </p>
-          <p className="info-body text-sm">{r.description}</p>
+          <p className="info-body [&&]:whitespace-pre-line [&&]:wrap-anywhere text-sm">{r.description}</p>
           {r.response && (
             <div className="mt-4 rounded-xl bg-[#f2f4eb] p-4">
               <strong className="text-sm">Response from the team</strong>
-              <p className="info-body text-sm">{r.response}</p>
+              <p className="info-body [&&]:whitespace-pre-line [&&]:wrap-anywhere text-sm">{r.response}</p>
             </div>
           )}
         </article>
@@ -833,8 +833,8 @@ export function PrivacyCenter() {
 }
 export function LegalCenterPage() {
   return (
-    <main className="info-site">
-      <div className="info-wrap">
+    <main className="info-site text-[#4b4840] bg-[#fcfaf6] [font-family:inherit] leading-[1.75] min-w-0 [&_h1]:text-[length:clamp(34px,5vw,64px)] [&_h1]:leading-[1.15] [&_h1]:tracking-[-1.6px] [&_h1]:font-medium [&_h1]:text-[#654a4c] [&_h1]:mt-[12px] [&_h1]:mx-0 [&_h1]:mb-[22px] [&_h2]:text-[length:clamp(24px,3vw,35px)] [&_h2]:leading-[1.3] [&_h2]:text-[#654a4c] [&_h2]:mb-[18px] [&_h2]:font-medium [&_h3]:text-[19px] [&_h3]:font-semibold [&_h3]:mb-[10px] print:bg-white print:text-black print:[&_h1]:text-[30px] print:[&_h1]:tracking-normal print:[&_h2]:text-[22px]">
+      <div className="info-wrap [&&]:w-[min(1180px,calc(100%_-_40px))] [&&]:mx-auto [&&]:my-0 [&&]:py-[64px] [&&]:px-0 max-[760.001px]:[&&]:w-[calc(100%_-_32px)] max-[760.001px]:[&&]:py-[36px] print:[&&]:w-full print:[&&]:p-0">
         <PrivacyCenter />
       </div>
     </main>

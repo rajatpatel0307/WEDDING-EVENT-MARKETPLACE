@@ -67,6 +67,8 @@ export function createMediaRouter({ authenticateRequest = authenticate } = {}) {
             return res
               .type(result.mimeType)
               .set("X-Content-Type-Options", "nosniff")
+              // The frontend and API use different ports (or subdomains).
+              .set("Cross-Origin-Resource-Policy", "same-site")
               .send(result.bytes);
           if (result?.redirect) return res.redirect(302, result.redirect);
           res.json({ success: true, data: result });

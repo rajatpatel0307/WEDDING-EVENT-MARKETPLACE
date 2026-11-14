@@ -9,7 +9,7 @@ import {
   money,
 } from "./quotation.api";
 import { QuoteState, QuoteItems } from "./QuotationPages";
-import "./quotations.css";
+
 const blank = () => ({
   serviceId: "",
   packageId: null,
@@ -49,7 +49,7 @@ export default function QuotationBuilder() {
     ((id || previousId) && source.loading)
   )
     return (
-      <div className="quotation-workspace">
+      <div className="quotation-workspace [&]:text-[#342d2a] [&]:min-w-0 [&]:wrap-anywhere [&_h1]:[font:clamp(28px,_4vw,_42px)/1.2_Georgia,_serif] [&_h1]:my-[12px] [&_h1]:mx-0 [&_h2]:[font:25px/1.3_Georgia,_serif] [&_h2]:my-[12px] [&_h2]:mx-0 [&_h3]:text-[17px] [&_h3]:my-[12px] [&_h3]:mx-0 [&_p]:leading-[1.7] [&_button]:inline-flex [&_button]:items-center [&_button]:gap-[8px] [&_button]:border [&_button]:border-[#ded2cd] [&_button]:rounded-[8px] [&_button]:py-[10px] [&_button]:px-[15px] [&_button]:bg-white [&_button]:text-inherit [&_button]:[font:inherit] [&_button]:no-underline [&_button]:cursor-pointer [&_button:disabled]:opacity-45 [&_button:disabled]:[cursor:not-allowed] [&_input]:w-full [&_input]:border [&_input]:border-[#ded2cd] [&_input]:rounded-[8px] [&_input]:p-[10px] [&_input]:bg-white [&_input]:text-inherit [&_input]:[font:inherit] [&_input]:min-w-0 [&_select]:w-full [&_select]:border [&_select]:border-[#ded2cd] [&_select]:rounded-[8px] [&_select]:p-[10px] [&_select]:bg-white [&_select]:text-inherit [&_select]:[font:inherit] [&_select]:min-w-0 [&_textarea]:w-full [&_textarea]:border [&_textarea]:border-[#ded2cd] [&_textarea]:rounded-[8px] [&_textarea]:p-[10px] [&_textarea]:bg-white [&_textarea]:text-inherit [&_textarea]:[font:inherit] [&_textarea]:min-w-0 [&_label]:grid [&_label]:gap-[7px] [&_label]:text-[13px] [&_table]:w-full [&_table]:border-collapse [&_td]:text-left [&_td]:p-[12px] [&_td]:border-b [&_td]:border-b-[#e7dfda] [&_td]:min-w-[110px] [&_td]:[vertical-align:top] [&_th]:text-left [&_th]:p-[12px] [&_th]:border-b [&_th]:border-b-[#e7dfda] [&_th]:min-w-[110px] [&_th]:[vertical-align:top] [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-[#8c414e] [&_:focus-visible]:outline-offset-[3px] print:[&_button]:hidden print:[&_nav]:hidden">
         <QuoteState state={failed || { loading: true }} />
       </div>
     );
@@ -175,7 +175,7 @@ function QuotationEditor({ id, previousId, params, options, catalog, source }) {
     }
   }
   return (
-    <div className="quotation-workspace">
+    <div className="quotation-workspace [&]:text-[#342d2a] [&]:min-w-0 [&]:wrap-anywhere [&_h1]:[font:clamp(28px,_4vw,_42px)/1.2_Georgia,_serif] [&_h1]:my-[12px] [&_h1]:mx-0 [&_h2]:[font:25px/1.3_Georgia,_serif] [&_h2]:my-[12px] [&_h2]:mx-0 [&_h3]:text-[17px] [&_h3]:my-[12px] [&_h3]:mx-0 [&_p]:leading-[1.7] [&_button]:inline-flex [&_button]:items-center [&_button]:gap-[8px] [&_button]:border [&_button]:border-[#ded2cd] [&_button]:rounded-[8px] [&_button]:py-[10px] [&_button]:px-[15px] [&_button]:bg-white [&_button]:text-inherit [&_button]:[font:inherit] [&_button]:no-underline [&_button]:cursor-pointer [&_button:disabled]:opacity-45 [&_button:disabled]:[cursor:not-allowed] [&_input]:w-full [&_input]:border [&_input]:border-[#ded2cd] [&_input]:rounded-[8px] [&_input]:p-[10px] [&_input]:bg-white [&_input]:text-inherit [&_input]:[font:inherit] [&_input]:min-w-0 [&_select]:w-full [&_select]:border [&_select]:border-[#ded2cd] [&_select]:rounded-[8px] [&_select]:p-[10px] [&_select]:bg-white [&_select]:text-inherit [&_select]:[font:inherit] [&_select]:min-w-0 [&_textarea]:w-full [&_textarea]:border [&_textarea]:border-[#ded2cd] [&_textarea]:rounded-[8px] [&_textarea]:p-[10px] [&_textarea]:bg-white [&_textarea]:text-inherit [&_textarea]:[font:inherit] [&_textarea]:min-w-0 [&_label]:grid [&_label]:gap-[7px] [&_label]:text-[13px] [&_table]:w-full [&_table]:border-collapse [&_td]:text-left [&_td]:p-[12px] [&_td]:border-b [&_td]:border-b-[#e7dfda] [&_td]:min-w-[110px] [&_td]:[vertical-align:top] [&_th]:text-left [&_th]:p-[12px] [&_th]:border-b [&_th]:border-b-[#e7dfda] [&_th]:min-w-[110px] [&_th]:[vertical-align:top] [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-[#8c414e] [&_:focus-visible]:outline-offset-[3px] print:[&_button]:hidden print:[&_nav]:hidden">
       <h1>
         {id
           ? "Edit draft quotation"
@@ -193,7 +193,7 @@ function QuotationEditor({ id, previousId, params, options, catalog, source }) {
           perform("Draft");
         }}
       >
-        <section className="qt-panel qt-fields">
+        <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid] qt-fields [&&]:grid [&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] [&&]:gap-[16px] max-[700.001px]:[&&]:grid-cols-[1fr]">
           <label>
             Customer event
             <select
@@ -282,18 +282,18 @@ function QuotationEditor({ id, previousId, params, options, catalog, source }) {
             </label>
           )}
         </section>
-        <section className="qt-panel">
+        <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid]">
           <h2>Quotation items</h2>
-          <p className="qt-note">
+          <p className="qt-note [&&]:text-[13px] [&&]:text-[#75665e]">
             Every item, including custom work and fees, is anchored to one of
             your services. Choose existing catalog items or describe authorized
             custom work.
           </p>
-          <div className="qt-lines">
+          <div className="qt-lines [&&]:grid [&&]:gap-[18px]">
             {form.items.map((line, index) => (
-              <article className="qt-line" key={index}>
+              <article className="qt-line [&&]:border [&&]:border-[#e7dfda] [&&]:rounded-[12px] [&&]:p-[18px]" key={index}>
                 <h3>Item {index + 1}</h3>
-                <div className="qt-line-fields">
+                <div className="qt-line-fields [&&]:grid [&&]:grid-cols-[repeat(3,_minmax(0,_1fr))] [&&]:gap-[12px] max-[700.001px]:[&&]:grid-cols-[1fr]">
                   <label>
                     Service
                     <select
@@ -533,7 +533,7 @@ function QuotationEditor({ id, previousId, params, options, catalog, source }) {
             Add item or fee
           </button>
         </section>
-        <section className="qt-panel qt-fields">
+        <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid] qt-fields [&&]:grid [&&]:grid-cols-[repeat(2,_minmax(0,_1fr))] [&&]:gap-[16px] max-[700.001px]:[&&]:grid-cols-[1fr]">
           <label>
             Quotation notes
             <textarea
@@ -560,7 +560,7 @@ function QuotationEditor({ id, previousId, params, options, catalog, source }) {
           </label>
         </section>
         {preview && (
-          <section className="qt-panel" aria-label="Server quotation preview">
+          <section className="qt-panel [&&]:border [&&]:border-[#e7dfda] [&&]:bg-[#fff] [&&]:rounded-[14px] [&&]:p-[24px] [&&]:my-[20px] [&&]:mx-0 max-[700.001px]:[&&]:p-[16px] print:[&&]:[break-inside:avoid]" aria-label="Server quotation preview">
             <h2>Server-calculated preview</h2>
             <QuoteItems items={preview.lines} />
             <p>
@@ -580,11 +580,11 @@ function QuotationEditor({ id, previousId, params, options, catalog, source }) {
           </section>
         )}
         {error && (
-          <p role="alert" className="qt-error">
+          <p role="alert" className="qt-error [&&]:text-[#a22d40]">
             {error}
           </p>
         )}
-        <div className="qt-actions">
+        <div className="qt-actions [&&]:flex [&&]:gap-[12px] [&&]:flex-wrap [&&]:items-center [&&]:my-[16px] [&&]:mx-0 print:[&&]:hidden">
           <button disabled={busy}>Save draft</button>
           <button
             type="button"
@@ -597,7 +597,7 @@ function QuotationEditor({ id, previousId, params, options, catalog, source }) {
           </button>
           <button
             type="button"
-            className="qt-primary"
+            className="qt-primary [&&&]:bg-[#8c414e] [&&&]:border-[#8c414e] [&&&]:text-white"
             disabled={busy || !preview}
             onClick={() => perform("Sent")}
           >
