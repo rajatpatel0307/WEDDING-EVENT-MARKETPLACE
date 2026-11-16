@@ -29,7 +29,7 @@ import { date, money, today } from "../services/workspace.api";
 import { Notice, ServiceActions, Status } from "./shared";
 import MediaManager from "./MediaManager";
 import ServiceOverview from "./ServiceOverview";
-import "./service-details.css";
+
 function PricingDetails({ pricing = {} }) {
   const labels = [
     ["type", "Pricing type"],
@@ -75,11 +75,13 @@ function PricingDetails({ pricing = {} }) {
     return value;
   };
   return (
-    <dl className="
+    <dl
+      className="
       grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_dt]:text-[10px] [&_dt]:capitalize
       [&_dt]:text-[#99a58d] [&_dt]:mb-[6px] [&_dd]:m-[0] [&_dd]:text-[#54704d]
       [&_dd]:[overflow-wrap:anywhere] service-mobile:grid-cols-[1fr]
-    ">
+    "
+    >
       {labels.map(([key, label]) => (
         <div key={key}>
           <dt>{label}</dt>
@@ -96,13 +98,16 @@ function PackagePreview({ id }) {
   return state.data.length ? (
     <div className="grid grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[20px] service-tablet:grid-cols-[repeat(2,_minmax(0,_1fr))] service-mobile:grid-cols-[1fr]">
       {state.data.map((p) => (
-        <article className="
+        <article
+          className="
           p-[25px] [background:#fff] [border-top:1px_solid_var(--sm-border)]
           [border-right:1px_solid_var(--sm-border)] [border-bottom:1px_solid_var(--sm-border)]
           [border-left:1px_solid_var(--sm-border)] rounded-[12px] [&_>_.vw-badge]:[float:right]
           [&_h2]:text-[19px] [&_h2]:mt-[20px] [&_p]:min-h-[40px] [&_>_.sm-row-actions]:mt-[20px]
           [&_>_.sm-row-actions]:pt-[20px] [&_>_.sm-row-actions]:[border-top:1px_solid_var(--sm-border)]
-        " key={p.id}>
+        "
+          key={p.id}
+        >
           <h3>{p.name}</h3>
           <p>{p.description}</p>
           <strong>{money(p.finalPrice)}</strong>
@@ -173,16 +178,20 @@ export function ServicePreview({
   categoryFields = [],
 }) {
   return (
-    <div className="
+    <div
+      className="
       [&_h2]:text-[25px] [&_h3]:mt-[25px] [&_h3]:mb-[10px] [&_p]:leading-[1.9] [&_ul]:pl-[20px]
       [&_ul]:[list-style:disc] [&_ul]:text-[#72866a] service-mobile:[&_h2]:text-[21px]
-    ">
-      <div className="
+    "
+    >
+      <div
+        className="
         grid grid-cols-[2fr_1fr_1fr] gap-[10px] mb-[25px] [&_img]:w-[100%] [&_img]:h-[220px]
         [&_img]:rounded-[10px] [&_img]:object-cover [&_img:nth-child(n_+_4)]:hidden
         service-mobile:grid-cols-[2fr_1fr] service-mobile:[&_img]:h-[150px]
         service-mobile:[&_img:nth-child(3)]:hidden
-      ">
+      "
+      >
         {s.images?.length ? (
           s.images
             .slice(0, 4)
@@ -221,7 +230,9 @@ export function ServicePreview({
           </div>
         </details>
       )}
-      <span className="inline-block [padding:5px_10px] [background:#edf4e9] text-[#4c7254] text-[10px] rounded-[5px] mb-[20px]">{category || "Service"}</span>
+      <span className="inline-block [padding:5px_10px] [background:#edf4e9] text-[#4c7254] text-[10px] rounded-[5px] mb-[20px]">
+        {category || "Service"}
+      </span>
       <h2>{s.name || "Your service name"}</h2>
       <p>
         {vendorName && `By ${vendorName} · `}
@@ -229,14 +240,16 @@ export function ServicePreview({
         {s.location?.state && `, ${s.location.state}`}
       </p>
       <p className="sm-lead">{s.shortDescription}</p>
-      <div className="
+      <div
+        className="
         p-[25px] [background:#f3f7ef] [border-top:1px_solid_#e1e8d9] [border-right:1px_solid_#e1e8d9]
         [border-bottom:1px_solid_#e1e8d9] [border-left:1px_solid_#e1e8d9] rounded-[10px] [margin:24px_0]
         [&_>_span]:block [&_>_span]:text-[10px] [&_>_span]:tracking-[1px] [&_>_span]:text-[#8d9b80]
         [&_>_strong]:block [&_>_strong]:text-[32px] [&_>_strong]:font-semibold [&_>_strong]:text-[#3c6348]
         [&_>_strong]:[margin:5px_0] [&_p]:max-w-[680px] [&_p]:leading-[1.8] [&_p]:[margin:8px_0_0]
         service-mobile:p-[18px]
-      ">
+      "
+      >
         <span>STARTING FROM</span>
         <strong>{money(s.price)}</strong>
         <span>{s.pricing?.unit}</span>
@@ -246,11 +259,13 @@ export function ServicePreview({
         {s.description || "Add a detailed description."}
       </p>
       <h3>Category details</h3>
-      <dl className="
+      <dl
+        className="
         grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_dt]:text-[10px] [&_dt]:capitalize
         [&_dt]:text-[#99a58d] [&_dt]:mb-[6px] [&_dd]:m-[0] [&_dd]:text-[#54704d]
         [&_dd]:[overflow-wrap:anywhere] service-mobile:grid-cols-[1fr]
-      ">
+      "
+      >
         {Object.entries(s.attributes || {}).map(([key, value]) => (
           <div key={key}>
             <dt>
@@ -268,7 +283,8 @@ export function ServicePreview({
         ))}
       </dl>
       <h3>Pricing details</h3>
-      <OfferReview offer={s.offer}/>{!s.offer && <PricingDetails pricing={s.pricing} />}
+      <OfferReview offer={s.offer} />
+      {!s.offer && <PricingDetails pricing={s.pricing} />}
       <h3>Included items</h3>
       {s.items?.length ? (
         <ul>
@@ -333,7 +349,9 @@ export function ServicePreview({
       ].map(([k, l]) => (
         <div key={k}>
           <strong>{l}</strong>
-          <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{s.policies?.[k] || "Not specified"}</p>
+          <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">
+            {s.policies?.[k] || "Not specified"}
+          </p>
         </div>
       ))}
       <p>
@@ -363,11 +381,13 @@ function Chart({ title, rows, metric }) {
     )
     .join(" ");
   return (
-    <section className="
+    <section
+      className="
       p-[20px] [border-top:1px_solid_var(--sm-border)] [border-right:1px_solid_var(--sm-border)]
       [border-bottom:1px_solid_var(--sm-border)] [border-left:1px_solid_var(--sm-border)] rounded-[10px]
       [&_svg]:w-[100%] [&_svg]:mt-[20px]
-    ">
+    "
+    >
       <h3>{title}</h3>
       {rows.length ? (
         <>
@@ -410,11 +430,13 @@ function Performance({ id }) {
   const d = state.data;
   return (
     <>
-      <div className="
+      <div
+        className="
         grid grid-cols-[repeat(4,_minmax(0,_1fr))] gap-[14px] [margin:24px_0]
         service-wide:grid-cols-[repeat(9,_minmax(0,_1fr))]
         service-mobile:grid-cols-[repeat(2,_minmax(0,_1fr))] service-mobile:gap-[10px]
-      ">
+      "
+      >
         {[
           ["views", "Total Views", Eye],
           ["enquiries", "Total Enquiries", MessageCircle],
@@ -426,7 +448,8 @@ function Performance({ id }) {
           ["averageRating", "Average Rating", Star],
           ["reviewCount", "Review Count", Star],
         ].map(([key, label, Icon]) => (
-          <div className="
+          <div
+            className="
             [background:#fff] [border-top:1px_solid_var(--sm-border)] [border-right:1px_solid_var(--sm-border)]
             [border-bottom:1px_solid_var(--sm-border)] [border-left:1px_solid_var(--sm-border)] rounded-[12px]
             p-[20px] flex items-center gap-[15px] [&_div]:flex [&_div]:flex-col [&_div]:gap-[5px]
@@ -435,7 +458,9 @@ function Performance({ id }) {
             service-wide:[padding:18px_13px] service-wide:gap-[10px] service-wide:[&_strong]:text-[23px]
             service-mobile:p-[14px] service-mobile:gap-[10px] service-mobile:[&_strong]:text-[22px]
             service-mobile:[&_div_>_span]:text-[10px]
-          " key={key}>
+          "
+            key={key}
+          >
             <Icon size={20} />
             <div>
               <span>{label}</span>
@@ -469,12 +494,14 @@ function History({ id, kind }) {
   if (state.error) return <ErrorView error={state.error} retry={state.retry} />;
   return state.data?.rows?.length ? (
     <>
-      <div className="
+      <div
+        className="
         grid gap-[12px] p-[20px] [&_article]:p-[15px] [&_article]:[border-top:1px_solid_var(--sm-border)]
         [&_article]:[border-right:1px_solid_var(--sm-border)]
         [&_article]:[border-bottom:1px_solid_var(--sm-border)]
         [&_article]:[border-left:1px_solid_var(--sm-border)] [&_article]:rounded-[9px]
-      ">
+      "
+      >
         {state.data.rows.map((r, i) => (
           <article key={r.id || i}>
             <strong>{r.name || `★ ${r.rating}`}</strong>
@@ -517,26 +544,31 @@ export default function ServiceDetails() {
   return (
     <div
       className="
-      service-details [--sm-accent:#2d604b] [--sm-border:#e2e8df] max-w-[1700px] m-[auto] w-full
+      service-details [--sd-ink:#253f34] [--sd-muted:#68796e] [--sd-green:#285c45] [--sd-border:#e1e7df] text-[color:var(--sd-ink)] [&_:is(button,_a)]:[-webkit-tap-highlight-color:transparent] [&_button]:cursor-pointer [&_:is(button,_a):focus-visible]:outline-[2px] [&_:is(button,_a):focus-visible]:outline-[#397455] [&_:is(button,_a):focus-visible]:outline-offset-[4px] [&_button:disabled]:cursor-not-allowed [&_button:disabled]:opacity-45 [&_.sd-tab-panel_>_header]:pt-[22px] [&_.sd-tab-panel_>_header]:px-[25px] [&_.sd-tab-panel_>_header]:pb-[17px] [&_.sd-tab-panel_>_header]:border-b [&_.sd-tab-panel_>_header]:border-b-[#e9ede4] [&_.sd-tab-panel_>_header_h2]:font-serif [&_.sd-tab-panel_>_header_h2]:text-[23px] [&_.sd-tab-panel_>_header_h2]:font-normal [&_.sd-tab-panel_:is(dt,_dd,_p)]:text-[12px] [&_.sd-tab-panel_dt]:text-[#6f7d68] [&_.sd-tab-panel_dd]:text-[#3e5a44] [--sm-accent:#2d604b] [--sm-border:#e2e8df] max-w-[1700px] m-[auto] w-full
       [&_button:disabled]:opacity-[0.45] [&_button:disabled]:cursor-not-allowed
       [&_:focus-visible]:[outline:2px_solid_#397455] [&_:focus-visible]:[outline-offset:3px]
     "
     >
-      <nav className="sd-breadcrumb" aria-label="Breadcrumb">
+      <nav
+        className="sd-breadcrumb flex items-center gap-[14px] mb-[25px] text-[12px] text-[#6b786e] [&_a]:inline-flex [&_a]:items-center [&_a]:gap-[8px] [&_a]:text-[#3f6350] [&_a:hover]:text-[#173c2c] [&_>_span:first-of-type]:text-[#b1bcb0] max-[760.001px]:mb-[21px] max-[760.001px]:text-[11px]"
+        aria-label="Breadcrumb"
+      >
         <Link to="/vendor/services">
           <ArrowLeft size={15} /> All services
         </Link>
         <span aria-hidden="true">/</span>
         <span>Service details</span>
       </nav>
-      <header className="sd-page-header">
-        <div className="sd-page-title">
-          <span className="sd-eyebrow">SERVICE MANAGEMENT</span>
-          <div className="sd-title-row">
+      <header className="sd-page-header flex items-center justify-between gap-[24px] mb-[25px] max-[1150.001px]:flex-wrap max-[1150.001px]:gap-[18px] max-[760.001px]:mb-[20px]">
+        <div className="sd-page-title min-w-0">
+          <span className="sd-eyebrow text-[10px] font-semibold tracking-[1.8px] text-[#73816e]">
+            SERVICE MANAGEMENT
+          </span>
+          <div className="sd-title-row flex items-center flex-wrap gap-[15px] mt-[7px] mx-0 mb-[11px] [&_h1]:m-0 [&_h1]:font-serif [&_h1]:text-[clamp(28px,_3vw,_40px)] [&_h1]:font-normal [&_h1]:leading-[1.18] [&_h1]:tracking-[-1.1px] [&_h1]:wrap-anywhere [&_.vw-badge]:py-[5px] [&_.vw-badge]:px-[10px] [&_.vw-badge]:border [&_.vw-badge]:border-[#e1e5d9] [&_.vw-badge]:rounded-[20px] [&_.vw-badge]:text-[10px] [&_.vw-badge]:text-[#6c7553] [&_.vw-badge]:bg-[#f0f2e7] [&_.vw-badge-adminreview]:border-[#eddfb9] [&_.vw-badge-adminreview]:text-[#846327] [&_.vw-badge-adminreview]:bg-[#faf3e3] [&_.vw-badge-pendingapproval]:border-[#eddfb9] [&_.vw-badge-pendingapproval]:text-[#846327] [&_.vw-badge-pendingapproval]:bg-[#faf3e3] [&_.vw-badge::before]:content-[''] [&_.vw-badge::before]:w-[5px] [&_.vw-badge::before]:h-[5px] [&_.vw-badge::before]:rounded-[50%] [&_.vw-badge::before]:mr-[6px] [&_.vw-badge::before]:bg-current max-[760.001px]:gap-[11px] max-[480.001px]:[&_h1]:text-[32px]">
             <h1>{s.name}</h1>
             <Status status={s.status} active={s.active} />
           </div>
-          <div className="sd-meta">
+          <div className="sd-meta flex items-center flex-wrap gap-y-[8px] gap-x-[19px] text-[color:var(--sd-muted)] text-[12px] [&_>_span]:inline-flex [&_>_span]:items-center [&_>_span]:gap-[6px] [&_svg]:text-[#81907d] max-[760.001px]:text-[11px] max-[760.001px]:gap-y-[7px] max-[760.001px]:gap-x-[12px] max-[480.001px]:[&_>_span:last-child]:[flex-basis:100%]">
             <span>
               <LayoutGrid size={14} />
               {category || "Service"}
@@ -552,7 +584,7 @@ export default function ServiceDetails() {
             </span>
           </div>
         </div>
-        <div className="sd-header-actions">
+        <div className="sd-header-actions flex items-center gap-[9px] shrink-0 [&_[role='group']_>_:is(a,_button)]:w-[39px] [&_[role='group']_>_:is(a,_button)]:h-[39px] [&_[role='group']_>_:is(a,_button)]:rounded-[8px] [&_[role='group']_>_span_>_button]:w-[39px] [&_[role='group']_>_span_>_button]:h-[39px] [&_[role='group']_>_span_>_button]:rounded-[8px] max-[760.001px]:w-full max-[760.001px]:justify-between">
           <ServiceActions
             service={s}
             onChange={(r) => {
@@ -561,7 +593,7 @@ export default function ServiceDetails() {
             }}
           />
           <Link
-            className="sd-button sd-button-primary"
+            className="sd-button inline-flex items-center justify-center gap-[9px] min-h-[40px] py-[10px] px-[15px] border border-[color:var(--sd-border)] rounded-[8px] bg-white text-[color:var(--sd-green)] text-[12px] font-medium no-underline [transition:background_0.15s,_border-color_0.15s] [&:hover]:bg-[#edf4ee] [&:hover]:border-[#a5bba9] sd-button-primary [&.sd-button-primary]:bg-[color:var(--sd-green)] [&.sd-button-primary]:border-[color:var(--sd-green)] [&.sd-button-primary]:text-white [&.sd-button-primary:hover]:bg-[#1c4733] [&.sd-button-primary:hover]:border-[#1c4733] [&.sd-button-primary:hover]:text-white"
             to={`/vendor/services/${id}/availability`}
           >
             <CalendarDays size={16} /> Availability <ArrowUpRight size={15} />
@@ -570,8 +602,8 @@ export default function ServiceDetails() {
       </header>
       <Notice message={notice} />
       {reviewing && (
-        <div className="sd-review-banner">
-          <span className="sd-review-icon">
+        <div className="sd-review-banner flex items-center gap-[14px] mb-[26px] py-[16px] px-[19px] border border-[#e9e1cc] rounded-[11px] bg-[#fbf8f0] text-[#74613b] [&_strong]:text-[12px] [&_strong]:font-semibold [&_p]:mt-[3px] [&_p]:mx-0 [&_p]:mb-0 [&_p]:text-[#7b725f] [&_p]:text-[12px] [&_p]:leading-[1.6] [&_>_.sd-text-button]:shrink-0 [&_>_.sd-text-button]:ml-auto [&_>_.sd-text-button]:text-[#7d6533] max-[760.001px]:p-[14px] max-[760.001px]:gap-[10px] max-[760.001px]:flex-wrap max-[760.001px]:mb-[20px] max-[760.001px]:[&_>_div]:flex-1 max-[760.001px]:[&_>_div]:min-w-[170px] max-[760.001px]:[&_p]:text-[11px] max-[760.001px]:[&_>_.sd-text-button]:ml-[49px] max-[760.001px]:[&_>_.sd-text-button]:text-[11px]">
+          <span className="sd-review-icon grid place-items-center w-[39px] h-[39px] rounded-[11px] shrink-0 bg-[#f1ead7] text-[#9b7a36]">
             <ShieldCheck size={20} />
           </span>
           <div>
@@ -588,7 +620,7 @@ export default function ServiceDetails() {
           </div>
           <button
             type="button"
-            className="sd-text-button"
+            className="sd-text-button inline-flex items-center justify-start gap-[6px] py-[3px] px-0 border-0 bg-transparent text-[color:var(--sd-green)] text-[12px] font-medium text-left leading-[1.5] [&:hover]:text-[#142f21] [&:hover]:underline [&:hover]:underline-offset-[4px]"
             onClick={() => selectTab("Approval History")}
           >
             Track progress <ArrowUpRight size={15} />
@@ -628,7 +660,7 @@ export default function ServiceDetails() {
         </div>
       )}
       <div
-        className="sd-tabs"
+        className="sd-tabs flex items-stretch gap-[25px] mb-[25px] py-0 px-[20px] overflow-x-auto border border-[color:var(--sd-border)] rounded-[11px] bg-white [scrollbar-width:thin] [scrollbar-color:#bdcdbb_transparent] [&_>_button]:inline-flex [&_>_button]:items-center [&_>_button]:justify-center [&_>_button]:gap-[7px] [&_>_button]:shrink-0 [&_>_button]:relative [&_>_button]:min-h-[58px] [&_>_button]:py-0 [&_>_button]:px-[1px] [&_>_button]:border-0 [&_>_button]:border-b-[2px] [&_>_button]:border-b-[transparent] [&_>_button]:bg-transparent [&_>_button]:text-[#6c7b6e] [&_>_button]:text-[12px] [&_>_button]:font-medium [&_>_button]:whitespace-nowrap [&_>_button:hover]:text-[color:var(--sd-green)] [&_>_button.selected]:text-[color:var(--sd-green)] [&_>_button.selected]:[border-bottom-color:var(--sd-green)] [&_>_button.selected]:font-semibold [&_>_button:focus-visible]:outline-offset-[-6px] [&_>_button:focus-visible]:rounded-[5px] max-[1150.001px]:gap-[22px] max-[760.001px]:mb-[21px] max-[760.001px]:py-0 max-[760.001px]:px-[15px] max-[760.001px]:gap-[23px] max-[760.001px]:[&_>_button]:min-h-[51px] max-[760.001px]:[&_>_button]:text-[11px]"
         role="tablist"
         aria-label="Service management sections"
         onKeyDown={(event) => {
