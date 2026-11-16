@@ -9,6 +9,20 @@ import {
   ShieldAlert,
   Wallet,
   CalendarDays,
+  CalendarCheck,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  RotateCcw,
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
+  LayoutDashboard,
+  Package,
+  FileText,
+  History,
+  ScrollText,
+  IndianRupee,
 } from "lucide-react";
 import {
   adminRequest,
@@ -20,42 +34,87 @@ import {
 import {
   Loading,
   ErrorState,
-  Definition,
   Field,
-  BookingStatus,
 } from "../components/BookingUI";
 import AdminDialog from "../components/AdminDialog";
 import { useAuth } from "../../../context/AuthContext";
 import BookingChanges from "../../bookings/BookingChanges";
 import BookingItemDetails from "../../bookings/BookingItemDetails";
 
+
+const button = "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-[#dce6df] bg-white px-3 py-2 text-[11px] font-medium text-[#557160] transition-colors hover:border-[#afccba] hover:bg-[#f0f6f2] disabled:cursor-not-allowed disabled:opacity-40";
+const primaryButton = "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-[#176b60] bg-[#176b60] px-3 py-2 text-[11px] font-medium text-white transition-colors hover:bg-[#12574e] disabled:cursor-not-allowed disabled:opacity-40";
+const dangerButton = "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-medium text-rose-700 transition-colors hover:border-rose-300 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40";
+const tableClass = "w-full border-collapse text-left text-xs [&_th]:border-b [&_th]:border-[#e5ece7] [&_th]:bg-[#f5f8f6] [&_th]:px-3 [&_th]:py-3 [&_th]:text-[10px] [&_th]:font-medium [&_th]:tracking-wide [&_th]:whitespace-nowrap [&_th]:text-[#7b9081] [&_th]:uppercase [&_td]:border-b [&_td]:border-[#edf2ee] [&_td]:px-3 [&_td]:py-3.5 [&_td]:align-top [&_tbody_tr:last-child_td]:border-0 [&_tbody_tr:hover]:bg-[#fafcfb]";
+const pageClass = "grid w-full min-w-0 gap-5 text-[#2b4638] [&_button]:cursor-pointer [&_button:disabled]:cursor-not-allowed [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-offset-3 [&_:focus-visible]:outline-[#176b60] [&_select]:rounded-lg [&_select]:border [&_select]:border-[#dce6df] [&_select]:bg-white [&_select]:px-3 [&_select]:py-2 [&_select]:text-xs";
+const tabIcons = { Overview: LayoutDashboard, Items: Package, Payment: Wallet, Payout: IndianRupee, Policy: ShieldAlert, "Status History": History, "Audit Logs": ScrollText, Quotation: FileText };
+
+function BookingStatus({ value }) {
+  const tone = ["Confirmed", "Paid", "Completed", "Success"].includes(value)
+    ? "bg-emerald-50 text-emerald-700 ring-emerald-600/10"
+    : ["Pending", "Accepted", "PaymentPending", "PartiallyPaid", "RefundPending", "Processing"].includes(value)
+      ? "bg-amber-50 text-amber-800 ring-amber-600/10"
+      : ["Cancelled", "Rejected", "Failed", "Disputed"].includes(value)
+        ? "bg-rose-50 text-rose-700 ring-rose-600/10"
+        : value === "InProgress" ? "bg-blue-50 text-blue-700 ring-blue-600/10"
+          : ["Refunded", "PartiallyRefunded"].includes(value) ? "bg-violet-50 text-violet-700 ring-violet-600/10"
+            : "bg-slate-50 text-slate-600 ring-slate-500/10";
+  return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] leading-normal font-medium whitespace-nowrap ring-1 ring-inset ${tone}`}>
+    <span className="size-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
+    {value === "Accepted" ? "Vendor accepted" : String(value || "Not recorded").replace(/([a-z])([A-Z])/g, "$1 $2")}
+  </span>;
+}
+
+function Definition({ values }) {
+  return <dl className="grid min-w-0 gap-x-6 sm:grid-cols-2">
+    {Object.entries(values).map(([label, value]) => <div key={label} className="min-w-0 border-b border-[#edf2ee] py-3">
+      <dt className="mb-1 text-[10px] text-[#819486]">{label}</dt>
+      <dd className={`text-xs leading-relaxed text-[#3d5948] whitespace-pre-wrap [overflow-wrap:anywhere] ${label === "ID" ? "font-mono text-[10px]" : ""}`}>{value === null || value === undefined || value === "" ? "Not provided" : typeof value === "boolean" ? value ? "Yes" : "No" : String(value)}</dd>
+    </div>)}
+  </dl>;
+}
+
 function ChangeRequests({ id, revision, saved }) {
   const state = useAdminData(`/bookings/${id}/change-requests`, revision);
-  if (state.loading) return <Loading />;
+  if (state.loading) return <div role="status" className="rounded-xl border border-[#e0e9e3] bg-white px-4 py-3 text-xs text-[#819486]">Loading change requests…</div>;
   if (state.error)
     return <ErrorState error={state.error} retry={state.retry} />;
+  const requests = Array.isArray(state.data) ? state.data : [];
+  const pending = requests.filter((request) => request.status === "Pending").length;
+  if (!requests.length) return (
+    <div className="flex items-center gap-2 rounded-xl border border-[#e0e9e3] bg-white px-4 py-3 text-[11px] text-[#7c9182]">
+      <CheckCircle2 size={15} className="text-[#7fa48c]" aria-hidden="true" />No booking change requests
+    </div>
+  );
   return (
-    <BookingChanges
-      id={id}
-      role="Admin"
-      data={{ requests: state.data }}
-      request={adminRequest}
-      saved={saved}
-    />
+    <details key={pending > 0 ? "pending" : "history"} open={pending > 0} className="group overflow-hidden rounded-xl border border-[#e0e9e3] bg-white">
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-xs font-medium [&::-webkit-details-marker]:hidden">
+        <ClipboardList size={15} className="text-[#6e927b]" aria-hidden="true" />Booking change requests
+        <span className={`rounded-full px-2 py-0.5 text-[10px] ${pending ? "bg-amber-50 text-amber-800" : "bg-[#edf4ef] text-[#66816e]"}`}>{pending ? `${pending} pending` : `${requests.length} recorded`}</span>
+        <ChevronDown size={14} className="ml-auto text-[#8ca193] transition-transform group-open:rotate-180" aria-hidden="true" />
+      </summary>
+      <div className="border-t border-[#edf2ee] [&>section]:m-0 [&>section]:rounded-none [&>section]:border-0 [&>section]:p-4 [&_h2]:hidden [&_article]:border-[#e3ebe5] [&_label]:text-xs [&_button]:text-xs [&_p]:text-xs!">
+        <BookingChanges id={id} role="Admin" data={{ requests }} request={adminRequest} saved={saved} />
+      </div>
+    </details>
   );
 }
 
 function PriceSummary({ f }) {
   return (
-    <div className="ab-price-summary p-[24px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dee8e1] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dee8e1] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dee8e1] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dee8e1] rounded-[14px] [&_h3]:text-[18px] [&_h3]:font-[600] [&_h3]:mb-[18px] [&_>_div]:flex [&_>_div]:justify-between [&_>_div]:items-center [&_>_div]:gap-[12px] [&_>_div]:[padding:11px_0] [&_>_div]:[border-bottom-width:1px] [&_>_div]:[border-bottom-style:solid] [&_>_div]:[border-bottom-color:#edf1ec] [&_>_div]:text-[12px] [&_>_div:nth-of-type(6)]:text-[16px] [&_>_div:nth-of-type(6)]:text-[#226c55] [&_>_div:nth-of-type(6)]:[padding:18px_0] [&_span]:text-[#839489] [&_p]:text-[11px] [&_p]:text-[#8d9d91] [&_p]:mt-[18px] [&_p]:leading-[1.7]">
-      <h3>Price Summary</h3>
+    <section aria-labelledby="price-summary-heading" className="overflow-hidden rounded-2xl border border-[#dfe8e1] bg-white shadow-sm shadow-[#254c3810]">
+      <div className="flex items-center gap-2 border-b border-[#e8eeea] px-5 py-4"><Wallet size={16} className="text-[#71937e]" aria-hidden="true" /><h3 id="price-summary-heading" className="text-sm font-semibold">Price summary</h3></div>
+      <div className="mx-4 mt-4 rounded-xl bg-[#edf5ef] px-4 py-3.5">
+        <span className="text-[10px] font-medium tracking-wide text-[#6f8e79] uppercase">Total booking amount</span>
+        <strong className="mt-1 block text-[26px] leading-tight font-semibold tracking-tight text-[#176b60] tabular-nums [overflow-wrap:anywhere]">{money(f.total)}</strong>
+      </div>
+      <dl className="px-5 py-3">
       {[
         ["Subtotal", f.subtotal],
         ["Discount", f.discount],
         ["Tax", f.tax],
         ["Platform fees", f.platformFees],
         ["Separately recorded travel charges", f.travelCharges],
-        ["Total amount", f.total],
         ["Paid amount", f.paid],
         ["Remaining amount", f.remaining],
         ["Refunded amount", f.refunded],
@@ -63,28 +122,31 @@ function PriceSummary({ f }) {
         ["Platform commission", f.commission],
         ["Vendor payable", f.vendorPayable],
       ].map(([label, value]) => (
-        <div key={label}>
-          <span>{label}</span>
-          <strong>{money(value)}</strong>
+        <div key={label} className={`flex items-start justify-between gap-3 py-2.5 text-[11px] ${label === "Paid amount" || label === "Refunded amount" || label === "Platform commission" ? "mt-1 border-t border-[#e8eeea] pt-3.5" : ""}`}>
+          <dt className="max-w-[65%] leading-relaxed text-[#7c9183]">{label}</dt>
+          <dd className={`min-w-0 text-right font-semibold tabular-nums [overflow-wrap:anywhere] ${label === "Paid amount" ? "text-[#176b60]" : label === "Remaining amount" && Number(value) > 0 ? "text-amber-700" : "text-[#395746]"}`}>{money(value)}</dd>
         </div>
       ))}
-      <p>
+      </dl>
+      <div className="space-y-3 border-t border-[#e8eeea] bg-[#fafcfb] px-5 py-4">
+      <p className="text-[10px]! leading-relaxed text-[#86998b]!">
         Amounts come from the booking and payment ledgers. Item prices may
         already include travel charges.
       </p>
       {!f.commissionRecorded && (
-        <p>
+        <p className="rounded-lg border border-amber-100 bg-amber-50 p-3 text-[10px]! leading-relaxed text-amber-800!">
           Commission has not been recorded. A new payout will remain on hold
           until financial terms are established.
         </p>
       )}
       {Math.abs(f.paid - f.recordedPaid) > 0.005 && (
-        <p role="alert">
+        <p role="alert" className="rounded-lg border border-rose-100 bg-rose-50 p-3 text-[10px]! leading-relaxed text-rose-700!">
           Recorded booking payments differ from captured payments.
           Reconciliation is required.
         </p>
       )}
-    </div>
+      </div>
+    </section>
   );
 }
 function ActionDialog({ action, data, close, saved }) {
@@ -148,14 +210,14 @@ function ActionDialog({ action, data, close, saved }) {
   const f = data.financial;
   return (
     <AdminDialog title={label} close={close} busy={busy}>
-      <form className="ad-form flex flex-col gap-[17px] [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] [&_label]:text-[11px] [&_label]:text-[#7c8e76] [&_input]:w-full [&_input]:text-[12px]! [&_textarea]:w-full [&_textarea]:text-[12px]! [&_select]:w-full [&_select]:text-[12px]! [&_textarea]:min-h-[90px] [&_textarea]:[resize:vertical] [&_p]:text-[12px] [&_p]:text-[#86977d] [&_p]:leading-[1.7]" onSubmit={submit}>
+      <form className="grid gap-4 [&_label]:flex [&_label]:flex-col [&_label]:gap-2 [&_label]:text-xs [&_label]:text-[#60766a] [&_input]:w-full [&_textarea]:min-h-24 [&_textarea]:w-full [&_p]:text-xs! [&_p]:leading-relaxed" onSubmit={submit}>
         <p>
           <strong>{data.booking.BookingNumber}</strong> · {data.customer.name} ·{" "}
           {data.vendor.name}
         </p>
         {(refund || cancel) && (
           <>
-            <p className="ab-warning [padding:16px_18px] [background:#fff5e0] [border-top-width:1px] [border-top-style:solid] [border-top-color:#efdfbd] [border-right-width:1px] [border-right-style:solid] [border-right-color:#efdfbd] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#efdfbd] [border-left-width:1px] [border-left-style:solid] [border-left-color:#efdfbd] text-[#9b7942] rounded-[10px] text-[12px] leading-[1.7]">
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-800 [&_p]:text-amber-800!">
               This action may trigger refund and vendor payout changes.
             </p>
             <Definition
@@ -170,12 +232,12 @@ function ActionDialog({ action, data, close, saved }) {
           </>
         )}
         {refund && !f.canRefund && (
-          <p role="alert" className="asm-alert [padding:15px_18px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#edd3d5] [border-right-width:1px] [border-right-style:solid] [border-right-color:#edd3d5] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#edd3d5] [border-left-width:1px] [border-left-style:solid] [border-left-color:#edd3d5] [background:#fff5f4] rounded-[9px] text-[#a8555b] text-[13px]">
+          <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs leading-relaxed text-rose-700">
             {f.refundBlockedReason}
           </p>
         )}
         {refund && (
-          <p className="asm-muted text-[12px] text-[#87958d] [margin:12px_0] leading-[1.7]">
+          <p className="my-3 text-xs! leading-relaxed text-[#75897b]!">
             The server calculates the refundable balance. The original payment
             remains in the ledger. Completion requires payment-provider
             confirmation.
@@ -183,18 +245,18 @@ function ActionDialog({ action, data, close, saved }) {
         )}
         {review && (
           <>
-            <p className="asm-muted text-[12px] text-[#87958d] [margin:12px_0] leading-[1.7]">
+            <p className="my-3 text-xs! leading-relaxed text-[#75897b]!">
               Record the applicable cancellation terms after reviewing the
               original agreement. Existing commission records remain unchanged.
             </p>
             {data.policies.map((p, i) => (
-              <blockquote key={i} className="ab-policy p-[18px] [margin:15px_0] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e1e9e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e1e9e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e1e9e2] [border-left-width:3px] [border-left-style:solid] [border-left-color:#729e85] rounded-[8px] text-[13px] leading-[1.8] [&_strong]:block [&_strong]:mb-[8px]">
+              <blockquote key={i} className="my-4 rounded-xl border border-[#e2eae4] border-l-[3px] border-l-[#80a88f] bg-[#fafcfb] p-4 text-xs leading-relaxed [&_strong]:mb-2 [&_strong]:block [&_p]:mt-1 [&_p]:text-xs!">
                 <strong>{p.service}</strong>
                 <p>{p.cancellation}</p>
                 <p>{p.refund}</p>
               </blockquote>
             ))}
-            <div className="asm-form-grid grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[16px]">
+            <div className="grid gap-4 sm:grid-cols-2">
               {[
                 ["refundPercent", "Refundable payment %", 100],
                 [
@@ -226,7 +288,7 @@ function ActionDialog({ action, data, close, saved }) {
             <h3>Cancellation policy</h3>
             {(f.policyTerms.length ? f.policyTerms : data.policies).map(
               (p, i) => (
-                <blockquote className="ab-policy p-[18px] [margin:15px_0] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e1e9e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e1e9e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e1e9e2] [border-left-width:3px] [border-left-style:solid] [border-left-color:#729e85] rounded-[8px] text-[13px] leading-[1.8] [&_strong]:block [&_strong]:mb-[8px]" key={i}>
+                <blockquote className="my-4 rounded-xl border border-[#e2eae4] border-l-[3px] border-l-[#80a88f] bg-[#fafcfb] p-4 text-xs leading-relaxed [&_strong]:mb-2 [&_strong]:block [&_p]:mt-1 [&_p]:text-xs!" key={i}>
                   <strong>{p.service}</strong>
                   <p>{p.cancellation}</p>
                   <p>{p.refund}</p>
@@ -234,7 +296,7 @@ function ActionDialog({ action, data, close, saved }) {
               ),
             )}
             {!f.policy && (
-              <p className="asm-muted text-[12px] text-[#87958d] [margin:12px_0] leading-[1.7]">
+              <p className="my-3 text-xs! leading-relaxed text-[#75897b]!">
                 Refund eligibility requires an audited policy review.
                 Cancellation does not initiate a refund.
               </p>
@@ -268,21 +330,21 @@ function ActionDialog({ action, data, close, saved }) {
           />
         </Field>
         {error && (
-          <p role="alert" className="asm-alert [padding:15px_18px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#edd3d5] [border-right-width:1px] [border-right-style:solid] [border-right-color:#edd3d5] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#edd3d5] [border-left-width:1px] [border-left-style:solid] [border-left-color:#edd3d5] [background:#fff5f4] rounded-[9px] text-[#a8555b] text-[13px]">
+          <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs leading-relaxed text-rose-700">
             {error}
           </p>
         )}
         <footer className="flex justify-end gap-2">
           <button
             type="button"
-            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+            className={button}
             disabled={busy}
             onClick={close}
           >
             Close
           </button>
           <button
-            className={`ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3] ${cancel ? "ab-danger [&.ab-danger]:[background:#b46c65]! [&.ab-danger]:[border-top-color:#b46c65]! [&.ab-danger]:[border-right-color:#b46c65]! [&.ab-danger]:[border-bottom-color:#b46c65]! [&.ab-danger]:[border-left-color:#b46c65]! [&.ab-danger]:text-[#fff]!" : "ad-primary"}`}
+            className={cancel ? `${dangerButton} border-rose-700! bg-rose-700! text-white! hover:bg-rose-800!` : primaryButton}
             disabled={busy || (refund && !f.canRefund)}
           >
             {busy ? "Saving…" : label}
@@ -303,8 +365,8 @@ function Payments({ id, revision }) {
   const d = state.data;
   return (
     <>
-      <div className="asm-table-wrap [overflow-x:auto] overflow-y-auto pb-[8px]">
-        <table className="asm-table w-full border-collapse text-left text-[12px] [&_th]:font-[600] [&_th]:text-[10px] [&_th]:tracking-[0.6px] [&_th]:uppercase [&_th]:whitespace-nowrap [&_th]:[padding:13px_14px] [&_th]:[background:#f6f9f6] [&_th]:text-[#7b8b80] [&_th]:[border-bottom-width:1px] [&_th]:[border-bottom-style:solid] [&_th]:[border-bottom-color:#e5ebe6] [&_td]:[border-bottom-width:1px] [&_td]:[border-bottom-style:solid] [&_td]:[border-bottom-color:#edf1ed] [&_td]:[padding:16px_14px] [&_td]:[vertical-align:middle] [&_tbody_tr:hover]:[background:#fbfcfa] [@media(width<=1200px)]:[&_.asm-id]:max-w-[75px]">
+      <div className="min-w-0 overflow-x-auto rounded-xl border border-[#e6ece7]">
+        <table className={tableClass}>
           <thead>
             <tr>
               {[
@@ -341,7 +403,8 @@ function Payments({ id, revision }) {
       </div>
       {!d.payments.length && <p>No payment transactions recorded.</p>}
       <h3>Refunds</h3>
-      <div className="asm-records grid gap-[12px] [margin:18px_0] [&_article]:p-[18px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e4ebe4] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e4ebe4] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e4ebe4] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e4ebe4] [&_article]:rounded-[10px] [&_article]:grid [&_article]:gap-[10px] [&_article]:text-[13px] [&_small]:text-[#8b9b90]">
+      {!d.refunds.length && <p className="rounded-lg bg-[#f7faf8] px-4 py-3 text-xs! text-[#819486]!">No refunds recorded for this booking.</p>}
+      <div className="my-4 grid gap-3 [&_article]:grid [&_article]:gap-2 [&_article]:rounded-xl [&_article]:border [&_article]:border-[#e3ebe5] [&_article]:p-4 [&_article]:text-xs [&_small]:text-[#829589]">
         {d.refunds.map((r) => (
           <article key={r.RefundId}>
             <strong>
@@ -358,7 +421,8 @@ function Payments({ id, revision }) {
         ))}
       </div>
       <h3>Transaction Ledger</h3>
-      <div className="asm-records grid gap-[12px] [margin:18px_0] [&_article]:p-[18px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e4ebe4] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e4ebe4] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e4ebe4] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e4ebe4] [&_article]:rounded-[10px] [&_article]:grid [&_article]:gap-[10px] [&_article]:text-[13px] [&_small]:text-[#8b9b90]">
+      {!d.transactions.length && <p className="rounded-lg bg-[#f7faf8] px-4 py-3 text-xs! text-[#819486]!">No ledger transactions recorded.</p>}
+      <div className="my-4 grid gap-3 [&_article]:grid [&_article]:gap-2 [&_article]:rounded-xl [&_article]:border [&_article]:border-[#e3ebe5] [&_article]:p-4 [&_article]:text-xs [&_small]:text-[#829589]">
         {d.transactions.map((t) => (
           <article key={t.id}>
             <strong>
@@ -382,13 +446,13 @@ function Payout({ id, revision }) {
     );
   return (
     <>
-      <p className="asm-muted text-[12px] text-[#87958d] [margin:12px_0] leading-[1.7]">
+      <p className="my-3 text-xs! leading-relaxed text-[#75897b]!">
         Payouts are calculated after completion. Refunds, unresolved commission
         terms and unpaid balances place payouts on hold. This screen does not
         transfer funds.
       </p>
       {state.data.rows.map((p) => (
-        <article className="ab-policy p-[18px] [margin:15px_0] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e1e9e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e1e9e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e1e9e2] [border-left-width:3px] [border-left-style:solid] [border-left-color:#729e85] rounded-[8px] text-[13px] leading-[1.8] [&_strong]:block [&_strong]:mb-[8px]" key={p.PayoutId}>
+        <article className="my-4 rounded-xl border border-[#e2eae4] border-l-[3px] border-l-[#80a88f] bg-[#fafcfb] p-4 text-xs leading-relaxed [&_strong]:mb-2 [&_strong]:block [&_p]:mt-1 [&_p]:text-xs!" key={p.PayoutId}>
           <BookingStatus value={p.PayoutStatus} />
           <Definition
             values={{
@@ -460,7 +524,7 @@ export default function BookingDetailsPage() {
   };
   if (state.loading)
     return (
-      <div className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
+      <div className="min-w-0 rounded-2xl border border-[#dfe8e1] bg-white p-4 shadow-sm shadow-[#254c3810] sm:p-5 [&_h3]:mt-6 [&_h3]:mb-3 [&_h3]:text-sm [&_h3]:font-semibold">
         <Loading />
       </div>
     );
@@ -472,58 +536,61 @@ export default function BookingDetailsPage() {
     b = d.booking,
     f = d.financial;
   return (
-    <div className="asm-page ab-page grid gap-[24px] text-[#253f3a] [&_select]:[padding:9px_12px] [&_select]:text-[12px] [&_select]:[border-top-width:1px] [&_select]:[border-top-style:solid] [&_select]:[border-top-color:#dce5df] [&_select]:[border-right-width:1px] [&_select]:[border-right-style:solid] [&_select]:[border-right-color:#dce5df] [&_select]:[border-bottom-width:1px] [&_select]:[border-bottom-style:solid] [&_select]:[border-bottom-color:#dce5df] [&_select]:[border-left-width:1px] [&_select]:[border-left-style:solid] [&_select]:[border-left-color:#dce5df] [&_select]:rounded-[7px] [&_select]:[background:#fff]">
-      <ChangeRequests
-        id={bookingId}
-        revision={revision}
-        saved={() => setRevision((v) => v + 1)}
-      />
-      <Link className="asm-back flex items-center gap-[8px] text-[13px] text-[#698c7d]" to="/admin/bookings">
-        <ArrowLeft size={16} />
-        All Bookings
-      </Link>
-      <header className="asm-detail-header ab-header [&_h1]:text-[30px] [@media(width<=767px)]:[&_h1]:text-[25px] [&_h1]:leading-[1.2] [&_h1]:[margin:8px_0_10px] [&_h1]:font-[650] [&_h1]:tracking-[-0.7px] [&_p]:text-[14px] [&_p]:text-[#7b8a83] flex gap-[18px] items-center flex-wrap [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7e1] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7e1] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7e1] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7e1] [background:#fff] rounded-[14px] p-[26px] [@media(width<=767px)]:p-[18px] [&_>_.asm-identity]:flex-1 [&_>_.asm-identity]:min-w-[280px] [@media(width<=767px)]:[&_>_.asm-identity]:min-w-0 [&_.asm-identity_>_img]:w-[100px] [@media(width<=767px)]:[&_.asm-identity_>_img]:w-[70px] [&_.asm-identity_>_img]:h-[100px] [@media(width<=767px)]:[&_.asm-identity_>_img]:h-[70px] [&_.asm-image-placeholder]:w-[100px] [@media(width<=767px)]:[&_.asm-image-placeholder]:w-[70px] [&_.asm-image-placeholder]:h-[100px] [@media(width<=767px)]:[&_.asm-image-placeholder]:h-[70px] [&_small]:text-[11px] [&_small]:text-[#87978d] [&_small]:block [&_small]:mt-[10px] [&_small]:max-w-[none] [&_.asm-identity_p]:mb-[10px] [@media(width<=767px)]:[&_>_.asm-identity]:[flex-basis:100%] justify-between [&_>_div:first-child]:min-w-[230px]">
-        <div>
-          <span className="ad-eyebrow text-[8px] [@media(width<=767px)]:text-[7px] tracking-[1.7px] text-[#7d9183] flex items-center gap-[6px] [&_>_span]:w-[5px] [&_>_span]:h-[5px] [&_>_span]:[background:#bfa471] [&_>_span]:rounded-[50%]">BOOKING DETAILS</span>
-          <h1>{b.BookingNumber}</h1>
-          <div className="flex flex-wrap gap-2">
-            <BookingStatus value={b.BookingStatus} />
-            <BookingStatus value={b.PaymentStatus} />
+    <div className={pageClass}>
+      <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#91a095]">
+        <Link className="inline-flex items-center gap-2 font-medium text-[#678372] transition-colors hover:text-[#176b60]" to="/admin/bookings"><ArrowLeft size={14} aria-hidden="true" />All bookings</Link>
+        <ChevronRight size={12} aria-hidden="true" /><span>Booking details</span>
+      </div>
+      <header className="overflow-hidden rounded-2xl border border-[#dfe8e1] bg-white shadow-sm shadow-[#254c3810]">
+        <div className="flex flex-wrap items-center justify-between gap-5 p-4 sm:p-5">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="mt-1 hidden size-11 shrink-0 place-items-center rounded-xl bg-[#eaf3ed] text-[#176b60] sm:grid"><CalendarCheck size={21} strokeWidth={1.6} aria-hidden="true" /></span>
+            <div className="min-w-0">
+              <span className="text-[9px] font-medium tracking-[1.5px] text-[#84988a] uppercase">Booking details</span>
+              <h1 className="mt-1! mb-2! text-xl! leading-tight! font-semibold! tracking-tight! [overflow-wrap:anywhere] sm:text-[26px]!">{b.BookingNumber}</h1>
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] text-[#829589]">
+                <span className="flex items-center gap-1.5"><Clock size={12} aria-hidden="true" />Booked {date(b.CreatedAt)}</span>
+                <span className="flex items-center gap-1.5"><CalendarDays size={12} aria-hidden="true" />Event {date(d.event.date)}</span>
+              </div>
+            </div>
           </div>
-          <small>
-            Booked {date(b.CreatedAt)} · Event {date(d.event.date)}
-          </small>
+          <dl className="flex flex-wrap gap-x-5 gap-y-3 rounded-xl bg-[#fafcfb] px-4 py-3">
+            <div><dt className="mb-1.5 text-[9px] tracking-wide text-[#829589] uppercase">Booking status</dt><dd><BookingStatus value={b.BookingStatus} /></dd></div>
+            <div><dt className="mb-1.5 text-[9px] tracking-wide text-[#829589] uppercase">Payment status</dt><dd><BookingStatus value={b.PaymentStatus} /></dd></div>
+          </dl>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" to={`/admin/customers/${b.CustomerId}`}>
+        <div className="flex flex-wrap items-center gap-2 border-t border-[#e8eeea] bg-[#fcfdfc] px-4 py-3 sm:px-5">
+          <Link className={button} to={`/admin/customers/${b.CustomerId}`}>
             <UserRound size={14} />
             View Customer
           </Link>
-          <Link className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" to={`/admin/vendors/${b.VendorId}`}>
+          <Link className={button} to={`/admin/vendors/${b.VendorId}`}>
             <Store size={14} />
             View Vendor
           </Link>
-          <button className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" onClick={() => changeTab("Overview")}>
+          <button className={button} onClick={() => changeTab("Overview")}>
             <CalendarDays size={14} />
             View Event
           </button>
-          <button className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" onClick={() => changeTab("Payment")}>
+          <button className={button} onClick={() => changeTab("Payment")}>
             <Wallet size={14} />
             View Payment
           </button>
           {b.QuotationId && (
             <button
-              className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+              className={button}
               onClick={() => changeTab("Quotation")}
             >
+              <FileText size={14} aria-hidden="true" />
               View Quotation
             </button>
           )}
+          <div className="flex flex-wrap items-center gap-2 min-[1350px]:ml-auto">
           {d.actions
             .filter((a) => !["view", "cancel", "refund"].includes(a))
             .map((a) => (
               <button
-                className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+                className={primaryButton}
                 key={a}
                 onClick={() => setDialog(a)}
               >
@@ -539,48 +606,57 @@ export default function BookingDetailsPage() {
             ))}
           {d.actions.includes("cancel") && (
             <button
-              className="ad-button asm-danger-text inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3] [&.asm-danger-text]:text-[#b14b52]!"
+              className={dangerButton}
               onClick={() => setDialog("cancel")}
             >
+              <XCircle size={14} aria-hidden="true" />
               Cancel Booking
             </button>
           )}
           <button
-            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+            className={button}
             disabled={!f.canRefund}
             title={f.refundBlockedReason || "Initiate eligible refund"}
             onClick={() => setDialog("refund")}
           >
+            <RotateCcw size={14} aria-hidden="true" />
             Refund
           </button>
+          </div>
         </div>
       </header>
       {b.CancellationReason && (
-        <aside className="ab-warning [padding:16px_18px] [background:#fff5e0] [border-top-width:1px] [border-top-style:solid] [border-top-color:#efdfbd] [border-right-width:1px] [border-right-style:solid] [border-right-color:#efdfbd] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#efdfbd] [border-left-width:1px] [border-left-style:solid] [border-left-color:#efdfbd] text-[#9b7942] rounded-[10px] text-[12px] leading-[1.7]">
+        <aside className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-800 [&_p]:text-amber-800!">
           <strong>Cancellation reason: </strong>
           {b.CancellationReason}
           <p>{b.AdminNotes}</p>
         </aside>
       )}
-      <nav className="asm-detail-tabs flex gap-[7px] [overflow-x:auto] pb-[3px] [&_button]:text-[13px] [&_button]:[padding:10px_16px] [&_button]:rounded-[8px] [&_button]:whitespace-nowrap [&_button]:text-[#74817c] [&_button[aria-current]]:[background:#e5efea] [&_button[aria-current]]:text-[#185b4d] [&_button[aria-current]]:font-[650]" aria-label="Booking details">
+      <nav className="flex min-w-0 gap-1 overflow-x-auto rounded-xl border border-[#e0e9e3] bg-white px-3 py-1 [&_button]:flex [&_button]:min-h-11 [&_button]:shrink-0 [&_button]:items-center [&_button]:gap-2 [&_button]:border-b-2 [&_button]:border-transparent [&_button]:px-3 [&_button]:text-xs [&_button]:whitespace-nowrap [&_button]:text-[#7b8e81] [&_button]:transition-colors [&_button:hover]:text-[#176b60] [&_button[aria-current]]:border-[#176b60] [&_button[aria-current]]:font-semibold! [&_button[aria-current]]:text-[#176b60]" aria-label="Booking details">
         {tabs
           .filter((t) => t !== "Quotation" || b.QuotationId)
-          .map((t) => (
+          .map((t) => {
+            const Icon = tabIcons[t];
+            return (
             <button
               key={t}
+              type="button"
               aria-current={tab === t ? "page" : undefined}
               onClick={() => changeTab(t)}
             >
+              <Icon size={14} aria-hidden="true" />
               {t}
             </button>
-          ))}
+            );
+          })}
       </nav>
-      <div className="ab-detail-grid grid grid-cols-[minmax(0,_1fr)_305px] [@media(width<=1200px)]:grid-cols-[1fr] gap-[22px] [@media(width<=767px)]:gap-[16px] [align-items:start] [@media(width<=1200px)]:[&_>_aside]:grid [@media(width<=767px)]:[&_>_aside]:grid-cols-[1fr] [@media(767px<width<=1200px)]:[&_>_aside]:grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=1200px)]:[&_>_aside]:gap-[18px]">
-        <section className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
-          <h2>{tab}</h2>
+      <ChangeRequests id={bookingId} revision={revision} saved={() => setRevision((v) => v + 1)} />
+      <div className="grid min-w-0 items-start gap-5 min-[1250px]:grid-cols-[minmax(0,1fr)_310px] min-[1600px]:grid-cols-[minmax(0,1fr)_340px]">
+        <section className="min-w-0 rounded-2xl border border-[#dfe8e1] bg-white p-4 shadow-sm shadow-[#254c3810] sm:p-5 [&_h3]:mt-6 [&_h3]:mb-3 [&_h3]:text-sm [&_h3]:font-semibold">
+          <div className="mb-5 flex items-center gap-2 border-b border-[#edf2ee] pb-4"><span className="size-1.5 rounded-full bg-[#176b60]" aria-hidden="true" /><h2 className="text-sm! font-semibold!">{tab === "Overview" ? "Booking overview" : tab}</h2></div>
           {tab === "Overview" && (
             <>
-              <div className="ab-parties grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[18px] [&_article]:p-[18px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e2ebe4] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e2ebe4] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e2ebe4] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e2ebe4] [&_article]:rounded-[10px] [&_article]:min-w-0 [&_.asm-definition]:grid-cols-[1fr] [&_.asm-identity]:min-w-0 [&_h3]:[margin:5px_0] [&_small]:text-[#8b9d91] [&_small]:text-[11px]">
+              <div className="grid gap-4 min-[700px]:grid-cols-2 [&_article]:min-w-0 [&_article]:rounded-xl [&_article]:border [&_article]:border-[#e2eae4] [&_article]:p-4 [&_dl]:grid-cols-1 [&_h3]:m-0!">
                 {[
                   [
                     "Customer Information",
@@ -594,12 +670,12 @@ export default function BookingDetailsPage() {
                   ],
                 ].map(([title, p, path]) => (
                   <article key={title}>
-                    <div className="asm-identity flex gap-[11px] items-center min-w-[180px] [&_img]:w-[48px] [&_img]:h-[48px] [&_img]:object-cover [&_img]:shrink-0 [&_img]:rounded-[9px] [&_img]:[background:#edf3ed] [&_img]:grid [&_img]:place-items-center [&_img]:text-[#77988b] [&_strong]:block [&_strong]:font-[600] [&_strong]:text-[13px] [&_small]:block [&_small]:text-[11px] [&_small]:text-[#88938c] [&_small]:mt-[4px] [&_small]:max-w-[190px] [&_small]:[overflow-x:hidden] [&_small]:[overflow-y:hidden] [&_small]:[text-overflow:ellipsis] [&_small]:whitespace-nowrap">
-                      {p.image && <img src={p.image} alt="" />}
-                      <div>
-                        <small>{title}</small>
+                    <div className="mb-3 flex min-w-0 items-center gap-3">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#edf4ef] text-[#6a8d76]">{title.startsWith("Customer") ? <UserRound size={17} aria-hidden="true" /> : <Store size={17} aria-hidden="true" />}</span>
+                      <div className="min-w-0">
+                        <small className="mb-1 block text-[10px] text-[#84998b]">{title}</small>
                         <h3>
-                          <Link to={path}>{p.name}</Link>
+                          <Link className="block text-sm font-semibold [overflow-wrap:anywhere]" to={path}>{p.name}</Link>
                         </h3>
                       </div>
                     </div>
@@ -619,14 +695,14 @@ export default function BookingDetailsPage() {
                     />
                     <div className="flex flex-wrap gap-2 mt-4">
                       {p.email && (
-                        <a className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" href={`mailto:${p.email}`}>
+                        <a className={button} href={`mailto:${p.email}`}>
                           <Mail size={14} />
                           Contact{" "}
                           {title.startsWith("Customer") ? "Customer" : "Vendor"}
                         </a>
                       )}
                       {p.phone && (
-                        <a className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" href={`tel:${p.phone}`}>
+                        <a className={button} href={`tel:${p.phone}`}>
                           <Phone size={14} />
                           Call
                         </a>
@@ -635,7 +711,8 @@ export default function BookingDetailsPage() {
                   </article>
                 ))}
               </div>
-              <h3>Event Information</h3>
+              <section aria-labelledby="event-information-heading" className="mt-5 rounded-xl border border-[#e2eae4] p-4">
+              <h3 id="event-information-heading" className="mt-0! flex items-center gap-2"><CalendarDays size={16} className="text-[#71937e]" aria-hidden="true" />Event information</h3>
               <Definition
                 values={{
                   "Event name": d.event.name,
@@ -654,7 +731,9 @@ export default function BookingDetailsPage() {
                   Description: d.event.description,
                 }}
               />
-              <h3>Booking Notes</h3>
+              </section>
+              <section aria-labelledby="booking-notes-heading" className="mt-5 rounded-xl border border-[#e2eae4] bg-[#fafcfb] p-4">
+              <h3 id="booking-notes-heading" className="mt-0! flex items-center gap-2"><FileText size={16} className="text-[#71937e]" aria-hidden="true" />Booking notes</h3>
               <Definition
                 values={{
                   "Customer notes": b.CustomerNotes,
@@ -662,11 +741,12 @@ export default function BookingDetailsPage() {
                   "Admin notes": b.AdminNotes,
                 }}
               />
+              </section>
             </>
           )}
           {tab === "Items" && (
-            <div className="asm-table-wrap [overflow-x:auto] overflow-y-auto pb-[8px]">
-              <table className="asm-table w-full border-collapse text-left text-[12px] [&_th]:font-[600] [&_th]:text-[10px] [&_th]:tracking-[0.6px] [&_th]:uppercase [&_th]:whitespace-nowrap [&_th]:[padding:13px_14px] [&_th]:[background:#f6f9f6] [&_th]:text-[#7b8b80] [&_th]:[border-bottom-width:1px] [&_th]:[border-bottom-style:solid] [&_th]:[border-bottom-color:#e5ebe6] [&_td]:[border-bottom-width:1px] [&_td]:[border-bottom-style:solid] [&_td]:[border-bottom-color:#edf1ed] [&_td]:[padding:16px_14px] [&_td]:[vertical-align:middle] [&_tbody_tr:hover]:[background:#fbfcfa] [@media(width<=1200px)]:[&_.asm-id]:max-w-[75px]">
+            <div className="min-w-0 overflow-x-auto rounded-xl border border-[#e6ece7]">
+              <table className={tableClass}>
                 <thead>
                   <tr>
                     {[
@@ -684,6 +764,7 @@ export default function BookingDetailsPage() {
                   </tr>
                 </thead>
                 <tbody>
+                  {!d.items.length && <tr><td colSpan={8} className="py-10! text-center text-[#819486]">No services recorded for this booking.</td></tr>}
                   {d.items.map((i) => (
                     <tr key={i.id}>
                       <td>
@@ -712,14 +793,14 @@ export default function BookingDetailsPage() {
           {tab === "Payout" && <Payout id={bookingId} revision={revision} />}
           {tab === "Policy" && (
             <>
-              <p className="asm-muted text-[12px] text-[#87958d] [margin:12px_0] leading-[1.7]">
+              <p className="my-3 text-xs! leading-relaxed text-[#75897b]!">
                 Terms captured at booking time take precedence. Legacy bookings
                 with only free-text terms require an audited review before
                 refunding.
               </p>
               {(f.policyTerms.length ? f.policyTerms : d.policies).map(
                 (p, i) => (
-                  <blockquote className="ab-policy p-[18px] [margin:15px_0] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e1e9e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e1e9e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e1e9e2] [border-left-width:3px] [border-left-style:solid] [border-left-color:#729e85] rounded-[8px] text-[13px] leading-[1.8] [&_strong]:block [&_strong]:mb-[8px]" key={i}>
+                  <blockquote className="my-4 rounded-xl border border-[#e2eae4] border-l-[3px] border-l-[#80a88f] bg-[#fafcfb] p-4 text-xs leading-relaxed [&_strong]:mb-2 [&_strong]:block [&_p]:mt-1 [&_p]:text-xs!" key={i}>
                     <strong>{p.service}</strong>
                     <p>Cancellation: {p.cancellation}</p>
                     <p>Refund: {p.refund}</p>
@@ -738,14 +819,14 @@ export default function BookingDetailsPage() {
                   }}
                 />
               ) : (
-                <p className="ab-warning [padding:16px_18px] [background:#fff5e0] [border-top-width:1px] [border-top-style:solid] [border-top-color:#efdfbd] [border-right-width:1px] [border-right-style:solid] [border-right-color:#efdfbd] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#efdfbd] [border-left-width:1px] [border-left-style:solid] [border-left-color:#efdfbd] text-[#9b7942] rounded-[10px] text-[12px] leading-[1.7]">
+                <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-800 [&_p]:text-amber-800!">
                   <ShieldAlert size={16} />
                   Refund eligibility requires policy review.
                 </p>
               )}
               {!f.refundPending && !f.refunded && (
                 <button
-                  className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+                  className={primaryButton}
                   onClick={() => setDialog("policy")}
                 >
                   Review cancellation policy
@@ -754,7 +835,8 @@ export default function BookingDetailsPage() {
             </>
           )}
           {tab === "Status History" && (
-            <ol className="ab-timeline [list-style:none] pl-[12px] [&_li]:relative [&_li]:[border-left-width:2px] [&_li]:[border-left-style:solid] [&_li]:[border-left-color:#dfece2] [&_li]:[padding:0_0_26px_24px] [&_li]:text-[13px] [&_li:before]:[content:''] [&_li:before]:absolute [&_li:before]:w-[10px] [&_li:before]:h-[10px] [&_li:before]:[background:#699b7d] [&_li:before]:rounded-[50%] [&_li:before]:left-[-6px] [&_li:before]:top-[3px] [&_p]:[margin:8px_0] [&_p]:text-[#7d9384] [&_p]:whitespace-pre-wrap [&_small]:text-[11px] [&_small]:text-[#98a99b]">
+            <ol className="mt-5 pl-2 [&_li]:relative [&_li]:border-l [&_li]:border-[#dbe7df] [&_li]:pb-6 [&_li]:pl-6 [&_li]:text-xs [&_li]:before:absolute [&_li]:before:top-1 [&_li]:before:-left-[4.5px] [&_li]:before:size-2 [&_li]:before:rounded-full [&_li]:before:bg-[#176b60] [&_li]:before:ring-4 [&_li]:before:ring-[#edf5ef] [&_li:last-child]:border-transparent [&_p]:my-2 [&_p]:text-xs! [&_p]:whitespace-pre-wrap [&_small]:text-[11px] [&_small]:text-[#8a9c8f]">
+              {!d.history.length && <li>No status changes recorded.</li>}
               {d.history.map((h) => (
                 <li key={h.id}>
                   <strong>
@@ -782,9 +864,9 @@ export default function BookingDetailsPage() {
             </ol>
           )}
           {tab === "Audit Logs" && (
-            <div className="asm-records grid gap-[12px] [margin:18px_0] [&_article]:p-[18px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e4ebe4] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e4ebe4] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e4ebe4] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e4ebe4] [&_article]:rounded-[10px] [&_article]:grid [&_article]:gap-[10px] [&_article]:text-[13px] [&_small]:text-[#8b9b90]">
+            <div className="my-4 grid gap-3 [&_article]:grid [&_article]:gap-2 [&_article]:rounded-xl [&_article]:border [&_article]:border-[#e3ebe5] [&_article]:p-4 [&_article]:text-xs [&_small]:text-[#829589]">
               {d.audits.map((a) => (
-                <details key={a.id} className="ab-audit p-[16px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e9e1] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e9e1] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e9e1] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e9e1] rounded-[8px] text-[12px] [&_summary]:cursor-pointer [&_summary]:font-[600] [&_p]:[margin:14px_0] [&_p]:text-[#82978b] [&_pre]:max-w-full [&_pre]:[overflow-x:auto] [&_pre]:overflow-y-auto [&_pre]:max-h-[350px] [&_pre]:p-[14px] [&_pre]:[background:#f6f9f5] [&_pre]:[margin:10px_0] [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]">
+                <details key={a.id} className="rounded-xl border border-[#e2eae4] p-4 text-xs [&_summary]:cursor-pointer [&_summary]:leading-relaxed [&_summary]:font-medium [&_p]:my-3 [&_p]:text-xs! [&_pre]:my-2 [&_pre]:max-h-80 [&_pre]:overflow-auto [&_pre]:rounded-lg [&_pre]:bg-[#f5f8f5] [&_pre]:p-3 [&_pre]:text-[11px] [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]">
                   <summary>
                     {a.action.replaceAll("_", " ")} ·{" "}
                     {a.actor?.trim() || "System"} · {date(a.timestamp)}
@@ -817,7 +899,7 @@ export default function BookingDetailsPage() {
                   }}
                 />
                 <Link
-                  className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+                  className={button}
                   to={`/admin/quotations?q=${encodeURIComponent(d.quotation.QuotationNumber)}`}
                 >
                   View quotation record
@@ -827,10 +909,10 @@ export default function BookingDetailsPage() {
               <p>No quotation linked.</p>
             ))}
         </section>
-        <aside>
+        <aside className="grid min-w-0 gap-4">
           <PriceSummary f={f} />
           {["Cancelled", "Rejected"].includes(b.BookingStatus) && (
-            <section className="ab-refund-card p-[22px] [background:#edf4ef] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dce7dd] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dce7dd] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dce7dd] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dce7dd] rounded-[12px] mt-[18px] [@media(width<=1200px)]:mt-[0] grid gap-[15px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_>_strong]:text-[25px] [&_p]:text-[12px] [&_p]:text-[#7d9381] [&_p]:leading-[1.7]">
+            <section className="grid gap-3 rounded-2xl border border-[#d7e5dc] bg-[#edf5ef] p-5 [&_h3]:text-sm [&_h3]:font-semibold [&_strong]:text-2xl [&_p]:text-xs! [&_p]:leading-relaxed">
               <h3>Refund eligibility</h3>
               <strong>{money(f.refundEligible)}</strong>
               <p>
@@ -839,14 +921,14 @@ export default function BookingDetailsPage() {
               </p>
               {!f.policy && (
                 <button
-                  className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+                  className={button}
                   onClick={() => changeTab("Policy")}
                 >
                   Review policy
                 </button>
               )}
               <button
-                className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+                className={primaryButton}
                 disabled={!f.canRefund}
                 onClick={() => setDialog("refund")}
               >
