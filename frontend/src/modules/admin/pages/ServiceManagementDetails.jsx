@@ -37,6 +37,7 @@ import {
 import ServiceDecisionDialog from "../components/ServiceDecisionDialog";
 import AdminDialog from "../components/AdminDialog";
 import ApprovalTimeline from "../../../components/common/ApprovalTimeline";
+import PackageVisibility from "../components/PackageVisibility";
 
 const tabs = [
   "Overview",
@@ -688,9 +689,13 @@ export default function ServiceManagementDetails() {
                   <header>
                     <h3>{p.PackageName}</h3>
                     <span className={`asm-active whitespace-nowrap text-[11px] text-[#8a938e] [&:before]:[content:''] [&:before]:inline-block [&:before]:w-[6px] [&:before]:h-[6px] [&:before]:rounded-[50%] [&:before]:[background:#a6ada8] [&:before]:mr-[7px] [&.on]:text-[#2a7a58] [&.on:before]:[background:#4f976a] ${p.IsActive ? "on" : ""}`}>
-                      {p.IsActive ? "Active" : "Inactive"}
+                      Package: {p.IsActive ? "Active" : "Inactive"}
                     </span>
                   </header>
+                  <div className="my-3 rounded-lg bg-[#f8faf7] p-3">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[#7b8b80]">Customer visibility</p>
+                    <PackageVisibility value={p} />
+                  </div>
                   <p>{p.Description}</p>
                   <p>
                     <del>{money(p.Price)}</del> · {p.DiscountPercentage}% off

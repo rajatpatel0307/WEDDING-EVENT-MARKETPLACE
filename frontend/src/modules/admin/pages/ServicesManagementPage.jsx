@@ -35,6 +35,7 @@ import {
 } from "../components/ServicesUI";
 import ServiceDecisionDialog from "../components/ServiceDecisionDialog";
 import AdminDialog from "../components/AdminDialog";
+import PackageVisibility from "../components/PackageVisibility";
 import { useAuth } from "../../../context/AuthContext";
 
 const statCards = [
@@ -475,7 +476,8 @@ export default function ServicesManagementPage({ kind }) {
                         "Service",
                         "Vendor",
                         "Price",
-                        "Status",
+                        kind === "packages" ? "Package status" : "Status",
+                        ...(kind === "packages" ? ["Customer visibility"] : []),
                         "Actions",
                       ].map((x) => (
                         <th key={x}>{x}</th>
@@ -490,6 +492,7 @@ export default function ServicesManagementPage({ kind }) {
                         <td>{row.vendor}</td>
                         <td>{money(row.price)}</td>
                         <td>{row.active ? "Active" : "Inactive"}</td>
+                        {kind === "packages" && <td className="min-w-[240px]"><PackageVisibility value={row} /></td>}
                         <td>
                           <Link
                             className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
@@ -497,6 +500,10 @@ export default function ServicesManagementPage({ kind }) {
                           >
                             View & manage
                           </Link>
+                          {kind === "packages" && <Link
+                            className="mt-2 block text-[11px] text-[#176b60] underline underline-offset-4"
+                            to={`/admin/services/${row.serviceId}`}
+                          >View parent service</Link>}
                         </td>
                       </tr>
                     ))}

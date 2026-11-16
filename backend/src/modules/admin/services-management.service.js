@@ -16,6 +16,7 @@ import { amount, validateAttributes } from "../vendors/workspace.validation.js";
 import { templateFor, templatesFor } from "../vendors/service-templates.js";
 import { assertVersion } from "../vendors/workspace.common.js";
 import { dateBounds } from "./admin.validation.js";
+import { packageVisibilityFields, packageVisibility } from "./package-visibility.js";
 
 const resource = { table: "Services", id: "ServiceId" };
 const fail = (message, status = 400) => {
@@ -238,6 +239,14 @@ export function priceCalculation(input) {
 }
 export async function details(id, ctx) {
   const data = await review(id, ctx);
+  const visibility = data.packages.length ? await repo.select(
+    `SELECT t.PackageId AS id,t.IsActive AS active,s.ServiceName AS service,${packageVisibilityFields}
+     FROM dbo.ServicePackages t JOIN dbo.Services s ON s.ServiceId=t.ServiceId
+     JOIN dbo.Categories c ON c.CategoryId=s.CategoryId JOIN dbo.Vendors v ON v.VendorId=s.VendorId
+     JOIN dbo.Users u ON u.UserId=v.UserId WHERE s.ServiceId=:id`,
+    { id },
+  ) : [];
+  const packageStatuses = new Map(visibility.map((row) => [row.id.toLowerCase(), packageVisibility(row)]));
   const [used] = await repo.select(
     "SELECT CASE WHEN EXISTS(SELECT 1 FROM dbo.BookingItems WHERE ServiceId=:id) OR EXISTS(SELECT 1 FROM dbo.QuotationItems WHERE ServiceId=:id OR PackageId IN(SELECT PackageId FROM dbo.ServicePackages WHERE ServiceId=:id)) OR EXISTS(SELECT 1 FROM dbo.QuotationRequests WHERE ServiceId=:id) OR EXISTS(SELECT 1 FROM dbo.Offers WHERE ServiceId=:id) THEN 1 ELSE 0 END AS hasHistory",
     { id },
@@ -250,6 +259,7 @@ export async function details(id, ctx) {
     : [];
   return {
     ...data,
+    packages: data.packages.map((pack) => ({ ...pack, ...packageStatuses.get(pack.PackageId.toLowerCase()) })),
     SubCategoryName: sub?.name,
     actions: actionsFor({ ...data, hasHistory: used?.hasHistory }),
     calculation: priceCalculation(
@@ -886,7 +896,7 @@ export async function childrenIndex(kind, input, ctx) {
     table = item ? "ServiceItems" : "ServicePackages",
     name = item ? "ItemName" : "PackageName",
     pk = item ? "ServiceItemId" : "PackageId";
-  const source = `FROM dbo.${table} t JOIN dbo.Services s ON s.ServiceId=t.ServiceId JOIN dbo.Vendors v ON v.VendorId=s.VendorId WHERE t.${name} LIKE :q OR s.ServiceName LIKE :q OR v.BusinessName LIKE :q`;
+  const source = `FROM dbo.${table} t JOIN dbo.Services s ON s.ServiceId=t.ServiceId JOIN dbo.Vendors v ON v.VendorId=s.VendorId ${item ? "" : "JOIN dbo.Categories c ON c.CategoryId=s.CategoryId JOIN dbo.Users u ON u.UserId=v.UserId"} WHERE t.${name} LIKE :q OR s.ServiceName LIKE :q OR v.BusinessName LIKE :q`;
   const p = {
     q: like(q.q),
     offset: (q.page - 1) * q.pageSize,
@@ -897,9 +907,9 @@ export async function childrenIndex(kind, input, ctx) {
     p,
   );
   const rows = await repo.select(
-    `SELECT t.${pk} AS id,t.${name} AS name,s.ServiceId AS serviceId,s.ServiceName AS service,v.BusinessName AS vendor,t.${item ? "UnitPrice" : "FinalPrice"} AS price,t.IsActive AS active ${source} ORDER BY t.CreatedAt DESC,t.${pk} OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
+    `SELECT t.${pk} AS id,t.${name} AS name,s.ServiceId AS serviceId,s.ServiceName AS service,v.BusinessName AS vendor,t.${item ? "UnitPrice" : "FinalPrice"} AS price,t.IsActive AS active${item ? "" : `,${packageVisibilityFields}`} ${source} ORDER BY t.CreatedAt DESC,t.${pk} OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
     p,
   );
-  return { rows, total: Number(count.total), ...q };
+  return { rows: item ? rows : rows.map((row) => ({ ...row, ...packageVisibility(row) })), total: Number(count.total), ...q };
 }
 export { csvCell } from "../../utils/csv.js";
