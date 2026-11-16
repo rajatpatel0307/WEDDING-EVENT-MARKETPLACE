@@ -1,14 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { CreditCard, RefreshCw } from "lucide-react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from "recharts";
 import { useAdminData } from "../services-management.api";
 import { adminRequest, date } from "../api";
 import AdminTable, {
@@ -19,6 +11,7 @@ import AdminTable, {
 import AdminDialog from "../components/AdminDialog";
 import PaymentTabs from "../components/PaymentTabs";
 import FinanceCards from "../components/FinanceCards";
+import PaymentOverview from "../components/PaymentOverview";
 import { useAuth } from "../../../context/AuthContext";
 const money = (v) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(
@@ -44,7 +37,7 @@ export default function PaymentManagementPage({ section = "overview" }) {
       : section === "reconciliation"
         ? "/payment-reconciliation"
         : "/payment-overview";
-  const state = useAdminData(`${path}?${params}`, version);
+  const state = useAdminData(section === "transactions" ? null : `${path}?${params}`, version);
   async function action(path, body = {}) {
     setBusy(true);
     setError("");
@@ -64,27 +57,29 @@ export default function PaymentManagementPage({ section = "overview" }) {
   }
   return (
     <>
-      <div className="ad-page-heading flex items-center [@media(width<=1000px)]:items-start justify-between gap-[20px] [@media(width<=767px)]:gap-[14px] [@media(width<=767px)]:flex-col [@media(width<=767px)]:[&_p]:text-[11px]">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <div className="ad-eyebrow text-[8px] [@media(width<=767px)]:text-[7px] tracking-[1.7px] text-[#7d9183] flex items-center gap-[6px] [&_>_span]:w-[5px] [&_>_span]:h-[5px] [&_>_span]:[background:#bfa471] [&_>_span]:rounded-[50%]">FINANCE</div>
-          <h1>
-            <CreditCard size={25} /> Payment management
+          <div className="mb-2 text-[10px] font-medium tracking-widest text-[#829487] uppercase">Finance workspace</div>
+          <h1 className="m-0! flex items-center gap-2.5 text-[26px]! leading-tight! font-semibold! tracking-tight! sm:text-[30px]!">
+            <CreditCard size={24} strokeWidth={1.7} className="shrink-0 text-[#176b60]" aria-hidden="true" />{section === "overview" ? "Payment overview" : "Payment management"}
           </h1>
-          <p>
-            Verified collections, refund review and settlement reconciliation.
+          <p className="mt-2 text-xs! leading-relaxed text-[#75867d]! sm:text-sm!">
+            {section === "overview" ? "Collections, refunds and vendor settlements in one place." : "Verified collections, refund review and settlement reconciliation."}
           </p>
         </div>
         <button
-          className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-          disabled={busy}
+          type="button"
+          className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg border border-[#dce6e1] bg-white px-3.5 py-2 text-xs font-medium text-[#45645a] shadow-sm transition-colors hover:border-[#a7c3b7] hover:bg-[#f1f7f4] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#176b60] disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+          disabled={busy || Boolean(state.loading)}
           onClick={() => setVersion((v) => v + 1)}
         >
-          <RefreshCw size={16} /> Refresh
+          <RefreshCw size={16} className={state.loading ? "animate-spin motion-reduce:animate-none" : ""} aria-hidden="true" />{state.loading ? "Refreshing..." : "Refresh"}
         </button>
       </div>
+      {section === "overview" && <PaymentTabs />}
       {section !== "transactions" && <>
         <FinanceCards section={section === "refunds" ? "refund-review" : section} revision={version} overviewState={state} />
-        <PaymentTabs />
+        {section !== "overview" && <PaymentTabs />}
       </>}
       {error && (
         <p role="alert" className="ad-inline-error [background:#fff1ed] text-[#af6158] p-[12px] rounded-[7px] text-[12px] [margin:12px_0]">
@@ -92,85 +87,13 @@ export default function PaymentManagementPage({ section = "overview" }) {
         </p>
       )}
       {section === "transactions" ? (
-        <AdminTable resource="payments" beforeTable={<PaymentTabs />} />
+        <AdminTable resource="payments" version={version} beforeTable={<PaymentTabs />} />
       ) : state.loading ? (
         <Skeleton />
       ) : state.error ? (
         <ErrorState error={state.error} retry={state.retry} />
       ) : section === "overview" ? (
-        <>
-
-          <section className="ad-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]">
-            <h2>Monthly payments, refunds, payouts and commission</h2>
-            {state.data.monthly.length ? (
-              <div className="h-[280px] w-full">
-                <ResponsiveContainer>
-                  <BarChart data={state.data.monthly}>
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={money} />
-                    <Bar
-                      dataKey="captured"
-                      fill="#955365"
-                      radius={[5, 5, 0, 0]}
-                    />
-                    <Bar dataKey="refunds" fill="#c67e55" />
-                    <Bar dataKey="payouts" fill="#527a70" />
-                    <Bar dataKey="commission" fill="#9b8bba" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <p>No captured payments in this period.</p>
-            )}
-            <p>{state.data.commissionPolicy}</p>
-          </section>
-          <section className="ad-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]">
-            <h2>Successful and failed attempts</h2>
-            <div className="h-[220px] w-full">
-              <ResponsiveContainer>
-                <BarChart
-                  data={[
-                    {
-                      status: "Captured",
-                      count: Number(state.data.totals.successful),
-                    },
-                    {
-                      status: "Failed",
-                      count: Number(state.data.totals.failed),
-                    },
-                  ]}
-                >
-                  <XAxis dataKey="status" />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#527a70" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
-          <section className="ad-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]">
-            <h2>Payment methods</h2>
-            {state.data.methods.length > 0 && (
-              <div className="h-[240px] w-full">
-                <ResponsiveContainer>
-                  <BarChart data={state.data.methods}>
-                    <XAxis dataKey="method" />
-                    <YAxis />
-                    <Tooltip formatter={money} />
-                    <Bar dataKey="amount" fill="#955365" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-            {state.data.methods.map((m) => (
-              <p key={m.method}>
-                {m.method}: {money(m.amount)}
-              </p>
-            ))}
-            {!state.data.methods.length && <p>No recorded payment methods.</p>}
-          </section>
-        </>
+        <PaymentOverview data={state.data} />
       ) : section === "refunds" ? (
         <section className="ad-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e5ebe6] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e5ebe6] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e5ebe6] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e5ebe6] rounded-[12px] [box-shadow:0_3px_8px_#263f2d02] min-w-0 [overflow-x:hidden] [overflow-y:hidden]">
           <label>
