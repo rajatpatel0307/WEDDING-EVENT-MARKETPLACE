@@ -49,6 +49,16 @@ const statCards = [
   ["bookings", "Total Bookings", CalendarCheck],
   ["revenue", "Total Service Revenue", IndianRupee],
 ];
+const serviceStatuses = [
+  ["Pending", "Pending Approval"],
+  ["UnderReview", "Admin Review"],
+  ["Approved", "Approved"],
+  ["Rejected", "Rejected"],
+  ["Suspended", "Suspended"],
+  ["Draft", "Draft"],
+  ["Active", "Active"],
+  ["Inactive", "Inactive"],
+];
 function Filters({ params, apply, close }) {
   const [values, setValues] = useState(Object.fromEntries(params)),
     [vendorQuery, setVendorQuery] = useState("");
@@ -123,20 +133,7 @@ function Filters({ params, apply, close }) {
             "Vendor",
             (metadata.data?.vendors || []).map((x) => [x.id, x.name]),
           )}
-          {select(
-            "status",
-            "Approval status",
-            [
-              "Draft",
-              "Pending",
-              "UnderReview",
-              "Approved",
-              "Rejected",
-              "Suspended",
-              "Inactive",
-              "Active",
-            ].map((x) => [x, x === "UnderReview" ? "Admin Review" : x]),
-          )}
+          {select("status", "Service status", serviceStatuses)}
           {select("active", "Active status", [
             ["true", "Active"],
             ["false", "Inactive"],
@@ -322,34 +319,6 @@ export default function ServicesManagementPage({ kind }) {
               <button onClick={() => setRevision((v) => v + 1)}>Retry</button>
             </p>
           )}
-          <nav className="flex min-w-0 gap-1 overflow-x-auto border-b border-[#dce6df] pb-2 [&_button]:min-h-10 [&_button]:shrink-0 [&_button]:whitespace-nowrap [&_button]:rounded-lg [&_button]:px-3.5 [&_button]:py-2 [&_button]:text-xs [&_button]:text-[#667d71] [&_button]:transition-colors [&_button:hover]:bg-[#edf4ef] [&_button[aria-current]]:bg-[#176b60] [&_button[aria-current]]:text-white [&_button[aria-current]]:font-semibold" aria-label="Service status">
-            {[
-              ["", "All Services"],
-              ["Pending", "Pending Approval"],
-              ["Approved", "Approved"],
-              ["Rejected", "Rejected"],
-              ["Suspended", "Suspended"],
-              ["Draft", "Draft"],
-              ["Active", "Active"],
-              ["Inactive", "Inactive"],
-            ].map(([value, label]) => (
-              <button
-                key={value}
-                aria-current={
-                  (params.get("status") || "") === value ? "page" : undefined
-                }
-                onClick={() =>
-                  update({
-                    ...Object.fromEntries(params),
-                    status: value,
-                    page: 1,
-                  })
-                }
-              >
-                {label}
-              </button>
-            ))}
-          </nav>
         </>
       )}
       <section className="min-w-0 rounded-xl border border-[#e0e8e2] bg-white p-3 shadow-sm sm:p-4">
@@ -394,6 +363,24 @@ export default function ServicesManagementPage({ kind }) {
                   <SlidersHorizontal size={16} />
                   Filters
                 </button>
+                <select
+                  aria-label="Filter by service status"
+                  value={params.get("status") || ""}
+                  onChange={(e) =>
+                    update({
+                      ...Object.fromEntries(params),
+                      status: e.target.value,
+                      page: 1,
+                    })
+                  }
+                >
+                  <option value="">All statuses</option>
+                  {serviceStatuses.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
                 <select
                   aria-label="Sort services"
                   value={params.get("sort") || "createdAt"}
