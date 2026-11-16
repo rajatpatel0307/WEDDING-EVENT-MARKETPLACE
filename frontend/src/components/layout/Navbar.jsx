@@ -11,7 +11,6 @@ import SearchBar from "./SearchBar";
 import ProfileDropdown from "./ProfileDropdown";
 import Modal from "./Modal";
 import { useSelectedLocation, setSelectedLocation } from "../../modules/marketplace/location-selection";
-import { resetNavbarServicesScroll } from "./navbar-services-scroll";
 export default function Navbar() {
   const { user, loading } = useAuth();
   const [open, setOpen] = useState(null),
@@ -28,7 +27,6 @@ export default function Navbar() {
     }
   };
   const location = useLocation();
-  useLayoutEffect(() => resetNavbarServicesScroll(location, window), [location]);
   const home = location.pathname === "/";
   const headerRef = useRef(null);
   useLayoutEffect(() => {

@@ -33,7 +33,7 @@ export function navigationFor(user) {
           `/vendor/${["dashboard", "services", "bookings", "quotations", "messages", "availability", "reviews"][i]}`,
         ])
       : publicNavigation;
-  return [...publicNavigation, ["Bookings", "/customer/bookings"]];
+  return publicNavigation;
 }
 export function profileFor(user) {
   const role = user?.role?.toLowerCase();

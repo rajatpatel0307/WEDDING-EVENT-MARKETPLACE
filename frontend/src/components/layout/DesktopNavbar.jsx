@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
-import { ChevronDown, ArrowUpRight } from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 import Popover from "./Popover";
 import { navigationFor } from "./navigation";
 const ServicesMegaMenu = lazy(() => import("./ServicesMegaMenu"));
@@ -34,21 +34,8 @@ export default function DesktopNavbar({ user, open, setOpen }) {
           </NavLink>
         ),
       )}
-      <Popover
-        name="more"
-        open={open}
-        setOpen={setOpen}
-        label={
-          <>
-            More <ChevronDown size={12} />
-          </>
-        }
-      >
-        <Link to="/about">About us</Link>
-        <Link to="/contact">
-          Contact us <ArrowUpRight size={14} />
-        </Link>
-      </Popover>
+      <NavLink to="/about">About us</NavLink>
+      <NavLink to="/contact">Contact us</NavLink>
     </nav>
   );
 }

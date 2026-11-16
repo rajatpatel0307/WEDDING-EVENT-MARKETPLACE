@@ -60,9 +60,11 @@ test("customer workspace reuses the site navbar without changing its links or dr
     const links = (html) => [...mainNavigation(html).matchAll(/<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)]
       .map((match) => [match[1], match[2].replace(/<[^>]+>/g, "").trim()]);
     assert.deepEqual(links(workspace), links(marketplace));
-    assert.ok(links(workspace).some(([href, label]) => href === "/customer/bookings" && label === "Bookings"));
+    assert.ok(!links(workspace).some(([href, label]) => href === "/customer/bookings" || label === "Bookings"));
     assert.match(mainNavigation(workspace), /Services <svg/);
-    assert.match(mainNavigation(workspace), /More <svg/);
+    assert.doesNotMatch(mainNavigation(workspace), />\s*More\b/);
+    assert.ok(links(workspace).some(([href, label]) => href === "/about" && label === "About us"));
+    assert.ok(links(workspace).some(([href, label]) => href === "/contact" && label === "Contact us"));
     assert.equal((workspace.match(/aria-label="Main navigation"/g) || []).length, 1);
     assert.ok(!workspace.includes('aria-label="Marketplace navigation"'));
     assert.ok(workspace.indexOf("mn-header") < workspace.indexOf("cw-app customer-workspace"));
