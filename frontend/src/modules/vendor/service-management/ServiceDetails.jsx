@@ -12,9 +12,13 @@ import {
   MessageCircle,
   FileText,
   TrendingUp,
+  ArrowUpRight,
+  CalendarDays,
+  Clock3,
+  LayoutGrid,
+  ShieldCheck,
 } from "lucide-react";
 import {
-  Heading,
   Panel,
   Loading,
   ErrorView,
@@ -24,6 +28,8 @@ import {
 import { date, money, today } from "../services/workspace.api";
 import { Notice, ServiceActions, Status } from "./shared";
 import MediaManager from "./MediaManager";
+import ServiceOverview from "./ServiceOverview";
+import "./service-details.css";
 function PricingDetails({ pricing = {} }) {
   const labels = [
     ["type", "Pricing type"],
@@ -496,38 +502,117 @@ export default function ServiceDetails() {
   if (state.loading) return <Loading />;
   if (state.error) return <ErrorView error={state.error} retry={state.retry} />;
   const s = state.data;
+  const category = metadata.data?.categories?.find(
+    (c) => c.id === s.categoryId,
+  )?.name;
+  const reviewing = ["Pending", "UnderReview"].includes(s.status);
+  const selectTab = (next) => {
+    setTab(next);
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`service-tab-${next.replaceAll(" ", "-")}`)
+        ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+  };
   return (
-    <div className="
-      [--sm-accent:#2d604b] [--sm-border:#e2e8df] max-w-[1700px] m-[auto]
+    <div
+      className="
+      service-details [--sm-accent:#2d604b] [--sm-border:#e2e8df] max-w-[1700px] m-[auto] w-full
       [&_button:disabled]:opacity-[0.45] [&_button:disabled]:cursor-not-allowed
       [&_:focus-visible]:[outline:2px_solid_#397455] [&_:focus-visible]:[outline-offset:3px]
-    ">
-      <Link className="inline-flex items-center gap-[7px] text-[#5d7566] mb-[18px] text-[12px]" to="/vendor/services">
-        <ArrowLeft size={15} />
-        All services
-      </Link>
-      <Heading
-        title={s.name}
-        eyebrow="SERVICE MANAGEMENT"
-        description={`${metadata.data?.categories.find((c) => c.id === s.categoryId)?.name || "Service"} · Updated ${date(s.updatedAt)}`}
-      >
-        <Status status={s.status} active={s.active} />
-      </Heading>
+    "
+    >
+      <nav className="sd-breadcrumb" aria-label="Breadcrumb">
+        <Link to="/vendor/services">
+          <ArrowLeft size={15} /> All services
+        </Link>
+        <span aria-hidden="true">/</span>
+        <span>Service details</span>
+      </nav>
+      <header className="sd-page-header">
+        <div className="sd-page-title">
+          <span className="sd-eyebrow">SERVICE MANAGEMENT</span>
+          <div className="sd-title-row">
+            <h1>{s.name}</h1>
+            <Status status={s.status} active={s.active} />
+          </div>
+          <div className="sd-meta">
+            <span>
+              <LayoutGrid size={14} />
+              {category || "Service"}
+            </span>
+            {s.location?.city && (
+              <span>
+                <MapPin size={14} />
+                {s.location.city}
+              </span>
+            )}
+            <span>
+              <Clock3 size={14} /> Updated {date(s.updatedAt)}
+            </span>
+          </div>
+        </div>
+        <div className="sd-header-actions">
+          <ServiceActions
+            service={s}
+            onChange={(r) => {
+              setNotice(r.message);
+              setVersion((v) => v + 1);
+            }}
+          />
+          <Link
+            className="sd-button sd-button-primary"
+            to={`/vendor/services/${id}/availability`}
+          >
+            <CalendarDays size={16} /> Availability <ArrowUpRight size={15} />
+          </Link>
+        </div>
+      </header>
       <Notice message={notice} />
+      {reviewing && (
+        <div className="sd-review-banner">
+          <span className="sd-review-icon">
+            <ShieldCheck size={20} />
+          </span>
+          <div>
+            <strong>
+              {s.status === "UnderReview"
+                ? "Your service is under review"
+                : "Your service is awaiting approval"}
+            </strong>
+            <p>
+              {s.status === "UnderReview"
+                ? "Our team is reviewing your listing. Follow its progress and feedback in approval history."
+                : "Your listing has been submitted. Follow its progress and feedback in approval history."}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="sd-text-button"
+            onClick={() => selectTab("Approval History")}
+          >
+            Track progress <ArrowUpRight size={15} />
+          </button>
+        </div>
+      )}
       {s.status === "Rejected" && (
-        <div className="
+        <div
+          className="
           rounded-[9px] [padding:14px_18px] [margin:14px_0] text-[12px] [background:#fcf0ed]
           [border-top:1px_solid_#efd4cd] [border-right:1px_solid_#efd4cd] [border-bottom:1px_solid_#efd4cd]
           [border-left:1px_solid_#efd4cd] text-[#9d5348] [&_p]:text-[inherit]! [&_.vw-button]:inline-flex
           [&_.vw-button]:m-[10px]
-        ">
+        "
+        >
           <h2>Service Rejected</h2>
           <strong>Rejection Reason</strong>
           <p>{s.rejectionReason || "Contact support for the review reason."}</p>
           <strong>Admin Note</strong>
           <p>{s.adminNote || "—"}</p>
           <small>Rejected {date(s.rejectedAt)}</small>
-          <Link to={`/vendor/services/${id}/edit`} className="
+          <Link
+            to={`/vendor/services/${id}/edit`}
+            className="
             vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
             [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
             rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
@@ -536,35 +621,40 @@ export default function ServiceDetails() {
             [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
             [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
             [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
-          ">
+          "
+          >
             Edit & Resubmit
           </Link>
         </div>
       )}
-      <div className="mb-[25px] [&_.sm-row-actions]:gap-[8px] [&_.sm-row-actions_>_a]:[padding:9px_12px] [&_.sm-row-actions_>_button]:[padding:9px_12px]">
-        <ServiceActions
-          service={s}
-          full
-          onChange={(r) => {
-            setNotice(r.message);
-            setVersion((v) => v + 1);
-          }}
-        />
-      </div>
-      <div className="
-        flex gap-[25px] [padding:0_25px] overflow-auto [border-bottom:1px_solid_var(--sm-border)]
-        whitespace-nowrap [&_button]:[border-top:0] [&_button]:[border-right:0]
-        [&_button]:[border-bottom:2px_solid_transparent] [&_button]:[border-left:0]
-        [&_button]:[background:none] [&_button]:text-[12px] [&_button]:[padding:16px_0]
-        [&_button]:text-[#8b978a] [&_button]:font-medium [&_button.selected]:text-[#2d604b]
-        [&_button.selected]:[border-bottom-color:#2d604b] service-mobile:gap-[20px]
-        service-mobile:[padding:0_15px] [background:white] [border-top:1px_solid_var(--sm-border)]
-        [border-right:1px_solid_var(--sm-border)] [border-bottom:1px_solid_var(--sm-border)]
-        [border-left:1px_solid_var(--sm-border)] rounded-[10px] mb-[20px]
-      ">
+      <div
+        className="sd-tabs"
+        role="tablist"
+        aria-label="Service management sections"
+        onKeyDown={(event) => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
+            return;
+          event.preventDefault();
+          const tabs = [
+            ...event.currentTarget.querySelectorAll('[role="tab"]'),
+          ];
+          const index = tabs.indexOf(document.activeElement);
+          const next =
+            event.key === "Home"
+              ? 0
+              : event.key === "End"
+                ? tabs.length - 1
+                : (index +
+                    (event.key === "ArrowRight" ? 1 : -1) +
+                    tabs.length) %
+                  tabs.length;
+          tabs[next].click();
+          tabs[next].focus();
+        }}
+      >
         {[
-          "Approval History",
           "Overview",
+          "Approval History",
           "Information",
           "Pricing",
           "Service Items",
@@ -579,116 +669,127 @@ export default function ServiceDetails() {
         ].map((t) => (
           <button
             key={t}
+            type="button"
+            role="tab"
+            id={`service-tab-${t.replaceAll(" ", "-")}`}
+            aria-selected={tab === t}
+            aria-controls="service-details-panel"
+            tabIndex={tab === t ? 0 : -1}
             className={tab === t ? "selected" : ""}
-            onClick={() => setTab(t)}
+            onClick={() => selectTab(t)}
           >
+            {t === "Overview" && <LayoutGrid size={15} />}
             {t}
           </button>
         ))}
       </div>
-      <Panel title={tab}>
-        {tab === "Information" && (
-          <div className="p-[25px] service-mobile:p-[18px]">
-            <dl className="
+      <div
+        id="service-details-panel"
+        role="tabpanel"
+        aria-labelledby={`service-tab-${tab.replaceAll(" ", "-")}`}
+        tabIndex={0}
+      >
+        {tab === "Overview" ? (
+          <ServiceOverview
+            service={s}
+            category={category}
+            vendorName={metadata.data?.vendorName}
+            categoryFields={metadata.data?.templates?.[category] || []}
+            onTabChange={selectTab}
+          />
+        ) : (
+          <Panel title={tab} className="sd-tab-panel">
+            {tab === "Information" && (
+              <div className="p-[25px] service-mobile:p-[18px]">
+                <dl
+                  className="
               grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_dt]:text-[10px] [&_dt]:capitalize
               [&_dt]:text-[#99a58d] [&_dt]:mb-[6px] [&_dd]:m-[0] [&_dd]:text-[#54704d]
               [&_dd]:[overflow-wrap:anywhere] service-mobile:grid-cols-[1fr]
-            ">
-              {[
-                ["Service ID", s.id],
-                ["Service name", s.name],
-                [
-                  "Category",
-                  metadata.data?.categories.find((c) => c.id === s.categoryId)
-                    ?.name,
-                ],
-                [
-                  "Subcategory",
-                  metadata.data?.subcategories.find(
-                    (c) => c.id === s.subcategoryId,
-                  )?.name,
-                ],
-                ["Service type", s.serviceType],
-                ["Description", s.description],
-                ["Approval status", s.status],
-                ["Active status", s.active ? "Active" : "Inactive"],
-                ["Created", date(s.createdAt)],
-                ["Updated", date(s.updatedAt)],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value || "—"}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        )}
-        {tab === "Approval History" && (
-          <div className="p-[25px] service-mobile:p-[18px]">
-            <ApprovalTimeline rows={s.approvalHistory} />
-          </div>
-        )}
-        {tab === "Overview" && (
-          <div className="p-[25px] service-mobile:p-[18px]">
-            <ServicePreview
-              service={s}
-              category={
-                metadata.data?.categories.find((c) => c.id === s.categoryId)
-                  ?.name
-              }
-              vendorName={metadata.data?.vendorName}
-              categoryFields={
-                metadata.data?.templates[
-                  metadata.data?.categories.find(
-                    (category) => category.id === s.categoryId,
-                  )?.name
-                ] || []
-              }
-            />
-          </div>
-        )}
-        {tab === "Pricing" && (
-          <div className="p-[25px] service-mobile:p-[18px]">
-            <OfferReview offer={s.offer}/>{!s.offer && <PricingDetails pricing={s.pricing} />}
-            <div className="
+            "
+                >
+                  {[
+                    ["Service ID", s.id],
+                    ["Service name", s.name],
+                    [
+                      "Category",
+                      metadata.data?.categories.find(
+                        (c) => c.id === s.categoryId,
+                      )?.name,
+                    ],
+                    [
+                      "Subcategory",
+                      metadata.data?.subcategories.find(
+                        (c) => c.id === s.subcategoryId,
+                      )?.name,
+                    ],
+                    ["Service type", s.serviceType],
+                    ["Description", s.description],
+                    ["Approval status", s.status],
+                    ["Active status", s.active ? "Active" : "Inactive"],
+                    ["Created", date(s.createdAt)],
+                    ["Updated", date(s.updatedAt)],
+                  ].map(([label, value]) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>{value || "—"}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
+            {tab === "Approval History" && (
+              <div className="p-[25px] service-mobile:p-[18px]">
+                <ApprovalTimeline rows={s.approvalHistory} />
+              </div>
+            )}
+            {tab === "Pricing" && (
+              <div className="p-[25px] service-mobile:p-[18px]">
+                <OfferReview offer={s.offer} />
+                {!s.offer && <PricingDetails pricing={s.pricing} />}
+                <div
+                  className="
               p-[25px] [background:#f3f7ef] [border-top:1px_solid_#e1e8d9] [border-right:1px_solid_#e1e8d9]
               [border-bottom:1px_solid_#e1e8d9] [border-left:1px_solid_#e1e8d9] rounded-[10px] [margin:24px_0]
               [&_>_span]:block [&_>_span]:text-[10px] [&_>_span]:tracking-[1px] [&_>_span]:text-[#8d9b80]
               [&_>_strong]:block [&_>_strong]:text-[32px] [&_>_strong]:font-semibold [&_>_strong]:text-[#3c6348]
               [&_>_strong]:[margin:5px_0] [&_p]:max-w-[680px] [&_p]:leading-[1.8] [&_p]:[margin:8px_0_0]
               service-mobile:p-[18px]
-            ">
-              <span>SERVER-CALCULATED STARTING PRICE</span>
-              <strong>{money(s.price)}</strong>
-            </div>
-          </div>
-        )}
-        {tab === "Service Items" && (
-          <div className="p-[25px] service-mobile:p-[18px]">
-            {s.items.length ? (
-              <div className="
+            "
+                >
+                  <span>SERVER-CALCULATED STARTING PRICE</span>
+                  <strong>{money(s.price)}</strong>
+                </div>
+              </div>
+            )}
+            {tab === "Service Items" && (
+              <div className="p-[25px] service-mobile:p-[18px]">
+                {s.items.length ? (
+                  <div
+                    className="
                 grid gap-[12px] p-[20px] [&_article]:p-[15px] [&_article]:[border-top:1px_solid_var(--sm-border)]
                 [&_article]:[border-right:1px_solid_var(--sm-border)]
                 [&_article]:[border-bottom:1px_solid_var(--sm-border)]
                 [&_article]:[border-left:1px_solid_var(--sm-border)] [&_article]:rounded-[9px]
-              ">
-                {s.items.map((i) => (
-                  <article key={i.id}>
-                    <strong>{i.name}</strong>
-                    <p>{i.description}</p>
-                    <span>
-                      {i.quantity} {i.unit} · {money(i.price)} ·{" "}
-                      {i.included ? "Included" : "Optional"}
-                    </span>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <Empty title="No items added" />
-            )}
-            {s.actions.edit && (
-              <Link
-                className="
+              "
+                  >
+                    {s.items.map((i) => (
+                      <article key={i.id}>
+                        <strong>{i.name}</strong>
+                        <p>{i.description}</p>
+                        <span>
+                          {i.quantity} {i.unit} · {money(i.price)} ·{" "}
+                          {i.included ? "Included" : "Optional"}
+                        </span>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <Empty title="No items added" />
+                )}
+                {s.actions.edit && (
+                  <Link
+                    className="
                   vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
                   [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
                   rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
@@ -698,29 +799,30 @@ export default function ServiceDetails() {
                   [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
                   [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
                 "
-                to={`/vendor/services/${id}/edit?step=3`}
-              >
-                Manage Items
-              </Link>
+                    to={`/vendor/services/${id}/edit?step=3`}
+                  >
+                    Manage Items
+                  </Link>
+                )}
+              </div>
             )}
-          </div>
-        )}
-        {tab === "Images" && (
-          <div className="p-[25px] service-mobile:p-[18px]">
-            <MediaManager
-              id={id}
-              disabled={!s.actions.edit}
-              onChanged={() => setVersion((v) => v + 1)}
-            />
-          </div>
-        )}
-        {tab === "Packages" && (
-          <div className="p-[25px] service-mobile:p-[18px]">
-            <p>
-              Create flexible packages for different celebrations and budgets.
-            </p>
-            <Link
-              className="
+            {tab === "Images" && (
+              <div className="p-[25px] service-mobile:p-[18px]">
+                <MediaManager
+                  id={id}
+                  disabled={!s.actions.edit}
+                  onChanged={() => setVersion((v) => v + 1)}
+                />
+              </div>
+            )}
+            {tab === "Packages" && (
+              <div className="p-[25px] service-mobile:p-[18px]">
+                <p>
+                  Create flexible packages for different celebrations and
+                  budgets.
+                </p>
+                <Link
+                  className="
                 vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
                 [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
                 rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
@@ -731,19 +833,20 @@ export default function ServiceDetails() {
                 [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
                 vw-primary
               "
-              to={`/vendor/services/${id}/packages`}
-            >
-              Manage Packages
-            </Link>
-          </div>
-        )}
-        {tab === "Availability" && (
-          <div className="p-[25px] service-mobile:p-[18px]">
-            <p>
-              Manage working days, custom timings, holidays and blocked dates.
-            </p>
-            <Link
-              className="
+                  to={`/vendor/services/${id}/packages`}
+                >
+                  Manage Packages
+                </Link>
+              </div>
+            )}
+            {tab === "Availability" && (
+              <div className="p-[25px] service-mobile:p-[18px]">
+                <p>
+                  Manage working days, custom timings, holidays and blocked
+                  dates.
+                </p>
+                <Link
+                  className="
                 vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
                 [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
                 rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
@@ -753,51 +856,55 @@ export default function ServiceDetails() {
                 [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
                 [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
               "
-              to={`/vendor/services/${id}/availability`}
-            >
-              Open service calendar
-            </Link>
-          </div>
-        )}
-        {tab === "Location" && (
-          <div className="p-[25px] service-mobile:p-[18px]">
-            <MapPin />
-            <p>
-              {Object.values(s.location || {})
-                .filter((v) => v !== null)
-                .join(" · ")}
-            </p>
-          </div>
-        )}
-        {tab === "Policies" && (
-          <dl className="
+                  to={`/vendor/services/${id}/availability`}
+                >
+                  Open service calendar
+                </Link>
+              </div>
+            )}
+            {tab === "Location" && (
+              <div className="p-[25px] service-mobile:p-[18px]">
+                <MapPin />
+                <p>
+                  {Object.values(s.location || {})
+                    .filter((v) => v !== null)
+                    .join(" · ")}
+                </p>
+              </div>
+            )}
+            {tab === "Policies" && (
+              <dl
+                className="
             grid grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[20px] [&_dt]:text-[10px] [&_dt]:capitalize
             [&_dt]:text-[#99a58d] [&_dt]:mb-[6px] [&_dd]:m-[0] [&_dd]:text-[#54704d]
             [&_dd]:[overflow-wrap:anywhere] service-mobile:grid-cols-[1fr] p-[25px] service-mobile:p-[18px]
-          ">
-            {Object.entries(s.policies || {}).map(([k, v]) => (
-              <div key={k}>
-                <dt>{k.replace(/([A-Z])/g, " $1")}</dt>
-                <dd className="whitespace-pre-wrap [overflow-wrap:anywhere]">
-                  {typeof v === "boolean"
-                    ? v
-                      ? "Yes"
-                      : "No"
-                    : v || "Not specified"}
-                </dd>
+          "
+              >
+                {Object.entries(s.policies || {}).map(([k, v]) => (
+                  <div key={k}>
+                    <dt>{k.replace(/([A-Z])/g, " $1")}</dt>
+                    <dd className="whitespace-pre-wrap [overflow-wrap:anywhere]">
+                      {typeof v === "boolean"
+                        ? v
+                          ? "Yes"
+                          : "No"
+                        : v || "Not specified"}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {["Bookings", "Reviews"].includes(tab) && (
+              <History id={id} kind={tab.toLowerCase()} />
+            )}
+            {tab === "Performance" && (
+              <div className="p-[25px] service-mobile:p-[18px]">
+                <Performance id={id} />
               </div>
-            ))}
-          </dl>
+            )}
+          </Panel>
         )}
-        {["Bookings", "Reviews"].includes(tab) && (
-          <History id={id} kind={tab.toLowerCase()} />
-        )}
-        {tab === "Performance" && (
-          <div className="p-[25px] service-mobile:p-[18px]">
-            <Performance id={id} />
-          </div>
-        )}
-      </Panel>
+      </div>
     </div>
   );
 }
