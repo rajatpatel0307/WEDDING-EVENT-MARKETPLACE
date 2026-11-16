@@ -1,17 +1,18 @@
 import { useState } from "react";
-import SectionHeader from "../common/SectionHeader";
+import { useQuery } from "@apollo/client/react";
+import { Sparkles } from "lucide-react";
 import CollectionState from "../common/CollectionState";
 import MarketplaceCard from "../common/MarketplaceCard";
 import PackageCard from "../common/PackageCard";
 import Testimonials from "./Testimonials";
-import { useQuery } from "@apollo/client/react";
+import { HomeSectionHeader, HomeListingGrid } from "./HomeSection";
 import { VENDORS } from "../../services/public";
 import { useSelectedLocation } from "../../modules/marketplace/location-selection";
 
 function TopVendors({ items, loading, retry, categories = [] }) {
   const city = useSelectedLocation();
   const tabs = [
-    ["All", null],
+    ["All professionals", null],
     ...categories.slice(0, 6).map((category) => [category.name, category.name]),
   ];
   const [category, setCategory] = useState(null);
@@ -24,52 +25,61 @@ function TopVendors({ items, loading, retry, categories = [] }) {
   const vendors = category ? filtered.data?.featuredVendors : items;
   const pending = category ? filtered.loading : loading;
   return (
-    <section className="mp-section max-w-[1320px] my-0 mx-auto py-[64px] px-[5%] [@media(width<=1100px)]:py-[48px] [@media(width<=1100px)]:px-[5%] [@media(width<=767px)]:py-[38px] [@media(width<=767px)]:px-[6%]">
-      <SectionHeader
-        eyebrow="GOOD PEOPLE. UNFORGETTABLE CELEBRATIONS."
-        title="Meet your wedding dream team."
-        description="Explore approved professionals, ranked by their listed rating and review count."
-        link="/vendors"
-        linkText="All vendors"
-      />
-      <div
-        className="mp-filter-tabs flex gap-[8px] flex-wrap mb-[26px] [&.mp-filter-tabs_button]:border [&.mp-filter-tabs_button]:border-[#e1d6cf] [&.mp-filter-tabs_button]:py-[8px] [&.mp-filter-tabs_button]:px-[17px] [&.mp-filter-tabs_button]:text-[11px] [&.mp-filter-tabs_button]:rounded-[30px] [&.mp-filter-tabs_button]:bg-transparent [&.mp-filter-tabs_button]:text-[#8b7670] [&.mp-filter-tabs_button]:min-h-[38px] [&.mp-filter-tabs_button[aria-pressed='true']]:bg-[#8c414e] [&.mp-filter-tabs_button[aria-pressed='true']]:text-white [&.mp-filter-tabs_button[aria-pressed='true']]:border-[#8c414e] [@media(width<=767px)]:gap-[7px] [@media(width<=767px)]:flex-nowrap [@media(width<=767px)]:overflow-x-auto [@media(width<=767px)]:pb-[6px] [@media(width<=767px)]:[&.mp-filter-tabs_button]:whitespace-nowrap [@media(width<=767px)]:[&.mp-filter-tabs_button]:py-[9px] [@media(width<=767px)]:[&.mp-filter-tabs_button]:px-[15px]"
-        role="group"
-        aria-label="Filter vendors by category"
-      >
-        {tabs.map(([name, value]) => (
-          <button
-            key={name}
-            aria-pressed={category === value}
-            onClick={() => setCategory(value)}
-          >
-            {name}
-          </button>
-        ))}
-      </div>
-      {vendors?.length ? (
-        <div className="mp-listing-grid grid grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[23px] [@media(width<=1100px)]:gap-[16px] [@media(width<=767px)]:grid-cols-[1fr] [@media(width<=767px)]:gap-[20px]">
-          {vendors.slice(0, 6).map((item) => (
-            <MarketplaceCard key={item.id} item={item} />
+    <section className="border-t border-[#eee5dd] bg-[#fffdfa]">
+      <div className="mx-auto max-w-[1320px] px-[6%] py-14 sm:px-[5%] lg:py-20">
+        <HomeSectionHeader
+          eyebrow="THE PEOPLE WHO MAKE IT SPECIAL"
+          title={
+            <>
+              Your vision. <em>Your dream team.</em>
+            </>
+          }
+          description="The creatives, the detail lovers, the memory makers. Meet approved wedding professionals and find your perfect fit."
+          link="/vendors"
+          linkText="Meet all vendors"
+        />
+        <div
+          className="mb-8 flex flex-wrap gap-2"
+          role="group"
+          aria-label="Filter vendors by category"
+        >
+          {tabs.map(([name, value]) => (
+            <button
+              key={name}
+              type="button"
+              aria-pressed={category === value}
+              onClick={() => setCategory(value)}
+              className="min-h-11 cursor-pointer rounded-full border border-[#e4d8cf] bg-transparent px-4 py-2.5 text-[11px]! text-[#7d6863] transition-colors hover:border-rose-brand/50 hover:bg-[#f5eeea] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-brand aria-pressed:border-rose-brand aria-pressed:bg-rose-brand aria-pressed:text-white sm:px-5"
+            >
+              {name}
+            </button>
           ))}
         </div>
-      ) : (
-        <CollectionState
-          loading={pending}
-          failed={!vendors}
-          retry={
-            category
-              ? () => {
-                  void filtered.refetch().catch(() => {});
-                }
-              : retry
-          }
-          empty="Your dream team is taking shape."
-        />
-      )}
+        {vendors?.length ? (
+          <HomeListingGrid>
+            {vendors.slice(0, 6).map((item) => (
+              <MarketplaceCard key={item.id} item={item} />
+            ))}
+          </HomeListingGrid>
+        ) : (
+          <CollectionState
+            loading={pending}
+            failed={!vendors}
+            retry={
+              category
+                ? () => {
+                    void filtered.refetch().catch(() => {});
+                  }
+                : retry
+            }
+            empty="Your dream team is taking shape."
+          />
+        )}
+      </div>
     </section>
   );
 }
+
 export default function HomeCollections({ data, loading, retry, part }) {
   if (part === "vendors")
     return (
@@ -89,20 +99,24 @@ export default function HomeCollections({ data, loading, retry, part }) {
       />
     );
   return (
-    <section className="mp-section max-w-[1320px] my-0 mx-auto py-[64px] px-[5%] [@media(width<=1100px)]:py-[48px] [@media(width<=1100px)]:px-[5%] [@media(width<=767px)]:py-[38px] [@media(width<=767px)]:px-[6%]">
-      <SectionHeader
-        eyebrow="BEAUTIFUL THINGS, BROUGHT TOGETHER"
-        title="Complete wedding packages."
-        description="Explore the packages our vendors have put together. Check each one for inclusions and exclusions."
+    <section className="mx-auto max-w-[1320px] px-[6%] py-14 sm:px-[5%] lg:py-20">
+      <HomeSectionHeader
+        eyebrow="A LITTLE MORE, BEAUTIFULLY TOGETHER"
+        title={
+          <>
+            Big-day plans. <em>Thoughtful packages.</em>
+          </>
+        }
+        description="Discover services brought together by our vendors. Explore the details and find a package that suits your celebration."
         link="/packages"
-        linkText="All packages"
+        linkText="Explore packages"
       />
       {data?.featuredPackages?.length ? (
-        <div className="mp-listing-grid grid grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[23px] [@media(width<=1100px)]:gap-[16px] [@media(width<=767px)]:grid-cols-[1fr] [@media(width<=767px)]:gap-[20px]">
+        <HomeListingGrid>
           {data.featuredPackages.map((item) => (
             <PackageCard key={item.id} item={item} />
           ))}
-        </div>
+        </HomeListingGrid>
       ) : (
         <CollectionState
           loading={loading}
@@ -111,6 +125,15 @@ export default function HomeCollections({ data, loading, retry, part }) {
           empty="Thoughtful packages are being prepared."
         />
       )}
+      <div className="mt-6 flex items-start justify-center gap-2.5 rounded-xl border border-[#e8ddd1] bg-[#f2ebe2] px-5 py-4 text-[11px] leading-relaxed text-[#826b60] sm:items-center">
+        <Sparkles
+          size={16}
+          className="mt-0.5 shrink-0 text-[#a47d58] sm:mt-0"
+          aria-hidden="true"
+        />
+        Every celebration is different. Review each package's inclusions and
+        exclusions before choosing.
+      </div>
     </section>
   );
 }

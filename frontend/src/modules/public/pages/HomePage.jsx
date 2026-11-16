@@ -1,13 +1,13 @@
 import { useQuery } from "@apollo/client/react";
 import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Tag } from "lucide-react";
 import { HOME } from "../../../services/public";
 import { useSelectedLocation } from "../../marketplace/location-selection";
 import PageMeta from "../../../components/common/PageMeta";
 import Hero from "../../../components/home/Hero";
 import ServiceCategories from "../../../components/home/ServiceCategories";
-import SectionHeader from "../../../components/common/SectionHeader";
+import { HomeSectionHeader, HomeListingGrid } from "../../../components/home/HomeSection";
 import MarketplaceCard from "../../../components/common/MarketplaceCard";
 import CollectionState from "../../../components/common/CollectionState";
 import HowItWorks from "../../../components/home/HowItWorks";
@@ -46,20 +46,20 @@ export default function HomePage() {
         retry={retry}
         visual
       />
-      <section className="mp-section max-w-[1320px] my-0 mx-auto py-[64px] px-[5%] [@media(width<=1100px)]:py-[48px] [@media(width<=1100px)]:px-[5%] [@media(width<=767px)]:py-[38px] [@media(width<=767px)]:px-[6%] mp-venues-section border-t border-t-[#e8dfd8]">
-        <SectionHeader
-          eyebrow="SET THE SCENE FOR YOUR STORY"
-          title="Beautiful venues for your big day."
-          description="From intimate gatherings to grand celebrations, find a place that feels like yours."
+      <section className="mx-auto max-w-[1320px] border-t border-[#e8dfd8] px-[6%] py-14 sm:px-[5%] lg:py-20">
+        <HomeSectionHeader
+          eyebrow="EVERY LOVE STORY DESERVES A BEAUTIFUL SETTING"
+          title={<>Somewhere special. <em>Something unforgettable.</em></>}
+          description="An intimate garden, a grand ballroom, a little magic under the stars. Find a place that feels like your story."
           link="/venues"
           linkText="Discover venues"
         />
         {data?.featuredVenues?.length ? (
-          <div className="mp-listing-grid grid grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[23px] [@media(width<=1100px)]:gap-[16px] [@media(width<=767px)]:grid-cols-[1fr] [@media(width<=767px)]:gap-[20px]">
+          <HomeListingGrid>
             {data.featuredVenues.map((item) => (
               <MarketplaceCard key={item.id} item={item} kind="venues" />
             ))}
-          </div>
+          </HomeListingGrid>
         ) : (
           <CollectionState
             loading={loading}
@@ -96,23 +96,27 @@ export default function HomePage() {
         />
       </Suspense>
       {data?.activeOffers?.length > 0 && (
-        <section className="mp-section max-w-[1320px] my-0 mx-auto py-[64px] px-[5%] [@media(width<=1100px)]:py-[48px] [@media(width<=1100px)]:px-[5%] [@media(width<=767px)]:py-[38px] [@media(width<=767px)]:px-[6%]">
-          <SectionHeader
+        <section className="mx-auto max-w-[1320px] px-[6%] pt-14 sm:px-[5%] lg:pt-20">
+          <HomeSectionHeader
             eyebrow="A LITTLE MORE TO CELEBRATE"
-            title="Lovely offers, while they last."
+            title={<>A lovely day. <em>A little extra delight.</em></>}
+            description="Explore current offers from our wedding community."
+            link="/offers"
+            linkText="View all offers"
           />
-          <div className="mp-offer-grid grid grid-cols-[repeat(3,_1fr)] gap-[20px] [&.mp-offer-grid_article]:border [&.mp-offer-grid_article]:border-[#e0cfc0] [&.mp-offer-grid_article]:bg-[#f1e5d6] [&.mp-offer-grid_article]:p-[25px] [&.mp-offer-grid_article]:flex [&.mp-offer-grid_article]:flex-col [&.mp-offer-grid_article]:gap-[10px] [&.mp-offer-grid_h3]:text-[24px] [&.mp-offer-grid_h3]:m-0 [&.mp-offer-grid_small]:text-[10px] [&.mp-offer-grid_small]:text-[#887164] [@media(width<=767px)]:grid-cols-[1fr]">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {data.activeOffers.map((offer) => (
-              <article key={offer.id}>
-                <span className="mn-kicker text-[9px] font-semibold tracking-[2px] text-[#9a6964] inline-flex items-center gap-[9px] max-[768px]:text-[8px] max-[768px]:tracking-[1.5px]">
+              <article key={offer.id} className="flex flex-col items-start gap-4 rounded-2xl border border-[#e0cfc0] bg-[#f3e9de] p-7">
+                <span className="inline-flex items-center gap-2 rounded-full bg-[#fffdfa] px-3 py-2 text-[10px] font-semibold tracking-wider text-rose-brand">
+                  <Tag size={13} aria-hidden="true" />
                   {offer.discountType === "Percentage"
                     ? `${offer.discountValue}% OFF`
                     : "SPECIAL OFFER"}
                 </span>
-                <h3>{offer.name}</h3>
+                <h3 className="text-[24px]!">{offer.name}</h3>
                 <p>{offer.description}</p>
-                <small>Offer ends {offer.endDate}</small>
-                <Link to="/offers" className="mn-text-link inline-flex items-center gap-[8px] text-[#8c414e] text-[12px]">
+                <small className="mt-auto text-[10px] text-[#887164]">Offer ends {offer.endDate}</small>
+                <Link to="/offers" className="inline-flex min-h-11 items-center gap-3 text-xs font-medium text-rose-brand hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-brand">
                   Explore offers <ArrowUpRight size={14} />
                 </Link>
               </article>
