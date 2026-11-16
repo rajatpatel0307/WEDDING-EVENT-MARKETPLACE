@@ -108,7 +108,12 @@ export function safeImage(value) {
   if (/^\/(?!\/)/.test(value)) return value;
   try {
     const url = new URL(value);
-    return url.protocol === "https:" ? url.href : null;
+    const localMedia =
+      url.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) &&
+      /^\/api\/media\/[a-f\d-]{36}\/content$/i.test(url.pathname) &&
+      !url.username && !url.password;
+    return url.protocol === "https:" || localMedia ? url.href : null;
   } catch {
     return null;
   }
