@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 
 import AdminHeader from "./AdminHeader.jsx";
@@ -21,6 +21,8 @@ const getSavedSidebarState = () => {
 };
 
 export default function AdminLayout() {
+  const { pathname } = useLocation();
+  const compactServices = ["/admin/services", "/admin/service-items", "/admin/service-packages"].includes(pathname.replace(/\/$/, ""));
   const [collapsed, setCollapsed] = useState(
     getSavedSidebarState
   );
@@ -102,7 +104,7 @@ export default function AdminLayout() {
         {/* Dynamic Admin Pages */}
         <main
           id="main-content"
-          className="ad-content [padding:30px_32px] [@media(width<=767px)]:[padding:23px_16px] [@media(767px<width<=1200px)]:[padding:25px_22px] [@media(width>=1500px)]:[padding:35px_42px] max-w-[1700px] [margin:0_auto] flex flex-col gap-[24px] [@media(width<=767px)]:gap-[20px] [@media(width>=1500px)]:gap-[26px]"
+          className={`ad-content flex min-w-0 flex-col gap-5 sm:gap-6 ${compactServices ? "w-full max-w-none px-3 py-5 sm:px-4 sm:py-6" : "mx-auto max-w-[1700px] px-8 py-[30px] [@media(width<=767px)]:px-4 [@media(width<=767px)]:py-[23px] [@media(767px<width<=1200px)]:px-[22px] [@media(767px<width<=1200px)]:py-[25px] min-[1500px]:px-[42px] min-[1500px]:py-[35px]"}`}
         >
           <Outlet />
         </main>

@@ -167,13 +167,13 @@ function Filters({ params, apply, close }) {
         {metadata.error && <p role="alert">{metadata.error.message}</p>}
         <footer className="flex justify-between gap-2">
           <button
-            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#dce6e1] bg-white px-3.5 py-2 text-xs font-medium text-[#426057] transition-colors hover:border-[#abc5ba] hover:bg-[#f1f7f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-wait disabled:opacity-50"
             type="button"
             onClick={() => apply({ q: values.q || "" })}
           >
             Clear filters
           </button>
-          <button className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]">Apply filters</button>
+          <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#176b60] bg-[#176b60] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#11594f] hover:text-white! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-wait disabled:opacity-50">Apply filters</button>
         </footer>
       </form>
     </AdminDialog>
@@ -253,36 +253,36 @@ export default function ServicesManagementPage({ kind }) {
           ? "Service Packages"
           : "Services Management";
   return (
-    <div className="asm-page grid gap-[24px] text-[#253f3a] [&_select]:[padding:9px_12px] [&_select]:text-[12px] [&_select]:[border-top-width:1px] [&_select]:[border-top-style:solid] [&_select]:[border-top-color:#dce5df] [&_select]:[border-right-width:1px] [&_select]:[border-right-style:solid] [&_select]:[border-right-color:#dce5df] [&_select]:[border-bottom-width:1px] [&_select]:[border-bottom-style:solid] [&_select]:[border-bottom-color:#dce5df] [&_select]:[border-left-width:1px] [&_select]:[border-left-style:solid] [&_select]:[border-left-color:#dce5df] [&_select]:rounded-[7px] [&_select]:[background:#fff]">
-      <header className="asm-heading flex items-center [@media(width<=1200px)]:items-start justify-between gap-[24px] [@media(width<=767px)]:gap-[18px] [&_h1]:text-[30px] [@media(width<=767px)]:[&_h1]:text-[26px] [&_h1]:leading-[1.2] [&_h1]:[margin:8px_0_10px] [&_h1]:font-[650] [&_h1]:tracking-[-0.7px] [&_p]:text-[14px] [&_p]:text-[#7b8a83] [@media(width<=767px)]:flex-col">
+    <div className="asm-page grid w-full min-w-0 gap-5 text-[#253f3a] sm:gap-6 [&_select]:min-h-10 [&_select]:rounded-lg [&_select]:border [&_select]:border-[#dce6e1] [&_select]:bg-white [&_select]:px-3 [&_select]:py-2 [&_select]:text-xs">
+      <header className="flex flex-col justify-between gap-4 border-b border-[#e0e8e3] pb-5 sm:flex-row sm:items-center">
         <div>
-          <span className="ad-eyebrow text-[8px] [@media(width<=767px)]:text-[7px] tracking-[1.7px] text-[#7d9183] flex items-center gap-[6px] [&_>_span]:w-[5px] [&_>_span]:h-[5px] [&_>_span]:[background:#bfa471] [&_>_span]:rounded-[50%]">CATALOG OPERATIONS</span>
-          <h1>{title}</h1>
-          <p>
+          <span className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.18em] text-[#658279]"><span className="size-1.5 rounded-full bg-[#176b60]" />CATALOG OPERATIONS</span>
+          <h1 className="my-2! text-2xl! font-semibold! tracking-tight sm:text-[28px]!">{title}</h1>
+          <p className="text-[13px]! leading-relaxed text-[#6b7f76]!">
             {kind
               ? `Inspect and manage ${kind} across every vendor service.`
               : "Manage, review and monitor all services listed by vendors."}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {!kind && (
             <>
               <button
-                className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#dce6e1] bg-white px-3.5 py-2 text-xs font-medium text-[#426057] transition-colors hover:border-[#abc5ba] hover:bg-[#f1f7f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-wait disabled:opacity-50"
                 disabled={exporting}
                 onClick={exportRows}
               >
                 <Download size={16} />
                 {exporting ? "Exporting…" : "Export"}
               </button>
-              <Link className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" to="/admin/services/new">
+              <Link className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#176b60] bg-[#176b60] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#11594f] hover:text-white! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-wait disabled:opacity-50" to="/admin/services/new">
                 <Plus size={17} />
                 Add Service
               </Link>
             </>
           )}
           {kind && (
-            <Link className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" to="/admin/services">
+            <Link className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#176b60] bg-[#176b60] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#11594f] hover:text-white! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-wait disabled:opacity-50" to="/admin/services">
               Choose a service to manage
             </Link>
           )}
@@ -290,24 +290,28 @@ export default function ServicesManagementPage({ kind }) {
       </header>
       {!kind && (
         <>
-          <div className="asm-stats grid grid-cols-[repeat(4,minmax(0,1fr))] gap-[16px] [@media(width<=767px)]:grid-cols-[repeat(2,minmax(0,1fr))] [@media(width<=767px)]:gap-[10px] [@media(767px<width<=1200px)]:grid-cols-[repeat(3,minmax(0,1fr))] [@media(767px<width<=1200px)]:gap-[12px] [@media(width>=1500px)]:gap-[20px]" aria-label="Service statistics">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-5" aria-label="Service statistics" aria-busy={stats.loading || undefined}>
             {statCards.map(([key, label, Icon]) => {
               const featured = key === "revenue";
               return (
-                <article key={key} className={`ad-panel ad-kpi min-w-0 overflow-hidden rounded-[12px] border px-[19px] py-[17px] shadow-[0_3px_8px_#263f2d02] transition-[box-shadow,transform] duration-200 hover:-translate-y-[2px] hover:shadow-[0_8px_20px_#243f3210] [@media(width<=1200px)]:p-[15px] [@media(width>=1500px)]:px-[23px] [@media(width>=1500px)]:py-[21px] ${featured ? "ad-kpi-featured border-[#176b60] bg-[#176b60] text-white" : "border-[#e5ebe6] bg-white text-[#2e4d40]"}`}>
-                  <div className={`ad-kpi-top flex min-h-[31px] items-center justify-between gap-[5px] text-[10px] [@media(width<=1200px)]:text-[9px] ${featured ? "text-[#abd2c3]" : "text-[#859289]"}`}>
-                    <span>{label}</span>
-                    <span className={`ad-kpi-icon grid size-[31px] shrink-0 place-items-center rounded-[8px] [@media(width<=767px)]:size-[28px] ${featured ? "bg-white/[0.09] text-[#c5e2d3]" : key === "pending" ? "bg-[#f9f5ec] text-[#ac8f59]" : "bg-[#f0f5ef] text-[#5e8975]"}`}>
-                      <Icon size={18} aria-hidden="true" />
+                <article
+                  key={key}
+                  className={`min-w-0 rounded-xl border p-4 transition-shadow hover:shadow-md ${featured ? "col-span-2 flex flex-col justify-between border-[#176b60] bg-[#176b60] text-white sm:col-span-4 xl:col-span-1 xl:col-start-5 xl:row-span-2 xl:row-start-1 xl:p-5" : "border-[#e0e8e3] bg-white shadow-sm"}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className={`pt-1 text-xs font-medium leading-5 ${featured ? "text-teal-50" : "text-[#63796e]"}`}>{label}</span>
+                    <span className={`grid size-8 shrink-0 place-items-center rounded-lg ${featured ? "bg-white/15 text-white" : key === "pending" ? "bg-amber-50 text-amber-600" : key === "rejected" || key === "suspended" ? "bg-rose-50 text-rose-500" : "bg-[#eef6f2] text-[#438572]"}`}>
+                      <Icon size={17} aria-hidden="true" />
                     </span>
                   </div>
-                  <strong className="mt-[7px] block text-[28px] leading-[1.3] font-semibold tracking-[-0.8px] tabular-nums [overflow-wrap:anywhere] [@media(width<=767px)]:text-[26px] [@media(767px<width<=1200px)]:text-[25px] [@media(width>=1500px)]:text-[32px]">
+                  <strong className={`mt-3 block font-semibold tracking-tight tabular-nums [overflow-wrap:anywhere] ${featured ? "text-3xl xl:mt-8" : "text-[28px] leading-none text-[#253f3a]"}`}>
                     {stats.data
                       ? key === "revenue"
                         ? money(stats.data[key])
                         : number(stats.data[key])
-                      : "?"}
+                      : "—"}
                   </strong>
+                  {featured && <span className="mt-3 text-xs leading-5 text-teal-100">Revenue across all services</span>}
                 </article>
               );
             })}
@@ -318,7 +322,7 @@ export default function ServicesManagementPage({ kind }) {
               <button onClick={() => setRevision((v) => v + 1)}>Retry</button>
             </p>
           )}
-          <nav className="asm-status-tabs flex gap-[7px] [overflow-x:auto] pb-[3px] [&_button]:text-[13px] [&_button]:[padding:10px_16px] [&_button]:rounded-[8px] [&_button]:whitespace-nowrap [&_button]:text-[#74817c] [&_button[aria-current]]:[background:#e5efea] [&_button[aria-current]]:text-[#185b4d] [&_button[aria-current]]:font-[650]" aria-label="Service status">
+          <nav className="flex min-w-0 gap-1 overflow-x-auto border-b border-[#dce6df] pb-2 [&_button]:min-h-10 [&_button]:shrink-0 [&_button]:whitespace-nowrap [&_button]:rounded-lg [&_button]:px-3.5 [&_button]:py-2 [&_button]:text-xs [&_button]:text-[#667d71] [&_button]:transition-colors [&_button:hover]:bg-[#edf4ef] [&_button[aria-current]]:bg-[#176b60] [&_button[aria-current]]:text-white [&_button[aria-current]]:font-semibold" aria-label="Service status">
             {[
               ["", "All Services"],
               ["Pending", "Pending Approval"],
@@ -348,8 +352,12 @@ export default function ServicesManagementPage({ kind }) {
           </nav>
         </>
       )}
-      <section className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
-        <div className="asm-toolbar flex justify-between gap-[14px] items-center [@media(width<=767px)]:items-stretch flex-wrap mb-[22px]">
+      <section className="min-w-0 rounded-xl border border-[#e0e8e2] bg-white p-3 shadow-sm sm:p-4">
+        <div className="mb-4 flex items-center gap-2 border-b border-[#edf1ed] pb-3">
+          <h2 className="text-sm! font-semibold!">{kind ? title : "Service directory"}</h2>
+          {data && <span className="rounded-md bg-[#edf4f0] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#4c7160]">{number(data.total)}</span>}
+        </div>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -359,12 +367,12 @@ export default function ServicesManagementPage({ kind }) {
                 page: 1,
               });
             }}
-            className="asm-search flex min-w-[260px] flex-1 items-center gap-[10px] [@media(width<=767px)]:min-w-0 [@media(width<=767px)]:basis-full"
+            className="flex min-w-0 basis-full items-center gap-2 xl:basis-auto xl:flex-1"
           >
-            <div className="flex min-w-0 flex-1 items-center gap-[10px] rounded-[9px] border-[1.5px] border-[#afcbb9] bg-[#f4f9f5] px-[14px] shadow-[0_1px_3px_#24483d04] transition-colors hover:border-[#7fa68e] focus-within:border-[#176b60] focus-within:bg-white focus-within:ring-[3px] focus-within:ring-[#176b6014]">
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-[#cbdcd2] bg-[#f8faf8] px-3 transition-colors focus-within:border-[#176b60] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#176b60]/10">
               <Search size={18} className="shrink-0 text-[#6b947c]" aria-hidden="true" />
               <input
-                className="min-w-0 flex-1 border-0! bg-transparent! px-0! py-[12px]! text-[13px] text-[#345746] outline-none! shadow-none! ring-0! placeholder:text-[#8fa397] [@media(width<=767px)]:text-[12px]"
+                className="min-w-0 flex-1 border-0! bg-transparent! px-0! py-[10px]! text-[13px] text-[#345746] outline-none! shadow-none! ring-0! placeholder:text-[#8fa397] [@media(width<=767px)]:text-[12px]"
                 key={params.get("q")}
                 name="q"
                 defaultValue={params.get("q") || ""}
@@ -377,12 +385,12 @@ export default function ServicesManagementPage({ kind }) {
                 }
               />
             </div>
-            <button className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]">Search</button>
+            <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#dce6e1] bg-white px-3.5 py-2 text-xs font-medium text-[#426057] transition-colors hover:border-[#abc5ba] hover:bg-[#f1f7f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-wait disabled:opacity-50">Search</button>
           </form>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {!kind && (
               <>
-                <button className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" onClick={() => setFilters(true)}>
+                <button className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#dce6e1] bg-white px-3.5 py-2 text-xs font-medium text-[#426057] transition-colors hover:border-[#abc5ba] hover:bg-[#f1f7f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-wait disabled:opacity-50" onClick={() => setFilters(true)}>
                   <SlidersHorizontal size={16} />
                   Filters
                 </button>
@@ -415,7 +423,7 @@ export default function ServicesManagementPage({ kind }) {
                   ))}
                 </select>
                 <button
-                  className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#dce6e1] bg-white px-3.5 py-2 text-xs font-medium text-[#426057] transition-colors hover:border-[#abc5ba] hover:bg-[#f1f7f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-wait disabled:opacity-50"
                   aria-label="Toggle sort direction"
                   onClick={() =>
                     update({
@@ -495,7 +503,7 @@ export default function ServicesManagementPage({ kind }) {
                         {kind === "packages" && <td className="min-w-[240px]"><PackageVisibility value={row} /></td>}
                         <td>
                           <Link
-                            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+                            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#dce6e1] bg-white px-3.5 py-2 text-xs font-medium text-[#426057] transition-colors hover:border-[#abc5ba] hover:bg-[#f1f7f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-wait disabled:opacity-50"
                             to={`/admin/services/${row.serviceId}?tab=${kind === "items" ? "Items" : "Packages"}`}
                           >
                             View & manage
@@ -513,9 +521,9 @@ export default function ServicesManagementPage({ kind }) {
             ) : (
               <>
                 <div className="asm-table-wrap asm-desktop w-full min-w-0 [@media(width<=1100px)]:hidden">
-                  <table className="asm-table w-full table-fixed border-collapse text-center text-[11px] [&_th]:font-semibold [&_th]:text-[9px] [&_th]:tracking-[0.3px] [&_th]:uppercase [&_th]:text-center [&_th]:[padding:10px_6px] [&_th]:[background:#f6f9f6] [&_th]:text-[#7b8b80] [&_th]:border-b [&_th]:border-[#e5ebe6] [&_th]:[overflow-wrap:normal] [&_td]:border-b [&_td]:border-[#edf1ed] [&_td]:[padding:12px_8px] [&_td]:align-middle [&_td]:[overflow-wrap:anywhere] [&_tbody_tr:hover]:bg-[#fbfcfa]">
+                  <table className="asm-table w-full table-fixed border-collapse text-center text-[11px] [&_th]:font-semibold [&_th]:text-[10px] [&_th]:tracking-[0.3px] [&_th]:uppercase [&_th]:text-center [&_th]:[padding:10px_6px] [&_th]:[background:#f6f9f6] [&_th]:text-[#7b8b80] [&_th]:border-b [&_th]:border-[#e5ebe6] [&_th]:[overflow-wrap:normal] [&_td]:border-b [&_td]:border-[#edf1ed] [&_td]:px-2 [&_td]:py-4 [&_td]:align-middle [&_td]:[overflow-wrap:anywhere] [&_tbody_tr:hover]:bg-[#fbfcfa]">
                     <colgroup>
-                      {[19, 10, 12, 8, 9, 10, 8, 7, 17].map((width, i) => <col key={i} style={{ width: `${width}%` }} />)}
+                      {["w-[21%]", "w-[10%]", "w-[10%]", "w-[9%]", "w-[9%]", "w-[11%]", "w-[8%]", "w-[6%]", "w-[16%]"].map((width, i) => <col key={i} className={width} />)}
                     </colgroup>
                     <thead>
                       <tr>
@@ -539,7 +547,7 @@ export default function ServicesManagementPage({ kind }) {
                         <tr key={row.id}>
                           <td>
                             <Link
-                              className="asm-identity flex min-w-0 items-center justify-center gap-[8px] text-left [&_img]:size-[40px] [&_img]:shrink-0 [&_img]:rounded-[7px] [&_img]:object-cover [&_strong]:block [&_strong]:text-[12px] [&_strong]:font-semibold [&_strong]:leading-[1.5] [&_small]:mt-[3px] [&_small]:block [&_small]:overflow-hidden [&_small]:text-ellipsis [&_small]:whitespace-nowrap [&_small]:text-[10px] [&_small]:text-[#88938c]"
+                              className="asm-identity flex min-w-0 items-center justify-start gap-[8px] text-left [&_img]:size-[40px] [&_img]:shrink-0 [&_img]:rounded-[7px] [&_img]:object-cover [&_strong]:block [&_strong]:text-[12px] [&_strong]:font-semibold [&_strong]:leading-[1.5] [&_small]:mt-[3px] [&_small]:block [&_small]:overflow-hidden [&_small]:text-ellipsis [&_small]:whitespace-nowrap [&_small]:text-[10px] [&_small]:text-[#88938c]"
                               to={`/admin/services/${row.id}`}
                             >
                               {row.image ? (
@@ -659,14 +667,14 @@ export default function ServicesManagementPage({ kind }) {
             {error && <p role="alert">{error}</p>}
             <div className="flex justify-end gap-2">
               <button
-                className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#dce6e1] bg-white px-3.5 py-2 text-xs font-medium text-[#426057] transition-colors hover:border-[#abc5ba] hover:bg-[#f1f7f4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-wait disabled:opacity-50"
                 disabled={busy}
                 onClick={() => setDialog(null)}
               >
                 Cancel
               </button>
               <button
-                className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#176b60] bg-[#176b60] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#11594f] hover:text-white! focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#176b60] disabled:cursor-wait disabled:opacity-50"
                 disabled={busy}
                 onClick={confirm}
               >
