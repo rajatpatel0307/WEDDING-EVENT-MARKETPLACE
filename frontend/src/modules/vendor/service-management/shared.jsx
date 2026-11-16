@@ -17,6 +17,7 @@ import {
 import { Badge, Modal, useVendorData } from "../components/WorkspaceUI";
 import { save, vendorRequest } from "../services/workspace.api";
 import { useAuth } from "../../../context/AuthContext";
+import ServiceActionMenu from "./ServiceActionMenu";
 
 export const steps = [
   "Basic information",
@@ -272,7 +273,7 @@ export function ServiceActions({ service, onChange, full = false }) {
   };
   return (
     <>
-      <div className="
+      {!full ? <ServiceActionMenu service={service} onAction={setConfirm} /> : <div className="
         sm-row-actions flex items-center gap-[5px] flex-wrap [&_a]:[border-top:1px_solid_#e3e9df]
         [&_a]:[border-right:1px_solid_#e3e9df] [&_a]:[border-bottom:1px_solid_#e3e9df]
         [&_a]:[border-left:1px_solid_#e3e9df] [&_a]:inline-flex [&_a]:items-center [&_a]:justify-center
@@ -335,25 +336,6 @@ export function ServiceActions({ service, onChange, full = false }) {
             </Link>
           </>
         )}
-        {!full && (
-          <select
-            aria-label={`Manage ${service.name}`}
-            value=""
-            onChange={(e) => navigate(`${base}/${e.target.value}`)}
-          >
-            <option value="" disabled>
-              Manage…
-            </option>
-            {a.edit && (
-              <>
-                <option value="edit?step=4">Manage Images</option>
-                <option value="edit?step=3">Manage Items</option>
-                <option value="packages">Manage Packages</option>
-              </>
-            )}
-            <option value="availability">Availability</option>
-          </select>
-        )}
         {a.activate && (
           <button
             onClick={() => setConfirm("active")}
@@ -382,7 +364,7 @@ export function ServiceActions({ service, onChange, full = false }) {
             {full && "Delete"}
           </button>
         )}
-      </div>
+      </div>}
       {confirm && (
         <Confirm
           title={`${confirm === "active" ? (service.active ? "Deactivate" : "Activate") : confirm[0].toUpperCase() + confirm.slice(1)} service`}

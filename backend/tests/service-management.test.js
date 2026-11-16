@@ -391,6 +391,43 @@ test("list queries are bounded, parameterized, stably sorted and scoped to the v
   assert.equal(paged.arguments[1].replacements.search, "%garden[_][%]'%");
   assert.ok(!paged.arguments[0].includes("Jaipur"));
 });
+test("each approval tab filters rows and totals independently while tab counts cover the vendor collection", async (t) => {
+  const counts = [
+    { status: "Draft", total: 3 },
+    { status: "Pending", total: 2 },
+    { status: "UnderReview", total: 1 },
+    { status: "Approved", total: 5 },
+    { status: "Rejected", total: 1 },
+    { status: "Suspended", total: 1 },
+  ];
+  const query = setup(t, null, (sql, options) => {
+    if (sql.includes("GROUP BY ApprovalStatus")) return counts;
+    if (sql.includes("COUNT_BIG(*) AS total ")) return [{ total: 1 }];
+    if (sql.includes("AS totalServices")) return [{ totalServices: 13 }];
+    if (sql.startsWith("SELECT AVG")) return [{}];
+    if (sql.includes("FETCH NEXT")) return [{ id: serviceId, status: options.replacements.approval, active: false }];
+    return [];
+  });
+  for (const { status } of counts) {
+    const result = await services.list({ approval: status, active: "false", page: 1 }, ctx);
+    assert.equal(result.rows[0].status, status);
+    assert.equal(result.total, 1);
+    assert.deepEqual(result.approvalCounts, Object.fromEntries(counts.map((row) => [row.status, row.total])));
+  }
+  const filtered = query.mock.calls.filter((call) => call.arguments[0].includes("FETCH NEXT") || call.arguments[0].startsWith("SELECT COUNT_BIG(*) AS total "));
+  assert.equal(filtered.length, 12);
+  for (const call of filtered) {
+    assert.match(call.arguments[0], /s\.ApprovalStatus=:approval/);
+    assert.match(call.arguments[0], /s\.IsActive=:isActive/);
+    assert.equal(call.arguments[1].replacements.id, vendorId);
+    assert.equal(call.arguments[1].replacements.isActive, 0);
+  }
+  for (const call of query.mock.calls.filter((call) => call.arguments[0].includes("GROUP BY ApprovalStatus"))) {
+    assert.match(call.arguments[0], /WHERE VendorId=:id/);
+    assert.equal(call.arguments[1].replacements.id, vendorId);
+  }
+});
+
 test("a booked date cannot be removed or overwritten", async (t) => {
   const query = setup(t, record(), (sql) =>
     sql.includes("SELECT * FROM dbo.VendorAvailability")

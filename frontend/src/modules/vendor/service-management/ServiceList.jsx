@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   BriefcaseBusiness,
   CheckCircle2,
@@ -8,11 +8,10 @@ import {
   Clock3,
   ShieldCheck,
   XCircle,
-  CalendarCheck,
   Star,
   Search,
   SlidersHorizontal,
-  ArrowUpRight,
+  X,
   Sparkles,
   Download,
   ShieldBan,
@@ -24,39 +23,25 @@ import {
   useVendorData,
 } from "../components/WorkspaceUI";
 import {
-  money,
-  date,
   vendorRequest,
   download,
 } from "../services/workspace.api";
-import { AddButton, Status, ServiceActions, Notice } from "./shared";
-
-const statIcons = [
-  BriefcaseBusiness,
-  CheckCircle2,
-  FilePenLine,
-  Clock3,
-  ShieldCheck,
-  XCircle,
-  ShieldBan,
-  CalendarCheck,
-  Star,
-];
+import { AddButton, Notice } from "./shared";
+import ServiceCollection, { approvalViews } from "./ServiceCollection";
 
 const statsConfig = [
-  ["totalServices", "Total Services"],
-  ["activeServices", "Active Services"],
-  ["draftServices", "Draft Services"],
-  ["pendingApproval", "Pending Approval"],
-  ["approvedServices", "Approved Services"],
-  ["rejectedServices", "Rejected Services"],
-  ["suspendedServices", "Suspended Services"],
-  ["totalBookings", "Total Bookings"],
-  ["averageRating", "Average Rating"],
+  ["totalServices", "Total Services", "Your complete service collection", BriefcaseBusiness, "text-[#6f8d60]"],
+  ["activeServices", "Active Services", "Approved and accepting bookings", CheckCircle2, "text-[#6f967c]"],
+  ["draftServices", "Draft Services", "Listings ready for you to finish", FilePenLine, "text-[#8a97a4]"],
+  ["pendingApproval", "Pending Approval", "Awaiting approval or under review", Clock3, "text-[#bea15f]"],
+  ["approvedServices", "Approved Services", "Reviewed and approved by the team", ShieldCheck, "text-[#6f967c]"],
+  ["rejectedServices", "Rejected Services", "Check feedback before resubmitting", XCircle, "text-[#bb8479]"],
+  ["suspendedServices", "Suspended Services", "Currently unavailable to customers", ShieldBan, "text-[#a18aaf]"],
+  ["averageRating", "Average Rating", "From published customer reviews", Star, "text-[#bea15f]"],
 ];
 
-const approvalTabs = [
-  ["", "All Services"],
+const approvalOptions = [
+  ["", "All statuses"],
   ["Draft", "Drafts"],
   ["Pending", "Pending Approval"],
   ["UnderReview", "Admin Review"],
@@ -139,6 +124,25 @@ export default function ServiceList() {
   const page = Number(params.get("page") || 1);
   const pageSize = Number(params.get("pageSize") || 12);
   const category = Number(params.get("category") || 0);
+  const approval = params.get("approval") || "";
+  const view = approvalViews[approval] || approvalViews[""];
+  const filterKeys = ["q", "category", "subcategory", "active", "approval", "minPrice", "maxPrice", "location", "rating", "from", "to"];
+  const activeFilters = filterKeys.filter((key) => params.get(key));
+  const hasFilters = activeFilters.length > 0;
+  const hasRefinements = activeFilters.some((key) => key !== "approval");
+  const clearFilters = () => {
+    setQuery("");
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      filterKeys.forEach((key) => next.delete(key));
+      next.set("page", "1");
+      return next;
+    });
+  };
+  const changed = (result) => {
+    setNotice(result.message);
+    setVersion((v) => v + 1);
+  };
 
   const select = (key, label, options) => (
     <label className="
@@ -171,7 +175,7 @@ export default function ServiceList() {
 
   return (
     <div className="
-      [--sm-accent:#2d604b] [--sm-border:#e2e8df] max-w-[1700px] m-[auto]
+      [--sm-accent:#2d604b] [--sm-border:#e2e8df] w-full min-w-0 max-w-none m-0
       [&_button:disabled]:opacity-[0.45] [&_button:disabled]:cursor-not-allowed
       [&_:focus-visible]:[outline:2px_solid_#397455] [&_:focus-visible]:[outline-offset:3px]
       animate-fade-in
@@ -221,14 +225,8 @@ export default function ServiceList() {
         </div>
       )}
 
-      {/* Enhanced Stats Row with Subtle Glow & Hover Lift */}
-      <div className="
-        grid grid-cols-[repeat(4,_minmax(0,_1fr))] gap-[14px] [margin:24px_0]
-        service-wide:grid-cols-[repeat(9,_minmax(0,_1fr))]
-        service-mobile:grid-cols-[repeat(2,_minmax(0,_1fr))] service-mobile:gap-[10px]
-      ">
-        {statsConfig.map(([key, label], i) => {
-          const Icon = statIcons[i];
+      <section aria-label="Service overview" className="my-6 grid grid-cols-2 gap-[13px] [font-family:Inter,_'Segoe_UI',_Arial,_sans-serif] tracking-normal lg:grid-cols-4 service-mobile:gap-2.5">
+        {statsConfig.map(([key, label, description, Icon, iconTone]) => {
           const rawValue = data?.stats?.[key];
           const formattedValue =
             loading || error
@@ -240,87 +238,33 @@ export default function ServiceList() {
                 : Number(rawValue || 0).toLocaleString("en-IN");
 
           return (
-            <div
-              className="
-                [background:#fff] [border-top:1px_solid_var(--sm-border)] [border-right:1px_solid_var(--sm-border)]
-                [border-bottom:1px_solid_var(--sm-border)] [border-left:1px_solid_var(--sm-border)] rounded-[12px]
-                p-[20px] flex items-center gap-[15px] [&_div]:flex [&_div]:flex-col [&_div]:gap-[5px]
-                [&_div_>_span]:text-[11px] [&_div_>_span]:text-[#7c8b7e] [&_strong]:text-[25px]
-                [&_strong]:leading-[1.3] [&_strong]:font-semibold [&_strong]:tabular-nums
-                service-wide:[padding:18px_13px] service-wide:gap-[10px] service-wide:[&_strong]:text-[23px]
-                service-mobile:p-[14px] service-mobile:gap-[10px] service-mobile:[&_strong]:text-[22px]
-                service-mobile:[&_div_>_span]:text-[10px] transition-all duration-200 hover:-translate-y-0.5
-              "
+            <article
+              aria-label={label}
+              className={`flex min-w-0 flex-col rounded-[10px] border px-5 py-[18px] shadow-[0_2px_6px_#29402c03] transition-[border-color,box-shadow] duration-200 hover:border-[#adc29b] hover:shadow-[0_4px_14px_#29402c08] service-mobile:px-3.5 service-mobile:py-4 ${key === "totalServices" ? "border-[#dde7d3] bg-[#edf3e7]" : "border-[#e4eadf] bg-white"}`}
               key={key}
             >
-              <span className={`w-[42px] h-[42px] rounded-[12px] inline-flex items-center justify-center text-[#42775b]
-                [background:#edf4eb] [&.tone-1]:text-[#658078] [&.tone-1]:[background:#eff4f1]
-                [&.tone-2]:text-[#a68b55] [&.tone-2]:[background:#faf5e9] [&.tone-3]:text-[#9082a3]
-                [&.tone-3]:[background:#f3f0f7] service-wide:w-[34px] service-wide:h-[34px]
-                service-mobile:w-[32px] service-mobile:h-[32px] tone-${i % 4}`}>
-                <Icon size={19} />
-              </span>
-              <div>
-                <span>{label}</span>
-                <strong>{formattedValue}</strong>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="[font-family:inherit] text-[13px] font-semibold leading-5 tracking-normal text-[#526b47]">{label}</h2>
+                <Icon size={19} strokeWidth={1.7} aria-hidden="true" className={`shrink-0 ${iconTone}`} />
               </div>
-            </div>
+              <div className="my-2 flex min-h-9 items-baseline gap-1.5">
+                <strong className="break-words text-[30px] font-semibold leading-tight tracking-normal text-[#476440] tabular-nums service-mobile:text-[26px]">{formattedValue}</strong>
+                {key === "averageRating" && !loading && !error && rawValue != null && <span className="text-[11px] text-[#98a48d]">/ 5</span>}
+              </div>
+              <p className="mt-auto text-[11px] font-normal leading-relaxed tracking-normal text-[#75856c]">{description}</p>
+            </article>
           );
         })}
-      </div>
+      </section>
 
       <section className="
         vw-panel [background:#fff] [border-top:1px_solid_#e4eade] [border-right:1px_solid_#e4eade]
         [border-bottom:1px_solid_#e4eade] [border-left:1px_solid_#e4eade] rounded-[10px] min-w-[0]
-        overflow-hidden overflow-hidden
+        overflow-hidden shadow-[0_3px_20px_#29402c04]
       ">
-        <div className="
-          flex justify-between items-center [padding:24px_25px_12px] [&_h2]:text-[17px]
-          [&_h2_span]:[font:11px_Inter,_Arial] [&_h2_span]:ml-[8px] [&_h2_span]:[background:#edf3e9]
-          [&_h2_span]:[border-top:1px_solid_#dde7d9] [&_h2_span]:[border-right:1px_solid_#dde7d9]
-          [&_h2_span]:[border-bottom:1px_solid_#dde7d9] [&_h2_span]:[border-left:1px_solid_#dde7d9]
-          [&_h2_span]:[padding:3px_8px] [&_h2_span]:rounded-[20px] [&_p]:[margin:5px_0]
-          [&_>_svg]:text-[#b4c2b0] service-mobile:[padding:20px_15px_5px]
-        ">
-          <div>
-            <h2>
-              Your service collection <span>{data?.total || 0}</span>
-            </h2>
-            <p>Thoughtfully created. Effortlessly managed.</p>
-          </div>
-          <ArrowUpRight
-            size={22}
-            className="text-muted-foreground opacity-70"
-          />
-        </div>
-
-        {/* Improved Tab Styling */}
-        <div className="
-          flex gap-[25px] [padding:0_25px] overflow-auto [border-bottom:1px_solid_var(--sm-border)]
-          whitespace-nowrap [&_button]:[border-top:0] [&_button]:[border-right:0]
-          [&_button]:[border-bottom:2px_solid_transparent] [&_button]:[border-left:0]
-          [&_button]:[background:none] [&_button]:text-[12px] [&_button]:[padding:16px_0]
-          [&_button]:text-[#8b978a] [&_button]:font-medium [&_button.selected]:text-[#2d604b]
-          [&_button.selected]:[border-bottom-color:#2d604b] service-mobile:gap-[20px]
-          service-mobile:[padding:0_15px]
-        " aria-label="Filter by approval">
-          {approvalTabs.map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={
-                (params.get("approval") || "") === value ? "selected" : ""
-              }
-              onClick={() => change("approval", value)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
         {/* Toolbar with Smoother Inputs */}
         <div className="
-          [padding:20px_25px] flex gap-[12px] items-center [&_select]:[background:white]
+          [padding:20px_25px] flex flex-wrap gap-[12px] items-center [&_select]:[background:white]
           [&_select]:min-h-[39px] [&_select]:[padding:8px_12px]
           [&_select]:[border-top:1px_solid_var(--sm-border)]
           [&_select]:[border-right:1px_solid_var(--sm-border)]
@@ -330,7 +274,7 @@ export default function ServiceList() {
           service-mobile:[&_>_select]:[flex:1] service-mobile:[&_>_select]:max-w-[none]
         ">
           <label className="
-            relative flex items-center gap-[10px] [flex:1] max-w-[550px] text-[#99a793] [&_svg]:absolute
+            relative flex min-w-[180px] items-center gap-[10px] [flex:1] max-w-[550px] text-[#99a793] [&_svg]:absolute
             [&_svg]:left-[12px] [&_input]:w-[100%] [&_input]:[padding:11px_12px_11px_38px]
             [&_input]:rounded-[7px]! [&_input]:[background:#fafbf8] service-mobile:[flex-basis:100%]
             service-mobile:max-w-[none]
@@ -342,6 +286,21 @@ export default function ServiceList() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
+          </label>
+          <label className="w-[200px] shrink-0 service-mobile:w-auto service-mobile:flex-1 [&_select]:w-full">
+            <span className="sr-only">Status</span>
+            <select
+              aria-label="Filter by status"
+              value={approval}
+              onChange={(e) => change("approval", e.target.value)}
+            >
+              {approvalOptions.map(([value, label]) => {
+                const count = value
+                  ? data?.approvalCounts ? data.approvalCounts[value] || 0 : undefined
+                  : data?.stats?.totalServices;
+                return <option key={value} value={value}>{label}{!loading && !error && count != null ? ` (${Number(count).toLocaleString("en-IN")})` : ""}</option>;
+              })}
+            </select>
           </label>
           <button
             type="button"
@@ -361,7 +320,7 @@ export default function ServiceList() {
           >
             <SlidersHorizontal size={16} />
             Filters
-            {params.size > 0 && (
+            {hasFilters && (
               <span className="w-2 h-2 rounded-full bg-primary inline-block ml-1" />
             )}
           </button>
@@ -400,14 +359,6 @@ export default function ServiceList() {
             {select("active", "Active status", [
               ["true", "Active"],
               ["false", "Inactive"],
-            ])}
-            {select("approval", "Approval status", [
-              ["Draft", "Draft"],
-              ["Pending", "Pending Approval"],
-              ["UnderReview", "Admin Review"],
-              ["Approved", "Approved"],
-              ["Rejected", "Rejected"],
-              ["Suspended", "Suspended"],
             ])}
             {[
               ["minPrice", "Minimum price", "number"],
@@ -454,13 +405,26 @@ export default function ServiceList() {
                 [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
                 text-destructive hover:opacity-80
               "
-              onClick={() => {
-                setParams({});
-                setQuery("");
-              }}
+              onClick={clearFilters}
             >
               Reset filters
             </button>
+          </div>
+        )}
+
+        {hasFilters && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-[#edf0e9] bg-[#fbfcf9] px-6 py-3 text-[11px]">
+            <span className="mr-1 text-[#8a9982]">Filtered by</span>
+            {activeFilters.map((key) => {
+              const value = params.get(key);
+              const label = key === "approval" ? approvalOptions.find(([v]) => v === value)?.[1] || value
+                : key === "active" ? value === "true" ? "Active listings" : "Inactive listings"
+                : key === "category" ? metadata.data?.categories?.find((c) => String(c.id) === value)?.name || "Category"
+                : key === "subcategory" ? metadata.data?.subcategories?.find((c) => String(c.id) === value)?.name || "Subcategory"
+                : `${{q: "Search", minPrice: "Min price", maxPrice: "Max price", location: "Location", rating: "Min rating", from: "From", to: "Until"}[key]}: ${value}`;
+              return <button key={key} type="button" aria-label={`Remove ${label} filter`} onClick={() => change(key, "")} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#dae5d5] bg-white px-2.5 py-1 text-[#56734b]"><span className="max-w-[200px] truncate">{label}</span><X size={12} className="shrink-0" /></button>;
+            })}
+            <button type="button" onClick={clearFilters} className="ml-auto text-[#426c3a] underline underline-offset-2">Clear filters</button>
           </div>
         )}
 
@@ -469,7 +433,7 @@ export default function ServiceList() {
         ) : loading ? (
           <div
             className="
-              [padding:10px_25px] [&_>_div]:h-[55px]
+              animate-pulse [padding:10px_25px] [&_>_div]:h-[72px] [&_>_div]:my-3 [&_>_div]:rounded-lg [&_>_div]:bg-[#f1f5ee]
               [&_>_div]:[background:linear-gradient(90deg,_#f3f5ee,_#e9eee3,_#f3f5ee)_0%_0%_/_200%]
               [&_>_div]:animate-vendor-shimmer [&_>_div]:[margin:12px_0] [&_>_div]:rounded-[7px]
               motion-reduce:[&_>_div]:[animation:none]
@@ -482,258 +446,12 @@ export default function ServiceList() {
             ))}
           </div>
         ) : data?.rows?.length ? (
-          <>
-            <div className="overflow-auto service-mobile:hidden">
-              <table className="
-                w-[100%] border-collapse whitespace-nowrap text-[11px] [&_th]:text-left [&_th]:[background:#f8faf5]
-                [&_th]:text-[#8a9987] [&_th]:[padding:13px_16px] [&_th]:[border-top:1px_solid_#edf0e9]
-                [&_th]:[border-bottom:1px_solid_#edf0e9] [&_th]:text-[10px] [&_th]:font-medium
-                [&_th]:tracking-[0.2px] [&_td]:[padding:18px_16px] [&_td]:[border-bottom:1px_solid_#edf0e9]
-                [&_td]:text-[#5f7563] [&_th:first-child]:pl-[25px] [&_td:first-child]:pl-[25px]
-                [&_tr:hover]:[background:#fcfdf9] [&_small]:block [&_small]:text-[10px] [&_small]:text-[#a1ab9a]
-                [&_small]:mt-[4px]
-              ">
-                <thead>
-                  <tr>
-                    {[
-                      "Service",
-                      "Category",
-                      "Price",
-                      "Location",
-                      "Status",
-                      "Approval",
-                      "Bookings",
-                      "Rating",
-                      "Updated",
-                      "Actions",
-                    ].map((c) => (
-                      <th key={c}>{c}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.rows.map((s) => (
-                    <tr
-                      key={s.id}
-                      className="hover:bg-muted/30 transition-colors"
-                    >
-                      <td>
-                        <Link
-                          className="
-                            flex items-center gap-[12px] [&_img]:w-[55px] [&_img]:h-[49px] [&_img]:rounded-[8px]
-                            [&_img]:object-cover [&_img]:[background:#edf0e9] [&_strong]:text-[12px] [&_strong]:font-semibold
-                            [&_strong]:text-[#3e5d46] [&_strong]:block [&_strong]:max-w-[205px] [&_strong]:overflow-hidden
-                            [&_strong]:text-ellipsis group
-                          "
-                          to={`/vendor/services/${s.id}`}
-                        >
-                          <img
-                            src={s.image || "/images/wedding-details-1024.webp"}
-                            alt=""
-                            loading="lazy"
-                            className="object-cover rounded-md group-hover:scale-105 transition-transform"
-                          />
-                          <div>
-                            <strong className="group-hover:text-primary transition-colors">
-                              {s.name}
-                            </strong>
-                            <small title={s.id}>
-                              #{s.id.slice(0, 8).toUpperCase()}
-                            </small>
-                          </div>
-                        </Link>
-                      </td>
-                      <td>
-                        <span className="font-medium">{s.category}</span>
-                        <small>{s.subcategory || "—"}</small>
-                      </td>
-                      <td className="font-semibold tabular-nums [&_small]:font-normal font-semibold">
-                        {money(s.price)}
-                        <small>Starting price</small>
-                      </td>
-                      <td>
-                        {s.location || (
-                          <span className="text-muted-foreground/60 italic">
-                            Not set
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        <span
-                          className={`vw-badge inline-flex items-center [padding:3px_7px] rounded-[5px] text-[8px] font-medium leading-[1.5]
-                            text-[#96a486] [background:#f0f4e9] whitespace-normal
-                            [&.vw-badge-approved]:[background:#edf5e4]
-                            [&.vw-badge-approved]:text-[#7a9b5b] [&.vw-badge-active]:[background:#edf5e4]
-                            [&.vw-badge-active]:text-[#7a9b5b] [&.vw-badge-confirmed]:[background:#edf5e4]
-                            [&.vw-badge-confirmed]:text-[#7a9b5b]
-                            [&.vw-badge-completed]:[background:#edf5e4]
-                            [&.vw-badge-completed]:text-[#7a9b5b] [&.vw-badge-paid]:[background:#edf5e4]
-                            [&.vw-badge-paid]:text-[#7a9b5b] [&.vw-badge-success]:[background:#edf5e4]
-                            [&.vw-badge-success]:text-[#7a9b5b] [&.vw-badge-accepted]:[background:#edf5e4]
-                            [&.vw-badge-accepted]:text-[#7a9b5b]
-                            [&.vw-badge-available]:[background:#edf5e4]
-                            [&.vw-badge-available]:text-[#7a9b5b]
-                            [&.vw-badge-published]:[background:#edf5e4]
-                            [&.vw-badge-published]:text-[#7a9b5b] [&.vw-badge-pending]:text-[#b2a06a]
-                            [&.vw-badge-pending]:[background:#fbf6e8]
-                            [&.vw-badge-processing]:text-[#b2a06a]
-                            [&.vw-badge-processing]:[background:#fbf6e8] [&.vw-badge-draft]:text-[#718070]
-                            [&.vw-badge-draft]:[background:#f0f2ed]
-                            [&.vw-badge-paymentpending]:text-[#b2a06a]
-                            [&.vw-badge-paymentpending]:[background:#fbf6e8]
-                            [&.vw-badge-underreview]:text-[#b2a06a]
-                            [&.vw-badge-underreview]:[background:#fbf6e8]
-                            [&.vw-badge-rejected]:text-[#c08d78]
-                            [&.vw-badge-rejected]:[background:#fcf1e9]
-                            [&.vw-badge-cancelled]:text-[#c08d78]
-                            [&.vw-badge-cancelled]:[background:#fcf1e9] [&.vw-badge-failed]:text-[#c08d78]
-                            [&.vw-badge-failed]:[background:#fcf1e9] [&.vw-badge-suspended]:text-[#8c628e]
-                            [&.vw-badge-suspended]:[background:#f6edf6]
-                            [&.vw-badge-blocked]:text-[#c08d78] [&.vw-badge-blocked]:[background:#fcf1e9]
-                            [&.vw-badge-sent]:text-[#79a399] [&.vw-badge-sent]:[background:#ebf4ef]
-                            [&.vw-badge-viewed]:text-[#79a399] [&.vw-badge-viewed]:[background:#ebf4ef]
-                            [&.vw-badge-inprogress]:text-[#79a399]
-                            [&.vw-badge-inprogress]:[background:#ebf4ef]
-                            [&.vw-badge-pendingapproval]:text-[#ab8a3c]
-                            [&.vw-badge-pendingapproval]:[background:#fcf6e5] vw-badge-${s.active ? "active" : "inactive"}`}
-                        >
-                          {s.active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`inline-block w-[5px] h-[5px] [background:#91a28c] rounded-[100%] mr-[6px]
-                              [&.sm-dot-approved]:[background:#5d946b]
-                              [&.sm-dot-pending]:[background:#d0ad5b]
-                              [&.sm-dot-rejected]:[background:#c98b83] sm-dot-${s.status.toLowerCase()}`}
-                          />
-                          <span className="text-sm font-medium">
-                            {s.status === "Pending"
-                              ? "Pending Approval"
-                              : s.status}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="font-medium">{s.bookings}</td>
-                      <td>
-                        <span className="
-                          inline-flex items-center gap-[4px] text-[#8f845f] [&_svg]:[fill:#c6b07b] [&_svg]:[stroke:#c6b07b]
-                          px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-medium inline-flex
-                          items-center gap-1
-                        ">
-                          <Star size={13} className="fill-current" />
-                          {s.rating ? Number(s.rating).toFixed(1) : "New"}
-                        </span>
-                      </td>
-                      <td className="text-muted-foreground">
-                        {date(s.updatedAt)}
-                      </td>
-                      <td>
-                        <ServiceActions
-                          service={s}
-                          onChange={(r) => {
-                            setNotice(r.message);
-                            setVersion((v) => v + 1);
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Enhanced Mobile Cards */}
-            <div className="
-              hidden service-mobile:grid service-mobile:gap-[15px] service-mobile:p-[15px]
-              service-mobile:[&_article]:p-[15px]
-              service-mobile:[&_article]:[border-top:1px_solid_var(--sm-border)]
-              service-mobile:[&_article]:[border-right:1px_solid_var(--sm-border)]
-              service-mobile:[&_article]:[border-bottom:1px_solid_var(--sm-border)]
-              service-mobile:[&_article]:[border-left:1px_solid_var(--sm-border)]
-              service-mobile:[&_article]:rounded-[10px] service-mobile:[&_article]:[background:#fff]
-            ">
-              {data.rows.map((s) => (
-                <article
-                  key={s.id}
-                  className="p-4 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="
-                    service-mobile:flex service-mobile:gap-[12px] service-mobile:[&_img]:w-[70px]
-                    service-mobile:[&_img]:h-[70px] service-mobile:[&_img]:object-cover
-                    service-mobile:[&_img]:rounded-[8px] service-mobile:[&_h3]:text-[14px]
-                    service-mobile:[&_p]:[margin:3px_0_7px] service-mobile:[&_p]:text-[10px] flex items-start gap-3
-                  ">
-                    <img
-                      loading="lazy"
-                      src={s.image || "/images/wedding-details-1024.webp"}
-                      alt=""
-                      className="w-16 h-16 rounded-lg object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <Link to={`/vendor/services/${s.id}`}>
-                        <h3 className="font-semibold truncate hover:text-primary">
-                          {s.name}
-                        </h3>
-                      </Link>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {s.category} {s.subcategory ? `· ${s.subcategory}` : ""}
-                      </p>
-                      <div className="mt-1">
-                        <Status status={s.status} active={s.active} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="
-                    service-mobile:grid service-mobile:grid-cols-[1fr_1fr] service-mobile:gap-[8px]
-                    service-mobile:text-[10px] service-mobile:[margin:15px_0] service-mobile:text-[#89977d]
-                    service-mobile:[&_strong]:text-[15px] service-mobile:[&_strong]:text-[#4c704e] mt-3 pt-3 border-t
-                    flex flex-col gap-1.5 text-sm
-                  ">
-                    <div className="flex items-center justify-between">
-                      <strong className="text-base font-bold">
-                        {money(s.price)}
-                      </strong>
-                      <span className="text-xs text-muted-foreground">
-                        {s.location || "Location not set"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{s.bookings} bookings</span>
-                      <span className="flex items-center gap-1 font-medium text-amber-600">
-                        <Star size={12} className="fill-current" />
-                        {s.rating ? Number(s.rating).toFixed(1) : "New"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-3 pt-3 border-t flex justify-end">
-                    <ServiceActions
-                      service={s}
-                      full
-                      onChange={(r) => {
-                        setNotice(r.message);
-                        setVersion((v) => v + 1);
-                      }}
-                    />
-                  </div>
-                </article>
-              ))}
-            </div>
-          </>
+          <ServiceCollection rows={data.rows} onChange={changed} />
         ) : (
           <Empty
-            title={
-              params.size
-                ? "No matching services found"
-                : "Your next great service starts here"
-            }
-            text={
-              params.size
-                ? "Try adjusting your search criteria or clearing your active filters."
-                : "Create your first listing, add your best work, and send it for approval."
-            }
-            action={<AddButton />}
+            title={page > 1 ? "No services on this page" : hasRefinements ? "No matching services found" : view.empty}
+            text={page > 1 ? "Return to the first page to see your current results." : hasRefinements ? "Try a different search or clear your filters to see more services." : view.help}
+            action={page > 1 ? <button className="rounded-lg border border-[#dfe7d8] px-4 py-2 text-xs text-[#386348]" onClick={() => change("page", "1")}>Back to first page</button> : hasFilters ? <button className="rounded-lg border border-[#dfe7d8] px-4 py-2 text-xs text-[#386348]" onClick={clearFilters}>View all services</button> : <AddButton />}
           />
         )}
 
@@ -744,8 +462,8 @@ export default function ServiceList() {
           service-mobile:flex-wrap service-mobile:[&_>_span]:[flex-basis:100%]
           service-mobile:[&_label]:mr-[auto]
         ">
-          <span>
-            {data?.total
+          <span aria-live="polite">
+            {loading ? "Loading services…" : error ? "Unable to load services" : data?.total && data?.rows?.length
               ? `${(page - 1) * pageSize + 1}–${Math.min(
                   page * pageSize,
                   data.total,

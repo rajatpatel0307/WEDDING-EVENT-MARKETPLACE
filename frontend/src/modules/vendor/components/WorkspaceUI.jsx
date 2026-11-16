@@ -8,21 +8,29 @@ export function useVendorData(path, version = 0) {
     [error, setError] = useState(null),
     [loading, setLoading] = useState(true),
     [retry, setRetry] = useState(0);
+  const requestKey = JSON.stringify([path, version, retry]);
+  const [settledKey, setSettledKey] = useState(null);
   useEffect(() => {
     const abort = new AbortController();
     setLoading(true);
     setError(null);
     vendorRequest(path, { signal: abort.signal })
-      .then(setData)
+      .then((result) => {
+        if (!abort.signal.aborted) setData(result);
+      })
       .catch((e) => {
         if (!abort.signal.aborted) setError(e);
       })
       .finally(() => {
-        if (!abort.signal.aborted) setLoading(false);
+        if (!abort.signal.aborted) {
+          setSettledKey(requestKey);
+          setLoading(false);
+        }
       });
     return () => abort.abort();
   }, [path, version, retry]);
-  return { data, setData, error, loading, retry: () => setRetry((v) => v + 1) };
+  const pending = loading || settledKey !== requestKey;
+  return { data, setData, error: pending ? null : error, loading: pending, retry: () => setRetry((v) => v + 1) };
 }
 export function Badge({ children }) {
   const value = String(children || "Unknown");

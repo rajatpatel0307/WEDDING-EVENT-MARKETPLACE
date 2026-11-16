@@ -174,6 +174,12 @@ export async function list(input, ctx, exporting = false) {
     page: q.page,
     pageSize: q.pageSize,
     stats: { ...stats, ...rating },
+    approvalCounts: Object.fromEntries(
+      (await repo.select(
+        "SELECT ApprovalStatus AS status,COUNT_BIG(*) AS total FROM dbo.Services WHERE VendorId=:id GROUP BY ApprovalStatus",
+        { id },
+      )).map((row) => [row.status, Number(row.total)]),
+    ),
     canSubmit: approved && access.serviceStatus === "Approved",
     canCreate: approved && access.serviceStatus === "Approved",
     access,
