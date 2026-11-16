@@ -1,99 +1,74 @@
-
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-
 import {
-  Search,
-  SlidersHorizontal,
-  CalendarCheck,
-  Clock,
-  CheckCircle2,
-  CalendarDays,
-  Activity,
-  BadgeCheck,
-  XCircle,
-  ShieldAlert,
-  IndianRupee,
-  Percent,
-  Wallet,
-  Eye,
+  Search, SlidersHorizontal, CalendarCheck, Clock, CheckCircle2, CalendarDays,
+  XCircle, IndianRupee, Percent, Wallet,
+  Eye, RefreshCw, RotateCcw, ArrowUpDown, ChevronRight, ChevronLeft, X, Inbox,
 } from "lucide-react";
-
-import {
-  useAdminData,
-  useDebounced,
-  money,
-  date,
-  number,
-} from "../services-management.api";
-
-import {
-  Loading,
-  ErrorState,
-  Empty,
-  Pager,
-  Field,
-  BookingStatus,
-} from "../components/BookingUI";
-
+import { useAdminData, useDebounced, money, date, number } from "../services-management.api";
+import { Loading, ErrorState, Field } from "../components/BookingUI";
 import AdminDialog from "../components/AdminDialog";
 
-
-// =====================================================
-// STATISTICS CARDS
-// =====================================================
-
-const cards = [
-  ["total", "Total Bookings", CalendarCheck],
-  ["pending", "Pending", Clock],
-  ["confirmed", "Confirmed", CheckCircle2],
-  ["upcoming", "Upcoming", CalendarDays],
-  ["inProgress", "In Progress", Activity],
-  ["completed", "Completed", BadgeCheck],
-  ["cancelled", "Cancelled", XCircle],
-  ["disputed", "Disputed", ShieldAlert],
-  ["value", "Total Booking Value", IndianRupee],
-  ["commission", "Platform Commission", Percent],
-  ["payable", "Vendor Payable", Wallet],
+const button = "inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-[#dce6e1] bg-white px-3.5 py-2 text-xs font-medium text-[#45645a] transition-colors hover:border-[#a7c3b7] hover:bg-[#f1f7f4] disabled:cursor-not-allowed disabled:opacity-50";
+const primaryButton = "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#176b60] px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-[#11564d]";
+const select = "min-h-10 max-w-full rounded-lg! border! border-[#dce6e1]! bg-white! px-3! py-2! text-xs! text-[#45645a]!";
+const primaryMetrics = [
+  ["total", "Total bookings", CalendarCheck, "bg-[#eaf3ef] text-[#176b60]", "Across all booking stages"],
+  ["pending", "Pending approval", Clock, "bg-amber-50 text-amber-700", "Awaiting a booking decision", "Pending"],
+  ["confirmed", "Confirmed", CheckCircle2, "bg-emerald-50 text-emerald-700", "Ready for fulfilment", "Confirmed"],
+  ["upcoming", "Upcoming events", CalendarDays, "bg-blue-50 text-blue-700", "Scheduled today or later"],
 ];
+const states = ["Pending", "Accepted", "PaymentPending", "Confirmed", "InProgress", "Completed", "Cancelled", "Rejected", "Disputed", "Refunded"];
+const filterLabels = {
+  q: "Search", status: "Status", payment: "Payment", customer: "Customer", vendor: "Vendor",
+  category: "Category", location: "Location", changeRequest: "Change request", eventFrom: "Event from",
+  eventTo: "Event to", bookedFrom: "Booked from", bookedTo: "Booked to", minAmount: "Min. amount", maxAmount: "Max. amount",
+};
+const readable = (value) => String(value || "").replace(/([a-z])([A-Z])/g, "$1 $2");
 
-// =====================================================
-// ALL SUPPORTED BOOKING STATES
-// Used by advanced filters
-// =====================================================
+function DashboardMetricCard({ label, value, icon: Icon, description, tone, featured = false, currency = false, onClick }) {
+  const Card = onClick ? "button" : "article";
+  return (
+    <Card
+      {...(onClick ? { type: "button", onClick, "aria-label": `Show ${label.toLowerCase()} bookings` } : {})}
+      className={`min-w-0 overflow-hidden rounded-xl border px-[19px] py-[17px] text-left shadow-[0_3px_8px_#263f2d02] min-[1500px]:px-[23px] min-[1500px]:py-[21px] ${featured ? "border-[#176b60] bg-[#176b60] text-white" : "border-[#e5ebe6] bg-white text-[#263d37]"} ${onClick ? "transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_#243f3210] motion-reduce:transform-none motion-reduce:transition-none" : ""}`}
+    >
+      <div className={`flex items-center justify-between gap-2 text-[10px] ${featured ? "text-[#abd2c3]" : "text-[#859289]"}`}>
+        <span>{label}</span>
+        <span className={`grid size-[31px] shrink-0 place-items-center rounded-lg ${featured ? "bg-white/10 text-[#c5e2d3]" : tone || "bg-[#f0f5ef] text-[#5e8975]"}`}>
+          <Icon size={18} strokeWidth={1.7} aria-hidden="true" />
+        </span>
+      </div>
+      <strong className={`mt-[7px] mb-3 block leading-[1.3] font-semibold tracking-[-0.8px] tabular-nums [overflow-wrap:anywhere] ${currency ? "text-[24px] sm:text-[26px] min-[1500px]:text-[30px]" : "text-[26px] sm:text-[28px] min-[1500px]:text-[32px]"}`}>{value}</strong>
+      <span className={`block text-[10px] leading-relaxed ${featured ? "text-[#abd2c3]" : "text-[#92a096]"}`}>{description}</span>
+    </Card>
+  );
+}
 
-const states = [
-  "Pending",
-  "Accepted",
-  "PaymentPending",
-  "Confirmed",
-  "InProgress",
-  "Completed",
-  "Cancelled",
-  "Rejected",
-  "Disputed",
-  "Refunded",
-];
+function StatusBadge({ value }) {
+  const tone = ["Confirmed", "Paid", "Completed", "Success"].includes(value)
+    ? "bg-emerald-50 text-emerald-700 ring-emerald-600/10"
+    : ["Pending", "Accepted", "PaymentPending", "PartiallyPaid", "RefundPending", "Processing"].includes(value)
+      ? "bg-amber-50 text-amber-800 ring-amber-600/10"
+      : ["Cancelled", "Rejected", "Failed", "Disputed"].includes(value)
+        ? "bg-rose-50 text-rose-700 ring-rose-600/10"
+        : value === "InProgress" ? "bg-blue-50 text-blue-700 ring-blue-600/10"
+          : ["Refunded", "PartiallyRefunded"].includes(value) ? "bg-violet-50 text-violet-700 ring-violet-600/10"
+            : "bg-slate-50 text-slate-600 ring-slate-500/10";
+  return <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${tone}`}>
+    <span className="size-1.5 shrink-0 rounded-full bg-current" aria-hidden="true" />
+    {value === "Accepted" ? "Vendor accepted" : readable(value) || "Not recorded"}
+  </span>;
+}
 
-// =====================================================
-// MAIN STATUS TABS
-// Shown above the bookings table
-// =====================================================
-
-const bookingStatusTabs = [
-  { value: "", label: "All Bookings" },
-  { value: "Pending", label: "Pending" },
-  { value: "Confirmed", label: "Confirmed" },
-  { value: "InProgress", label: "In Progress" },
-  { value: "Completed", label: "Completed" },
-  { value: "Cancelled", label: "Cancelled" },
-  { value: "Rejected", label: "Rejected" },
-  { value: "Disputed", label: "Disputed" },
-];
-
-// =====================================================
-// ADVANCED FILTER DIALOG
-// =====================================================
+function Identity({ name, to, id }) {
+  return <Link to={to} className="group block min-w-0">
+    <span className="min-w-0">
+      <span className="block max-w-44 truncate text-xs font-semibold text-[#304d42] group-hover:text-[#176b60]" title={name}>{name || "Not recorded"}</span>
+      <span className="mt-0.5 block max-w-36 truncate font-mono text-[10px] text-slate-400" title={id}>{id}</span>
+    </span>
+  </Link>;
+}
 
 function Filters({ params, apply, close }) {
   const [values, setValues] = useState(
@@ -162,13 +137,13 @@ function Filters({ params, apply, close }) {
       close={close}
     >
       <form
-        className="ad-form flex flex-col gap-[17px] [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] [&_label]:text-[11px] [&_label]:text-[#7c8e76] [&_input]:w-full [&_input]:text-[12px]! [&_textarea]:w-full [&_textarea]:text-[12px]! [&_select]:w-full [&_select]:text-[12px]! [&_textarea]:min-h-[90px] [&_textarea]:[resize:vertical] [&_p]:text-[12px] [&_p]:text-[#86977d] [&_p]:leading-[1.7]"
+        className="grid gap-5 [&_label]:flex [&_label]:flex-col [&_label]:gap-2 [&_label]:text-xs [&_label]:text-[#45645a] [&_input]:min-h-10 [&_input]:w-full! [&_input]:text-xs! [&_select]:min-h-10 [&_select]:w-full! [&_select]:text-xs!"
         onSubmit={(event) => {
           event.preventDefault();
           apply(values);
         }}
       >
-        <div className="asm-form-grid grid grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[1fr] gap-[16px]">
+        <div className="grid gap-4 sm:grid-cols-2">
           {select("changeRequest", "Pending change request", [["Cancellation", "Cancellation"], ["Reschedule", "Reschedule"]])}
           {/* Booking Status */}
 
@@ -344,7 +319,7 @@ function Filters({ params, apply, close }) {
         <footer className="flex justify-between gap-2">
           <button
             type="button"
-            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+            className={button}
             onClick={() =>
               apply({
                 q: values.q || "",
@@ -356,7 +331,7 @@ function Filters({ params, apply, close }) {
 
           <button
             type="submit"
-            className="ad-button ad-primary inline-flex justify-center items-center gap-[7px] [background:#176b60] [border-top-width:1px] [border-top-style:solid] [border-top-color:#176b60] [border-right-width:1px] [border-right-style:solid] [border-right-color:#176b60] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#176b60] [border-left-width:1px] [border-left-style:solid] [border-left-color:#176b60] rounded-[7px] [padding:8px_12px] text-[#fff] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#11594f] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
+            className={primaryButton}
           >
             Apply filters
           </button>
@@ -366,702 +341,137 @@ function Filters({ params, apply, close }) {
   );
 }
 
-// =====================================================
-// MAIN BOOKINGS MANAGEMENT PAGE
-// =====================================================
-
 export default function BookingsManagementPage() {
   const [params, setParams] = useSearchParams();
-
   const [revision, setRevision] = useState(0);
-
-  const [filters, setFilters] = useState(false);
-
-  // ---------------------------------------------------
-  // URL AND API DATA
-  // ---------------------------------------------------
-
-  const requestedPage = Number(
-    params.get("page") || 1
-  );
-
-  const page =
-    Number.isInteger(requestedPage) &&
-    requestedPage > 0
-      ? requestedPage
-      : 1;
-
-  const state = useAdminData(
-    `/bookings?${params.toString()}`,
-    revision
-  );
-
-  const stats = useAdminData(
-    "/bookings/statistics",
-    revision
-  );
-
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const requestedPage = Number(params.get("page") || 1);
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const state = useAdminData(`/bookings?${params.toString()}`, revision);
+  const stats = useAdminData("/bookings/statistics", revision);
   const data = state.data;
-
-  // Safe array handling
-  const rows = Array.isArray(data?.rows)
-    ? data.rows
-    : [];
-
-  // Active status from URL
-  const activeStatus =
-    params.get("status") || "";
-
-  // ---------------------------------------------------
-  // UPDATE URL FILTERS
-  // ---------------------------------------------------
-
+  const rows = Array.isArray(data?.rows) ? data.rows : [];
+  const activeStatus = params.get("status") || "";
+  const activeFilters = [...params].filter(([key, value]) => filterLabels[key] && value);
+  const filterCount = activeFilters.filter(([key]) => key !== "q" && key !== "status").length;
+  const refreshing = Boolean(state.loading || stats.loading);
   const update = (values) => {
-    const nextParams = new URLSearchParams();
-
+    const next = new URLSearchParams();
     for (const [key, value] of Object.entries(values)) {
-      if (
-        value !== "" &&
-        value !== null &&
-        value !== undefined
-      ) {
-        nextParams.set(key, String(value));
-      }
+      if (value !== "" && value !== null && value !== undefined) next.set(key, String(value));
     }
-
-    setParams(nextParams);
+    setParams(next);
   };
-
-  // ---------------------------------------------------
-  // UPDATE STATUS
-  // ---------------------------------------------------
-
-  const changeStatus = (status) => {
-    update({
-      ...Object.fromEntries(params),
-      status,
-      page: 1,
-    });
-  };
-
-  // ---------------------------------------------------
-  // REFRESH BOOKINGS
-  // ---------------------------------------------------
-
-  const refreshBookings = () => {
-    setRevision((previous) => previous + 1);
-  };
-
-  // ---------------------------------------------------
-  // BOOKING ACTIONS
-  // ---------------------------------------------------
-
+  const change = (values) => update({ ...Object.fromEntries(params), ...values, page: 1 });
+  const refresh = () => setRevision((value) => value + 1);
+  const metric = (key, currency = false) => stats.data
+    ? currency ? money(stats.data[key] ?? 0) : number(stats.data[key] ?? 0)
+    : stats.error ? "—" : "…";
   const actions = (row) => {
-    const allowedActions = Array.isArray(row.actions)
-      ? row.actions
-      : [];
-
-    return (
-      <div className="ab-row-actions flex gap-[6px] flex-wrap min-w-[110px] [@media(width<=767px)]:mt-[14px]">
-        <Link
-          className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-          to={`/admin/bookings/${row.id}`}
-        >
-          <Eye size={14} />
-          View
-        </Link>
-
-        {allowedActions.includes("cancel") && (
-          <Link
-            className="ad-button asm-danger-text inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3] [&.asm-danger-text]:text-[#b14b52]!"
-            to={`/admin/bookings/${row.id}?action=cancel`}
-          >
-            Cancel
-          </Link>
-        )}
-
-        {allowedActions.includes("refund") && (
-          <Link
-            className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-            to={`/admin/bookings/${row.id}?action=refund&tab=Payment`}
-          >
-            Refund
-          </Link>
-        )}
-      </div>
-    );
+    const allowed = Array.isArray(row.actions) ? row.actions : [];
+    return <div className="flex flex-wrap items-center gap-2">
+      <Link to={`/admin/bookings/${row.id}`} aria-label={`View booking ${row.number}`} title="View booking" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#cfe0d6] bg-[#f3f8f5] text-[#176b60] transition-colors hover:border-[#a7c3b7] hover:bg-[#e5f1ea]"><Eye size={16} aria-hidden="true" /></Link>
+      {allowed.includes("cancel") && <Link aria-label={`Cancel booking ${row.number}`} title="Cancel booking" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-rose-100 bg-rose-50/60 text-rose-600 transition-colors hover:border-rose-200 hover:bg-rose-100 hover:text-rose-800!" to={`/admin/bookings/${row.id}?action=cancel`}><XCircle size={16} aria-hidden="true" /></Link>}
+      {allowed.includes("refund") && <Link aria-label={`Refund booking ${row.number}`} title="Refund booking" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-amber-100 bg-amber-50/60 text-amber-700 transition-colors hover:border-amber-200 hover:bg-amber-100 hover:text-amber-800!" to={`/admin/bookings/${row.id}?action=refund&tab=Payment`}><RotateCcw size={16} aria-hidden="true" /></Link>}
+    </div>;
   };
 
-  // ===================================================
-  // PAGE UI
-  // ===================================================
-
-  return (
-    <div className="asm-page ab-page grid gap-[24px] text-[#253f3a] [&_select]:[padding:9px_12px] [&_select]:text-[12px] [&_select]:[border-top-width:1px] [&_select]:[border-top-style:solid] [&_select]:[border-top-color:#dce5df] [&_select]:[border-right-width:1px] [&_select]:[border-right-style:solid] [&_select]:[border-right-color:#dce5df] [&_select]:[border-bottom-width:1px] [&_select]:[border-bottom-style:solid] [&_select]:[border-bottom-color:#dce5df] [&_select]:[border-left-width:1px] [&_select]:[border-left-style:solid] [&_select]:[border-left-color:#dce5df] [&_select]:rounded-[7px] [&_select]:[background:#fff]">
-      {/* ============================================= */}
-      {/* PAGE HEADER */}
-      {/* ============================================= */}
-
-      <header className="asm-heading flex items-center [@media(width<=1200px)]:items-start justify-between gap-[24px] [@media(width<=767px)]:gap-[18px] [&_h1]:text-[30px] [@media(width<=767px)]:[&_h1]:text-[26px] [&_h1]:leading-[1.2] [&_h1]:[margin:8px_0_10px] [&_h1]:font-[650] [&_h1]:tracking-[-0.7px] [&_p]:text-[14px] [&_p]:text-[#7b8a83] [@media(width<=767px)]:flex-col">
-        <div>
-          <span className="ad-eyebrow text-[8px] [@media(width<=767px)]:text-[7px] tracking-[1.7px] text-[#7d9183] flex items-center gap-[6px] [&_>_span]:w-[5px] [&_>_span]:h-[5px] [&_>_span]:[background:#bfa471] [&_>_span]:rounded-[50%]">
-            BOOKING OPERATIONS
-          </span>
-
-          <h1>Bookings Management</h1>
-
-          <p>
-            Monitor customer bookings, vendor fulfilment,
-            payments and refunds.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-          onClick={refreshBookings}
-        >
-          Refresh bookings
-        </button>
-      </header>
-
-      {/* ============================================= */}
-      {/* STATISTICS CARDS */}
-      {/* ============================================= */}
-
-      <div className="asm-stats ab-stats grid grid-cols-[repeat(4,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(767px<width<=1200px)]:grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[12px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e1e9e4] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e1e9e4] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e1e9e4] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e1e9e4] [&_article]:rounded-[12px] [&_article]:[background:#fff] [&_article]:p-[18px] [@media(width<=767px)]:[&_article]:p-[13px] [&_article]:min-w-0 [&_article_>_div]:flex [&_article_>_div]:justify-between [&_article_>_div]:items-center [&_article_>_div]:gap-[10px] [&_span]:text-[12px] [&_span]:text-[#71827a] [&_strong]:block [&_strong]:text-[25px] [@media(width<=767px)]:[&_strong]:text-[21px] [&_strong]:font-[650] [&_strong]:mt-[9px] [&_strong]:tracking-[-0.6px] [&_strong]:[overflow-wrap:anywhere] [&_svg]:text-[#73978b]">
-        {cards.map(([key, cardLabel, Icon]) => (
-          <article key={key}>
-            <div>
-              <span>{cardLabel}</span>
-
-              <Icon size={17} />
-            </div>
-
-            <strong>
-              {stats.data
-                ? ["value", "commission", "payable"].includes(
-                    key
-                  )
-                  ? money(stats.data[key] ?? 0)
-                  : number(stats.data[key] ?? 0)
-                : "…"}
-            </strong>
-          </article>
-        ))}
+  return <div className="grid w-full min-w-0 gap-5 text-[#253f3a] sm:gap-6 [&_button]:cursor-pointer [&_button:disabled]:cursor-not-allowed [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-offset-3 [&_:focus-visible]:outline-[#176b60]">
+    <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <div>
+        <div className="mb-2 flex items-center gap-2 text-[11px] text-[#7b8d84]"><span>Administration</span><ChevronRight size={12} aria-hidden="true" /><span className="font-medium text-[#176b60]">Booking operations</span></div>
+        <h1 className="m-0! text-[26px]! leading-tight! font-semibold! tracking-tight! sm:text-[30px]!">Bookings management</h1>
+        <p className="mt-2 text-xs! leading-relaxed text-[#75867d]! sm:text-sm!">A clear view of every booking, from first request to final payment.</p>
       </div>
-
-      {/* Statistics Error */}
-
-      {stats.error && (
-        <p role="alert">
-          Statistics unavailable.{" "}
-
-          <button
-            type="button"
-            onClick={refreshBookings}
-          >
-            Retry
-          </button>
-        </p>
-      )}
-
-      {/* ============================================= */}
-      {/* NEW BOOKING STATUS TABS */}
-      {/* ============================================= */}
-
-      <nav
-        className="my-6 flex w-full flex-wrap items-center gap-2 sm:gap-3"
-        aria-label="Filter bookings by status"
-      >
-        {bookingStatusTabs.map((tab) => {
-          const isActive =
-            activeStatus === tab.value;
-
-          return (
-            <button
-              key={tab.value || "all"}
-              type="button"
-              aria-pressed={isActive}
-              onClick={() =>
-                changeStatus(tab.value)
-              }
-              className={`
-                inline-flex
-                min-h-12
-                items-center
-                justify-center
-                whitespace-nowrap
-                rounded-xl
-                px-5
-                py-3
-                text-sm
-                font-medium
-                transition-all
-                duration-200
-                focus-visible:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-emerald-700
-                focus-visible:ring-offset-2
-                ${
-                  isActive
-                    ? "bg-[#e3eee9] text-[#075448] font-semibold"
-                    : "bg-transparent text-[#727d7b] hover:bg-[#edf2ef] hover:text-[#075448]"
-                }
-              `}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* ============================================= */}
-      {/* BOOKINGS TABLE PANEL */}
-      {/* ============================================= */}
-
-      <section className="asm-panel [background:white] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e0e8e2] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e0e8e2] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e0e8e2] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e0e8e2] rounded-[14px] p-[24px] [@media(width<=1200px)]:p-[18px] min-w-0 [&_h2]:text-[19px] [&_h2]:font-[650] [&_h2]:mb-[20px] [&_h3]:text-[15px] [&_h3]:font-[600] [&_h3]:[margin:18px_0_12px]">
-        {/* =========================================== */}
-        {/* SEARCH AND TOOLBAR */}
-        {/* =========================================== */}
-
-        <div className="asm-toolbar flex justify-between gap-[14px] items-center [@media(width<=767px)]:items-stretch flex-wrap mb-[22px]">
-          {/* Search */}
-
-          <form
-            className="asm-search flex items-center gap-[10px] flex-1 min-w-[260px] [@media(width<=767px)]:min-w-0 [&_>_svg]:text-[#89978f] [&_input]:min-w-[100px] [&_input]:flex-1 [&_input]:[border-top-width:0] [&_input]:[border-top-style:none] [&_input]:[border-top-color:currentColor] [&_input]:[border-right-width:0] [&_input]:[border-right-style:none] [&_input]:[border-right-color:currentColor] [&_input]:[border-bottom-width:0] [&_input]:[border-bottom-style:none] [&_input]:[border-bottom-color:currentColor] [&_input]:[border-left-width:0] [&_input]:[border-left-style:none] [&_input]:[border-left-color:currentColor] [&_input]:[background:transparent] [&_input]:text-[13px] [@media(width<=767px)]:[&_input]:text-[12px] [&_input]:[padding:10px_0] [@media(width<=767px)]:[flex-basis:100%]"
-            onSubmit={(event) => {
-              event.preventDefault();
-
-              update({
-                ...Object.fromEntries(params),
-                q: new FormData(
-                  event.currentTarget
-                ).get("q"),
-                page: 1,
-              });
-            }}
-          >
-            <Search size={18} />
-
-            <input
-              key={params.get("q") || ""}
-              name="q"
-              maxLength={200}
-              defaultValue={
-                params.get("q") || ""
-              }
-              aria-label="Search bookings"
-              placeholder="Search booking, customer, vendor, event or service"
-            />
-
-            <button
-              type="submit"
-              className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-            >
-              Search
-            </button>
-          </form>
-
-          {/* Toolbar Actions */}
-
-          <div className="flex flex-wrap gap-2">
-            {/* Advanced Filters */}
-
-            <button
-              type="button"
-              className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-              onClick={() =>
-                setFilters(true)
-              }
-            >
-              <SlidersHorizontal size={16} />
-              Filters
-            </button>
-
-            {/* Sort */}
-
-            <select
-              aria-label="Sort bookings"
-              value={
-                params.get("sort") ||
-                "createdAt"
-              }
-              onChange={(event) =>
-                update({
-                  ...Object.fromEntries(params),
-                  sort: event.target.value,
-                  page: 1,
-                })
-              }
-            >
-              {[
-                ["createdAt", "Created date"],
-                ["number", "Booking number"],
-                ["customer", "Customer"],
-                ["vendor", "Vendor"],
-                ["eventDate", "Event date"],
-                ["bookingDate", "Scheduled date"],
-                ["amount", "Amount"],
-                ["status", "Status"],
-              ].map(([key, name]) => (
-                <option
-                  key={key}
-                  value={key}
-                >
-                  {name}
-                </option>
-              ))}
-            </select>
-
-            {/* Sort Direction */}
-
-            <button
-              type="button"
-              className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]"
-              onClick={() =>
-                update({
-                  ...Object.fromEntries(params),
-                  direction:
-                    params.get("direction") === "asc"
-                      ? "desc"
-                      : "asc",
-                  page: 1,
-                })
-              }
-            >
-              {params.get("direction") === "asc"
-                ? "Ascending ↑"
-                : "Descending ↓"}
-            </button>
-
-            {/* Rows per Page */}
-
-            <select
-              aria-label="Bookings per page"
-              value={
-                params.get("pageSize") ||
-                "20"
-              }
-              onChange={(event) =>
-                update({
-                  ...Object.fromEntries(params),
-                  pageSize: event.target.value,
-                  page: 1,
-                })
-              }
-            >
-              {[10, 20, 50, 100].map(
-                (value) => (
-                  <option
-                    key={value}
-                    value={value}
-                  >
-                    {value} / page
-                  </option>
-                )
-              )}
-            </select>
-          </div>
-        </div>
-
-        {/* =========================================== */}
-        {/* LOADING */}
-        {/* =========================================== */}
-
-        {state.loading && <Loading />}
-
-        {/* =========================================== */}
-        {/* ERROR */}
-        {/* =========================================== */}
-
-        {state.error && (
-          <ErrorState
-            error={state.error}
-            retry={refreshBookings}
-          />
-        )}
-
-        {/* =========================================== */}
-        {/* EMPTY STATE */}
-        {/* =========================================== */}
-
-        {!state.loading &&
-          !state.error &&
-          data &&
-          rows.length === 0 && (
-            <Empty />
-          )}
-
-        {/* =========================================== */}
-        {/* DESKTOP TABLE */}
-        {/* =========================================== */}
-
-        {!state.loading &&
-          !state.error &&
-          rows.length > 0 && (
-            <>
-              <div className="asm-table-wrap asm-desktop [overflow-x:auto] overflow-y-auto pb-[8px] [@media(width<=767px)]:hidden [@media(768px<=width<=1200px)]:[&_th:nth-child(1)]:hidden [@media(768px<=width<=1200px)]:[&_td:nth-child(1)]:hidden [@media(768px<=width<=1200px)]:[&_th:nth-child(5)]:hidden [@media(768px<=width<=1200px)]:[&_td:nth-child(5)]:hidden [@media(768px<=width<=1200px)]:[&_th:nth-child(13)]:hidden [@media(768px<=width<=1200px)]:[&_td:nth-child(13)]:hidden">
-                <table className="asm-table ab-table w-full border-collapse text-left text-[12px] [&_th]:font-[600] [&_th]:text-[10px] [&_th]:tracking-[0.6px] [&_th]:uppercase [&_th]:whitespace-nowrap [&_th]:[padding:13px_14px] [&_th]:[background:#f6f9f6] [&_th]:text-[#7b8b80] [&_th]:[border-bottom-width:1px] [&_th]:[border-bottom-style:solid] [&_th]:[border-bottom-color:#e5ebe6] [&_td]:[border-bottom-width:1px] [&_td]:[border-bottom-style:solid] [&_td]:[border-bottom-color:#edf1ed] [&_td]:[padding:16px_14px] [&_td]:[vertical-align:middle] [&_tbody_tr:hover]:[background:#fbfcfa] [@media(width<=1200px)]:[&_.asm-id]:max-w-[75px] [@media(width<=1200px)]:[&_th:nth-child(5)]:[display:table-cell] [@media(width<=1200px)]:[&_td:nth-child(5)]:[display:table-cell] [@media(width<=1200px)]:[&_th:nth-child(13)]:[display:table-cell] [@media(width<=1200px)]:[&_td:nth-child(13)]:[display:table-cell]">
-                  <thead>
-                    <tr>
-                      {[
-                        "Booking Number",
-                        "Customer",
-                        "Vendor",
-                        "Event",
-                        "Services",
-                        "Event Date",
-                        "Booking Date",
-                        "Amount",
-                        "Payment Status",
-                        "Booking Status",
-                        "Created Date",
-                        "Actions",
-                      ].map((column) => (
-                        <th key={column}>
-                          {column}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {rows.map((row) => (
-                      <tr key={row.id}>
-                        {/* Booking Number */}
-
-                        <td>
-                          <Link
-                            className="font-semibold"
-                            to={`/admin/bookings/${row.id}`}
-                          >
-                            {row.number}
-                          </Link>
-                        </td>
-
-                        {/* Customer */}
-
-                        <td>
-                          <Link
-                            className="asm-identity flex gap-[11px] items-center min-w-[180px] [&_img]:w-[48px] [&_img]:h-[48px] [&_img]:object-cover [&_img]:shrink-0 [&_img]:rounded-[9px] [&_img]:[background:#edf3ed] [&_img]:grid [&_img]:place-items-center [&_img]:text-[#77988b] [&_strong]:block [&_strong]:font-[600] [&_strong]:text-[13px] [&_small]:block [&_small]:text-[11px] [&_small]:text-[#88938c] [&_small]:mt-[4px] [&_small]:max-w-[190px] [&_small]:[overflow-x:hidden] [&_small]:[overflow-y:hidden] [&_small]:[text-overflow:ellipsis] [&_small]:whitespace-nowrap"
-                            to={`/admin/customers/${row.customerId}`}
-                          >
-                            {row.customerImage && (
-                              <img
-                                src={row.customerImage}
-                                alt=""
-                              />
-                            )}
-
-                            <span>
-                              <strong>
-                                {row.customer}
-                              </strong>
-
-                              <small
-                                className="asm-id text-[10px] [font-family:ui-monospace,_monospace] max-w-[110px] [overflow-x:hidden] [overflow-y:hidden] [text-overflow:ellipsis] whitespace-nowrap text-[#84938a]"
-                                title={row.customerId}
-                              >
-                                {row.customerId}
-                              </small>
-                            </span>
-                          </Link>
-                        </td>
-
-                        {/* Vendor */}
-
-                        <td>
-                          <Link
-                            className="asm-identity flex gap-[11px] items-center min-w-[180px] [&_img]:w-[48px] [&_img]:h-[48px] [&_img]:object-cover [&_img]:shrink-0 [&_img]:rounded-[9px] [&_img]:[background:#edf3ed] [&_img]:grid [&_img]:place-items-center [&_img]:text-[#77988b] [&_strong]:block [&_strong]:font-[600] [&_strong]:text-[13px] [&_small]:block [&_small]:text-[11px] [&_small]:text-[#88938c] [&_small]:mt-[4px] [&_small]:max-w-[190px] [&_small]:[overflow-x:hidden] [&_small]:[overflow-y:hidden] [&_small]:[text-overflow:ellipsis] [&_small]:whitespace-nowrap"
-                            to={`/admin/vendors/${row.vendorId}`}
-                          >
-                            {row.vendorLogo && (
-                              <img
-                                src={row.vendorLogo}
-                                alt=""
-                              />
-                            )}
-
-                            <span>
-                              <strong>
-                                {row.vendor}
-                              </strong>
-
-                              <small
-                                className="asm-id text-[10px] [font-family:ui-monospace,_monospace] max-w-[110px] [overflow-x:hidden] [overflow-y:hidden] [text-overflow:ellipsis] whitespace-nowrap text-[#84938a]"
-                                title={row.vendorId}
-                              >
-                                {row.vendorId}
-                              </small>
-                            </span>
-                          </Link>
-                        </td>
-
-                        {/* Event */}
-
-                        <td>{row.event}</td>
-
-                        {/* Services */}
-
-                        <td>
-                          <Link
-                            className="ab-item-link text-[#347d68] whitespace-nowrap"
-                            to={`/admin/bookings/${row.id}?tab=Items`}
-                          >
-                            {number(row.services ?? 0)} Services
-                          </Link>
-                        </td>
-
-                        {/* Event Date */}
-
-                        <td className="whitespace-nowrap">
-                          {date(row.eventDate)}
-                        </td>
-
-                        {/* Booking Date */}
-
-                        <td className="whitespace-nowrap">
-                          {date(row.createdAt)}
-                        </td>
-
-                        {/* Amount */}
-
-                        <td className="font-semibold whitespace-nowrap">
-                          {money(row.amount ?? 0)}
-                        </td>
-
-                        {/* Payment Status */}
-
-                        <td>
-                          <BookingStatus
-                            value={row.paymentStatus}
-                          />
-                        </td>
-
-                        {/* Booking Status */}
-
-                        <td>
-                          <BookingStatus
-                            value={row.status}
-                          />
-                        </td>
-
-                        {/* Created Date */}
-
-                        <td className="whitespace-nowrap">
-                          {date(row.createdAt)}
-                        </td>
-
-                        {/* Actions */}
-
-                        <td>
-                          {actions(row)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* ===================================== */}
-              {/* MOBILE BOOKING CARDS */}
-              {/* ===================================== */}
-
-              <div className="asm-mobile hidden [@media(width<=767px)]:grid [@media(width<=767px)]:gap-[12px] [@media(width<=767px)]:[&_article]:p-[16px] [@media(width<=767px)]:[&_article]:[border-top-width:1px] [@media(width<=767px)]:[&_article]:[border-top-style:solid] [@media(width<=767px)]:[&_article]:[border-top-color:#e4ece6] [@media(width<=767px)]:[&_article]:[border-right-width:1px] [@media(width<=767px)]:[&_article]:[border-right-style:solid] [@media(width<=767px)]:[&_article]:[border-right-color:#e4ece6] [@media(width<=767px)]:[&_article]:[border-bottom-width:1px] [@media(width<=767px)]:[&_article]:[border-bottom-style:solid] [@media(width<=767px)]:[&_article]:[border-bottom-color:#e4ece6] [@media(width<=767px)]:[&_article]:[border-left-width:1px] [@media(width<=767px)]:[&_article]:[border-left-style:solid] [@media(width<=767px)]:[&_article]:[border-left-color:#e4ece6] [@media(width<=767px)]:[&_article]:rounded-[10px] [@media(width<=767px)]:[&_article]:text-[12px] [@media(width<=767px)]:[&_article]:relative [@media(width<=767px)]:[&_article_>_p]:text-[#8b9a90] [@media(width<=767px)]:[&_article_>_p]:[margin:12px_0] [@media(width<=767px)]:[&_article_>_small]:block [@media(width<=767px)]:[&_article_>_small]:mt-[14px] [@media(width<=767px)]:[&_article_>_small]:text-[#8b9a90] [@media(width<=767px)]:[&_.asm-menu[open]_>_div]:top-[100%] [@media(width<=767px)]:[&_.asm-menu[open]_>_div]:bottom-[auto] [@media(width<=767px)]:[&_.asm-identity]:min-w-0 [@media(width<=767px)]:[&_.asm-identity_small]:max-w-[160px]">
-                {rows.map((row) => (
-                  <article key={row.id}>
-                    <div className="flex justify-between gap-3">
-                      <Link
-                        className="font-semibold"
-                        to={`/admin/bookings/${row.id}`}
-                      >
-                        {row.number}
-                      </Link>
-
-                      <strong>
-                        {money(row.amount ?? 0)}
-                      </strong>
-                    </div>
-
-                    <p>
-                      {row.customer} ·{" "}
-                      {row.vendor}
-                    </p>
-
-                    <p>
-                      {row.event} ·{" "}
-                      {date(row.eventDate)}
-                    </p>
-
-                    <div className="flex flex-wrap gap-2">
-                      <BookingStatus
-                        value={row.status}
-                      />
-
-                      <BookingStatus
-                        value={row.paymentStatus}
-                      />
-
-                      <Link
-                        to={`/admin/bookings/${row.id}?tab=Items`}
-                      >
-                        {number(row.services ?? 0)} Services
-                      </Link>
-                    </div>
-
-                    <small>
-                      Booked{" "}
-                      {date(row.createdAt)}
-                    </small>
-
-                    {actions(row)}
-                  </article>
-                ))}
-              </div>
-            </>
-          )}
-
-        {/* =========================================== */}
-        {/* PAGINATION */}
-        {/* =========================================== */}
-
-        {!state.loading &&
-          !state.error &&
-          data && (
-            <Pager
-              data={data}
-              page={page}
-              change={(nextPage) =>
-                update({
-                  ...Object.fromEntries(params),
-                  page: nextPage,
-                })
-              }
-            />
-          )}
-      </section>
-
-      {/* ============================================= */}
-      {/* ADVANCED FILTER DIALOG */}
-      {/* ============================================= */}
-
-      {filters && (
-        <Filters
-          params={params}
-          close={() =>
-            setFilters(false)
-          }
-          apply={(values) => {
-            update({
-              ...values,
-              page: 1,
-            });
-
-            setFilters(false);
-          }}
+      <button type="button" className={`${button} self-start shadow-sm sm:self-auto`} onClick={refresh} disabled={refreshing}>
+        <RefreshCw size={14} className={refreshing ? "animate-spin motion-reduce:animate-none" : ""} aria-hidden="true" />{refreshing ? "Refreshing…" : "Refresh bookings"}
+      </button>
+    </header>
+
+    <section aria-label="Booking overview" className="grid min-w-0 grid-cols-1 gap-3 min-[420px]:grid-cols-2 min-[1001px]:grid-cols-4 min-[1201px]:gap-4 min-[1500px]:gap-5">
+      {primaryMetrics.map(([key, label, Icon, tone, description, status]) => (
+        <DashboardMetricCard
+          key={key}
+          label={label}
+          value={metric(key)}
+          icon={Icon}
+          description={description}
+          featured={key === "pending"}
+          tone={tone}
+          onClick={status ? () => change({ status }) : undefined}
         />
-      )}
-    </div>
-  );
+      ))}
+    </section>
+
+    <section aria-label="Booking finances" className="grid min-w-0 grid-cols-1 gap-3 min-[1001px]:grid-cols-3 min-[1201px]:gap-4 min-[1500px]:gap-5">
+      {[
+        ["value", "Total booking value", IndianRupee, "Gross value across all bookings", "bg-[#f0f5ef] text-[#5e8975]"],
+        ["commission", "Platform commission", Percent, "Earnings from booking commissions", "bg-[#f9f5ec] text-[#ac8f59]"],
+        ["payable", "Vendor payable", Wallet, "Outstanding vendor settlements", "bg-[#f0f5ef] text-[#5e8975]"],
+      ].map(([key, label, Icon, description, tone]) => (
+        <DashboardMetricCard key={key} label={label} value={metric(key, true)} icon={Icon} description={description} tone={tone} currency />
+      ))}
+    </section>
+    {stats.error && <div role="alert" className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">Statistics unavailable.<button type="button" className="font-semibold underline underline-offset-2" onClick={refresh}>Retry</button></div>}
+
+    <section aria-label="Bookings list" className="min-w-0 overflow-hidden rounded-2xl border border-[#e0e9e3] bg-white shadow-sm shadow-[#284d3810]">
+      <div className="flex flex-wrap items-center gap-2.5 bg-[#fcfdfc] p-4 sm:px-5">
+        <form className="flex min-w-0 flex-[1_1_260px] items-center gap-2 rounded-lg border border-[#dce6e1] bg-white pr-1.5 pl-3 focus-within:border-[#82b29f] focus-within:ring-2 focus-within:ring-[#176b60]/10" onSubmit={(event) => { event.preventDefault(); change({ q: new FormData(event.currentTarget).get("q") }); }}>
+          <Search size={16} className="shrink-0 text-[#8ba094]" aria-hidden="true" />
+          <input key={params.get("q") || ""} type="search" name="q" maxLength={200} defaultValue={params.get("q") || ""} aria-label="Search bookings" placeholder="Search booking, customer, vendor…" className="min-w-0! flex-1 border-0! bg-transparent! px-0! py-2.5! text-xs! shadow-none! outline-none! placeholder:text-[#9aa89f]" />
+          <button type="submit" className="rounded-md bg-[#edf4ef] px-2.5 py-1.5 text-[11px] font-medium text-[#176b60] transition-colors hover:bg-[#dfebe3]">Search</button>
+        </form>
+        <select aria-label="Filter bookings by status" className={select} value={activeStatus} onChange={(event) => change({ status: event.target.value })}>
+          <option value="">All statuses</option>
+          {states.map((status) => <option key={status} value={status}>{readable(status)}</option>)}
+        </select>
+        <button type="button" className={button} onClick={() => setFiltersOpen(true)}><SlidersHorizontal size={14} aria-hidden="true" />Filters{filterCount > 0 && <span className="rounded bg-[#176b60] px-1.5 py-0.5 text-[10px] text-white">{filterCount}</span>}</button>
+        <select aria-label="Sort bookings" className={select} value={params.get("sort") || "createdAt"} onChange={(event) => change({ sort: event.target.value })}>{[["createdAt", "Created date"], ["number", "Booking number"], ["customer", "Customer"], ["vendor", "Vendor"], ["eventDate", "Event date"], ["bookingDate", "Scheduled date"], ["amount", "Amount"], ["status", "Status"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+        <button type="button" className={button} onClick={() => change({ direction: params.get("direction") === "asc" ? "desc" : "asc" })} aria-label={`Sort ${params.get("direction") === "asc" ? "descending" : "ascending"}`}><ArrowUpDown size={14} aria-hidden="true" />{params.get("direction") === "asc" ? "Ascending" : "Descending"}</button>
+      </div>
+      {activeFilters.length > 0 && <div className="flex flex-wrap items-center gap-2 border-t border-[#edf1ee] px-4 py-3 sm:px-5">
+        <span className="mr-1 text-[11px] text-[#8a9a90]">Applied:</span>
+        {activeFilters.map(([key, value]) => <button key={key} type="button" onClick={() => change({ [key]: "" })} aria-label={`Remove ${filterLabels[key].toLowerCase()} filter`} className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-[#edf4ef] px-2 py-1 text-[10px] text-[#456e56]"><span className="max-w-48 truncate">{filterLabels[key]}: {readable(value)}</span><X size={11} className="shrink-0" aria-hidden="true" /></button>)}
+        <button type="button" className="ml-auto px-1 py-1 text-[11px] text-[#176b60] underline decoration-[#adc5b8] underline-offset-4" onClick={() => update({ sort: params.get("sort"), direction: params.get("direction"), pageSize: params.get("pageSize") })}>Clear all</button>
+      </div>}
+
+      <div aria-busy={Boolean(state.loading)}>
+        {state.loading && <div className="p-5"><Loading /></div>}
+        {state.error && <ErrorState error={state.error} retry={refresh} />}
+        {!state.loading && !state.error && data && rows.length === 0 && <div className="flex flex-col items-center px-5 py-14 text-center">
+          <span className="mb-4 grid size-14 place-items-center rounded-2xl bg-[#edf4ef] text-[#70957d]"><Inbox size={26} strokeWidth={1.5} aria-hidden="true" /></span>
+          <h3 className="text-sm font-semibold">No bookings found</h3>
+          <p className="mt-1.5 max-w-sm text-xs! leading-relaxed text-[#819189]!">{activeFilters.length ? "Try a different search or clear your filters to see more bookings." : "Your customer bookings will appear here as they come in."}</p>
+          {activeFilters.length > 0 && <button type="button" className={`${button} mt-5`} onClick={() => update({})}>Clear filters</button>}
+        </div>}
+        {!state.loading && !state.error && rows.length > 0 && <>
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[1050px] border-collapse text-left text-xs [&_th]:whitespace-nowrap [&_th]:border-y [&_th]:border-[#e8eeea] [&_th]:bg-[#f5f8f6] [&_th]:px-4 [&_th]:py-3 [&_th]:text-[10px] [&_th]:font-medium [&_th]:tracking-wider [&_th]:text-[#809187] [&_th]:uppercase [&_td]:px-4 [&_td]:py-4 [&_td]:align-middle">
+              <caption className="sr-only">Customer bookings with vendor, event, amount, payment, status, and available actions</caption>
+              <thead><tr>{["Booking", "Customer", "Vendor", "Event & schedule", "Amount", "Payment", "Status", "Actions"].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
+              <tbody className="divide-y divide-[#edf1ee]">{rows.map((row) => <tr key={row.id} className="transition-colors hover:bg-[#f8fbf9]">
+                <td><Link className="whitespace-nowrap text-[11px] font-semibold text-[#176b60]" to={`/admin/bookings/${row.id}`}>{row.number}</Link><span className="mt-1.5 block whitespace-nowrap text-[10px] text-[#8c9b92]">Created {date(row.createdAt)}</span></td>
+                <td><Identity name={row.customer} id={row.customerId} to={`/admin/customers/${row.customerId}`} /></td>
+                <td><Identity name={row.vendor} id={row.vendorId} to={`/admin/vendors/${row.vendorId}`} /></td>
+                <td><span className="block max-w-44 truncate font-medium" title={row.event}>{row.event || "Event not specified"}</span><span className="mt-1 flex items-center gap-1.5 whitespace-nowrap text-[10px] text-[#86978c]"><CalendarDays size={11} aria-hidden="true" />{date(row.eventDate)}</span><Link className="mt-1 block text-[10px] text-[#49816a]" to={`/admin/bookings/${row.id}?tab=Items`}>{number(row.services ?? 0)} services</Link></td>
+                <td className="whitespace-nowrap font-semibold tabular-nums">{money(row.amount ?? 0)}</td><td><StatusBadge value={row.paymentStatus} /></td><td><StatusBadge value={row.status} /></td><td>{actions(row)}</td>
+              </tr>)}</tbody>
+            </table>
+          </div>
+          <div className="grid gap-3 border-t border-[#e8eeea] p-4 md:hidden">{rows.map((row) => <article key={row.id} className="min-w-0 rounded-xl border border-[#e0e9e3] p-4">
+            <div className="flex flex-wrap items-start justify-between gap-2"><Link className="break-all text-xs font-semibold text-[#176b60]" to={`/admin/bookings/${row.id}`}>{row.number}</Link><strong className="text-sm tabular-nums">{money(row.amount ?? 0)}</strong></div>
+            <div className="mt-4 grid gap-3 min-[480px]:grid-cols-2"><Identity name={row.customer} id={row.customerId} to={`/admin/customers/${row.customerId}`} /><Identity name={row.vendor} id={row.vendorId} to={`/admin/vendors/${row.vendorId}`} /></div>
+            <div className="my-4 rounded-lg bg-[#f6f9f6] p-3"><span className="block text-xs font-medium">{row.event || "Event not specified"}</span><div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#7b8f80]"><span className="flex items-center gap-1.5"><CalendarDays size={12} aria-hidden="true" />{date(row.eventDate)}</span><Link className="text-[#176b60]" to={`/admin/bookings/${row.id}?tab=Items`}>{number(row.services ?? 0)} services</Link></div></div>
+            <dl className="flex flex-wrap gap-x-5 gap-y-3"><div><dt className="mb-1.5 text-[10px] text-[#8a9a90]">Booking status</dt><dd><StatusBadge value={row.status} /></dd></div><div><dt className="mb-1.5 text-[10px] text-[#8a9a90]">Payment</dt><dd><StatusBadge value={row.paymentStatus} /></dd></div></dl>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#edf1ee] pt-3"><span className="text-[10px] text-[#8c9b92]">Created {date(row.createdAt)}</span>{actions(row)}</div>
+          </article>)}</div>
+        </>}
+      </div>
+      {!state.loading && !state.error && data && <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e8eeea] bg-[#fcfdfc] px-4 py-3.5 text-[11px] text-[#829288] sm:px-5">
+        <div className="flex flex-wrap items-center gap-3"><span>{data.total ? `${number((page - 1) * data.pageSize + 1)}–${number(Math.min(page * data.pageSize, data.total))} of ${number(data.total)} bookings` : "0 bookings"}</span><select aria-label="Bookings per page" className="min-h-8 rounded-md! border! border-[#e0e7e2]! bg-white! px-2! py-1! text-[11px]!" value={params.get("pageSize") || "20"} onChange={(event) => change({ pageSize: event.target.value })}>{[10, 20, 50, 100].map((value) => <option key={value} value={value}>{value} / page</option>)}</select></div>
+        <div className="flex items-center gap-2"><button type="button" aria-label="Previous page" className="grid size-8 place-items-center rounded-lg border border-[#dce6e1] bg-white text-[#45645a] hover:bg-[#edf4ef] disabled:opacity-35" disabled={page <= 1} onClick={() => update({ ...Object.fromEntries(params), page: page - 1 })}><ChevronLeft size={15} /></button><span className="px-1">Page <strong className="font-medium text-[#45645a]">{page}</strong> of {Math.max(1, Math.ceil(data.total / data.pageSize))}</span><button type="button" aria-label="Next page" className="grid size-8 place-items-center rounded-lg border border-[#dce6e1] bg-white text-[#45645a] hover:bg-[#edf4ef] disabled:opacity-35" disabled={page * data.pageSize >= data.total} onClick={() => update({ ...Object.fromEntries(params), page: page + 1 })}><ChevronRight size={15} /></button></div>
+      </footer>}
+    </section>
+    {filtersOpen && <Filters params={params} close={() => setFiltersOpen(false)} apply={(values) => { update({ ...values, page: 1 }); setFiltersOpen(false); }} />}
+  </div>;
 }
