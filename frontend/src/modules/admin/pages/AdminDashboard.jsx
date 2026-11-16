@@ -41,7 +41,7 @@ const metrics = [
     "pendingServices",
     "Pending service approvals",
     ClipboardCheck,
-    "services/pending",
+    "services",
   ],
   [
     "pendingBookings",

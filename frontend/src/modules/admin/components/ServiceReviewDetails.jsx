@@ -45,14 +45,13 @@ export function ServiceReviewHeader() {
     <div>
       <nav className="mb-[25px] flex flex-wrap items-center gap-[9px] text-[11px] text-[#7b877e] [&_[aria-current]]:text-[#354d40] [@media(width<=600px)]:mb-5 [@media(width<=600px)]:text-[10px]" aria-label="Breadcrumb">
         <Link to="/admin/services">Services</Link><ChevronRight size={12} />
-        <Link to="/admin/services/pending">Approval queue</Link><ChevronRight size={12} />
         <span aria-current="page">Service review</span>
       </nav>
       <p className="mt-0! mb-2! text-[10px]! font-semibold tracking-[2.2px] text-[#9b8255]!">MARKETPLACE CURATION</p>
       <h1>Review service<span>.</span></h1>
       <p>Review approval status, rejection reasons, and every listing detail.</p>
     </div>
-    <Link className="inline-flex min-h-[42px] cursor-pointer items-center justify-center gap-[9px] rounded-lg border px-4 py-[11px] text-[12px] leading-[1.5] font-medium no-underline transition-[background,box-shadow,border-color] duration-180 hover:shadow-[0_3px_8px_#203e3510] disabled:cursor-not-allowed disabled:opacity-55 border-[#dce3da] bg-white text-[#45614f] hover:border-[#b6c5b6] hover:bg-[#f2f5ef] mb-[3px] shrink-0 self-end [@media(width<=600px)]:min-h-[38px] [@media(width<=600px)]:self-start [@media(width<=600px)]:px-3 [@media(width<=600px)]:py-2 [@media(width<=600px)]:text-[11px]" to="/admin/services/pending"><ArrowLeft size={15} />Back to queue</Link>
+    <Link className="inline-flex min-h-[42px] cursor-pointer items-center justify-center gap-[9px] rounded-lg border px-4 py-[11px] text-[12px] leading-[1.5] font-medium no-underline transition-[background,box-shadow,border-color] duration-180 hover:shadow-[0_3px_8px_#203e3510] disabled:cursor-not-allowed disabled:opacity-55 border-[#dce3da] bg-white text-[#45614f] hover:border-[#b6c5b6] hover:bg-[#f2f5ef] mb-[3px] shrink-0 self-end [@media(width<=600px)]:min-h-[38px] [@media(width<=600px)]:self-start [@media(width<=600px)]:px-3 [@media(width<=600px)]:py-2 [@media(width<=600px)]:text-[11px]" to="/admin/services"><ArrowLeft size={15} />Back to services</Link>
   </header>;
 }
 

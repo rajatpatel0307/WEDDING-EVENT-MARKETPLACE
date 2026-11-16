@@ -825,13 +825,7 @@ export default function AppRoutes() {
             />
             <Route
               path="services/pending"
-              element={
-                <Suspense
-                  fallback={<div role="status">Loading service queue...</div>}
-                >
-                  <ServiceApprovalPage />
-                </Suspense>
-              }
+              element={<Navigate to="/admin/services" replace />}
             />
             <Route
               path="services/:serviceId/review"
@@ -839,7 +833,7 @@ export default function AppRoutes() {
                 <Suspense
                   fallback={<div role="status">Loading service review...</div>}
                 >
-                  <ServiceApprovalPage review />
+                  <ServiceApprovalPage />
                 </Suspense>
               }
             />

@@ -57,7 +57,6 @@ export default function AdminSidebar({
   const location = useLocation();
 
   const [pendingCount, setPendingCount] = useState(null);
-  const [serviceCount, setServiceCount] = useState(null);
 
   const segments = location.pathname.split("/");
 
@@ -65,47 +64,6 @@ export default function AdminSidebar({
     segments[2] === "finance"
       ? segments[3]
       : segments[2] || "dashboard";
-
-  // Load pending service approval count
-  useEffect(() => {
-    const abort = new AbortController();
-
-    const refreshCount = () => {
-      adminRequest("/services/pending-count", {
-        signal: abort.signal,
-      })
-        .then((result) => {
-          setServiceCount(result.pendingCount);
-        })
-        .catch(() => {});
-    };
-
-    refreshCount();
-
-    window.addEventListener(
-      "marrynest:service-decision",
-      refreshCount
-    );
-
-    window.addEventListener(
-      "focus",
-      refreshCount
-    );
-
-    return () => {
-      abort.abort();
-
-      window.removeEventListener(
-        "marrynest:service-decision",
-        refreshCount
-      );
-
-      window.removeEventListener(
-        "focus",
-        refreshCount
-      );
-    };
-  }, []);
 
   // Load pending vendor approval count
   useEffect(() => {
@@ -270,14 +228,6 @@ export default function AdminSidebar({
                       pendingCount !== null && (
                         <span className="va-pending-badge inline-flex items-center justify-center [background:#e8f0e1] text-[#567d47] text-[9px] rounded-[5px] [padding:1px_5px] ml-[auto]">
                           {pendingCount}
-                        </span>
-                      )}
-
-                    {/* Pending Service Badge */}
-                    {path === "services/pending" &&
-                      serviceCount !== null && (
-                        <span className="va-pending-badge inline-flex items-center justify-center [background:#e8f0e1] text-[#567d47] text-[9px] rounded-[5px] [padding:1px_5px] ml-[auto]">
-                          {serviceCount}
                         </span>
                       )}
 
