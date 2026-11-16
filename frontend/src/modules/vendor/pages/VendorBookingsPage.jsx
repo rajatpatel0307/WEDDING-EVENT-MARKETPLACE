@@ -10,6 +10,7 @@ import { vendorRequest, save, money, date, timestamp } from "../services/workspa
 import { BookingStatus } from "../../admin/components/BookingUI";
 import BookingChanges from "../../bookings/BookingChanges";
 import BookingItemDetails from "../../bookings/BookingItemDetails";
+import useBookingCustomerChat from "../services/useBookingCustomerChat";
 
 const card = "min-w-0 rounded-2xl border border-[#dfe8e2] bg-white shadow-[0_2px_8px_#244d3403]";
 const caption = "text-[11px] font-medium uppercase tracking-[0.09em] text-[#61766a]";
@@ -48,6 +49,7 @@ function ServiceDetails({ description }) {
 
 export default function VendorBookingsPage() {
   const { id } = useParams();
+  const { openCustomerChat, openingBookingId, chatError } = useBookingCustomerChat();
   const [version, setVersion] = useState(0);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -131,6 +133,7 @@ export default function VendorBookingsPage() {
     </header>
 
     {success && <p role="status" className="flex items-center gap-2.5 rounded-xl border border-[#cfe5d4] bg-[#eaf5ed] px-4 py-3 text-sm text-[#326548]"><CircleCheck size={18} aria-hidden="true" />{success}</p>}
+    {chatError && <p role="alert" className="rounded-xl border border-[#efd2cd] bg-[#fff3f0] px-4 py-3 text-sm text-[#a24338]">{chatError}</p>}
     {error && !pending && <p role="alert" className="rounded-xl border border-[#efd2cd] bg-[#fff3f0] px-4 py-3 text-sm text-[#a24338]">{error}</p>}
     {pending && <div className="flex items-start gap-3 rounded-xl border border-[#e8ddbe] bg-[#fcf8ec] p-4 text-[#806b36]">
       <Clock3 size={19} className="mt-0.5" aria-hidden="true" />
@@ -202,6 +205,9 @@ export default function VendorBookingsPage() {
               {!customer.email && !customer.phone && <p className="text-[#647b59]">Contact details not provided.</p>}
             </div>
           </> : <p className="text-sm text-[#627969]">Customer details are not available.</p>}
+          <button type="button" disabled={openingBookingId != null} onClick={() => openCustomerChat(id)} aria-busy={openingBookingId === id} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#cbded3] bg-[#edf6f0] px-4 py-3 text-xs font-semibold text-[#397154] transition-colors hover:border-[#9cbea7] hover:bg-[#dfede2] disabled:opacity-55">
+            {openingBookingId === id ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <MessageSquare size={17} aria-hidden="true" />}{openingBookingId === id ? "Opening conversation…" : "Message customer"}
+          </button>
         </section>
 
         <section className={`${card} overflow-hidden`} aria-label="Payment summary">

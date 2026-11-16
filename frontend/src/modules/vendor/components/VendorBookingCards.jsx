@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowUpRight, CalendarCheck, ShoppingBag, CalendarDays, Clock,
   CircleCheck, CircleX, CalendarClock, Ban,
@@ -17,13 +17,17 @@ const cards = [
 ];
 
 export default function VendorBookingCards({ filter = "all", refreshVersion = 0 }) {
+  const [params] = useSearchParams();
   const state = useVendorData("/bookings/statistics", refreshVersion);
   return <section aria-label="Vendor booking statistics" aria-busy={state.loading}>
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:gap-4">
       {cards.map(([key, category, label, Icon, color]) => {
         const selected = filter === category;
         const count = state.data?.[key];
-        return <Link key={key} to={`/vendor/bookings/${category}`} aria-current={selected ? "page" : undefined}
+        const next = new URLSearchParams(params);
+        category === "all" ? next.delete("status") : next.set("status", category);
+        next.set("page", "1");
+        return <Link key={key} to={`/vendor/bookings/all?${next}`} aria-current={selected ? "page" : undefined}
           className={`group relative flex min-w-0 flex-col justify-between gap-3 overflow-hidden rounded-2xl border p-4 transition-colors ${selected ? "border-[#31594a] bg-[#31594a] shadow-sm" : "border-[#dfe8e2] bg-white hover:border-[#9ebba8] hover:bg-[#fbfdf9]"}`}>
           <div className="flex items-start justify-between gap-2">
             <span className={`max-w-[145px] text-xs leading-relaxed font-medium ${selected ? "text-[#dce9df]" : "text-[#62796b]"}`}>{label}</span>

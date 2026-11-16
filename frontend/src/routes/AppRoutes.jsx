@@ -2,7 +2,7 @@ import { BookingCheckout, CartCheckout, PurchaseOrder, MyOrders } from "../modul
 import VendorAccessPage from "../modules/admin/pages/VendorAccessPage";
 import VendorVerificationPage from "../modules/vendor/pages/VendorVerificationPage";
 import VendorProfilePage from "../modules/vendor/pages/VendorProfilePage";
-import { Routes, Route, Navigate, Link } from "react-router-dom";
+import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import GuestRoute from "./GuestRoute";
 import ProtectedRoute from "./ProtectedRoute";
@@ -234,6 +234,13 @@ function PublicPage({ children }) {
     </Suspense>
   );
 }
+function VendorBookingStatusRedirect({ status }) {
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  params.set("status", status);
+  return <Navigate to={`/vendor/bookings/all?${params}`} replace />;
+}
+
 export default function AppRoutes() {
   return (
     <Routes>
@@ -585,8 +592,8 @@ export default function AppRoutes() {
                   </Suspense>
                 }
               />
+              <Route path="bookings/all" element={<VendorBookingsList />} />
               {[
-                "all",
                 "requests",
                 "upcoming",
                 "active",
@@ -598,12 +605,7 @@ export default function AppRoutes() {
                 <Route
                   key={filter}
                   path={`bookings/${filter}`}
-                  element={
-                    <VendorBookingsList
-                      key={`bookings-${filter}`}
-                      filter={filter}
-                    />
-                  }
+                  element={<VendorBookingStatusRedirect status={filter} />}
                 />
               ))}
               <Route
