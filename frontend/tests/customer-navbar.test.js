@@ -54,6 +54,8 @@ test("customer workspace renders its customer header, sidebar, counts and nested
     assert.equal((workspace.match(/<header\b/g) || []).length, 1);
     assert.ok(workspace.includes('aria-label="Marketplace navigation"'));
     assert.ok(workspace.includes('aria-label="Customer profile menu"'));
+    assert.ok(workspace.includes('aria-label="Search customer pages"'));
+    assert.ok(workspace.includes('aria-label="Open search"'));
     assert.ok(workspace.includes('id="customer-sidebar"'));
     assert.ok(workspace.includes('aria-label="Customer pages"'));
     for (const path of ["dashboard", "profile", "events", "discover", "bookings", "quotations", "wishlist", "messages", "notifications", "payments", "reviews", "addresses", "settings", "cart", "orders", "legal"]) {
@@ -66,11 +68,16 @@ test("customer workspace renders its customer header, sidebar, counts and nested
     assert.ok(workspace.includes("Customer dashboard content"));
     assert.ok(workspace.includes('aria-label="Open dashboard navigation"'));
     assert.ok(workspace.includes('aria-label="Collapse sidebar"'));
-    assert.ok(workspace.includes("lg:ml-[280px]"));
+    assert.ok(workspace.includes("md:ml-[218px] xl:ml-[244px]"));
+    assert.ok(workspace.indexOf('id="customer-sidebar"') < workspace.indexOf("<header"));
+    assert.ok(workspace.indexOf("<header") < workspace.indexOf('id="main-content"'));
+    const sidebarMarkup = workspace.match(/<aside\b[^>]*>/)?.[0];
+    assert.match(sidebarMarkup, /top-0/);
+    assert.doesNotMatch(sidebarMarkup, /top-\[76px\]/);
     collapsed = true;
     const collapsedWorkspace = render();
     assert.ok(collapsedWorkspace.includes('aria-label="Expand sidebar"'));
-    assert.ok(collapsedWorkspace.includes("lg:ml-[76px]"));
+    assert.ok(collapsedWorkspace.includes("md:ml-[76px]"));
     globalThis.window.localStorage.getItem = () => { throw new Error("Storage unavailable"); };
     assert.ok(render().includes('aria-label="Collapse sidebar"'));
   } finally {

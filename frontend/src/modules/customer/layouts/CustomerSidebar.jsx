@@ -4,55 +4,12 @@ import {
   Link,
 } from "react-router-dom";
 
-import {
-  LayoutDashboard,
-  UserRound,
-  CalendarHeart,
-  Search,
-  ShoppingBag,
-  FileText,
-  Heart,
-  MessagesSquare,
-  Bell,
-  Wallet,
-  Star,
-  MapPin,
-  Settings,
-  House,
-  Store,
-  Package,
-  BadgePercent,
-  PanelLeftClose,
-  PanelLeftOpen,
-  X,
-} from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { customerNavigation as navigation, marketplaceLinks } from "../navigation";
 
 import { useAuth } from "../../../context/AuthContext";
 import fullLogo from "../../../assets/MarryNest Wedding Logo.png";
 import compactLogo from "../../../assets/small logo.png";
-
-// ============================================
-// CUSTOMER NAVIGATION
-// ============================================
-
-const navigation = [
-  ["dashboard", "Dashboard", LayoutDashboard],
-  ["profile", "My Profile", UserRound],
-  // ["events", "My Events", CalendarHeart],
-  // ["discover", "Find Services", Search], 
-  ["bookings", "My Bookings", ShoppingBag],
-  ["quotations", "My Quotations", FileText],
-  ["wishlist", "Wishlist", Heart],
-  ["messages", "Messages", MessagesSquare],
-  ["notifications", "Notifications", Bell],
-  ["payments", "Payments", Wallet],
-  ["reviews", "Reviews", Star],
-  ["addresses", "Addresses", MapPin],
-  ["settings", "Settings", Settings],
-  ["cart", "My Cart", ShoppingBag],
-  ["orders", "My Orders", ShoppingBag],
-  ["legal", "Legal & Privacy", FileText],
-];
 
 // ============================================
 // NAVIGATION GROUPS
@@ -75,21 +32,6 @@ const groups = [
     label: "MY ACCOUNT",
     items: navigation.slice(9),
   },
-];
-
-// ============================================
-// MARKETPLACE QUICK LINKS
-// Visible when top navigation is hidden
-// ============================================
-
-const marketplaceLinks = [
-  ["Home", "/", House],
-  ["Services", "/customer/discover", Search],
-  ["Vendors", "/customer/discover?type=vendors", Store],
-  ["Venues", "/customer/discover?venue=1", MapPin],
-  ["Packages", "/customer/discover?type=packages", Package],
-  ["Offers", "/customer/discover?type=offers", BadgePercent],
-  ["My Events", "/customer/events", CalendarHeart],
 ];
 
 // ============================================
@@ -124,26 +66,26 @@ export default function CustomerSidebar({
       aria-label="Customer navigation"
       className={`
         fixed bottom-0 left-0
-        top-[76px] z-50
+        top-0 z-[70]
 
         flex w-[280px]
         max-w-[88vw] flex-col
 
-        border-r border-[#e6ebe1]
-        bg-[#fffefa]
+        border-r border-[#dce4df]
+        bg-white
         shadow-xl
 
         transition-[width,transform]
         duration-200 ease-in-out
 
-        lg:max-w-none
-        lg:translate-x-0
-        lg:shadow-none
+        md:max-w-none
+        md:translate-x-0
+        md:shadow-none
 
         ${
           collapsed
-            ? "lg:w-[76px]"
-            : "lg:w-[280px]"
+            ? "md:w-[76px]"
+            : "md:w-[218px] xl:w-[244px]"
         }
 
         ${
@@ -159,14 +101,14 @@ export default function CustomerSidebar({
 
       <div
         className={`
-          flex h-[89px] shrink-0
+          flex h-[76px] shrink-0
           items-center justify-between
-          gap-2 border-b border-[#e6ebe1]
+          gap-2
           px-4
 
           ${
             collapsed
-              ? "lg:flex-col lg:justify-center lg:gap-1 lg:px-2"
+              ? "md:h-[108px] md:flex-col md:justify-center md:gap-1 md:px-2"
               : ""
           }
         `}
@@ -183,14 +125,14 @@ export default function CustomerSidebar({
             alt="MarryNest"
             width="185"
             height="65"
-            className={`block h-[65px] w-auto max-w-[185px] object-contain ${collapsed ? "lg:hidden" : ""}`}
+            className={`block h-auto max-h-[65px] w-full max-w-[160px] object-contain ${collapsed ? "md:hidden" : ""}`}
           />
           <img
             src={compactLogo}
             alt=""
             width="40"
             height="39"
-            className={`hidden h-[39px] w-10 object-contain ${collapsed ? "lg:block" : ""}`}
+            className={`hidden h-[39px] w-10 object-contain ${collapsed ? "md:block" : ""}`}
           />
         </Link>
 
@@ -221,7 +163,7 @@ export default function CustomerSidebar({
             hover:bg-[#f1f5ec]
             hover:text-[#4b7049]
 
-            lg:flex
+            md:flex
           "
         >
           {collapsed ? (
@@ -250,7 +192,7 @@ export default function CustomerSidebar({
             text-[#87947e]
 
             hover:bg-[#f1f5ec]
-            lg:hidden
+            md:hidden
           "
         >
           <X size={20} />
@@ -272,7 +214,7 @@ export default function CustomerSidebar({
           [scrollbar-width:thin]
           [scrollbar-color:#ced8c7_transparent]
 
-          ${collapsed ? "lg:px-[10px]" : ""}
+          ${collapsed ? "md:px-[10px]" : ""}
         `}
       >
         {groups.map((group, groupIndex) => (
@@ -283,7 +225,7 @@ export default function CustomerSidebar({
 
               ${
                 collapsed && groupIndex > 0
-                  ? "lg:border-t lg:border-[#edf2e5] lg:pt-[13px]"
+                  ? "md:border-t md:border-[#edf2e5] md:pt-[13px]"
                   : ""
               }
             `}
@@ -296,7 +238,7 @@ export default function CustomerSidebar({
                 uppercase tracking-[1.4px]
                 text-[#a4af9b]
 
-                ${collapsed ? "lg:hidden" : ""}
+                ${collapsed ? "md:hidden" : ""}
               `}
             >
               {group.label}
@@ -340,7 +282,7 @@ export default function CustomerSidebar({
 
                         ${
                           collapsed
-                            ? "lg:justify-center lg:gap-0 lg:px-[10px]"
+                            ? "md:justify-center md:gap-0 md:px-[10px]"
                             : ""
                         }
 
@@ -384,7 +326,7 @@ export default function CustomerSidebar({
                             className={`
                               min-w-0 flex-1 truncate
 
-                              ${collapsed ? "lg:hidden" : ""}
+                              ${collapsed ? "md:hidden" : ""}
                             `}
                           >
                             {label}
@@ -403,7 +345,7 @@ export default function CustomerSidebar({
                                   text-[9px] font-semibold
                                   text-[#486d3c]
 
-                                  ${collapsed ? "lg:hidden" : ""}
+                                  ${collapsed ? "md:hidden" : ""}
                                 `}
                               >
                                 {count > 99 ? "99+" : count}
@@ -416,7 +358,7 @@ export default function CustomerSidebar({
                                     absolute right-1 top-1
                                     hidden h-2 w-2
                                     rounded-full bg-[#63894d]
-                                    lg:block
+                                    md:block
                                   "
                                 />
                               )}
@@ -430,7 +372,7 @@ export default function CustomerSidebar({
                                 h-1.5 w-1.5
                                 rounded-full bg-[#63894d]
 
-                                ${collapsed ? "lg:hidden" : ""}
+                                ${collapsed ? "md:hidden" : ""}
                               `}
                             />
                           )}
@@ -446,13 +388,14 @@ export default function CustomerSidebar({
 
         {/* ======================================
             MARKETPLACE SHORTCUTS
-            Shown when header links are hidden
+            Available at every screen size
         ====================================== */}
 
-        <div
+        <section
+          aria-label="Marketplace navigation"
           className={`
             mb-5 border-t border-[#edf2e5]
-            pt-5 xl:hidden
+            pt-5
           `}
         >
           <h2
@@ -462,7 +405,7 @@ export default function CustomerSidebar({
               uppercase tracking-[1.4px]
               text-[#a4af9b]
 
-              ${collapsed ? "lg:hidden" : ""}
+              ${collapsed ? "md:hidden" : ""}
             `}
           >
             EXPLORE MARKETPLACE
@@ -493,7 +436,7 @@ export default function CustomerSidebar({
 
                     ${
                       collapsed
-                        ? "lg:justify-center lg:gap-0 lg:px-[10px]"
+                        ? "md:justify-center md:gap-0 md:px-[10px]"
                         : ""
                     }
                   `}
@@ -508,7 +451,7 @@ export default function CustomerSidebar({
                     className={`
                       truncate
 
-                      ${collapsed ? "lg:hidden" : ""}
+                      ${collapsed ? "md:hidden" : ""}
                     `}
                   >
                     {label}
@@ -517,7 +460,7 @@ export default function CustomerSidebar({
               )
             )}
           </div>
-        </div>
+        </section>
       </nav>
     </aside>
   );

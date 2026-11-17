@@ -111,22 +111,11 @@ export default function CustomerLayout() {
   return (
     <div
       className="
-        min-h-screen bg-[#f6f8f4]
+        min-h-screen bg-[#f6f8f7]
         font-sans text-[13px]
         leading-relaxed text-[#2e4439]
       "
     >
-      {/* ======================================
-          CUSTOMER HEADER
-      ====================================== */}
-
-      <CustomerHeader
-        mobileOpen={mobileOpen}
-        onToggleMobile={() =>
-          setMobileOpen((previous) => !previous)
-        }
-      />
-
       {/* ======================================
           MOBILE BACKDROP
       ====================================== */}
@@ -137,12 +126,11 @@ export default function CustomerLayout() {
           aria-label="Close customer navigation"
           onClick={() => setMobileOpen(false)}
           className="
-            fixed inset-x-0 bottom-0
-            top-[76px] z-40
+            fixed inset-0 z-[65]
             cursor-default border-0
             bg-[#1a352b]/40
             backdrop-blur-[2px]
-            lg:hidden
+            md:hidden
           "
         />
       )}
@@ -164,18 +152,25 @@ export default function CustomerLayout() {
 
       <div
         className={`
-          min-h-[calc(100vh-76px)]
+          min-h-screen
           min-w-0
           transition-[margin-left]
           duration-200 ease-in-out
 
           ${
             collapsed
-              ? "lg:ml-[76px]"
-              : "lg:ml-[280px]"
+              ? "md:ml-[76px]"
+              : "md:ml-[218px] xl:ml-[244px]"
           }
         `}
       >
+        <CustomerHeader
+          mobileOpen={mobileOpen}
+          onToggleMobile={() =>
+            setMobileOpen((previous) => !previous)
+          }
+        />
+
         <main
           id="main-content"
           className="

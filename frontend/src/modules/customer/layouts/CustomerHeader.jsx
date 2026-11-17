@@ -1,6 +1,4 @@
-
-import { useEffect, useRef, useState } from "react";
-
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Link,
   useLocation,
@@ -8,93 +6,196 @@ import {
 } from "react-router-dom";
 
 import {
+  ArrowUpRight,
   Bell,
   ChevronDown,
-  Heart,
   LogOut,
   Menu,
+  Search,
+  Heart,
   MessagesSquare,
   X,
 } from "lucide-react";
 
 import { useAuth } from "../../../context/AuthContext";
+import { customerNavigation, marketplaceLinks } from "../navigation";
 
 // ============================================
-// MARKETPLACE NAVIGATION
+// CURRENT DATE
 // ============================================
 
-const topNavigation = [
-  ["Home", "/"],
-  ["Services", "/customer/discover"],
-  ["Vendors", "/customer/discover?type=vendors"],
-  ["Venues", "/customer/discover?venue=1"],
-  ["Packages", "/customer/discover?type=packages"],
-  ["Offers", "/customer/discover?type=offers"],
-  ["My Events", "/customer/events"],
-];
-
-const profileNavigation = [
-  ["My Profile", "profile"],
-  ["My Addresses", "addresses"],
-  ["My Bookings", "bookings"],
-  ["My Quotations", "quotations"],
-  ["Payments", "payments"],
-];
+const getCurrentDate = () =>
+  new Date().toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
 
 // ============================================
-// HEADER ACTION LINK
+// SHARED SEARCH INPUT
 // ============================================
 
-function HeaderAction({
-  to,
-  label,
-  icon: Icon,
-  count = 0,
-  className = "",
+function CustomerSearchInput({
+  query,
+  onChange,
+  onClear,
+  onFocus,
+  autoFocus = false,
+  placeholder = "Search anything...",
 }) {
   return (
-    <Link
-      to={to}
-      title={label}
-      aria-label={
-        count > 0 ? `${label}: ${count} items` : label
-      }
-      className={`
-        relative flex h-10 w-10
-        shrink-0 items-center
-        justify-center rounded-lg
-        text-[#87947e] no-underline
-
-        transition-colors duration-200
-        hover:bg-[#f1f5ec]
-        hover:text-[#245c49]
-
-        focus-visible:outline-2
-        focus-visible:outline-offset-2
-        focus-visible:outline-[#8aaf94]
-
-        ${className}
-      `}
+    <div
+      className="
+        flex h-11 w-full min-w-0 items-center gap-3
+        rounded-xl border border-slate-200
+        bg-slate-50 px-3
+        transition-all duration-200
+        hover:border-slate-300
+        focus-within:border-[#956d67]
+        focus-within:bg-white
+        focus-within:ring-2
+        focus-within:ring-[#956d67]/10
+      "
     >
-      <Icon size={19} strokeWidth={1.7} />
+      <Search
+        size={18}
+        strokeWidth={1.8}
+        className="pointer-events-none shrink-0 text-slate-400"
+      />
 
-      {Number(count) > 0 && (
-        <span
+      <input
+        type="text"
+        inputMode="search"
+        autoComplete="off"
+        autoFocus={autoFocus}
+        role="searchbox"
+        aria-label="Search customer pages"
+        placeholder={placeholder}
+        value={query}
+        onChange={(event) => onChange(event.target.value)}
+        onFocus={onFocus}
+        className="
+          !m-0 !block !h-full !min-h-0
+          !w-full !min-w-0 !flex-1
+          !appearance-none !rounded-none
+          !border-0 !bg-transparent !p-0
+          !text-sm !font-normal !text-slate-700
+          !shadow-none !outline-none !ring-0
+          placeholder:!text-slate-400
+          focus:!border-0
+          focus:!bg-transparent
+          focus:!shadow-none
+          focus:!outline-none
+          focus:!ring-0
+          focus-visible:!outline-none
+        "
+      />
+
+      {query && (
+        <button
+          type="button"
+          aria-label="Clear search"
+          onClick={onClear}
           className="
-            absolute right-1 top-1
-            h-2 w-2 rounded-full
-            bg-[#b9a276]
-            ring-2 ring-white
+            flex h-7 w-7 shrink-0 items-center
+            justify-center rounded-md
+            border-0 bg-transparent p-0
+            text-slate-400 shadow-none
+            transition-colors
+            hover:bg-slate-200
+            hover:text-slate-700
           "
-        />
+        >
+          <X size={15} />
+        </button>
       )}
-    </Link>
+    </div>
+  );
+}
+
+// ============================================
+// SEARCH RESULTS
+// ============================================
+
+function CustomerSearchResults({
+  query,
+  matches,
+  onClose,
+  mobile = false,
+}) {
+  if (!query.trim()) return null;
+
+  return (
+    <div
+      className={
+        mobile
+          ? "mt-3 max-h-[55vh] overflow-y-auto rounded-xl border border-slate-100 bg-white p-2"
+          : "absolute left-0 right-0 top-full z-[60] mt-2 max-h-96 overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
+      }
+    >
+      {matches.length > 0 ? (
+        matches.map(([path, label, Icon]) => (
+          <Link
+            key={path}
+            to={path}
+            onClick={onClose}
+            className="
+              flex items-center gap-3 rounded-lg
+              px-3 py-3 text-sm text-slate-700
+              transition-colors
+              hover:bg-slate-50
+              hover:text-[#273e35]
+            "
+          >
+            <Icon
+              size={17}
+              strokeWidth={1.8}
+              className="shrink-0 text-slate-400"
+            />
+
+            <span className="min-w-0 flex-1 truncate">
+              {label}
+            </span>
+
+            <ArrowUpRight
+              size={14}
+              className="shrink-0 text-slate-400"
+            />
+          </Link>
+        ))
+      ) : (
+        <div role="status" className="px-4 py-7 text-center">
+          <Search
+            size={23}
+            className="mx-auto mb-2 text-slate-300"
+          />
+
+          <p className="text-sm font-medium text-slate-600">
+            No matching pages
+          </p>
+
+          <p className="mt-1 text-xs text-slate-400">
+            Try a different search term.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 
 // ============================================
 // CUSTOMER HEADER
 // ============================================
+
+function HeaderAction({ to, label, icon: Icon, count = 0, className = "" }) {
+  return (
+    <Link to={to} title={label} aria-label={count > 0 ? `${label}, ${count} items` : label} className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-600 no-underline transition-colors hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-[#956d67] ${className}`}>
+      <Icon size={20} strokeWidth={1.8} />
+      {Number(count) > 0 && <span className="absolute -right-1 -top-1 flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{count > 99 ? "99+" : count}</span>}
+    </Link>
+  );
+}
 
 export default function CustomerHeader({
   mobileOpen = false,
@@ -105,98 +206,197 @@ export default function CustomerHeader({
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
-  const [logoutError, setLogoutError] = useState("");
+  // ============================================
+  // SEARCH STATES
+  // ============================================
 
+  const [query, setQuery] = useState("");
+
+  const [desktopSearchOpen, setDesktopSearchOpen] =
+    useState(false);
+
+  const [mobileSearchOpen, setMobileSearchOpen] =
+    useState(false);
+
+  // ============================================
+  // PROFILE STATE
+  // ============================================
+
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const [logoutError, setLogoutError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [failedPhotoUrl, setFailedPhotoUrl] = useState(null);
+
+  // ============================================
+  // DATE STATE
+  // ============================================
+
+  const [currentDate, setCurrentDate] = useState(
+    getCurrentDate
+  );
+
+  // ============================================
+  // REFS
+  // ============================================
+
+  const desktopSearchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
   const profileRef = useRef(null);
 
   // ============================================
-  // CLOSE PROFILE ON ROUTE CHANGE
+  // SEARCH MATCHES
+  // ============================================
+
+  const matches = useMemo(() => {
+    const searchText = query.trim().toLowerCase();
+
+    if (!searchText) return [];
+
+    return [
+      ...customerNavigation.map(([path, label, Icon]) => [`/customer/${path}`, label, Icon]),
+      ...marketplaceLinks.map(([label, path, Icon]) => [path, label, Icon]),
+    ]
+      .filter(([, label]) =>
+        label.toLowerCase().includes(searchText)
+      )
+      .slice(0, 6);
+  }, [query]);
+
+  // ============================================
+  // CURRENT DATE EFFECT
   // ============================================
 
   useEffect(() => {
-    setProfileOpen(false);
-  }, [location.pathname, location.search]);
+    const timer = setInterval(() => {
+      setCurrentDate(getCurrentDate());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // ============================================
-  // ESCAPE KEY
+  // ESCAPE KEY HANDLING
   // ============================================
 
   useEffect(() => {
-    const closeOnEscape = (event) => {
-      if (event.key === "Escape") {
-        setProfileOpen(false);
-      }
+    const handleEscape = (event) => {
+      if (event.key !== "Escape") return;
+
+      setProfileOpen(false);
+      setDesktopSearchOpen(false);
+      setMobileSearchOpen(false);
     };
 
-    window.addEventListener(
-      "keydown",
-      closeOnEscape
-    );
+    window.addEventListener("keydown", handleEscape);
 
     return () => {
       window.removeEventListener(
         "keydown",
-        closeOnEscape
+        handleEscape
       );
     };
   }, []);
 
   // ============================================
-  // OUTSIDE CLICK
+  // OUTSIDE CLICK HANDLING
   // ============================================
 
   useEffect(() => {
-    const closeOnOutsideClick = (event) => {
+    const handleOutsideClick = (event) => {
       if (
         profileRef.current &&
         !profileRef.current.contains(event.target)
       ) {
         setProfileOpen(false);
       }
+
+      if (
+        desktopSearchRef.current &&
+        !desktopSearchRef.current.contains(event.target)
+      ) {
+        setDesktopSearchOpen(false);
+      }
+
+      if (
+        mobileSearchRef.current &&
+        !mobileSearchRef.current.contains(event.target)
+      ) {
+        setMobileSearchOpen(false);
+      }
     };
 
     document.addEventListener(
       "pointerdown",
-      closeOnOutsideClick
+      handleOutsideClick
     );
 
     return () => {
       document.removeEventListener(
         "pointerdown",
-        closeOnOutsideClick
+        handleOutsideClick
       );
     };
   }, []);
 
   // ============================================
-  // LOGOUT
+  // CLOSE MENUS ON ROUTE CHANGE
   // ============================================
+
+  useEffect(() => {
+    setProfileOpen(false);
+    setDesktopSearchOpen(false);
+    setMobileSearchOpen(false);
+    setQuery("");
+  }, [location.pathname, location.search, mobileOpen]);
+
+  // ============================================
+  // SEARCH HANDLERS
+  // ============================================
+
+  const clearSearch = () => {
+    setQuery("");
+  };
+
+  const closeSearch = () => {
+    setQuery("");
+    setDesktopSearchOpen(false);
+    setMobileSearchOpen(false);
+  };
+
+  const toggleMobileSearch = () => {
+    if (mobileSearchOpen) {
+      closeSearch();
+      return;
+    }
+
+    setMobileSearchOpen(true);
+    setDesktopSearchOpen(false);
+    setProfileOpen(false);
+  };
+
+  // ============================================
+  // PROFILE HANDLERS
+  // ============================================
+
+  const toggleProfile = () => {
+    setProfileOpen((previous) => !previous);
+    setDesktopSearchOpen(false);
+    setMobileSearchOpen(false);
+  };
 
   const handleLogout = async () => {
     if (loggingOut) return;
-
     try {
       setLoggingOut(true);
       setLogoutError("");
-
       await logout();
-
       setProfileOpen(false);
-
-      navigate("/auth/login", {
-        replace: true,
-      });
+      navigate("/auth/login", { replace: true });
     } catch (error) {
-      const message =
-        error?.message || "Unable to sign out.";
-
+      const message = error?.message || "Unable to sign out. Please try again.";
       setLogoutError(message);
-
-      if (typeof notify === "function") {
-        notify(message);
-      }
+      if (typeof notify === "function") notify(message);
     } finally {
       setLoggingOut(false);
     }
@@ -212,8 +412,11 @@ export default function CustomerHeader({
     .charAt(0)
     .toUpperCase();
 
+  const unreadNotifications =
+    user?.unreadNotificationCount ?? 0;
+
   // ============================================
-  // HEADER RENDER
+  // RENDER
   // ============================================
 
   return (
@@ -221,261 +424,328 @@ export default function CustomerHeader({
       className="
         sticky top-0 z-[60]
         flex h-[76px] w-full
-        items-center justify-between gap-3
-
-        border-b border-[#e6ebe1]
+        items-center justify-between gap-2
+        overflow-visible
+        border-b border-slate-200
         bg-white px-3 shadow-sm
-
-        sm:px-5 lg:px-6
+        sm:px-5 lg:px-6 xl:px-8
       "
     >
-      {/* ======================================
-          COMPANY LOGO
-      ====================================== */}
-
-      <Link
-        to="/customer/dashboard"
-        aria-label="MarryNest Customer Dashboard"
-        className="
-          flex min-w-0 shrink-0
-          items-center no-underline
-        "
-      >
-        <img
-          src="/images/marrynest-logo-320.webp"
-          alt="MarryNest"
-          width="160"
-          height="68"
-          className="
-            h-auto w-28
-            object-contain
-            sm:w-36 lg:w-40
-          "
-        />
-      </Link>
-
-      {/* ======================================
-          DESKTOP MARKETPLACE NAVIGATION
-      ====================================== */}
-
-      <nav
-        aria-label="Marketplace navigation"
-        className="
-          hidden min-w-0 flex-1
-          items-center justify-center
-          gap-1 xl:flex
-        "
-      >
-        {topNavigation.map(([name, path]) => {
-          const active =
-            `${location.pathname}${location.search}` ===
-            path;
-
-          return (
-            <Link
-              key={name}
-              to={path}
-              aria-current={
-                active ? "page" : undefined
-              }
-              className={`
-                whitespace-nowrap rounded-lg
-                px-2.5 py-2
-                text-[12px] font-medium
-                no-underline
-                transition-colors duration-200
-
-                ${
-                  active
-                    ? "bg-[#eaf1e3] text-[#245c49]"
-                    : "text-[#87947e] hover:bg-[#f1f5ec] hover:text-[#245c49]"
-                }
-              `}
-            >
-              {name}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* ======================================
-          HEADER ACTIONS
-      ====================================== */}
+      {/* ====================================
+          HEADER LEFT
+      ==================================== */}
 
       <div
         className="
-          ml-auto flex shrink-0
-          items-center gap-0.5
-          sm:gap-1.5
+          flex min-w-0 shrink-0
+          items-center gap-2 sm:gap-3
         "
       >
-        {/* Wishlist */}
-        <HeaderAction
-          to="/customer/wishlist"
-          label="Wishlist"
-          icon={Heart}
-          count={user?.wishlistCount}
-          className="hidden sm:flex"
-        />
+        {/* Mobile Sidebar Button */}
+        <button
+          type="button"
+          onClick={onToggleMobile}
+          aria-label={mobileOpen ? "Close dashboard navigation" : "Open dashboard navigation"}
+          aria-controls="customer-sidebar"
+          aria-expanded={mobileOpen}
+          className="
+            flex h-10 w-10 shrink-0
+            items-center justify-center
+            rounded-xl text-slate-600
+            transition-colors
+            hover:bg-slate-100
+            focus-visible:outline-2
+            focus-visible:outline-[#956d67]
+            md:hidden
+          "
+        >
+          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
 
-        {/* Messages */}
-        <HeaderAction
-          to="/customer/messages"
-          label="Messages"
-          icon={MessagesSquare}
-          count={user?.unreadMessageCount}
-          className="hidden sm:flex"
-        />
+        {/* Company Brand */}
+        <Link
+          to="/customer/dashboard"
+          aria-label="MarryNest Customer Dashboard"
+          className="
+            group flex min-w-0 items-center
+            gap-2 no-underline
+          "
+        >
+          <span
+            className="
+              truncate text-[19px]
+              font-bold tracking-[-0.7px]
+              text-[#273e35]
+              transition-colors
+              group-hover:text-[#956d67]
+              sm:text-[22px]
+            "
+          >
+            MarryNest
+          </span>
+        </Link>
+      </div>
 
-        {/* Notifications */}
-        <HeaderAction
-          to="/customer/notifications"
-          label="Notifications"
-          icon={Bell}
-          count={user?.unreadNotificationCount}
-        />
+      {/* ====================================
+          HEADER RIGHT
+      ==================================== */}
 
-        {/* ======================================
-            PROFILE MENU
-        ====================================== */}
+      <div
+        className="
+          flex min-w-0 items-center
+          justify-end gap-1.5
+          sm:gap-2 lg:gap-3
+        "
+      >
+        {/* ====================================
+            TABLET + DESKTOP SEARCH
+        ==================================== */}
+
+        <div
+          ref={desktopSearchRef}
+          className="
+            relative hidden min-w-0
+            md:block md:w-40
+            lg:w-56 xl:w-72 2xl:w-80
+          "
+        >
+          <CustomerSearchInput
+            query={query}
+            onChange={setQuery}
+            onClear={clearSearch}
+            onFocus={() => setDesktopSearchOpen(true)}
+          />
+
+          {desktopSearchOpen && query.trim() && (
+            <CustomerSearchResults
+              query={query}
+              matches={matches}
+              onClose={closeSearch}
+            />
+          )}
+        </div>
+
+        {/* ====================================
+            MOBILE SEARCH
+        ==================================== */}
+
+        <div
+          ref={mobileSearchRef}
+          className="relative md:hidden"
+        >
+          {/* Mobile Search Button */}
+          <button
+            type="button"
+            aria-label={
+              mobileSearchOpen
+                ? "Close search"
+                : "Open search"
+            }
+            aria-expanded={mobileSearchOpen}
+            onClick={toggleMobileSearch}
+            className={`
+              flex h-10 w-10 items-center
+              justify-center rounded-xl
+              transition-colors
+              focus-visible:outline-2
+              focus-visible:outline-[#956d67]
+              ${
+                mobileSearchOpen
+                  ? "bg-[#956d67]/10 text-[#956d67]"
+                  : "text-slate-600 hover:bg-slate-100"
+              }
+            `}
+          >
+            {mobileSearchOpen ? (
+              <X size={20} />
+            ) : (
+              <Search size={20} />
+            )}
+          </button>
+
+          {/* Mobile Search Panel */}
+          {mobileSearchOpen && (
+            <div
+              className="
+                fixed inset-x-3 top-[76px]
+                z-[80] rounded-b-2xl
+                border border-slate-200
+                bg-white p-3 shadow-xl
+                md:hidden
+              "
+            >
+              <CustomerSearchInput
+                query={query}
+                onChange={setQuery}
+                onClear={clearSearch}
+                autoFocus
+                placeholder="Search customer pages..."
+              />
+
+              <CustomerSearchResults
+                query={query}
+                matches={matches}
+                onClose={closeSearch}
+                mobile
+              />
+            </div>
+          )}
+        </div>
+
+        {/* ====================================
+            CURRENT DATE
+        ==================================== */}
+
+        <span
+          className="
+            hidden shrink-0 whitespace-nowrap
+            text-xs font-medium text-slate-500
+            2xl:block
+          "
+        >
+          {currentDate}
+        </span>
+
+        {/* ====================================
+            NOTIFICATIONS
+        ==================================== */}
+
+        <HeaderAction to="/customer/wishlist" label="Wishlist" icon={Heart} count={user?.wishlistCount} className="hidden sm:flex" />
+        <HeaderAction to="/customer/messages" label="Messages" icon={MessagesSquare} count={user?.unreadMessageCount} className="hidden sm:flex" />
+        <HeaderAction to="/customer/notifications" label="Notifications" icon={Bell} count={unreadNotifications} />
+
+        {/* ====================================
+            PROFILE DROPDOWN
+        ==================================== */}
 
         <div
           ref={profileRef}
-          className="relative"
+          className="relative shrink-0"
         >
+          {/* Profile Trigger */}
           <button
             type="button"
             aria-label="Customer profile menu"
             aria-haspopup="true"
             aria-expanded={profileOpen}
-            onClick={() =>
-              setProfileOpen((previous) => !previous)
-            }
+            onClick={toggleProfile}
             className={`
-              flex h-10 items-center gap-1.5
-              rounded-lg border-0
-              bg-transparent px-1.5
-              transition-colors duration-200
-
-              hover:bg-[#f1f5ec]
-
+              flex items-center gap-2
+              rounded-xl p-1.5
+              transition-colors
+              sm:gap-3 sm:px-2
+              focus-visible:outline-2
+              focus-visible:outline-[#956d67]
               ${
                 profileOpen
-                  ? "bg-[#f1f5ec]"
-                  : ""
+                  ? "bg-slate-100"
+                  : "hover:bg-slate-50"
               }
             `}
           >
-            {/* Customer Avatar */}
+            {/* Avatar */}
             <span
               className="
                 flex h-9 w-9 shrink-0
                 items-center justify-center
-                overflow-hidden rounded-full
-                bg-[#245c49]
-                text-[13px] font-semibold
-                text-white
+                overflow-hidden rounded-full bg-[#273e35]
+                text-sm font-bold text-white
               "
             >
-              {user?.profilePhotoUrl ? (
-                <img
-                  src={user.profilePhotoUrl}
-                  alt=""
-                  className="
-                    h-full w-full
-                    object-cover
-                  "
-                />
-              ) : (
-                customerInitial
-              )}
+              {user?.profilePhotoUrl && failedPhotoUrl !== user.profilePhotoUrl ? (
+                <img src={user.profilePhotoUrl} alt={`${customerName}'s profile photo`} className="block h-full w-full object-cover" onError={() => setFailedPhotoUrl(user.profilePhotoUrl)} />
+              ) : customerInitial}
             </span>
 
+            {/* Customer Name */}
+            <span
+              className="
+                hidden min-w-0 text-left
+                lg:block
+              "
+            >
+              <span
+                className="
+                  block max-w-28 truncate
+                  text-sm font-semibold
+                  text-slate-800
+                "
+              >
+                {customerName}
+              </span>
+
+              <span
+                className="
+                  block text-[11px]
+                  text-slate-400
+                "
+              >
+                Customer
+              </span>
+            </span>
+
+            {/* Dropdown Arrow */}
             <ChevronDown
-              size={14}
+              size={15}
               className={`
-                hidden text-[#87947e]
+                hidden shrink-0 text-slate-400
                 transition-transform duration-200
                 sm:block
-
                 ${profileOpen ? "rotate-180" : ""}
               `}
             />
           </button>
 
-          {/* ======================================
-              PROFILE DROPDOWN
-          ====================================== */}
-
+          {/* Profile Dropdown */}
           {profileOpen && (
             <div
               className="
                 absolute right-0 top-full
-                z-[80] mt-3 w-[240px]
+                z-[80] mt-3 w-60
                 overflow-hidden rounded-xl
-                border border-[#e4eade]
+                border border-slate-200
                 bg-white p-2 shadow-xl
               "
             >
-              {/* User Information */}
+              {/* Customer Information */}
               <div
                 className="
-                  border-b border-[#edf2e8]
+                  border-b border-slate-100
                   px-3 py-3
                 "
               >
-                <strong
+                <p
                   className="
-                    block truncate text-[13px]
-                    font-semibold text-[#2b4638]
+                    truncate text-sm
+                    font-semibold text-slate-900
                   "
                 >
                   {customerName}
-                </strong>
+                </p>
 
-                <span
+                <p
                   className="
-                    mt-1 block truncate
-                    text-[11px] text-[#89978c]
+                    mt-1 truncate text-xs
+                    text-slate-500
                   "
                 >
-                  {user?.email || "MarryNest Customer"}
-                </span>
+                  {user?.email || "Customer"}
+                </p>
               </div>
 
-              {/* Profile Navigation */}
               <div className="py-2">
-                {profileNavigation.map(
-                  ([name, path]) => (
-                    <Link
-                      key={path}
-                      to={`/customer/${path}`}
-                      onClick={() =>
-                        setProfileOpen(false)
-                      }
-                      className="
-                        flex min-h-[40px]
-                        items-center rounded-lg
-                        px-3 py-2
-                        text-[12px] text-[#87947e]
-                        no-underline
-
-                        transition-colors
-                        hover:bg-[#f1f5ec]
-                        hover:text-[#245c49]
-                      "
-                    >
-                      {name}
-                    </Link>
-                  )
-                )}
+                {customerNavigation.filter(([path]) => ["profile", "addresses", "bookings", "quotations", "payments", "settings"].includes(path)).map(([path, label, Icon]) => (
+                  <Link key={path} to={`/customer/${path}`} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-700 transition-colors hover:bg-slate-50 hover:text-emerald-700">
+                    <Icon size={17} /><span>{label}</span>
+                  </Link>
+                ))}
               </div>
 
               {/* Logout */}
               <div
                 className="
-                  border-t border-[#edf2e8]
-                  pt-2
+                  mt-2 border-t
+                  border-slate-100 pt-2
                 "
               >
                 <button
@@ -483,36 +753,23 @@ export default function CustomerHeader({
                   onClick={handleLogout}
                   disabled={loggingOut}
                   className="
-                    flex min-h-[40px] w-full
-                    items-center gap-2
-                    rounded-lg border-0
-                    bg-transparent px-3 py-2
-                    text-left text-[12px]
+                    flex w-full items-center
+                    gap-3 rounded-lg
+                    px-3 py-2.5 text-left
+                    text-sm font-medium
                     text-red-600
-
                     transition-colors
-                    hover:bg-red-50
-
-                    disabled:opacity-50
+                    hover:bg-red-50 disabled:opacity-50
                   "
                 >
-                  <LogOut
-                    size={16}
-                    strokeWidth={1.7}
-                  />
-
-                  {loggingOut
-                    ? "Signing out..."
-                    : "Logout"}
+                  <LogOut size={17} />
+                  <span>{loggingOut ? "Signing out..." : "Sign Out"}</span>
                 </button>
 
                 {logoutError && (
                   <p
                     role="alert"
-                    className="
-                      px-3 py-2
-                      text-[11px] text-red-600
-                    "
+                    className="px-3 py-2 text-xs text-red-600"
                   >
                     {logoutError}
                   </p>
@@ -521,40 +778,6 @@ export default function CustomerHeader({
             </div>
           )}
         </div>
-
-        {/* ======================================
-            MOBILE SIDEBAR BUTTON
-        ====================================== */}
-
-        <button
-          type="button"
-          onClick={onToggleMobile}
-          aria-label={
-            mobileOpen
-              ? "Close dashboard navigation"
-              : "Open dashboard navigation"
-          }
-          aria-controls="customer-sidebar"
-          aria-expanded={mobileOpen}
-          className="
-            flex h-10 w-10 shrink-0
-            items-center justify-center
-            rounded-lg border-0
-            bg-transparent text-[#87947e]
-
-            transition-colors
-            hover:bg-[#f1f5ec]
-            hover:text-[#245c49]
-
-            lg:hidden
-          "
-        >
-          {mobileOpen ? (
-            <X size={21} />
-          ) : (
-            <Menu size={21} />
-          )}
-        </button>
       </div>
     </header>
   );
