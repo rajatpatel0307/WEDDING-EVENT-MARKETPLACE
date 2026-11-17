@@ -30,7 +30,7 @@ const time = (v) =>
     hour: "2-digit",
     minute: "2-digit",
   });
-export default function ChatPage({ role }) {
+export default function ChatPage({ role, emptyState, renderHeader, inboxFooter }) {
   const socket = useCommunicationSocket(),
     [params, setParams] = useSearchParams(),
     selected = params.get("conversation")?.toLowerCase();
@@ -347,18 +347,20 @@ export default function ChatPage({ role }) {
   );
   return (
     <div className="comm-root [&&]:text-[#263e35] [&&]:[font-family:inherit] [&&]:min-w-0 [&&_button]:cursor-pointer [&&_button:disabled]:opacity-45 [&&_button:disabled]:cursor-default [&&_button:focus-visible]:outline-2 [&&_button:focus-visible]:outline-[#72917e] [&&_button:focus-visible]:outline-offset-[3px] [&&_a:focus-visible]:outline-2 [&&_a:focus-visible]:outline-[#72917e] [&&_a:focus-visible]:outline-offset-[3px] [&&_input:focus-visible]:outline-2 [&&_input:focus-visible]:outline-[#72917e] [&&_input:focus-visible]:outline-offset-[3px] [&&_textarea:focus-visible]:outline-2 [&&_textarea:focus-visible]:outline-[#72917e] [&&_textarea:focus-visible]:outline-offset-[3px] [&&_.comm-filters]:flex [&&_.comm-filters]:items-center [&&_.comm-filters]:flex-wrap [&&_.comm-filters]:gap-[12px] [&&_.comm-filters]:py-[12px] [&&_.comm-filters]:px-[16px] [&&_.comm-filters]:text-[12px] [&&_.comm-send]:inline-flex [&&_.comm-send]:items-center [&&_.comm-send]:justify-center [&&_.comm-send]:gap-[9px] [&&_.comm-send]:bg-[#365f4d] [&&_.comm-send]:text-white [&&_.comm-send]:py-[11px] [&&_.comm-send]:px-[18px] [&&_.comm-send]:rounded-[8px] [&&_.comm-send]:text-[12px] max-[640.001px]:[&&_.comm-send]:p-[10px]">
+      {renderHeader ? renderHeader({ connected }) : (
       <div className="comm-title [&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-[20px] [&&]:mb-[25px] [&&_p]:text-[10px] [&&_p]:tracking-[2px] [&&_p]:text-[#8a7961] [&&_p]:mb-[8px] [&&_h1]:text-[30px] [&&_h1]:mt-0 [&&_h1]:mx-0 [&&_h1]:mb-[8px] [&&_h1]:font-semibold [&&_span]:text-[13px] [&&_span]:text-[#7b857f] [&&_>_a]:flex [&&_>_a]:items-center [&&_>_a]:gap-[8px] [&&_>_a]:text-[13px] [&&_.comm-connection]:text-[11px] [&&_.comm-connection]:border [&&_.comm-connection]:border-[#e3e8e2] [&&_.comm-connection]:py-[9px] [&&_.comm-connection]:px-[13px] [&&_.comm-connection]:rounded-[25px] [&&_.comm-connection]:bg-white max-[900.001px]:[&&_.comm-connection]:hidden max-[640.001px]:[&&_h1]:text-[25px] max-[640.001px]:[&&]:gap-[10px] max-[640.001px]:[&&_>_a]:text-[11px]">
         <div>
           <p>YOUR PLANNING SPACE</p>
           <h1>Messages</h1>
           <span>Every beautiful event begins with a conversation.</span>
         </div>
-        <span className="comm-connection">
+        <span className={`comm-connection ${connected ? "is-connected" : "is-reconnecting"}`}>
           {connected
             ? "Live updates connected"
             : "Reconnecting · messages remain saved"}
         </span>
       </div>
+      )}
       {error && (
         <div className="comm-error [&&]:flex [&&]:flex-wrap [&&]:gap-[10px] [&&]:items-center [&&]:bg-[#fff3ef] [&&]:text-[#914d3c] [&&]:py-[12px] [&&]:px-[16px] [&&]:rounded-[8px] [&&]:text-[12px] [&&]:mb-[12px] [&&_button]:underline" role="alert">
           {error}{" "}
@@ -455,6 +457,7 @@ export default function ChatPage({ role }) {
               </div>
             )}
           </div>
+          {inboxFooter}
           <div className="comm-pagination [&&]:flex [&&]:justify-between [&&]:items-center [&&]:gap-[10px] [&&]:p-[15px] [&&]:text-[12px] [&&_button]:border [&&_button]:border-[#e3e8e2] [&&_button]:py-[6px] [&&_button]:px-[9px] [&&_button]:rounded-[6px]">
             <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
               Previous
@@ -466,7 +469,7 @@ export default function ChatPage({ role }) {
           </div>
         </aside>
         <section className="comm-window [&&]:flex [&&]:flex-col [&&]:min-h-0 [&&]:min-w-0 [&&]:bg-[#fbfcf9] max-[640.001px]:[&&]:hidden max-[640.001px]:[&&]:w-full">
-          {!selected ? (
+          {!selected ? (emptyState || (
             <div className="comm-empty [&&]:flex [&&]:flex-1 [&&]:flex-col [&&]:items-center [&&]:justify-center [&&]:text-center [&&]:py-[35px] [&&]:px-[25px] [&&]:gap-[12px] [&&]:text-[#879380] [&&_h2]:font-medium [&&_h2]:text-[#53644f] [&&_h2]:text-[18px] [&&_h3]:font-medium [&&_h3]:text-[#53644f] [&&_h3]:text-[18px] [&&_p]:text-[12px] [&&_p]:max-w-[280px] [&&_p]:leading-[1.8]">
               <MessageCircle size={42} />
               <h2>Let’s plan something special</h2>
@@ -474,7 +477,7 @@ export default function ChatPage({ role }) {
                 Choose a conversation to share ideas, details and inspiration.
               </p>
             </div>
-          ) : (
+          )) : (
             <>
               <header className="comm-chat-header [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:py-[17px] [&&]:px-[20px] [&&]:border-b [&&]:border-b-[#e3e8e2] [&&]:bg-white [&&_>_div]:flex-1 [&&_>_div]:min-w-0 [&&_h2]:text-[15px] [&&_h2]:font-semibold [&&_h2]:wrap-anywhere [&&_small]:flex [&&_small]:items-center [&&_small]:gap-[5px] [&&_small]:text-[11px] [&&_small]:text-[#8a938c] [&&_small]:my-[4px] [&&_small]:mx-0 [&&_i]:w-[6px] [&&_i]:h-[6px] [&&_i]:rounded-[100%] [&&_i]:bg-[#b5bcb6] [&&_i.online]:bg-[#62a875] [&&_nav]:flex [&&_nav]:flex-wrap [&&_nav]:gap-[10px] [&&_nav]:text-[11px] [&&_nav]:underline [&&_>_button]:p-[5px] [&&_>_button]:text-[#718374] max-[900.001px]:[&&]:p-[12px] max-[900.001px]:[&&]:gap-[8px] max-[640.001px]:[&&_.comm-avatar]:hidden">
                 <button
