@@ -28,6 +28,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { save } from "../customer/services/workspace.api";
 import { useMarketplace, money } from "./api";
+import { offerState } from "../commerce/offer-state";
 import { DiscoveryCard, ReadState } from "./BrowsePage";
 
 
@@ -151,8 +152,15 @@ export default function DetailPage() {
     item = vendor ? d.vendor : d.service,
     privatePath = `/customer/${vendor ? "vendors" : "services"}/${item.id}`;
   const bookingAllowed = item.bookingAccessStatus === "Approved" && item.bookEnabled !== false && item.bookEnabled !== 0;
+  const packageBookingAllowed = item.offer ? offerState(item).canBook : bookingAllowed;
   function begin(action, packageId) {
     if (action === "book" && !bookingAllowed) return;
+    if (action === "book" && item.offer) {
+      if (!packageBookingAllowed) return;
+      const path = `/customer/booking-checkout/${item.id}${packageId ? `?${new URLSearchParams({ package: packageId })}` : ""}`;
+      navigate(user ? path : `/auth/login?redirect=${encodeURIComponent(path)}`);
+      return;
+    }
     const path = `${privatePath}?${new URLSearchParams({ ...(!vendor ? { action } : {}), ...(packageId ? { package: packageId } : {}) })}`;
     navigate(user ? path : `/auth/login?redirect=${encodeURIComponent(path)}`);
   }
@@ -289,7 +297,7 @@ export default function DetailPage() {
                 {d.packages.length ? <div className="cm-package-list [.customer-marketplace.cm-detail-page_&]:grid [.customer-marketplace.cm-detail-page_&]:gap-[16px]">{d.packages.map((p) => (
                   <article className="cm-package-card [.customer-marketplace.cm-detail-page_&]:grid [.customer-marketplace.cm-detail-page_&]:grid-cols-[minmax(0,_1fr)_auto] [.customer-marketplace.cm-detail-page_&]:gap-[20px] [.customer-marketplace.cm-detail-page_&]:p-[24px] [.customer-marketplace.cm-detail-page_&]:border [.customer-marketplace.cm-detail-page_&]:border-[#e8dfd9] [.customer-marketplace.cm-detail-page_&]:rounded-[12px] [.customer-marketplace.cm-detail-page_&]:bg-[#fcfaf7] [.customer-marketplace.cm-detail-page_&_h3]:mt-0 [.customer-marketplace.cm-detail-page_&_p]:text-[#75645d] [.customer-marketplace.cm-detail-page_&_p]:text-[12px] [.customer-marketplace.cm-detail-page_&_>_div:last-child]:text-right [.customer-marketplace.cm-detail-page_&_.cm-price]:text-[24px] [.customer-marketplace.cm-detail-page_&_.cm-price]:text-[#302725] [.customer-marketplace.cm-detail-page_&_.cm-price]:mt-0 [.customer-marketplace.cm-detail-page_&_.cm-price]:mx-0 [.customer-marketplace.cm-detail-page_&_.cm-price]:mb-[16px] max-[560.001px]:[.customer-marketplace.cm-detail-page_&]:grid-cols-[1fr] max-[560.001px]:[.customer-marketplace.cm-detail-page_&_>_div:last-child]:text-left" key={p.id}>
                     <div><h3>{p.name}</h3><p>{p.description}</p><span className="cm-meta [.customer-marketplace_&]:text-[13px] [.customer-marketplace_&]:text-[#75645d] [.customer-marketplace_&]:flex [.customer-marketplace_&]:gap-[6px] [.customer-marketplace_&]:items-center [.customer-marketplace_&]:flex-wrap"><Users size={15} aria-hidden="true" />{p.minGuests || "Flexible"}–{p.maxGuests || "flexible"} guests</span></div>
-                    <div><p className="cm-price [.customer-marketplace_&]:text-[25px] [.customer-marketplace_&]:font-semibold [.customer-marketplace_&]:my-[16px] [.customer-marketplace_&]:mx-0">{money(p.price)}</p><button className="cm-primary" disabled={!bookingAllowed || !!item.offer} onClick={() => begin("book", p.id)}>Choose package<ArrowUpRight size={15} aria-hidden="true" /></button></div>
+                    <div><p className="cm-price [.customer-marketplace_&]:text-[25px] [.customer-marketplace_&]:font-semibold [.customer-marketplace_&]:my-[16px] [.customer-marketplace_&]:mx-0">{money(p.price)}</p><button className="cm-primary" disabled={!packageBookingAllowed} title={!packageBookingAllowed ? "Booking is currently unavailable for this service." : undefined} onClick={() => begin("book", p.id)}>Choose package<ArrowUpRight size={15} aria-hidden="true" /></button></div>
                   </article>
                 ))}</div> : <div className="cm-package-empty [.customer-marketplace.cm-detail-page_&]:flex [.customer-marketplace.cm-detail-page_&]:items-center [.customer-marketplace.cm-detail-page_&]:gap-[18px] [.customer-marketplace.cm-detail-page_&]:bg-[#fcfaf7] [.customer-marketplace.cm-detail-page_&]:border [.customer-marketplace.cm-detail-page_&]:border-[#e8dfd9] [.customer-marketplace.cm-detail-page_&]:rounded-[12px] [.customer-marketplace.cm-detail-page_&]:p-[26px] [.customer-marketplace.cm-detail-page_&]:mt-[22px] [.customer-marketplace.cm-detail-page_&_svg]:text-[#8c414e] [.customer-marketplace.cm-detail-page_&_svg]:shrink-0 [.customer-marketplace.cm-detail-page_&_strong]:font-medium [.customer-marketplace.cm-detail-page_&_strong]:text-[13px] [.customer-marketplace.cm-detail-page_&_p]:text-[12px] [.customer-marketplace.cm-detail-page_&_p]:text-[#75645d] [.customer-marketplace.cm-detail-page_&_p]:mt-[6px] max-[560.001px]:[.customer-marketplace.cm-detail-page_&]:items-start max-[560.001px]:[.customer-marketplace.cm-detail-page_&]:p-[18px] max-[560.001px]:[.customer-marketplace.cm-detail-page_&]:gap-[12px]"><PackageOpen size={26} strokeWidth={1.3} aria-hidden="true" /><div><strong>A celebration, tailored to you.</strong><p>No packages published yet. Message the vendor to discuss your requirements.</p></div></div>}
               </section>

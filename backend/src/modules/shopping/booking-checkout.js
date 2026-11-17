@@ -12,6 +12,7 @@ import { assertAccess } from "../vendors/access.service.js";
 export const bookingCheckoutInput = z
   .object({
     serviceId: z.guid(),
+    packageId: z.guid().optional(),
     quantity: z.number().int().min(1).max(100000),
     date: z.iso.date().optional(),
     start: z
@@ -60,13 +61,27 @@ export async function bookingCheckout(input, ctx, submit = false) {
         message: "Booking already requested.",
       };
     }
-    const { s } = await availableService(body.serviceId, null, tx);
+    const { s, pack } = await availableService(body.serviceId, body.packageId, tx);
     await assertAccess(s.VendorId, "booking", tx);
     const d = JSON.parse(s.DetailsJson || "{}"),
       config = d.offer?.book;
     assertAllowed(d.offer, await categoryOptions(s.CategoryId, tx));
     if (!config || d.offer.type === "Sell")
       fail("This listing is unavailable for this booking checkout.", 409);
+    const price = Number(pack ? pack.FinalPrice : config.price);
+    if (!Number.isFinite(price) || price <= 0)
+      fail("Request a quotation to confirm the price.", 409);
+    const packageSnapshot = pack ? {
+      id: pack.PackageId,
+      name: pack.PackageName,
+      description: pack.Description,
+      price,
+      inclusions: await repo.select(
+        "SELECT ItemName AS name,Description AS description,Quantity AS quantity,Unit AS unit FROM dbo.PackageItems WHERE PackageId=:id ORDER BY SortOrder,PackageItemId",
+        { id: pack.PackageId },
+        tx,
+      ),
+    } : null;
     const window = await capacity(
       s.ServiceId,
       config,
@@ -90,7 +105,7 @@ export async function bookingCheckout(input, ctx, submit = false) {
           postalCode: address.PostalCode,
         }
       : null;
-    const subtotalMinor = Math.round(config.price * 100) * body.quantity,
+    const subtotalMinor = Math.round(price * 100) * body.quantity,
       taxMinor = Math.round(
         (subtotalMinor * Number(d.pricing?.taxRate || 0)) / 100,
       );
@@ -100,6 +115,7 @@ export async function bookingCheckout(input, ctx, submit = false) {
       source: "Commerce",
       reservation: { startsAt: window.startsAt, endsAt: window.endsAt },
       serviceId: s.ServiceId,
+      ...(packageSnapshot ? { package: packageSnapshot } : {}),
       quantity: body.quantity,
       booking: config,
       location: { event: location },
@@ -114,7 +130,7 @@ export async function bookingCheckout(input, ctx, submit = false) {
       tax: taxMinor / 100,
       discount: 0,
       total,
-      advance: (Math.round(config.advance * 100) * body.quantity) / 100,
+      advance: (Math.round(Math.min(config.advance, price) * 100) * body.quantity) / 100,
     };
     const reviewToken = createHash("sha256")
       .update(JSON.stringify({ snapshot, date: body.date, start: body.start }))
@@ -123,9 +139,10 @@ export async function bookingCheckout(input, ctx, submit = false) {
       return {
         reviewToken,
         service: s.ServiceName,
+        ...(packageSnapshot ? { package: packageSnapshot } : {}),
         vendor: s.BusinessName,
         quantity: body.quantity,
-        price: config.price,
+        price,
         subtotal: snapshot.subtotal,
         tax: snapshot.tax,
         total,
@@ -144,7 +161,7 @@ export async function bookingCheckout(input, ctx, submit = false) {
       fail("Review the current booking summary and accept the policies.", 409);
     const event = {
       EventId: null,
-      EventName: s.ServiceName,
+      EventName: pack?.PackageName || s.ServiceName,
       EventType: "Reservation",
       EventDate: body.date || null,
       StartTime: body.start || null,
@@ -165,11 +182,13 @@ export async function bookingCheckout(input, ctx, submit = false) {
       [
         {
           ServiceId: s.ServiceId,
-          ItemName: s.ServiceName,
+          PackageId: pack?.PackageId,
+          ItemName: pack?.PackageName || s.ServiceName,
           Quantity: body.quantity,
-          UnitPrice: config.price,
+          UnitPrice: price,
           TaxAmount: snapshot.tax,
           DescriptionSnapshot: JSON.stringify({
+            ...(packageSnapshot ? { package: packageSnapshot } : {}),
             duration: config.duration,
             startsAt: window.startsAt,
             endsAt: window.endsAt,

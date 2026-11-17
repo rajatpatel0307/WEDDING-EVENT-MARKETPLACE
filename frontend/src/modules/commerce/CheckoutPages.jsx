@@ -92,12 +92,15 @@ function Totals({ data }) {
 }
 export function BookingCheckout() {
   const { id } = useParams();
-  return <BookingForm key={id} id={id} />;
+  const [params] = useSearchParams();
+  const packageId = params.get("package");
+  return <BookingForm key={`${id}:${packageId || ""}`} id={id} packageId={packageId} />;
 }
-function BookingForm({ id }) {
+function BookingForm({ id, packageId }) {
   const service = useCustomerData(`/services/${id}`),
     [body, setBody] = useState({
       serviceId: id,
+      ...(packageId ? { packageId } : {}),
       quantity: 1,
       instructions: "",
       idempotencyKey: crypto.randomUUID(),
@@ -125,8 +128,13 @@ function BookingForm({ id }) {
   if (service.error)
     return <ErrorView error={service.error} retry={service.retry} />;
   const item = service.data.service,
-    book = item.offer?.book;
-  if (!book || !offerState(item).canBook)
+    selectedPackage = packageId
+      ? service.data.packages?.find((p) => p.id.toLowerCase() === packageId.toLowerCase())
+      : null,
+    book = item.offer?.book,
+    price = selectedPackage ? Number(selectedPackage.price) : book?.price,
+    bookingName = selectedPackage?.name || item.name;
+  if (!book || !offerState(item).canBook || (packageId && !selectedPackage))
     return (
       <div className="mx-auto max-w-[1160px] p-6 [&_h1]:mb-5 [&_h1]:text-3xl">
         <h1>Booking unavailable</h1>
@@ -136,7 +144,7 @@ function BookingForm({ id }) {
   const quantityState = bookingQuantityState(body.quantity, book);
   const validQuantity = quantityState.valid;
   const estimatedSubtotal = validQuantity
-    ? Math.round(Number(book.price) * 100) * body.quantity / 100
+    ? Math.round(Number(price) * 100) * body.quantity / 100
     : null;
   const bookingImage = (!imageFailed && item.image) || categoryImages[item.category] || categoryImages["Religious & Ceremony Services"];
   const bookingDuration = book.duration === "Custom" ? `${book.durationMinutes} minutes` : book.duration;
@@ -237,9 +245,9 @@ function BookingForm({ id }) {
                 </div>
                 <div className="min-w-0 flex-1 py-1">
                   <span className="mb-2 inline-flex rounded-md bg-[#f8f1e9] px-2 py-1 text-[8px] font-semibold tracking-[1.3px] text-[#a47c5e]">{item.category || "YOUR SELECTED SERVICE"}</span>
-                  <h3 className="m-0! font-[Georgia,serif] text-[27px]! leading-tight font-normal! tracking-[-0.6px] [overflow-wrap:anywhere] max-[450px]:text-[23px]!">{item.name}</h3>
+                  <h3 className="m-0! font-[Georgia,serif] text-[27px]! leading-tight font-normal! tracking-[-0.6px] [overflow-wrap:anywhere] max-[450px]:text-[23px]!">{bookingName}</h3>
                   <p className="mt-[5px] text-xs text-[#8c7981]!">by <span className="font-medium text-[#66505b]">{item.vendor}</span></p>
-                  <div className="mt-3 flex flex-wrap items-baseline gap-[6px]"><strong className="text-lg font-semibold tracking-[-0.6px] text-[#8c414e]">{money(book.price)}</strong><span className="text-[10px] text-[#a18e96]">/ unit · {book.duration.toLowerCase()}</span></div>
+                  <div className="mt-3 flex flex-wrap items-baseline gap-[6px]"><strong className="text-lg font-semibold tracking-[-0.6px] text-[#8c414e]">{money(price)}</strong><span className="text-[10px] text-[#a18e96]">/ unit · {book.duration.toLowerCase()}</span></div>
                 </div>
               </div>
               <div className="flex items-start gap-3 border-t border-[#efe8e2] bg-[#fcfaf7] px-5 py-[14px]">
@@ -321,7 +329,7 @@ function BookingForm({ id }) {
               </div>
               <div className="relative mx-0 border-t border-dashed border-[#d9c9bd] before:absolute before:-left-[7px] before:-top-[7px] before:size-[14px] before:rounded-full before:border before:border-[#e6d8cf] before:bg-[#faf8f5] after:absolute after:-right-[7px] after:-top-[7px] after:size-[14px] after:rounded-full after:border after:border-[#e6d8cf] after:bg-[#faf8f5]" aria-hidden="true" />
               <div className="px-7 pt-6 pb-7 max-[600px]:px-5">
-                <div className="mb-5 border-b border-[#f0e7e1] pb-5"><span className="text-[9px] uppercase tracking-[1.4px] text-[#af9789]">The experience</span><h3 className="mt-[5px] mb-0! text-[14px]! font-semibold [overflow-wrap:anywhere]">{item.name}</h3><p className="mt-1 text-[11px] text-[#a18b94]!">by {item.vendor}</p></div>
+                <div className="mb-5 border-b border-[#f0e7e1] pb-5"><span className="text-[9px] uppercase tracking-[1.4px] text-[#af9789]">The experience</span><h3 className="mt-[5px] mb-0! text-[14px]! font-semibold [overflow-wrap:anywhere]">{bookingName}</h3><p className="mt-1 text-[11px] text-[#a18b94]!">by {item.vendor}</p></div>
                 <dl className="m-0 space-y-4 text-[11px] [&>div]:flex [&>div]:items-center [&>div]:justify-between [&>div]:gap-4 [&_dt]:flex [&_dt]:items-center [&_dt]:gap-2 [&_dt]:text-[#a38b94] [&_dt>svg]:text-[#ba9b89] [&_dd]:m-0 [&_dd]:text-right [&_dd]:font-medium [&_dd]:text-[#71545f]">
                   {book.mode === "Scheduled" && <div><dt><CalendarDays size={14} aria-hidden="true" /> Date</dt><dd>{body.date ? date(body.date) : <span className="font-normal text-[#b8a9ac]">Not selected yet</span>}</dd></div>}
                   <div><dt><ShoppingBag size={14} aria-hidden="true" /> Quantity</dt><dd>{body.quantity || "—"} {Number(body.quantity) === 1 ? "unit" : "units"}</dd></div>
