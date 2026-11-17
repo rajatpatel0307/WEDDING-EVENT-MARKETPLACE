@@ -1,5 +1,5 @@
 import { ReviewForm as CompleteReviewForm } from '../../reviews/Reviews';
-import { LocationFields, MapLink } from "../components/LocationFields";
+import { LocationFields } from "../components/LocationFields";
 import { useEffect, useState } from "react";
 import {
   Link,
@@ -8,9 +8,6 @@ import {
   useNavigate,
 } from "react-router-dom";
 import {
-  Plus,
-  Pencil,
-  Trash2,
   ArrowUpRight,
   Check,
   MessagesSquare,
@@ -48,6 +45,9 @@ import {
 import BookingItemDetails from "../../bookings/BookingItemDetails";
 import CustomerBookingDetails from "./CustomerBookingDetails";
 import CustomerBookingsPage from "./CustomerBookingsPage";
+import CustomerPaymentsPage from "./CustomerPaymentsPage";
+import CustomerSettingsPage from "./CustomerSettingsPage";
+import { AddressHeader, AddressSearch, AddressGrid, AddressLoading, AddressEmpty, AddressPagination } from "../components/CustomerAddressUI";
 const columns = {
   bookings: [
     ["number", "Booking"],
@@ -118,7 +118,9 @@ function Cell({ name, value, row }) {
 export default function CustomerRecords({ section: explicit }) {
   const location = useLocation();
   const section = explicit || location.pathname.split("/")[2];
-  return section === "bookings" ? <CustomerBookingsPage /> : <CustomerRecordList section={section} />;
+  if (section === "bookings") return <CustomerBookingsPage />;
+  if (section === "payments") return <CustomerPaymentsPage />;
+  return <CustomerRecordList section={section} />;
 }
 function CustomerRecordList({ section }) {
   const [page, setPage] = useState(1),
@@ -141,6 +143,69 @@ function CustomerRecordList({ section }) {
   }, [section]);
   const refresh = () => setVersion((v) => v + 1);
   const rows = section === "wishlist" ? r.data : r.data?.rows;
+  if (section === "addresses") {
+    const changeSearch = (value) => { setSearch(value); setPage(1); };
+    return (
+      <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-6 text-sm text-slate-700 [&_svg]:shrink-0">
+        <AddressHeader onAdd={() => setEdit({})} />
+        <AddressSearch search={search} onSearch={changeSearch} total={r.data?.total || 0} loading={r.loading || !!r.error} />
+        {r.loading ? <AddressLoading /> : r.error ? <ErrorView error={r.error} retry={r.retry} /> : !rows?.length ? (
+          page > 1 ? <div className="rounded-2xl border border-[#e3e6e0] bg-white p-8 text-center"><p className="mb-4 text-slate-500">No addresses on this page.</p><button type="button" onClick={() => setPage(1)} className="rounded-xl border border-[#e3d5d8] px-4 py-3 text-xs font-medium text-[#873f52] hover:bg-[#faf3f5] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#873f52]">Back to first page</button></div> : <AddressEmpty filtered={!!search.trim()} onClear={() => changeSearch("")} onAdd={() => setEdit({})} />
+        ) : <AddressGrid rows={rows} busy={busy} onEdit={setEdit} onRemove={setRemove} onDefault={async (address) => {
+          if (busy) return;
+          setBusy(true);
+          try {
+            await save(`/addresses/${address.id}/default`, "PATCH", {});
+            refresh();
+            notify("Default address updated.");
+          } catch (e) {
+            notify(e.message);
+          } finally {
+            setBusy(false);
+          }
+        }} />}
+        {!r.error && r.data?.total > r.data?.pageSize && <AddressPagination page={page} pageSize={r.data.pageSize} total={r.data.total} loading={r.loading} onPage={setPage} />}
+        {edit && (
+          <AddressForm
+            address={edit.id ? edit : null}
+            close={() => setEdit(null)}
+            done={refresh}
+          />
+        )}
+        {remove && (
+          <Modal title="Remove address" busy={busy} close={() => setRemove(null)}>
+            <div className="space-y-5 p-5 sm:p-6">
+            <p>Remove this {(remove.type || "saved").toLowerCase()} address?</p>
+            <div className="flex flex-wrap justify-end gap-3">
+            <button type="button" disabled={busy} onClick={() => setRemove(null)} className="min-h-11 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#873f52]">Cancel</button>
+            <button
+              type="button"
+              className="min-h-11 rounded-xl border border-rose-700 bg-rose-700 px-4 py-2.5 text-xs font-semibold text-white hover:bg-rose-800 disabled:cursor-wait disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-rose-700"
+              disabled={busy}
+              onClick={async () => {
+                if (busy) return;
+                setBusy(true);
+                try {
+                  await save(`/addresses/${remove.id}`, "DELETE", {});
+                  setRemove(null);
+                  refresh();
+                  notify("Address removed.");
+                } catch (e) {
+                  notify(e.message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Removing…" : "Remove address"}
+            </button>
+            </div>
+            </div>
+          </Modal>
+        )}
+      </div>
+    );
+  }
   return (
     <>
       <Heading
@@ -157,28 +222,12 @@ function CustomerRecordList({ section }) {
           }[section]
         }
       >
-        {section === "addresses" ? (
-          <button className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" onClick={() => setEdit({})}>
-            <Plus size={16} /> Add address
-          </button>
-        ) : ["wishlist", "bookings", "quotations"].includes(section) ? (
+        {["wishlist", "bookings", "quotations"].includes(section) ? (
           <Link className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" to="/customer/discover">
             Find services <ArrowUpRight size={15} />
           </Link>
         ) : null}
       </Heading>
-      {section === "addresses" && (
-        <input
-          className="border rounded-lg p-3 mb-4 w-full"
-          aria-label="Search addresses"
-          placeholder="Search addresses by contact, city, postal code or street"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-        />
-      )}
       {section === "quotations" && (
         <div className="cw-inline-tabs flex gap-[25px] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e8ded5] mb-[25px] [&_>_a]:pt-[13px] [&_>_a]:pr-[3px] [&_>_a]:pb-[13px] [&_>_a]:pl-[3px] [&_>_a]:text-[12px] [&_>_a]:text-[#a38a7b] [&_>_a.active]:text-[#9a5b70] [&_>_a.active]:[border-bottom-width:2px] [&_>_a.active]:[border-bottom-style:solid] [&_>_a.active]:[border-bottom-color:#9a5b70]">
           <Link to="/customer/quotations" className="active">
@@ -248,62 +297,6 @@ function CustomerRecordList({ section }) {
                 reload();
               }}
             />
-          ))}
-        </div>
-      ) : section === "addresses" ? (
-        <div className="cw-events-grid grid grid-cols-[repeat(3,_minmax(0,_1fr))] [@media(width<=520px)]:grid-cols-[minmax(0,_1fr)] [@media(520px<width<=1250px)]:grid-cols-[repeat(2,_minmax(0,_1fr))] gap-[24px]">
-          {rows.map((a) => (
-            <article className="cw-panel cw-prose [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4eade] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4eade] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4eade] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4eade] rounded-[10px] min-w-0 overflow-x-hidden overflow-y-hidden pt-[25px] [@media(width<=520px)]:pt-[23px] pr-[28px] [@media(width<=520px)]:pr-[20px] pb-[25px] [@media(width<=520px)]:pb-[23px] pl-[28px] [@media(width<=520px)]:pl-[20px] mb-[24px] [&_>_h2]:mb-[20px] [&_>_h3]:mt-[24px] [&_p]:[white-space:pre-line]" key={a.id}>
-              <div className="cw-record-line flex justify-between items-center gap-[18px] pt-[12px] pr-[0] pb-[12px] pl-[0] [&_>_h2]:mt-[0] [&_>_h2]:mr-[0] [&_>_h2]:mb-[0] [&_>_h2]:ml-[0] [@media(width<=520px)]:flex-wrap">
-                <h2>{a.type}</h2>
-                {a.isDefault && <Badge>Default</Badge>}
-              </div>
-              <p>
-                {a.fullName} {a.phone}
-              </p>
-              <p>
-                {a.line1}
-                <br />
-                {a.line2}
-                <br />
-                {a.city}, {a.state} {a.postalCode}
-                <br />
-                {a.country}
-              </p>
-              <div className="cw-detail-actions flex gap-[12px] flex-wrap mt-[22px] [@media(width<=520px)]:[&_>_.cw-button]:text-[11px]">
-                <MapLink value={a} />
-                {!a.isDefault && (
-                  <button
-                    className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-                    disabled={busy}
-                    onClick={async () => {
-                      setBusy(true);
-                      try {
-                        await save(`/addresses/${a.id}/default`, "PATCH", {});
-                        refresh();
-                        notify("Default address updated.");
-                      } catch (e) {
-                        notify(e.message);
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
-                  >
-                    Set as default
-                  </button>
-                )}
-                <button className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" onClick={() => setEdit(a)}>
-                  <Pencil size={14} /> Edit
-                </button>
-                <button
-                  className="cw-icon inline-flex items-center justify-center shrink-0 w-[29px] h-[29px] text-[#99a38e] [background:none] [border-top-width:1px] [border-top-style:solid] [border-top-color:transparent] [border-right-width:1px] [border-right-style:solid] [border-right-color:transparent] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:transparent] [border-left-width:1px] [border-left-style:solid] [border-left-color:transparent] rounded-[5px] pt-[0] pr-[0] pb-[0] pl-[0] [&:hover]:[background:#edf3e4] [&:hover]:text-[#608146]"
-                  aria-label={`Remove ${a.type} address`}
-                  onClick={() => setRemove(a)}
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </article>
           ))}
         </div>
       ) : section === "notifications" ? (
@@ -406,37 +399,7 @@ function CustomerRecordList({ section }) {
           </button>
         </div>
       )}
-      {edit && (
-        <AddressForm
-          address={edit.id ? edit : null}
-          close={() => setEdit(null)}
-          done={refresh}
-        />
-      )}{" "}
-      {remove && (
-        <Modal title="Remove address" busy={busy} close={() => setRemove(null)}>
-          <p>Remove this {remove.type.toLowerCase()} address?</p>
-          <button
-            className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                await save(`/addresses/${remove.id}`, "DELETE", {});
-                setRemove(null);
-                refresh();
-                notify("Address removed.");
-              } catch (e) {
-                notify(e.message);
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            {busy ? "Removing…" : "Remove address"}
-          </button>
-        </Modal>
-      )}
+
     </>
   );
 }
@@ -451,9 +414,11 @@ function AddressForm({ address, close, done }) {
       close={close}
     >
       <form
-        className="cw-form min-w-0 [&_fieldset]:[border-top-width:0] [&_fieldset]:[border-top-style:none] [&_fieldset]:[border-top-color:currentColor] [&_fieldset]:[border-right-width:0] [&_fieldset]:[border-right-style:none] [&_fieldset]:[border-right-color:currentColor] [&_fieldset]:[border-bottom-width:0] [&_fieldset]:[border-bottom-style:none] [&_fieldset]:[border-bottom-color:currentColor] [&_fieldset]:[border-left-width:0] [&_fieldset]:[border-left-style:none] [&_fieldset]:[border-left-color:currentColor] [&_fieldset]:pt-[0] [&_fieldset]:pr-[0] [&_fieldset]:pb-[0] [&_fieldset]:pl-[0] [&_fieldset]:mt-[0] [&_fieldset]:mr-[0] [&_fieldset]:mb-[0] [&_fieldset]:ml-[0] [&_fieldset]:min-w-0 [&_>_.cw-panel_+_.cw-panel]:mt-[22px]"
+        className="grid min-w-0 gap-4 p-5 sm:grid-cols-2 sm:p-6 [&_.cw-field]:text-xs [&_.cw-field]:text-slate-600 [&_input:not([type=checkbox])]:min-h-11 [&_input:not([type=checkbox])]:rounded-xl [&_select]:min-h-11 [&_select]:rounded-xl [&_input]:text-sm! [&_select]:text-sm! [&_>_p]:col-span-full"
         onSubmit={async (e) => {
           e.preventDefault();
+          if (busy) return;
+          setError("");
           const f = Object.fromEntries(new FormData(e.currentTarget));
           setBusy(true);
           try {
@@ -492,7 +457,7 @@ function AddressForm({ address, close, done }) {
           </Field>
         ))}
         <LocationFields value={address || {}} />
-        <label className="cw-checkbox flex gap-[10px] items-center">
+        <label className="col-span-full flex items-center gap-2.5 text-xs font-medium text-slate-600 [&_input]:size-4 [&_input]:accent-[#873f52]">
           <input
             name="isDefault"
             type="checkbox"
@@ -505,7 +470,7 @@ function AddressForm({ address, close, done }) {
             {error}
           </p>
         )}
-        <button disabled={busy} className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]">
+        <button type="submit" disabled={busy} className="col-span-full inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#873f52] bg-[#873f52] px-4 py-3 text-xs font-semibold text-white transition-colors hover:bg-[#723247] disabled:cursor-wait disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#873f52]">
           {busy ? "Saving…" : "Save address"}
         </button>
       </form>
@@ -778,31 +743,7 @@ export function CustomerProfile({ settings = false }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [failedPhoto, setFailedPhoto] = useState("");
-  if (settings)
-    return (
-      <>
-        <Heading
-          title="A little peace of mind"
-          description="Keep your account secure and your details up to date."
-        />
-        <section className="cw-panel cw-prose [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4eade] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4eade] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4eade] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4eade] rounded-[10px] min-w-0 overflow-x-hidden overflow-y-hidden pt-[25px] [@media(width<=520px)]:pt-[23px] pr-[28px] [@media(width<=520px)]:pr-[20px] pb-[25px] [@media(width<=520px)]:pb-[23px] pl-[28px] [@media(width<=520px)]:pl-[20px] mb-[24px] [&_>_h2]:mb-[20px] [&_>_h3]:mt-[24px] [&_p]:[white-space:pre-line]">
-          <ShieldCheck size={30} />
-          <h2>Account security</h2>
-          <p>Use a strong, unique password to keep your planning space safe.</p>
-          <Link className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" to="/auth/change-password">
-            Change password
-          </Link>
-          <h3>Profile & contact details</h3>
-          <p>
-            Your email is verified. Keep your phone number and addresses
-            current.
-          </p>
-          <Link className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" to="/customer/profile">
-            Edit profile
-          </Link>
-        </section>
-      </>
-    );
+  if (settings) return <CustomerSettingsPage user={user} />;
   if (r.loading) return <Loading />;
   if (r.error) return <ErrorView error={r.error} retry={r.retry} />;
 

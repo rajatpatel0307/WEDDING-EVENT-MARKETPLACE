@@ -17,6 +17,7 @@ import {
   download,
 } from "../services/workspace.api";
 import RefundRequest from "./CustomerRefunds";
+import CustomerTransactionDetails from "./CustomerTransactionDetails";
 import { checkout } from "../services/checkout";
 import { paymentScreen, selectedPaymentMinor } from "../services/checkout-state";
 export default function CustomerCheckout({ transaction = false }) {
@@ -38,7 +39,8 @@ function CheckoutContent({ transaction }) {
     [customAmount, setCustomAmount] = useState(""),
     [checkoutKey, setCheckoutKey] = useState(() => crypto.randomUUID()),
     [paidBefore, setPaidBefore] = useState(null),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [downloading, setDownloading] = useState(false);
   const r = useCustomerData(
       transaction ? `/payments/${id}` : `/bookings/${id}`,
       version,
@@ -61,73 +63,34 @@ function CheckoutContent({ transaction }) {
       setCheckoutKey(crypto.randomUUID());
     }
   }, [stage, paidBefore, r.data?.booking?.PaidAmount]);
-  if (r.loading && !r.data) return <Loading />;
-  if (r.error) return <ErrorView error={r.error} retry={r.retry} />;
   if (transaction) {
-    const p = r.data.payment;
     return (
-      <>
-        <Heading
-          title="Transaction details"
-          description="Recorded securely on the server."
-        />
-        <section className="cw-panel cw-prose [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4eade] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4eade] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4eade] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4eade] rounded-[10px] min-w-0 overflow-x-hidden overflow-y-hidden pt-[25px] [@media(width<=520px)]:pt-[23px] pr-[28px] [@media(width<=520px)]:pr-[20px] pb-[25px] [@media(width<=520px)]:pb-[23px] pl-[28px] [@media(width<=520px)]:pl-[20px] mb-[24px] [&_>_h2]:mb-[20px] [&_>_h3]:mt-[24px] [&_p]:[white-space:pre-line]">
-          <h2>{p.reference}</h2>
-          <Badge>{p.status}</Badge>
-          <p>
-            {money(p.amount, false, p.currency)} · {p.method} · {p.gateway}
-          </p>
-          <p>{date(p.paidAt || p.createdAt)}</p>
-          <Link to={`/customer/bookings/${p.bookingId}`}>
-            Booking {p.booking}
-          </Link>
-          {["Success", "Refunded"].includes(p.status) && (
-            <button
-              className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-              onClick={async () => {
-                try {
-                  download(
-                    await customerRequest(`/payments/${id}/receipt`, {
-                      download: true,
-                    }),
-                    "payment-receipt.txt",
-                  );
-                } catch (e) {
-                  setError(e.message);
-                }
-              }}
-            >
-              Download receipt
-            </button>
-          )}
-          <Link
-            className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-            to={`/customer/bookings/${p.bookingId}/checkout`}
-          >
-            Payment status and retry
-          </Link>
-          <h3>Transaction history</h3>
-          {r.data.transactions.map((t) => (
-            <p key={t.id}>
-              {t.type} · {t.status} · {money(t.amount)} · {date(t.createdAt)}
-            </p>
-          ))}
-          <h3>Refunds</h3>
-          {r.data.refunds.length ? (
-            r.data.refunds.map((f, i) => (
-              <p key={i}>
-                {money(f.amount)} · {f.status}
-              </p>
-            ))
-          ) : (
-            <p>No refunds recorded.</p>
-          )}
-        </section>
-        <RefundRequest bookingId={p.bookingId} />
-        {error && <p role="alert">{error}</p>}
-      </>
+      <CustomerTransactionDetails
+        {...r}
+        downloading={downloading}
+        receiptError={error}
+        onDownload={async () => {
+          if (downloading) return;
+          setDownloading(true);
+          setError("");
+          try {
+            download(
+              await customerRequest(`/payments/${id}/receipt`, { download: true }),
+              "payment-receipt.txt",
+            );
+          } catch (e) {
+            setError(e.message);
+          } finally {
+            setDownloading(false);
+          }
+        }}
+      >
+        {r.data?.payment?.bookingId && <RefundRequest bookingId={r.data.payment.bookingId} />}
+      </CustomerTransactionDetails>
     );
   }
+  if (r.loading && !r.data) return <Loading />;
+  if (r.error) return <ErrorView error={r.error} retry={r.retry} />;
   const b = r.data.booking,
     paid = b.PaymentStatus === "Paid",
     eligible =

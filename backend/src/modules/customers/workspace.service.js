@@ -100,10 +100,20 @@ const allowed = new Set([
   "addresses",
   "notifications",
 ]);
+const paymentRecordInput = pageInput.extend({
+  q: z.string().trim().max(150).default(""),
+  status: z.enum(["", "Pending", "Processing", "Success", "Failed", "Refunded"]).default(""),
+  method: z.enum(["", "card", "upi", "netbanking", "wallet", "emi", "cardless_emi", "paylater", "bank_transfer", "cash", "ach"]).default(""),
+  from: z.union([z.iso.date(), z.literal("")]).default(""),
+  to: z.union([z.iso.date(), z.literal("")]).default(""),
+}).refine((q) => !q.from || !q.to || q.from <= q.to, {
+  message: "The end date must be on or after the start date.",
+  path: ["to"],
+});
 export async function records(section, input, ctx) {
   const { id } = scope(ctx);
   if (!allowed.has(section)) fail("Page not found.", 404);
-  const q = pageInput
+  const q = (section === "payments" ? paymentRecordInput : pageInput
       .extend({
         q: z.string().trim().max(150).default(""),
         status: z
@@ -116,7 +126,7 @@ export async function records(section, input, ctx) {
             "Cancelled",
           ])
           .default(""),
-      })
+      }))
       .parse(input),
     c = extra[section] || customerReadCollections[section],
     p = {
@@ -124,6 +134,12 @@ export async function records(section, input, ctx) {
       search: `%${q.q.replace(/[\[\]%_]/g, (c) => `[${c}]`)}%`,
       offset: (q.page - 1) * q.pageSize,
       size: q.pageSize,
+      ...(section === "payments" ? {
+        paymentStatus: q.status,
+        paymentMethod: q.method,
+        paymentFrom: q.from,
+        paymentTo: q.to,
+      } : {}),
     };
   const bookingFilters = {
     Pending: "t.BookingStatus IN('Pending','Accepted','PaymentPending')",
@@ -142,7 +158,15 @@ export async function records(section, input, ctx) {
       ? ` AND (${bookingFilters[q.status]})`
       : section === "events" && q.status === "Upcoming"
         ? " AND t.EventDate>=CONVERT(date,DATEADD(minute,330,SYSUTCDATETIME())) AND t.Status IN('Planning','Confirmed')"
-        : "");
+        : "") +
+    (section === "payments" ? [
+      q.q ? " AND (t.PaymentReference LIKE :search OR b.BookingNumber LIKE :search OR t.GatewayName LIKE :search)" : "",
+      q.status ? " AND t.PaymentStatus=:paymentStatus" : "",
+      q.method ? " AND LOWER(t.PaymentMethod)=:paymentMethod" : "",
+      // Payment dates are displayed in India time; include the entire selected day.
+      q.from ? " AND COALESCE(t.PaidAt,t.CreatedAt)>=DATEADD(minute,-330,CAST(:paymentFrom AS datetime2))" : "",
+      q.to ? " AND COALESCE(t.PaidAt,t.CreatedAt)<DATEADD(day,1,DATEADD(minute,-330,CAST(:paymentTo AS datetime2)))" : "",
+    ].join("") : "");
   const [n] = await repo.select(
     `SELECT COUNT(*) AS total FROM ${c.from} WHERE ${where}`,
     p,
