@@ -22,13 +22,14 @@ import { loadCheckout } from "../customer/services/checkout-loader";
 import { offerState } from "./offer-state";
 import { bookingQuantityState } from "./booking-quantity";
 import CartItem from "./CartItem";
+import AddressForm from "../customer/components/CustomerAddressForm";
 import CustomerOrdersPage from "./CustomerOrdersPage";
 import PurchaseOrderDetails from "./PurchaseOrderDetails";
 import { categoryImages } from "../../components/home/categoryImages";
 
 
-function AddressPicker({ value, onChange, optional = false, disabled = false, className = "", selectClassName = "", linkClassName = "" }) {
-  const state = useCustomerData("/addresses?pageSize=50");
+function AddressPicker({ value, onChange, optional = false, disabled = false, className = "", selectClassName = "", linkClassName = "", version = 0, onAddAddress }) {
+  const state = useCustomerData("/addresses?pageSize=50", version);
   return (
     <label className={className}>
       {optional ? "Booking address (optional)" : "Shipping / billing address"}
@@ -57,6 +58,7 @@ function AddressPicker({ value, onChange, optional = false, disabled = false, cl
         </select>
       )}
       <Link className={linkClassName} to="/customer/addresses">Manage addresses</Link>
+      {onAddAddress && <button type="button" disabled={disabled} onClick={onAddAddress} className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg border border-[#e3d5d8] bg-white px-3 py-2 text-xs font-medium text-[#8c414e] hover:bg-[#faf3f5] disabled:cursor-not-allowed disabled:opacity-50"><Plus size={14} aria-hidden="true" />Add new address</button>}
     </label>
   );
 }
@@ -367,12 +369,22 @@ function BookingForm({ id, packageId }) {
   );
 }
 
+export function CartPage() {
+  return <CartFlow key="cart" checkout={false} />;
+}
+
 export function CartCheckout() {
+  return <CartFlow key="checkout" checkout />;
+}
+
+function CartFlow({ checkout }) {
   const navigate = useNavigate(),
     [params, setParams] = useSearchParams(),
     [version, setVersion] = useState(0),
     state = useCustomerData("/cart", version),
     [addressId, setAddress] = useState(""),
+    [addAddress, setAddAddress] = useState(false),
+    [addressVersion, setAddressVersion] = useState(0),
     [preview, setPreview] = useState(null),
     [accepted, setAccepted] = useState(false),
     [error, setError] = useState(""),
@@ -381,6 +393,7 @@ export function CartCheckout() {
     key = useRef(crypto.randomUUID()),
     adding = useRef(null);
   useEffect(() => {
+    if (checkout) return;
     const serviceId = params.get("service");
     if (!serviceId || adding.current === serviceId) return;
     adding.current = serviceId;
@@ -398,7 +411,7 @@ export function CartCheckout() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setBusy(false));
-  }, [params, setParams]);
+  }, [params, setParams, checkout]);
   function reset() {
     setPreview(null);
     setAccepted(false);
@@ -424,7 +437,7 @@ export function CartCheckout() {
   }
   async function review(e) {
     e.preventDefault();
-    if (changing.current || busy || state.loading || !addressId || blocked) return;
+    if (!checkout || changing.current || busy || state.loading || !addressId || blocked) return;
     setBusy(true);
     setError("");
     setPreview(null);
@@ -443,7 +456,7 @@ export function CartCheckout() {
     }
   }
   async function confirm() {
-    if (!preview || !accepted || busy || state.loading) return;
+    if (!checkout || !preview || !accepted || busy || state.loading || blocked) return;
     setBusy(true);
     setError("");
     try {
@@ -471,33 +484,38 @@ export function CartCheckout() {
     (sum, line) => sum + Math.round(Number(line.price) * 100) * Number(line.quantity), 0,
   ) / 100;
   const blocked = lines.some((line) => line.unavailable) || !!state.data.checkoutError;
+  function continueToCheckout(event) {
+    event.preventDefault();
+    if (changing.current || pending || blocked || !lines.length) return;
+    navigate("/customer/checkout");
+  }
   return (
     <div className="mx-auto min-w-0 max-w-[1240px] pt-[6px] pb-9 text-[#463b3d] max-[520px]:pt-0 max-[520px]:pb-6 [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#a67687] [&_:focus-visible]:outline-offset-[3px]">
-      <Link className="inline-flex items-center gap-[7px] text-xs text-[#827477] hover:text-[#8c414e]!" to="/services">
-        <ArrowLeft size={14} /> Continue shopping
+      <Link className="inline-flex items-center gap-[7px] text-xs text-[#827477] hover:text-[#8c414e]!" to={checkout ? "/customer/cart" : "/services"}>
+        <ArrowLeft size={14} /> {checkout ? "Back to cart" : "Continue shopping"}
       </Link>
       <header className="mt-[29px] mb-[25px] flex items-center justify-between gap-5 max-[520px]:mt-[22px] max-[520px]:flex-col max-[520px]:items-start max-[520px]:gap-4">
         <div>
           <span className="text-[9px] font-semibold tracking-[1.8px] text-[#a17c69] max-[520px]:text-[8px] max-[520px]:tracking-[1.2px]">A LITTLE CLOSER TO YOUR CELEBRATION</span>
           <h1 className="mt-[6px] mb-2 flex items-center gap-[13px] text-[38px]! max-[520px]:text-[32px]!">
-            Your cart <span className="inline-grid h-7 min-w-7 place-items-center rounded-full border border-[#ead8db] bg-[#f7edef] px-[7px] font-[Inter,'Segoe_UI',sans-serif] text-xs leading-none font-medium tracking-normal text-[#8c414e]">{quantity}</span>
+            {checkout ? "Checkout" : "Your cart"} <span className="inline-grid h-7 min-w-7 place-items-center rounded-full border border-[#ead8db] bg-[#f7edef] px-[7px] font-[Inter,'Segoe_UI',sans-serif] text-xs leading-none font-medium tracking-normal text-[#8c414e]">{quantity}</span>
           </h1>
-          <p className="m-0 text-[13px] text-[#827477]!">Everything you love, ready for your big day.</p>
+          <p className="m-0 text-[13px] text-[#827477]!">{checkout ? "Add your delivery details, then review your order." : "Everything you love, ready for your big day."}</p>
         </div>
         <Link className="inline-flex shrink-0 items-center justify-center gap-[9px] rounded-[7px] border border-[#eae2de] bg-[#fffdfa] px-[15px] py-[10px] text-xs text-[#463b3d] hover:text-[#8c414e]!" to="/customer/orders">
           <ReceiptText size={16} /> My Orders <ArrowRight size={14} />
         </Link>
       </header>
-      {!!lines.length && (
+      {checkout && !!lines.length && (
         <ol className="m-0 mb-[26px] flex list-none items-center justify-center gap-[30px] rounded-[9px] border border-[#eae2de] bg-[#f4eeeb] px-5 py-[17px] max-[520px]:justify-between max-[520px]:gap-2 max-[520px]:px-3 max-[520px]:py-[14px]" aria-label="Checkout progress">
           <li className="flex items-center gap-[9px] text-[11px] whitespace-nowrap text-[#8c414e] max-[520px]:flex-col max-[520px]:gap-[6px] max-[520px]:text-[9px]">
             <span className="grid size-[25px] place-items-center rounded-full border border-[#8c414e] bg-[#8c414e] text-[10px] text-white"><Check size={14} /></span>Your cart
           </li>
-          <li className="flex items-center gap-[9px] text-[11px] whitespace-nowrap text-[#8c414e] before:mr-5 before:h-px before:w-12 before:bg-[#d9cbc8] before:content-[''] max-[520px]:flex-col max-[520px]:gap-[6px] max-[520px]:text-[9px] max-[520px]:before:hidden" aria-current={!addressId ? "step" : undefined}>
-            <span className={`grid size-[25px] place-items-center rounded-full border border-[#8c414e] text-[10px] ${addressId ? "bg-[#8c414e] text-white" : "bg-[#fffdfa]"}`}>{addressId ? <Check size={14} /> : "2"}</span>Delivery details
+          <li className="flex items-center gap-[9px] text-[11px] whitespace-nowrap text-[#8c414e] before:mr-5 before:h-px before:w-12 before:bg-[#d9cbc8] before:content-[''] max-[520px]:flex-col max-[520px]:gap-[6px] max-[520px]:text-[9px] max-[520px]:before:hidden" aria-current={!preview ? "step" : undefined}>
+            <span className={`grid size-[25px] place-items-center rounded-full border border-[#8c414e] text-[10px] ${preview ? "bg-[#8c414e] text-white" : "bg-[#fffdfa]"}`}>{preview ? <Check size={14} /> : "2"}</span>Delivery details
           </li>
-          <li className={`flex items-center gap-[9px] text-[11px] whitespace-nowrap before:mr-5 before:h-px before:w-12 before:bg-[#d9cbc8] before:content-[''] max-[520px]:flex-col max-[520px]:gap-[6px] max-[520px]:text-[9px] max-[520px]:before:hidden ${addressId ? "text-[#8c414e]" : "text-[#827477]"}`} aria-current={addressId ? "step" : undefined}>
-            <span className={`grid size-[25px] place-items-center rounded-full border text-[10px] ${addressId ? "border-[#8c414e] bg-[#fffdfa]" : "border-[#d9cbc8]"}`}>3</span>Review & pay
+          <li className={`flex items-center gap-[9px] text-[11px] whitespace-nowrap before:mr-5 before:h-px before:w-12 before:bg-[#d9cbc8] before:content-[''] max-[520px]:flex-col max-[520px]:gap-[6px] max-[520px]:text-[9px] max-[520px]:before:hidden ${preview ? "text-[#8c414e]" : "text-[#827477]"}`} aria-current={preview ? "step" : undefined}>
+            <span className={`grid size-[25px] place-items-center rounded-full border text-[10px] ${preview ? "border-[#8c414e] bg-[#fffdfa]" : "border-[#d9cbc8]"}`}>3</span>Review & pay
           </li>
         </ol>
       )}
@@ -514,23 +532,23 @@ export function CartCheckout() {
         </section>
       ) : (
         <div className="grid grid-cols-[minmax(0,1.55fr)_minmax(290px,1fr)] items-start gap-6 max-[1100px]:grid-cols-[minmax(0,1fr)]" aria-busy={pending}>
-          <form id="cart-checkout" className="grid min-w-0 gap-[22px]" onSubmit={review}>
+          <form id="cart-checkout" className="grid min-w-0 gap-[22px]" onSubmit={checkout ? review : continueToCheckout}>
             <section className="min-w-0 rounded-xl border border-[#eae2de] bg-white shadow-[0_3px_18px_#51363e04]" aria-labelledby="cart-items-title">
               <header className="flex items-center justify-between gap-3 border-b border-[#f0e9e4] px-6 py-[21px] max-[520px]:gap-2 max-[520px]:px-4 max-[520px]:py-[18px]">
-                <div className="flex min-w-0 items-center gap-[10px]"><ShoppingBag size={18} className="shrink-0 text-[#a57c85]" /><h2 id="cart-items-title" className="m-0 text-[22px]! tracking-[-.5px] max-[520px]:text-xl!">Your selection</h2></div>
+                <div className="flex min-w-0 items-center gap-[10px]"><ShoppingBag size={18} className="shrink-0 text-[#a57c85]" /><h2 id="cart-items-title" className="m-0 text-[22px]! tracking-[-.5px] max-[520px]:text-xl!">{checkout ? "Order items" : "Your selection"}</h2></div>
                 <span className="shrink-0 text-[10px] text-[#827477] max-[520px]:text-[9px]">{lines.length} {lines.length === 1 ? "product" : "products"}</span>
               </header>
               <ul className="m-0 list-none px-6 max-[520px]:px-4">
-                {lines.map((line) => <CartItem key={line.id} line={line} disabled={pending}
+                {checkout ? lines.map((line) => <li key={line.id} className="flex flex-wrap items-start justify-between gap-4 py-5 not-first:border-t not-first:border-[#f0e9e4]"><div className="min-w-0"><p className="text-sm font-semibold break-words">{line.name}</p><p className="mt-1 text-xs text-[#827477]">Quantity: {line.quantity} · {money(line.price)} each</p>{line.unavailable && <p role="alert" className="mt-2 text-xs text-[#994a42]">{line.unavailable}</p>}</div><strong className="text-sm tabular-nums">{money(Number(line.price) * line.quantity)}</strong></li>) : lines.map((line) => <CartItem key={line.id} line={line} disabled={pending}
                   onEdit={reset}
                   onUpdate={(quantity) => mutate("/cart/items", "PUT", { serviceId: line.id, quantity })}
                   onRemove={() => {
                     if (window.confirm(`Remove ${line.name} from your cart?`)) mutate(`/cart/items/${line.id}`, "DELETE");
                   }} />)}
               </ul>
-              <footer className="flex items-center gap-2 rounded-b-xl border-t border-[#f0e9e4] bg-[#fdfaf7] px-6 py-[13px] text-[10px] text-[#827477] max-[520px]:px-4 max-[520px]:py-3"><Package size={15} className="shrink-0 text-[#b1967a]" /> Buying for your celebration? Check quantities before you review.</footer>
+              <footer className="flex items-center gap-2 rounded-b-xl border-t border-[#f0e9e4] bg-[#fdfaf7] px-6 py-[13px] text-[10px] text-[#827477] max-[520px]:px-4 max-[520px]:py-3">{checkout ? <Link to="/customer/cart" className="inline-flex min-h-8 items-center gap-2 text-xs font-medium text-[#8c414e]"><ArrowLeft size={14} aria-hidden="true" />Edit cart</Link> : <><Package size={15} className="shrink-0 text-[#b1967a]" />Check quantities before continuing to checkout.</>}</footer>
             </section>
-            <section className="min-w-0 rounded-xl border border-[#eae2de] bg-white shadow-[0_3px_18px_#51363e04]" aria-labelledby="cart-delivery-title">
+            {checkout && <section className="min-w-0 rounded-xl border border-[#eae2de] bg-white shadow-[0_3px_18px_#51363e04]" aria-labelledby="cart-delivery-title">
               <header className="flex items-center justify-between gap-3 border-b border-[#f0e9e4] px-6 py-[21px] max-[520px]:gap-2 max-[520px]:px-4 max-[520px]:py-[18px]">
                 <div className="flex min-w-0 items-center gap-[10px]"><MapPin size={18} className="shrink-0 text-[#a57c85]" /><h2 id="cart-delivery-title" className="m-0 text-[22px]! tracking-[-.5px] max-[520px]:text-xl!">Delivery details</h2></div>
                 <span className={`inline-flex shrink-0 items-center gap-1 text-[10px] max-[520px]:text-[9px] ${addressId ? "text-[#55745c]" : "text-[#827477]"}`}>{addressId ? <><Check size={12} /> Address selected</> : "Required"}</span>
@@ -540,13 +558,13 @@ export function CartCheckout() {
                   <UserRound size={18} className="mt-[3px] shrink-0 text-[#a57c85]" />
                   <div className="min-w-0"><span className="text-[10px] font-semibold">Customer details</span><CustomerLabel className="mt-1 mb-0 text-[11px]! text-[#827477]! [overflow-wrap:anywhere]" /></div>
                 </div>
-                <AddressPicker disabled={pending} className="flex flex-col gap-[10px] text-[11px]"
+                <AddressPicker disabled={pending} version={addressVersion} onAddAddress={() => setAddAddress(true)} className="flex flex-col gap-[10px] text-[11px]"
                   selectClassName="min-h-[45px] w-full min-w-0 rounded-[7px] border border-[#e5d9d9]! bg-white px-3 py-[11px] text-xs font-[inherit]"
                   linkClassName="self-start text-[11px] text-[#8c414e] underline underline-offset-[3px] hover:text-[#8c414e]!"
                   value={addressId} onChange={(v) => { setAddress(v); reset(); setError(""); }} />
-                <p className="mt-[9px] mb-0 text-[10px]! text-[#827477]!">Choose a saved address, or add a new one in Manage addresses.</p>
+                <p className="mt-[9px] mb-0 text-[10px]! text-[#827477]!">Choose a saved address or add a new address for this order.</p>
               </div>
-            </section>
+            </section>}
           </form>
           <aside className="sticky top-[106px] min-w-0 rounded-xl border border-[#eae2de] bg-white shadow-[0_3px_18px_#51363e04] max-[1100px]:static" aria-labelledby="cart-summary-title">
             <header className="flex items-center gap-3 border-b border-[#f0e9e4] px-6 py-[21px] max-[520px]:gap-2 max-[520px]:px-4 max-[520px]:py-[18px]">
@@ -556,12 +574,20 @@ export function CartCheckout() {
               <p className="m-0 mb-[17px] text-[11px]! text-[#827477]!">{quantity} {quantity === 1 ? "item" : "items"} for your celebration</p>
               <dl className="m-0">
                 <div className="mb-[14px] flex items-baseline justify-between gap-[14px] text-xs"><dt className="text-[#78696e]">Items subtotal</dt><dd className="m-0 text-right font-medium whitespace-nowrap tabular-nums">{money(preview ? preview.subtotal : subtotal)}</dd></div>
-                <div className="mb-[14px] flex items-baseline justify-between gap-[14px] text-xs"><dt className="text-[#78696e]">Delivery charges</dt><dd className="m-0 text-right font-medium whitespace-nowrap tabular-nums">{preview ? Number(preview.shipping) === 0 ? <span className="text-[#55745c]">Free</span> : money(preview.shipping) : <span className="text-[10px] font-normal text-[#827477]">At review</span>}</dd></div>
-                <div className="mb-[14px] flex items-baseline justify-between gap-[14px] text-xs"><dt className="text-[#78696e]">Tax</dt><dd className="m-0 text-right font-medium whitespace-nowrap tabular-nums">{preview ? money(preview.tax) : <span className="text-[10px] font-normal text-[#827477]">At review</span>}</dd></div>
+                {checkout && <div className="mb-[14px] flex items-baseline justify-between gap-[14px] text-xs"><dt className="text-[#78696e]">Delivery charges</dt><dd className="m-0 text-right font-medium whitespace-nowrap tabular-nums">{preview ? Number(preview.shipping) === 0 ? <span className="text-[#55745c]">Free</span> : money(preview.shipping) : <span className="text-[10px] font-normal text-[#827477]">At review</span>}</dd></div>}
+                {checkout && <div className="mb-[14px] flex items-baseline justify-between gap-[14px] text-xs"><dt className="text-[#78696e]">Tax</dt><dd className="m-0 text-right font-medium whitespace-nowrap tabular-nums">{preview ? money(preview.tax) : <span className="text-[10px] font-normal text-[#827477]">At review</span>}</dd></div>}
                 {Number(preview?.discount) > 0 && <div className="mb-[14px] flex items-baseline justify-between gap-[14px] text-xs"><dt className="text-[#78696e]">Discount</dt><dd className="m-0 text-right font-medium whitespace-nowrap text-[#55745c] tabular-nums">-{money(preview.discount)}</dd></div>}
                 <div className="mt-[22px] flex items-baseline justify-between gap-[14px] border-t border-[#eae2de] pt-[18px]"><dt className="text-sm font-semibold">{preview ? "Total to pay" : "Items total"}</dt><dd className="m-0 text-right text-[23px] font-semibold whitespace-nowrap text-[#8c414e] tabular-nums">{money(preview ? preview.total : subtotal)}</dd></div>
               </dl>
-              {preview ? (
+              {!checkout ? (
+                <>
+                  <p className="mt-3 mb-5 text-[10px]! text-[#827477]!">Delivery address, charges and tax are reviewed at checkout.</p>
+                  <button className="flex min-h-[46px] w-full items-center justify-center gap-[10px] rounded-[7px] border border-[#8c414e] bg-[#8c414e] px-[18px] py-[11px] text-xs font-medium text-white enabled:hover:border-[#74333f] enabled:hover:bg-[#74333f] disabled:cursor-not-allowed disabled:opacity-45" type="submit" form="cart-checkout" disabled={pending || blocked}>
+                    {pending ? "Updating..." : "Proceed to checkout"}<ArrowRight size={16} aria-hidden="true" />
+                  </button>
+                  {blocked && <p role="status" className="mt-3 text-xs text-[#994a42]">Update unavailable quantities or remove items to continue.</p>}
+                </>
+              ) : preview ? (
                 <>
                   <div className="mt-5 flex gap-[10px] rounded-lg bg-[#faf4f2] p-[13px]">
                     <MapPin size={16} className="mt-[3px] shrink-0 text-[#8c414e]" />
@@ -584,14 +610,14 @@ export function CartCheckout() {
                   <p className="mt-[10px] mb-0 text-center text-[10px]! text-[#827477]!" role="status">{blocked ? "Update unavailable quantities or remove items to continue." : !addressId ? "Select a delivery address to continue." : "Ready to review your order and delivery details."}</p>
                 </>
               )}
-              <div className="mt-[22px] flex items-start gap-[10px] border-t border-[#f0e9e4] pt-4">
+              {checkout && <div className="mt-[22px] flex items-start gap-[10px] border-t border-[#f0e9e4] pt-4">
                 <ShieldCheck size={18} className="mt-[2px] shrink-0 text-[#a17c69]" /><div><strong className="text-[11px] font-medium">Review before you pay</strong><p className="mt-1 mb-0 text-[10px]! text-[#827477]!">You can check your final total before continuing to payment.</p></div>
-              </div>
-              <p className="mt-[15px] mb-0 text-[10px]! text-[#827477]!">Service bookings are managed separately in <Link className="text-[#8c414e] underline underline-offset-2 hover:text-[#8c414e]!" to="/customer/bookings">My Bookings</Link>.</p>
+              </div>}
             </div>
           </aside>
         </div>
       )}
+      {checkout && addAddress && <AddressForm address={null} close={() => setAddAddress(false)} done={() => { setAddressVersion((v) => v + 1); reset(); setError(""); }} />}
     </div>
   );
 }

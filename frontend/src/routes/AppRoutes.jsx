@@ -1,4 +1,4 @@
-import { BookingCheckout, CartCheckout, PurchaseOrder, MyOrders } from "../modules/commerce/CheckoutPages";
+import { BookingCheckout, CartPage, CartCheckout, PurchaseOrder, MyOrders } from "../modules/commerce/CheckoutPages";
 import VendorAccessPage from "../modules/admin/pages/VendorAccessPage";
 import VendorVerificationPage from "../modules/vendor/pages/VendorVerificationPage";
 import VendorProfilePage from "../modules/vendor/pages/VendorProfilePage";
@@ -383,7 +383,8 @@ export default function AppRoutes() {
               path="vendors/:id"
               element={<CustomerServiceDetails vendor />}
             />
-            <Route path="cart" element={<CartCheckout/>}/>
+            <Route path="cart" element={<CartPage/>}/>
+            <Route path="checkout" element={<CartCheckout/>}/>
             <Route path="orders" element={<MyOrders/>}/>
             <Route path="orders/:id" element={<PurchaseOrder/>}/>
             <Route path="booking-checkout/:id" element={<BookingCheckout/>}/>

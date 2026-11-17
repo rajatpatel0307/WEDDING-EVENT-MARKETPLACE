@@ -12,6 +12,7 @@ import {
   GitCompareArrows,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import CustomerQuotationView from "./CustomerQuotationView";
 import {
   useQuotation,
   mutateQuote,
@@ -109,6 +110,7 @@ export function QuotationList({
       if (key !== "page") next.delete("page");
       return next;
     });
+  if (role === "Customer") return <CustomerQuotationView requests={requests} status={status} params={params} state={state} onChange={change} onReset={() => setParams({ status: "" })} />;
   return (
     <div className="quotation-workspace [&]:text-[#342d2a] [&]:min-w-0 [&]:wrap-anywhere [&_h1]:[font:clamp(28px,_4vw,_42px)/1.2_Georgia,_serif] [&_h1]:my-[12px] [&_h1]:mx-0 [&_h2]:[font:25px/1.3_Georgia,_serif] [&_h2]:my-[12px] [&_h2]:mx-0 [&_h3]:text-[17px] [&_h3]:my-[12px] [&_h3]:mx-0 [&_p]:leading-[1.7] [&_button]:inline-flex [&_button]:items-center [&_button]:gap-[8px] [&_button]:border [&_button]:border-[#ded2cd] [&_button]:rounded-[8px] [&_button]:py-[10px] [&_button]:px-[15px] [&_button]:bg-white [&_button]:text-inherit [&_button]:[font:inherit] [&_button]:no-underline [&_button]:cursor-pointer [&_button:disabled]:opacity-45 [&_button:disabled]:[cursor:not-allowed] [&_input]:w-full [&_input]:border [&_input]:border-[#ded2cd] [&_input]:rounded-[8px] [&_input]:p-[10px] [&_input]:bg-white [&_input]:text-inherit [&_input]:[font:inherit] [&_input]:min-w-0 [&_select]:w-full [&_select]:border [&_select]:border-[#ded2cd] [&_select]:rounded-[8px] [&_select]:p-[10px] [&_select]:bg-white [&_select]:text-inherit [&_select]:[font:inherit] [&_select]:min-w-0 [&_textarea]:w-full [&_textarea]:border [&_textarea]:border-[#ded2cd] [&_textarea]:rounded-[8px] [&_textarea]:p-[10px] [&_textarea]:bg-white [&_textarea]:text-inherit [&_textarea]:[font:inherit] [&_textarea]:min-w-0 [&_label]:grid [&_label]:gap-[7px] [&_label]:text-[13px] [&_table]:w-full [&_table]:border-collapse [&_td]:text-left [&_td]:p-[12px] [&_td]:border-b [&_td]:border-b-[#e7dfda] [&_td]:min-w-[110px] [&_td]:[vertical-align:top] [&_th]:text-left [&_th]:p-[12px] [&_th]:border-b [&_th]:border-b-[#e7dfda] [&_th]:min-w-[110px] [&_th]:[vertical-align:top] [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-[#8c414e] [&_:focus-visible]:outline-offset-[3px] print:[&_button]:hidden print:[&_nav]:hidden">
       <h1>{requests ? "Quotation requests" : "Your quotations"}</h1>
