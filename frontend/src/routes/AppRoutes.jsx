@@ -21,6 +21,11 @@ const ContactManagement = lazy(() =>
     default: m.ContactManagement,
   })),
 );
+const ContactInquiryDetailsPage = lazy(() =>
+  import("../modules/content/AdminContent").then((m) => ({
+    default: m.ContactInquiryDetailsPage,
+  })),
+);
 const PrivacyManagement = lazy(() =>
   import("../modules/content/AdminContent").then((m) => ({
     default: m.PrivacyManagement,
@@ -688,6 +693,14 @@ export default function AppRoutes() {
               element={
                 <Suspense fallback={<div role="status">Loading...</div>}>
                   <ContactManagement />
+                </Suspense>
+              }
+            />
+            <Route
+              path="contact-inquiries/:inquiryId"
+              element={
+                <Suspense fallback={<div role="status">Loading inquiry...</div>}>
+                  <ContactInquiryDetailsPage />
                 </Suspense>
               }
             />

@@ -45,7 +45,7 @@ function isActivePage(path, location, section) {
     );
   }
 
-  return !currentQuery.has("status");
+  return pathname === "contact-inquiries" || !currentQuery.has("status");
 }
 
 export default function AdminSidebar({
