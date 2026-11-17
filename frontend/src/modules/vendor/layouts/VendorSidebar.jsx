@@ -143,9 +143,9 @@ export default function VendorSidebar({
         ====================================== */}
 
         <Link
-          to={user?.vendor?.verificationStatus === "Approved" && user.vendor.active ? "/vendor/dashboard" : "/vendor/verification"}
+          to="/"
           onClick={onCloseMobile}
-          aria-label="MarryNest Vendor Dashboard"
+          aria-label="MarryNest home"
           className="
             flex min-w-0 shrink
             items-center justify-start

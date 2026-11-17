@@ -115,9 +115,9 @@ export default function CustomerSidebar({
       >
         {/* Company logo */}
         <Link
-          to="/customer/dashboard"
+          to="/"
           onClick={onCloseMobile}
-          aria-label="MarryNest Customer Dashboard"
+          aria-label="MarryNest home"
           className="flex min-w-0 shrink items-center no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8aaf94]"
         >
           <img

@@ -676,8 +676,8 @@ export default function AdminHeader({
 
         {/* Company Name */}
         <Link
-          to="/admin/dashboard"
-          aria-label="MarryNest Admin Dashboard"
+          to="/"
+          aria-label="MarryNest home"
           className="
             group flex min-w-0 items-center
             gap-2 no-underline

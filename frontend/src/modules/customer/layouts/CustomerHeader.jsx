@@ -464,8 +464,8 @@ export default function CustomerHeader({
 
         {/* Company Brand */}
         <Link
-          to="/customer/dashboard"
-          aria-label="MarryNest Customer Dashboard"
+          to="/"
+          aria-label="MarryNest home"
           className="
             group flex min-w-0 items-center
             gap-2 no-underline

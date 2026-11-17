@@ -115,9 +115,9 @@ export default function AdminSidebar({
       {/* Sidebar Header */}
       <div className="ad-sidebar-header h-[86px] shrink-0 flex items-center gap-[12px] [padding:14px_16px] [&_.ad-brand]:p-[0]! [&_.ad-brand]:h-auto [&_.ad-brand]:flex-1 [&_.ad-brand]:min-w-0 [&_.ad-brand]:block [&_.ad-brand_img]:block [&_.ad-brand_img]:w-full [&_.ad-brand_img]:max-w-[160px] [&_.ad-brand_img]:h-auto [&_.ad-brand_img]:object-contain [@media(width<=767px)]:pr-[57px]">
         <Link
-          to="/admin/dashboard"
+          to="/"
           className="ad-compact-brand hidden [&_img]:block [&_img]:w-[44px] [&_img]:h-[39px] [&_img]:object-contain [&_img]:rounded-[7px]"
-          aria-label="MarryNest admin dashboard"
+          aria-label="MarryNest home"
           onClick={onCloseMobile}
         >
           <img
@@ -129,9 +129,9 @@ export default function AdminSidebar({
         </Link>
 
         <Link
-          to="/admin/dashboard"
+          to="/"
           className="ad-brand h-[86px] flex items-center gap-[10px] [padding:21px_23px] shrink-0 [&_>_span]:h-[38px] [&_>_span]:w-[38px] [&_>_span]:grid [&_>_span]:place-items-center [&_>_span]:text-[var(--ad-teal)] [&_>_span]:[background:#eaf2ee] [&_>_span]:rounded-[12px] [&_>_span]:shrink-0 [&_strong]:[font-family:Georgia,_serif] [&_strong]:text-[24px] [@media(width<=1200px)]:[&_strong]:text-[22px] [&_strong]:font-[500] [&_strong]:tracking-[-0.6px] [&_strong]:flex [&_strong]:items-center [&_strong]:gap-[9px] [&_strong_span]:[font:9px_Inter,_sans-serif] [&_strong_span]:tracking-[1.2px] [&_strong_span]:text-[#ab9062] [&_strong_span]:[background:#f7f3eb] [&_strong_span]:rounded-[3px] [&_strong_span]:[padding:3px_5px] [&_small]:text-[8px] [@media(width<=1200px)]:[&_small]:text-[7px] [&_small]:text-[#87958f] [&_small]:whitespace-nowrap [@media(width<=1200px)]:pl-[17px]"
-          aria-label="MarryNest admin dashboard"
+          aria-label="MarryNest home"
           onClick={onCloseMobile}
         >
           <img

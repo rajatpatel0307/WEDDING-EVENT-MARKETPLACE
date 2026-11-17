@@ -450,8 +450,8 @@ export default function VendorHeader({
 
         {/* Company Brand */}
         <Link
-          to="/vendor/dashboard"
-          aria-label="MarryNest Vendor Dashboard"
+          to="/"
+          aria-label="MarryNest home"
           className="
             group flex min-w-0 items-center
             gap-2 no-underline
