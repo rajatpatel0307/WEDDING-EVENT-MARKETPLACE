@@ -8,6 +8,7 @@ import {
 import * as quotations from "../quotations/quotations.service.js";
 import { randomUUID, createHash } from "node:crypto";
 import { bookingInput } from "../bookings/bookings.validation.js";
+import { allocateBookingNumber } from "../bookings/booking-numbers.js";
 import { assertReservation, dayOf } from "../bookings/reservations.js";
 import { details as lifecycleDetails } from "../bookings/bookings.service.js";
 import { recordServiceMetric } from "../vendors/service-metrics.js";
@@ -104,8 +105,7 @@ export async function createBooking(
         ),
     );
   }
-  const bookingId = randomUUID(),
-    number = `BK-${Date.now().toString(36).toUpperCase()}-${bookingId.slice(0, 6).toUpperCase()}`;
+  const bookingId = randomUUID();
   const total = items.reduce(
     (n, i) =>
       n +
@@ -116,6 +116,7 @@ export async function createBooking(
   );
   if (total <= 0 || total > 1e8)
     fail("This booking requires a vendor quotation with a valid total.");
+  const number = await allocateBookingNumber(tx);
   await insert(
     "Booking",
     "BookingId",

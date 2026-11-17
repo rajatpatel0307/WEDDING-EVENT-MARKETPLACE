@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { bookingNotificationText } from "../bookings/booking-notification-reference.js";
 import { z } from "zod";
 import { sequelize } from "../../config/database.js";
 import { QueryTypes } from "sequelize";
@@ -183,9 +184,9 @@ export async function inbox(input, ctx, role) {
   const user = requireAuth(ctx),
     b = paging.parse(input);
   const rows = await query(
-    `SELECT NotificationId AS id,Title AS title,Message AS message,ReferenceType,ReferenceId,IsRead AS isRead,CreatedAt AS createdAt,
+    `SELECT NotificationId AS id,${bookingNotificationText("Title")} AS title,${bookingNotificationText("Message")} AS message,ReferenceType,ReferenceId,IsRead AS isRead,CreatedAt AS createdAt,
     CASE WHEN ReferenceType='Conversation' THEN 'chat' WHEN ReferenceType LIKE '%Booking%' THEN 'booking' WHEN ReferenceType LIKE '%Quotation%' THEN 'quotation' ELSE Category END AS category
-    FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL AND (:unread =0 OR IsRead=0)
+    FROM dbo.Notifications t WHERE UserId=:user AND DismissedAt IS NULL AND (:unread =0 OR IsRead=0)
     AND (:category ='all' OR :category = CASE WHEN ReferenceType='Conversation' THEN 'chat' WHEN ReferenceType LIKE '%Booking%' THEN 'booking' WHEN ReferenceType LIKE '%Quotation%' THEN 'quotation' ELSE Category END)
     ORDER BY CreatedAt DESC,NotificationId DESC OFFSET :offset ROWS FETCH NEXT 21 ROWS ONLY`,
     {

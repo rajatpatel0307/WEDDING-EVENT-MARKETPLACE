@@ -1,5 +1,6 @@
 import { up as sellBookUp } from "../migrations/030-sell-book.js";
 import { up as adminLocationsUp } from "../migrations/031-admin-locations.js";
+import { up as bookingNumbersUp } from "../migrations/032-booking-numbers.js";
 import { up as vendorAccessUp } from "../migrations/029-vendor-access.js";
 import { up as onboardingUp } from "../migrations/028-vendor-onboarding.js";
 import { up as categoryImagesUp } from "../migrations/027-category-images.js";
@@ -453,6 +454,14 @@ try {
     if (!rows.length) {
       await adminLocationsUp(sequelize.getQueryInterface(), transaction);
       await sequelize.query("INSERT dbo.AuthMigrations(Name) VALUES('031-admin-locations')", { transaction });
+    }
+  });
+  await sequelize.transaction(async transaction => {
+    await sequelize.query("DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;", { transaction });
+    const [rows] = await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='032-booking-numbers'", { transaction });
+    if (!rows.length) {
+      await bookingNumbersUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query("INSERT dbo.AuthMigrations(Name) VALUES('032-booking-numbers')", { transaction });
     }
   });
   console.log("Database migrations are current.");

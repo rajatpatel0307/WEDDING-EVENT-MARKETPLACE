@@ -37,7 +37,7 @@ const navigation = [
   ["dashboard", "Dashboard", LayoutDashboard],
   ["profile", "My Profile", UserRound],
   ["events", "My Events", CalendarHeart],
-  ["discover", "Find Services", Search],
+  ["discover", "Find Services", Search], 
   ["bookings", "My Bookings", ShoppingBag],
   ["quotations", "My Quotations", FileText],
   ["wishlist", "Wishlist", Heart],

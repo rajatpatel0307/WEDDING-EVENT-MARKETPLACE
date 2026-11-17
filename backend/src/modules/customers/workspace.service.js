@@ -16,6 +16,7 @@ import { customerReadCollections } from "../admin/customers.service.js";
 import { phone } from "../auth/auth.validation.js";
 import { dayOf, clockOf } from "../bookings/reservations.js";
 import { csvCell } from "../../utils/csv.js";
+import { bookingNotificationText } from "../bookings/booking-notification-reference.js";
 const localDay = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 export const eventInput = z
@@ -86,7 +87,7 @@ const extra = {
     where:
       "t.UserId=:id AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation')",
     fields:
-      "t.NotificationId AS id,t.Title AS title,t.Message AS message,t.IsRead AS isRead,t.ReferenceType AS referenceType,t.ReferenceId AS referenceId,t.CreatedAt AS createdAt",
+      `t.NotificationId AS id,${bookingNotificationText("Title")} AS title,${bookingNotificationText("Message")} AS message,t.IsRead AS isRead,t.ReferenceType AS referenceType,t.ReferenceId AS referenceId,t.CreatedAt AS createdAt`,
   },
 };
 const allowed = new Set([

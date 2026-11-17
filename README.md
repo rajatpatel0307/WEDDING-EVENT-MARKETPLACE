@@ -20,6 +20,8 @@ The centralized [Admin services management module](backend/docs/admin-services-m
 
 The [Booking lifecycle implementation report](backend/docs/booking-lifecycle.md) covers customer price review and add-ons, server-side coupons, exclusive reservations, vendor decisions, cancellation and rescheduling approvals, private history, migration `015-booking-lifecycle`, actual API paths, verification results and rollout requirements.
 
+[Permanent sequential Booking IDs](backend/docs/booking-numbers.md) documents the `MNBK26` reference sequence, existing-booking backfill, concurrency protection, migration `032-booking-numbers`, standalone SQL, display coverage and verification.
+
 Cloudinary handles new signup documents and profile photos. See [Cloudinary setup](backend/docs/cloudinary.md) for required credentials and the profile photo database migration.
 
 The role-based authentication implementation, environment setup, database mapping, migration commands, secure administrator provisioning and verification limitations are documented in [Authentication setup](backend/docs/authentication.md).

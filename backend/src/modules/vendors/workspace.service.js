@@ -1,4 +1,5 @@
 import { assertAccess } from "./access.service.js";
+import { bookingNotificationText } from "../bookings/booking-notification-reference.js";
 import { publicPredicate } from '../reviews/reviews.policy.js';
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -69,7 +70,7 @@ const extra = {
     where:
       "t.UserId=:ownerId AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation')",
     fields:
-      "t.NotificationId AS id,t.Title AS title,t.Message AS message,t.IsRead AS isRead,t.ReferenceType AS referenceType,t.ReferenceId AS referenceId,t.CreatedAt AS createdAt",
+      `t.NotificationId AS id,${bookingNotificationText("Title")} AS title,${bookingNotificationText("Message")} AS message,t.IsRead AS isRead,t.ReferenceType AS referenceType,t.ReferenceId AS referenceId,t.CreatedAt AS createdAt`,
   },
 };
 const allowed = new Set([

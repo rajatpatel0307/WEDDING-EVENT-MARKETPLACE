@@ -1,3 +1,5 @@
+import { bookingNotificationText } from "../bookings/booking-notification-reference.js";
+
 // Every identifier and projection is owned by the server; request input is bound.
 const resource = (table, id, fields, options = {}) => ({
   table,
@@ -400,8 +402,8 @@ export const resources = {
     "Notifications",
     "NotificationId",
     {
-      name: "t.Title",
-      description: "t.Message",
+      name: bookingNotificationText("Title"),
+      description: bookingNotificationText("Message"),
       recipient: "u.Email",
       type: "t.NotificationType",
       status: "CASE WHEN t.IsRead=1 THEN 'Read' ELSE 'Unread' END",
