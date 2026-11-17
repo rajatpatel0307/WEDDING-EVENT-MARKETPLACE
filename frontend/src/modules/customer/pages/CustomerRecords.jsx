@@ -15,6 +15,12 @@ import {
   Check,
   MessagesSquare,
   ShieldCheck,
+  Camera,
+  LoaderCircle,
+  LockKeyhole,
+  Mail,
+  Save,
+  UserRound,
 } from "lucide-react";
 import { gql } from "@apollo/client";
 import { useAuth } from "../../../context/AuthContext";
@@ -37,6 +43,7 @@ import {
   date,
   timestamp,
   customerRequest,
+  today,
 } from "../services/workspace.api";
 import BookingItemDetails from "../../bookings/BookingItemDetails";
 import CustomerBookingDetails from "./CustomerBookingDetails";
@@ -769,7 +776,8 @@ export function CustomerProfile({ settings = false }) {
   const { user, setUser, reload, notify } = useAuth(),
     r = useCustomerData("/profile"),
     [busy, setBusy] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [failedPhoto, setFailedPhoto] = useState("");
   if (settings)
     return (
       <>
@@ -797,93 +805,130 @@ export function CustomerProfile({ settings = false }) {
     );
   if (r.loading) return <Loading />;
   if (r.error) return <ErrorView error={r.error} retry={r.retry} />;
+
+  const inputClass = "block min-h-12 w-full min-w-0 rounded-xl border border-[#dce5d5] bg-white px-4 py-3 text-[13px] text-[#3f5537] transition placeholder:text-[#a1ac95] hover:border-[#b4c4a4] focus:border-[#7d9a66] focus:outline-none focus:ring-4 focus:ring-[#7d9a66]/10 disabled:cursor-not-allowed disabled:bg-[#f5f7f1] disabled:text-[#7c8970] motion-reduce:transition-none";
+  const labelClass = "grid min-w-0 content-start gap-2 text-xs font-medium text-[#53684a]";
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ");
+  const initials = [user.firstName, user.lastName].filter(Boolean).map((name) => name.charAt(0)).join("").toUpperCase() || "M";
+
   return (
-    <>
-      <Heading
-        title="The person behind the celebration"
-        description="Your profile, your details, your next chapter."
-      />
-      <section className="cw-panel cw-profile-panel [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4eade] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4eade] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4eade] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4eade] rounded-[10px] min-w-0 overflow-x-hidden overflow-y-hidden pt-[30px] [@media(width<=520px)]:pt-[23px] pr-[30px] [@media(width<=520px)]:pr-[23px] pb-[30px] [@media(width<=520px)]:pb-[23px] pl-[30px] [@media(width<=520px)]:pl-[23px] grid grid-cols-[260px_minmax(0,_1fr)] [@media(width<=800px)]:grid-cols-[1fr] [@media(800px<width<=1050px)]:grid-cols-[190px_minmax(0,_1fr)] gap-[40px] [@media(width<=1050px)]:gap-[25px]">
-        <div className="cw-profile-photo pr-[30px] [@media(width<=800px)]:pr-[0] [border-right-width:1px] [@media(width<=800px)]:[border-right-width:0] [border-right-style:solid] [@media(width<=800px)]:[border-right-style:none] [border-right-color:#eee4da] [@media(width<=800px)]:[border-right-color:currentColor] [&_>_strong]:block [&_>_strong]:[font-family:Georgia,_serif] [&_>_strong]:text-[23px] [&_>_strong]:font-[400] [&_>_strong]:mt-[25px] [&_.photo-upload]:max-w-full [@media(width<=800px)]:[border-top-width:0] [@media(width<=800px)]:[border-top-style:none] [@media(width<=800px)]:[border-top-color:currentColor] [@media(width<=800px)]:[border-bottom-width:1px] [@media(width<=800px)]:[border-bottom-style:solid] [@media(width<=800px)]:[border-bottom-color:#eee4da] [@media(width<=800px)]:[border-left-width:0] [@media(width<=800px)]:[border-left-style:none] [@media(width<=800px)]:[border-left-color:currentColor] [@media(width<=800px)]:pt-[0] [@media(width<=800px)]:pb-[25px] [@media(width<=800px)]:pl-[0]">
-          <PhotoUpload
-            url={user.profilePhotoUrl}
-            onBusy={setBusy}
-            onUploaded={async ({ uploadToken }) => {
-              const { data } = await client.mutate({
-                mutation: gql(
-                  `mutation UpdateProfilePhoto($uploadToken:String!){updateProfilePhoto(uploadToken:$uploadToken){success message user{${userFields}}}}`,
-                ),
-                variables: { uploadToken },
-              });
-              setUser((p) => ({ ...p, ...data.updateProfilePhoto.user }));
-              notify(data.updateProfilePhoto.message);
-              r.retry();
-            }}
-          />
-          <strong>
-            {user.firstName} {user.lastName}
-          </strong>
-          <p>{user.email}</p>
-          <Badge>Verified</Badge>
+    <div className="min-w-0 space-y-6 text-[#3e5438] sm:space-y-7">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#879577]">Your celebration, beautifully planned</p>
+          <h1 className="mt-2 font-serif text-[30px] leading-tight tracking-[-0.8px] text-[#304735] sm:text-[36px]">The person behind the celebration<span className="text-[#b09374]">.</span></h1>
+          <p className="mt-3 text-xs leading-relaxed text-[#7c8971] sm:text-[13px]">Your profile, your details, your next chapter.</p>
         </div>
-        <form
-          className="cw-form min-w-0 [&_fieldset]:[border-top-width:0] [&_fieldset]:[border-top-style:none] [&_fieldset]:[border-top-color:currentColor] [&_fieldset]:[border-right-width:0] [&_fieldset]:[border-right-style:none] [&_fieldset]:[border-right-color:currentColor] [&_fieldset]:[border-bottom-width:0] [&_fieldset]:[border-bottom-style:none] [&_fieldset]:[border-bottom-color:currentColor] [&_fieldset]:[border-left-width:0] [&_fieldset]:[border-left-style:none] [&_fieldset]:[border-left-color:currentColor] [&_fieldset]:pt-[0] [&_fieldset]:pr-[0] [&_fieldset]:pb-[0] [&_fieldset]:pl-[0] [&_fieldset]:mt-[0] [&_fieldset]:mr-[0] [&_fieldset]:mb-[0] [&_fieldset]:ml-[0] [&_fieldset]:min-w-0 [&_>_.cw-panel_+_.cw-panel]:mt-[22px]"
-          onSubmit={async (e) => {
-            e.preventDefault();
+        <Link to="/customer/settings" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#dfe6d6] bg-white px-3.5 py-2 text-[11px] font-medium text-[#6d805c] transition hover:border-[#b9caa7] hover:bg-[#f3f6ed] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7d9a66] motion-reduce:transition-none"><ShieldCheck size={15} aria-hidden="true" />Account settings<ArrowUpRight size={13} aria-hidden="true" /></Link>
+      </header>
+
+      <div className="grid min-w-0 items-start gap-5 min-[1100px]:grid-cols-[280px_minmax(0,1fr)] min-[1400px]:grid-cols-[310px_minmax(0,1fr)] min-[1400px]:gap-6">
+        <aside aria-label="Your profile photo and account" className="min-w-0 overflow-hidden rounded-2xl border border-[#e0e7d7] bg-white shadow-[0_3px_16px_#263c2803]">
+          <div className="h-24 border-b border-[#e4e9db] bg-linear-to-br from-[#e3ebd6] via-[#eff3e7] to-[#f5f0e3]"><p className="px-6 pt-5 text-[9px] font-medium uppercase tracking-[0.2em] text-[#85966f]">A little more you</p></div>
+          <div className="px-5 pb-6 sm:px-6">
+            <div className="-mt-9 flex items-end justify-between gap-3">
+              <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-[#e5edd9] font-serif text-[32px] text-[#6f8854] shadow-[0_3px_12px_#394b2912]">
+                {user.profilePhotoUrl && failedPhoto !== user.profilePhotoUrl ? (
+                  <img src={user.profilePhotoUrl} alt={fullName ? fullName + "'s profile photo" : "Your profile photo"} width="96" height="96" onError={() => setFailedPhoto(user.profilePhotoUrl)} className="size-full object-cover" />
+                ) : <span aria-label="Your initials">{initials}</span>}
+              </div>
+              <span className="mb-1 inline-flex items-center gap-1 rounded-full border border-[#dfe8d4] bg-[#f1f6e9] px-2.5 py-1 text-[9px] font-medium text-[#738c58]"><ShieldCheck size={12} aria-hidden="true" />Verified</span>
+            </div>
+            <h2 className="mt-4 break-words font-serif text-[25px] leading-tight text-[#3b5235]">{fullName || "Your profile"}</h2>
+            <p className="mt-2 break-all text-[11px] leading-relaxed text-[#839173]">{user.email}</p>
+            <p className="mt-2 text-[9px] font-medium uppercase tracking-[0.16em] text-[#a0aa94]">MarryNest customer</p>
+
+            <fieldset disabled={busy} className="mt-6 min-w-0 border-0 border-t border-solid border-[#e9ede2] pt-5">
+              <legend className="sr-only">Profile photo</legend>
+              <div className="mb-4 flex items-center gap-2 text-xs font-medium text-[#526a44]"><Camera size={15} className="text-[#8c9d78]" aria-hidden="true" />Make it feel like you</div>
+              <div className="[&_.field]:mb-0! [&_.field>span]:text-xs! [&_.field>span]:text-[#637654]! [&_input]:min-w-0 [&_input]:rounded-xl! [&_input]:border-[#dce5d2]! [&_input]:bg-[#f8faf5]! [&_input]:p-2! [&_input]:text-[10px]! [&_input]:text-[#76856c]! [&_input]:file:mr-2 [&_input]:file:cursor-pointer [&_input]:file:rounded-lg [&_input]:file:border-0 [&_input]:file:bg-[#e6eddc] [&_input]:file:px-2.5 [&_input]:file:py-2 [&_input]:file:text-[10px] [&_input]:file:font-medium [&_input]:file:text-[#4c6740] [&_input:focus]:border-[#8ba773]! [&_input:focus]:shadow-none! [&_input:focus-visible]:outline-2! [&_input:focus-visible]:outline-offset-2 [&_input:focus-visible]:outline-[#8ba773]! [&_small]:mt-3! [&_small]:text-[10px]! [&_small]:leading-relaxed [&_small]:text-[#879478]!">
+                <PhotoUpload
+                  onBusy={setBusy}
+                  onUploaded={async ({ uploadToken }) => {
+                    const { data } = await client.mutate({
+                      mutation: gql("mutation UpdateProfilePhoto($uploadToken:String!){updateProfilePhoto(uploadToken:$uploadToken){success message user{" + userFields + "}}}"),
+                      variables: { uploadToken },
+                    });
+                    setUser((previous) => ({ ...previous, ...data.updateProfilePhoto.user }));
+                    notify(data.updateProfilePhoto.message);
+                    r.retry();
+                  }}
+                />
+              </div>
+              <p className="mt-3 text-[10px] leading-relaxed text-[#9aa58c]">Your photo is saved automatically when you upload it.</p>
+            </fieldset>
+          </div>
+        </aside>
+
+        <section aria-labelledby="profile-details-title" className="min-w-0 overflow-hidden rounded-2xl border border-[#e0e7d7] bg-white shadow-[0_3px_16px_#263c2803]">
+          <header className="flex items-start gap-3 border-b border-[#eaf0e2] p-5 sm:px-7 sm:py-6">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f0f4e9] text-[#8ca373]"><UserRound size={20} strokeWidth={1.6} aria-hidden="true" /></span>
+            <div><h2 id="profile-details-title" className="font-serif text-[24px] leading-tight tracking-[-0.3px] text-[#3b5334]">Personal information</h2><p className="mt-1.5 text-[11px] leading-relaxed text-[#869478]">A few details to make your planning space your own.</p></div>
+          </header>
+          <form onSubmit={async (event) => {
+            event.preventDefault();
+            if (busy) return;
+            const fields = Object.fromEntries(new FormData(event.currentTarget));
             setBusy(true);
             setError("");
             try {
-              const f = Object.fromEntries(new FormData(e.currentTarget));
-              const result = await save("/profile", "PUT", {
-                ...f,
-                expectedUpdatedAt: r.data.updatedAt,
-              });
+              const result = await save("/profile", "PUT", { ...fields, expectedUpdatedAt: r.data.updatedAt });
               notify(result.message);
               await reload();
               r.retry();
-            } catch (e) {
-              setError(e.message);
+            } catch (error) {
+              setError(error.message);
             } finally {
               setBusy(false);
             }
-          }}
-        >
-          <div className="cw-form-grid">
-            {[
-              ["firstName", "First name"],
-              ["lastName", "Last name"],
-              ["phone", "Phone"],
-            ].map(([key, label]) => (
-              <Field label={label} key={key}>
-                <input
-                  name={key}
-                  defaultValue={r.data[key] || ""}
-                  required={key === "firstName"}
-                  maxLength={key === "phone" ? 20 : 100}
-                />
-              </Field>
-            ))}
-            <Field label="Date of birth">
-              <input
-                name="dateOfBirth"
-                type="date"
-                defaultValue={r.data.dateOfBirth?.slice(0, 10) || ""}
-              />
-            </Field>
-          </div>
-          <Field label="Verified email">
-            <input value={r.data.email} disabled readOnly />
-          </Field>
-          {error && (
-            <p className="cw-form-error [background:#fff4ee] [border-top-width:1px] [border-top-style:solid] [border-top-color:#f0ddcf] [border-right-width:1px] [border-right-style:solid] [border-right-color:#f0ddcf] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#f0ddcf] [border-left-width:1px] [border-left-style:solid] [border-left-color:#f0ddcf] text-[#b6836e]! pt-[12px] pr-[15px] pb-[12px] pl-[15px] rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]" role="alert">
-              {error}
-            </p>
-          )}
-          <button className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" disabled={busy}>
-            {busy ? "Saving…" : "Save profile"}
-          </button>
-        </form>
-      </section>
-    </>
+          }}>
+            <fieldset disabled={busy} className="m-0 min-w-0 border-0 p-0">
+              <legend className="sr-only">Edit your personal and contact details</legend>
+              <div className="space-y-6 p-5 sm:p-7">
+                <p className="text-[10px] text-[#98a18e]"><span className="text-[#a08065]">*</span> Required field</p>
+                <div className="grid min-w-0 grid-cols-1 gap-x-5 gap-y-5 min-[600px]:grid-cols-2">
+                  <label className={labelClass}>
+                    <span>First name <span className="text-[#a08065]">*</span></span>
+                    <input className={inputClass} name="firstName" autoComplete="given-name" defaultValue={r.data.firstName || ""} placeholder="Your first name" required maxLength={100} />
+                  </label>
+                  <label className={labelClass}>
+                    <span>Last name <span className="ml-1 text-[10px] font-normal text-[#9aa58c]">Optional</span></span>
+                    <input className={inputClass} name="lastName" autoComplete="family-name" defaultValue={r.data.lastName || ""} placeholder="Your last name" maxLength={100} />
+                  </label>
+                  <label className={labelClass}>
+                    <span>Phone number <span className="ml-1 text-[10px] font-normal text-[#9aa58c]">Optional</span></span>
+                    <input className={inputClass} name="phone" type="tel" autoComplete="tel" defaultValue={r.data.phone || ""} placeholder="Your phone number" maxLength={20} />
+                  </label>
+                  <label className={labelClass}>
+                    <span>Date of birth <span className="ml-1 text-[10px] font-normal text-[#9aa58c]">Optional</span></span>
+                    <input className={inputClass} name="dateOfBirth" type="date" autoComplete="bday" max={today()} defaultValue={r.data.dateOfBirth?.slice(0, 10) || ""} />
+                  </label>
+                </div>
+                <div className="border-t border-[#ecf0e5] pt-6">
+                  <label className={labelClass}>
+                    <span className="flex flex-wrap items-center justify-between gap-2"><span>Email address</span><span className="inline-flex items-center gap-1 text-[10px] font-normal text-[#8ba374]"><ShieldCheck size={12} aria-hidden="true" />Verified email</span></span>
+                    <span className="relative block min-w-0">
+                      <Mail size={16} className="pointer-events-none absolute top-4 left-4 text-[#a1ae92]" aria-hidden="true" />
+                      <input value={r.data.email || ""} type="email" autoComplete="email" disabled readOnly className={inputClass + " pl-11 pr-10"} />
+                      <LockKeyhole size={13} className="pointer-events-none absolute top-[18px] right-4 text-[#a7b19a]" aria-hidden="true" />
+                    </span>
+                    <span className="text-[10px] leading-relaxed font-normal text-[#96a087]">This email is linked to your account and can’t be edited here.</span>
+                  </label>
+                </div>
+                {error && <p role="alert" className="rounded-xl border border-[#edc9c9] bg-[#fff5f3] px-4 py-3 text-xs leading-relaxed break-words text-[#ab5b56]">{error}</p>}
+              </div>
+              <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-[#eaf0e2] bg-[#fbfcf9] px-5 py-5 sm:px-7">
+                <p className="flex items-center gap-2 text-[10px] text-[#8e9c7c]"><ShieldCheck size={15} className="shrink-0 text-[#9bae88]" aria-hidden="true" />Keep your contact details up to date.</p>
+                <button type="submit" disabled={busy} className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#46683a] bg-[#46683a] px-5 py-3 text-xs font-semibold text-white shadow-sm transition hover:border-[#335528] hover:bg-[#335528] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7d9a66] disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none sm:w-auto">
+                  {busy ? <LoaderCircle size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Save size={15} aria-hidden="true" />}
+                  {busy ? "Saving…" : "Save profile"}
+                </button>
+              </footer>
+            </fieldset>
+          </form>
+        </section>
+      </div>
+      <p className="flex items-center justify-center gap-2 pt-1 text-center text-[10px] text-[#9ba68d]"><Camera size={13} aria-hidden="true" />A familiar face. A celebration that’s yours.</p>
+    </div>
   );
 }

@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../../context/AuthContext";
+import fullLogo from "../../../assets/MarryNest Wedding Logo.png";
+import compactLogo from "../../../assets/small logo.png";
 
 // ============================================
 // CUSTOMER NAVIGATION
@@ -36,8 +38,8 @@ import { useAuth } from "../../../context/AuthContext";
 const navigation = [
   ["dashboard", "Dashboard", LayoutDashboard],
   ["profile", "My Profile", UserRound],
-  ["events", "My Events", CalendarHeart],
-  ["discover", "Find Services", Search], 
+  // ["events", "My Events", CalendarHeart],
+  // ["discover", "Find Services", Search], 
   ["bookings", "My Bookings", ShoppingBag],
   ["quotations", "My Quotations", FileText],
   ["wishlist", "Wishlist", Heart],
@@ -157,29 +159,40 @@ export default function CustomerSidebar({
 
       <div
         className={`
-          flex h-[65px] shrink-0
+          flex h-[89px] shrink-0
           items-center justify-between
           gap-2 border-b border-[#e6ebe1]
-          px-5
+          px-4
 
           ${
             collapsed
-              ? "lg:justify-center lg:px-2"
+              ? "lg:flex-col lg:justify-center lg:gap-1 lg:px-2"
               : ""
           }
         `}
       >
-        {/* Sidebar Title */}
-        <strong
-          className={`
-            truncate text-[13px]
-            font-semibold text-[#365b43]
-
-            ${collapsed ? "lg:hidden" : ""}
-          `}
+        {/* Company logo */}
+        <Link
+          to="/customer/dashboard"
+          onClick={onCloseMobile}
+          aria-label="MarryNest Customer Dashboard"
+          className="flex min-w-0 shrink items-center no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8aaf94]"
         >
-          Your workspace
-        </strong>
+          <img
+            src={fullLogo}
+            alt="MarryNest"
+            width="185"
+            height="65"
+            className={`block h-[65px] w-auto max-w-[185px] object-contain ${collapsed ? "lg:hidden" : ""}`}
+          />
+          <img
+            src={compactLogo}
+            alt=""
+            width="40"
+            height="39"
+            className={`hidden h-[39px] w-10 object-contain ${collapsed ? "lg:block" : ""}`}
+          />
+        </Link>
 
         {/* Desktop Collapse Button */}
         <button

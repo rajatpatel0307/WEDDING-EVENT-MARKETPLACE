@@ -7,6 +7,8 @@ import {
 
 import CustomerHeader from "./CustomerHeader";
 import CustomerSidebar from "./CustomerSidebar";
+import { useCommunicationCounts } from "../../../hooks/useCommunicationCounts";
+import { customerRequest } from "../services/workspace.api";
 
 // ============================================
 // SIDEBAR STORAGE
@@ -29,6 +31,7 @@ const getSavedSidebarState = () => {
 // ============================================
 
 export default function CustomerLayout() {
+  useCommunicationCounts(customerRequest);
   const location = useLocation();
 
   const [collapsed, setCollapsed] = useState(

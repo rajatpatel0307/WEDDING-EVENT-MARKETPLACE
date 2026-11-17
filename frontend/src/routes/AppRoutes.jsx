@@ -83,7 +83,7 @@ const AdminServiceEditor = lazy(
 const ServiceApprovalPage = lazy(
   () => import("../modules/admin/pages/ServiceApprovalPage"),
 );
-const CustomerLayout = lazy(() => import("../modules/customer/CustomerLayout"));
+const CustomerLayout = lazy(() => import("../modules/customer/layouts/CustomerLayout"));
 const CustomerDashboardPage = lazy(
   () => import("../modules/customer/pages/CustomerDashboard"),
 );

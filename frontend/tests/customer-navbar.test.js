@@ -2,12 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "vite";
 
-test("customer workspace reuses the site navbar without changing its links or dropdowns", async () => {
+test("customer workspace renders its customer header, sidebar, counts and nested pages", async () => {
   const previousWindow = globalThis.window;
-  const previousStorage = globalThis.localStorage;
   let collapsed = false;
-  globalThis.localStorage = { getItem: () => String(collapsed) };
-  globalThis.window = { scrollY: 0, location: { origin: "http://localhost:5173" } };
+  globalThis.window = {
+    localStorage: { getItem: () => String(collapsed) },
+    location: { origin: "http://localhost:5173" },
+  };
   const server = await createServer({
     server: { middlewareMode: true, hmr: false },
     plugins: [{
@@ -30,17 +31,16 @@ test("customer workspace reuses the site navbar without changing its links or dr
             import React from "react";
             import { renderToStaticMarkup } from "react-dom/server";
             import { MemoryRouter, Routes, Route } from "react-router-dom";
-            import Navbar from "/src/components/layout/Navbar.jsx";
-            import CustomerLayout from "/src/modules/customer/CustomerLayout.jsx";
-            export function render(workspace = false) {
+            import CustomerLayout from "/src/modules/customer/layouts/CustomerLayout.jsx";
+            export function render() {
               const element = React.createElement;
-              const content = workspace ? element(Routes, null,
+              const content = element(Routes, null,
                 element(Route, { path: "/customer", element: element(CustomerLayout) },
                   element(Route, { path: "dashboard", element: element("p", null, "Customer dashboard content") })
                 )
-              ) : element(Navbar);
+              );
               return renderToStaticMarkup(element(MemoryRouter, {
-                initialEntries: [workspace ? "/customer/dashboard" : "/services"]
+                initialEntries: ["/customer/dashboard"]
               }, content));
             }
           `;
@@ -50,33 +50,31 @@ test("customer workspace reuses the site navbar without changing its links or dr
   });
   try {
     const { render } = await server.ssrLoadModule("virtual:customer-navbar-check.jsx");
-    const marketplace = render();
-    const workspace = render(true);
-    const mainNavigation = (html) => {
-      const match = html.match(/<nav[^>]*aria-label="Main navigation"[^>]*>([\s\S]*?)<\/nav>/);
-      assert.ok(match, "shared main navigation is present");
-      return match[1];
-    };
-    const links = (html) => [...mainNavigation(html).matchAll(/<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)]
-      .map((match) => [match[1], match[2].replace(/<[^>]+>/g, "").trim()]);
-    assert.deepEqual(links(workspace), links(marketplace));
-    assert.ok(!links(workspace).some(([href, label]) => href === "/customer/bookings" || label === "Bookings"));
-    assert.match(mainNavigation(workspace), /Services <svg/);
-    assert.doesNotMatch(mainNavigation(workspace), />\s*More\b/);
-    assert.ok(links(workspace).some(([href, label]) => href === "/about" && label === "About us"));
-    assert.ok(links(workspace).some(([href, label]) => href === "/contact" && label === "Contact us"));
-    assert.equal((workspace.match(/aria-label="Main navigation"/g) || []).length, 1);
-    assert.ok(!workspace.includes('aria-label="Marketplace navigation"'));
-    assert.ok(workspace.indexOf("mn-header") < workspace.indexOf("cw-app customer-workspace"));
+    const workspace = render();
+    assert.equal((workspace.match(/<header\b/g) || []).length, 1);
+    assert.ok(workspace.includes('aria-label="Marketplace navigation"'));
+    assert.ok(workspace.includes('aria-label="Customer profile menu"'));
+    assert.ok(workspace.includes('id="customer-sidebar"'));
+    assert.ok(workspace.includes('aria-label="Customer pages"'));
+    for (const path of ["dashboard", "profile", "events", "discover", "bookings", "quotations", "wishlist", "messages", "notifications", "payments", "reviews", "addresses", "settings", "cart", "orders", "legal"]) {
+      assert.ok(workspace.includes(`href="/customer/${path}"`), `${path} is reachable`);
+    }
+    assert.ok(workspace.includes('aria-label="Wishlist, 3 items"'));
+    assert.ok(workspace.includes('aria-label="Messages, 2 items"'));
+    assert.ok(workspace.includes('aria-label="Notifications, 7 items"'));
     assert.ok(workspace.includes('id="main-content"'));
     assert.ok(workspace.includes("Customer dashboard content"));
-    assert.ok(workspace.includes('aria-label="Toggle dashboard navigation"'));
-    assert.ok(workspace.includes("top-[var(--customer-header-height)]"));
+    assert.ok(workspace.includes('aria-label="Open dashboard navigation"'));
+    assert.ok(workspace.includes('aria-label="Collapse sidebar"'));
+    assert.ok(workspace.includes("lg:ml-[280px]"));
     collapsed = true;
-    assert.ok(render(true).includes("cw-sidebar-collapsed"));
+    const collapsedWorkspace = render();
+    assert.ok(collapsedWorkspace.includes('aria-label="Expand sidebar"'));
+    assert.ok(collapsedWorkspace.includes("lg:ml-[76px]"));
+    globalThis.window.localStorage.getItem = () => { throw new Error("Storage unavailable"); };
+    assert.ok(render().includes('aria-label="Collapse sidebar"'));
   } finally {
     await server.close();
     if (previousWindow === undefined) delete globalThis.window; else globalThis.window = previousWindow;
-    if (previousStorage === undefined) delete globalThis.localStorage; else globalThis.localStorage = previousStorage;
   }
 });
