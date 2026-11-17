@@ -62,7 +62,7 @@ function MessagesHeader({ connected }) {
           <span aria-hidden="true" className={"size-1.5 rounded-full " + (connected ? "bg-[#7e9e71] shadow-[0_0_0_3px_#7e9e7110]" : "bg-[#c1a163]")} />
           {connected ? "Live updates connected" : "Reconnecting · messages remain saved"}
         </div>
-        <Link to="/customer/discover" className="group inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#d9ccb3] bg-[#fffdf8] px-3.5 py-2 text-[10px] font-medium text-[#9a8155] transition hover:border-[#b99d6c] hover:bg-[#f5efdf] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b99d6c] motion-reduce:transition-none">
+        <Link to="/services" className="group inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#d9ccb3] bg-[#fffdf8] px-3.5 py-2 text-[10px] font-medium text-[#9a8155] transition hover:border-[#b99d6c] hover:bg-[#f5efdf] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b99d6c] motion-reduce:transition-none">
           Explore services<ArrowUpRight size={13} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none" aria-hidden="true" />
         </Link>
       </div>
@@ -78,7 +78,7 @@ function InboxFooter() {
         <div>
           <p className="font-serif text-[17px] leading-tight text-[#777c60]">Find your people.</p>
           <p className="mt-1 text-[10px] leading-relaxed text-[#aa9b7e]">A great team starts with a hello.</p>
-          <Link to="/customer/discover" className="mt-1.5 inline-flex min-h-7 items-center gap-1.5 text-[10px] font-medium text-[#a08755] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b99d6c]">Explore vendors<ArrowUpRight size={11} aria-hidden="true" /></Link>
+          <Link to="/services" className="mt-1.5 inline-flex min-h-7 items-center gap-1.5 text-[10px] font-medium text-[#a08755] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b99d6c]">Explore vendors<ArrowUpRight size={11} aria-hidden="true" /></Link>
         </div>
       </div>
     </div>
@@ -104,7 +104,7 @@ function ConversationWelcome() {
               Beautiful celebrations<br /><em className="font-normal text-[#a58c61]">begin with a hello.</em>
             </h2>
             <p className="mt-4 max-w-[290px] text-xs leading-7 text-[#9b917c]">Choose a conversation to share your vision, ask the little questions, and bring every detail together.</p>
-            <Link to="/customer/discover" className="group mt-5 inline-flex min-h-10 items-center justify-center gap-3 rounded-lg border border-[#3f5940] bg-[#3f5940] px-4 py-2.5 text-[10px] font-medium tracking-wide text-white! transition hover:bg-[#2f442f] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b69b6d] motion-reduce:transition-none">
+            <Link to="/services" className="group mt-5 inline-flex min-h-10 items-center justify-center gap-3 rounded-lg border border-[#3f5940] bg-[#3f5940] px-4 py-2.5 text-[10px] font-medium tracking-wide text-white! transition hover:bg-[#2f442f] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b69b6d] motion-reduce:transition-none">
               Find your dream team<ArrowUpRight size={13} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none" aria-hidden="true" />
             </Link>
           </div>

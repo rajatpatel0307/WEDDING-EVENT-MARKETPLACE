@@ -55,7 +55,7 @@ function Recommendation({ category }) {
     <div aria-busy={state.loading}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <h3 className="font-serif text-xl text-[#40533c]">{category.title}</h3>
-        <Link className={textLink} to={`/customer/discover?category=${encodeURIComponent(category.id)}`}>View all {category.label.toLowerCase()}<ArrowRight size={14} aria-hidden="true" /></Link>
+        <Link className={textLink} to={`/services?category=${encodeURIComponent(category.id)}`}>View all {category.label.toLowerCase()}<ArrowRight size={14} aria-hidden="true" /></Link>
       </div>
       {state.loading ? (
         <div role="status" aria-label={`Loading ${category.label.toLowerCase()}`} className="grid grid-cols-1 gap-4 min-[540px]:grid-cols-2 min-[1400px]:grid-cols-4">
@@ -67,7 +67,7 @@ function Recommendation({ category }) {
         <div className="flex flex-wrap items-center gap-4 rounded-xl border border-dashed border-[#d9e2d1] bg-[#f2f5ed] p-6">
           <Sparkles size={24} className="shrink-0 text-[#8d9e77]" aria-hidden="true" />
           <div className="min-w-0 flex-1 basis-52"><h3 className="text-sm font-medium text-[#435b3e]">Beautiful possibilities are on their way</h3><p className="mt-1 text-xs leading-relaxed text-[#74806d]">New {category.label.toLowerCase()} will appear here as vendors are approved.</p></div>
-          <Link to="/customer/discover" className={textLink}>Explore services<ArrowRight size={15} aria-hidden="true" /></Link>
+          <Link to="/services" className={textLink}>Explore services<ArrowRight size={15} aria-hidden="true" /></Link>
         </div>
       )}
     </div>
@@ -93,7 +93,7 @@ export default function CustomerDashboard() {
   const days = Number.isFinite(eventTimestamp) ? Math.max(0, Math.round((eventTimestamp - new Date(`${today}T00:00:00+05:30`).getTime()) / 86400000)) : null;
   const checklist = [
     ["Create your event", "A date for your diary", !!event, event ? `/customer/events/${event.id}` : "/customer/events?create=1"],
-    ["Find your dream team", "Choose the people who get you", Number(event?.bookedServices) > 0, "/customer/discover"],
+    ["Find your dream team", "Choose the people who get you", Number(event?.bookedServices) > 0, "/services"],
     ["Confirm your bookings", "Bring the details together", bookings.some((booking) => ["Confirmed", "Completed", "InProgress"].includes(booking.status)), "/customer/bookings"],
     ["Make it official", "Keep your payments in one place", Number(data?.stats?.spent) > 0, "/customer/payments"],
   ];
@@ -125,7 +125,7 @@ export default function CustomerDashboard() {
           <h2 id="planning-hero-title" className="mt-5 font-serif text-[40px] leading-[1.08] tracking-[-1px] text-[#fffaf1] sm:text-[50px]">Plan your<br /><em className="font-normal text-[#e8d2b5]">perfect wedding.</em></h2>
           <p className="mt-4 max-w-80 text-xs leading-7 text-[#ede6d7]">Your people. Your vision. One unforgettable celebration.<br className="max-sm:hidden" /> Bring it all together, one beautiful detail at a time.</p>
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <Link to="/customer/discover" className="inline-flex min-h-11 items-center gap-3 rounded-xl bg-[#fbf6ec] px-5 py-3 text-xs font-semibold text-[#4c513b] transition hover:bg-white motion-reduce:transition-none">Find your dream team<ArrowUpRight size={17} aria-hidden="true" /></Link>
+            <Link to="/services" className="inline-flex min-h-11 items-center gap-3 rounded-xl bg-[#fbf6ec] px-5 py-3 text-xs font-semibold text-[#4c513b] transition hover:bg-white motion-reduce:transition-none">Find your dream team<ArrowUpRight size={17} aria-hidden="true" /></Link>
             <Link to="/customer/wishlist" className="inline-flex min-h-11 items-center gap-2 text-xs text-[#f6eddf] underline-offset-4 hover:underline"><Heart size={15} aria-hidden="true" />Your saved inspiration</Link>
           </div>
         </div>
@@ -192,12 +192,12 @@ export default function CustomerDashboard() {
             </table>
           </div>
         ) : (
-          <div className="flex flex-wrap items-center gap-4 p-6"><span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[#f2f5ec] text-[#8a9b74]"><ShoppingBag size={22} aria-hidden="true" /></span><div className="min-w-0 flex-1 basis-52"><h3 className="font-serif text-xl text-[#455b3c]">Your dream team is waiting</h3><p className="mt-1 text-xs leading-6 text-[#7b8870]">Your booking requests and confirmations will appear here.</p></div><Link to="/customer/discover" className={primaryButton}>Discover services<ArrowRight size={15} aria-hidden="true" /></Link></div>
+          <div className="flex flex-wrap items-center gap-4 p-6"><span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-[#f2f5ec] text-[#8a9b74]"><ShoppingBag size={22} aria-hidden="true" /></span><div className="min-w-0 flex-1 basis-52"><h3 className="font-serif text-xl text-[#455b3c]">Your dream team is waiting</h3><p className="mt-1 text-xs leading-6 text-[#7b8870]">Your booking requests and confirmations will appear here.</p></div><Link to="/services" className={primaryButton}>Discover services<ArrowRight size={15} aria-hidden="true" /></Link></div>
         )}
       </section>
 
       <section aria-labelledby="discover-services-title" className="space-y-5">
-        <SectionHeading label="The people behind your perfect day" title={<span id="discover-services-title">Find your kind of extraordinary</span>} to="/customer/discover" link="All services" />
+        <SectionHeading label="The people behind your perfect day" title={<span id="discover-services-title">Find your kind of extraordinary</span>} to="/services" link="All services" />
         {catalog.error ? <ErrorView error={catalog.error} retry={catalog.retry} /> : catalog.loading ? <div role="status" aria-label="Loading service categories" className="space-y-4"><Skeleton className="h-16" /><Skeleton className="h-56" /></div> : availableCategories.length ? (
           <>
             <div role="group" aria-label="Browse service categories" className="flex gap-2 overflow-x-auto p-1 pb-3 [scrollbar-width:thin]">
@@ -206,7 +206,7 @@ export default function CustomerDashboard() {
             <div id="dashboard-category-results"><Recommendation key={activeCategory.id} category={activeCategory} /></div>
           </>
         ) : (
-          <div className="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-[#e6dfd0] bg-[#f7f2e9] p-6"><div><h3 className="font-serif text-2xl text-[#766849]">A dream team for your dream day</h3><p className="mt-2 text-xs leading-6 text-[#8e8470]">From the perfect venue to the final flourish, explore the possibilities.</p></div><Link to="/customer/discover" className={textLink}>Explore all services<ArrowUpRight size={15} aria-hidden="true" /></Link></div>
+          <div className="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-[#e6dfd0] bg-[#f7f2e9] p-6"><div><h3 className="font-serif text-2xl text-[#766849]">A dream team for your dream day</h3><p className="mt-2 text-xs leading-6 text-[#8e8470]">From the perfect venue to the final flourish, explore the possibilities.</p></div><Link to="/services" className={textLink}>Explore all services<ArrowUpRight size={15} aria-hidden="true" /></Link></div>
         )}
       </section>
 

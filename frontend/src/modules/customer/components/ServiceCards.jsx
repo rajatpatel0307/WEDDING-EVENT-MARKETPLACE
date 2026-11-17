@@ -22,8 +22,8 @@ export function ServiceCard({ item, saved: savedProp = false, onChange }) {
     [failed, setFailed] = useState(false);
   const path =
     item.type === "Vendor"
-      ? `/customer/vendors/${item.vendorId || item.id}`
-      : `/customer/services/${item.serviceId || item.id}${item.type === "Package" ? `?package=${item.packageId || item.id}` : ""}`;
+      ? `/vendors/${item.vendorId || item.id}`
+      : `/services/${item.serviceId || item.id}${item.type === "Package" ? `?package=${item.packageId || item.id}` : ""}`;
   async function toggle() {
     setBusy(true);
     try {

@@ -37,11 +37,11 @@ export const customerNavigation = [
 
 export const marketplaceLinks = [
   ["Home", "/", House],
-  ["Services", "/customer/discover", Search],
-  ["Vendors", "/customer/discover?type=vendors", Store],
-  ["Venues", "/customer/discover?venue=1", MapPin],
-  ["Packages", "/customer/discover?type=packages", Package],
-  ["Offers", "/customer/discover?type=offers", BadgePercent],
+  ["Services", "/services", Search],
+  ["Vendors", "/vendors", Store],
+  ["Venues", "/venues", MapPin],
+  ["Packages", "/packages", Package],
+  ["Offers", "/offers", BadgePercent],
   ["My Events", "/customer/events", CalendarHeart],
 ];
 

@@ -279,7 +279,7 @@ export function QuotationList({
               Try a different filter or discover a service to start an enquiry.
             </p>
             {role === "Customer" && (
-              <Link to="/customer/discover">Discover services</Link>
+              <Link to="/services">Discover services</Link>
             )}
           </section>
         ))}
@@ -695,7 +695,7 @@ export function QuotationDetails({ role = "Customer" }) {
         </p>
         {role === "Customer" && (
           <p>
-            <Link to={`/customer/vendors/${q.VendorId}`}>Vendor profile</Link>
+            <Link to={`/vendors/${q.VendorId}`}>Vendor profile</Link>
           </p>
         )}
         <QuoteItems items={d.items} />

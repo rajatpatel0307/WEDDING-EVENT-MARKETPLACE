@@ -1,6 +1,7 @@
 import { BookingCheckout, CartPage, CartCheckout, PurchaseOrder, MyOrders } from "../modules/commerce/CheckoutPages";
 import VendorAccessPage from "../modules/admin/pages/VendorAccessPage";
 import VendorVerificationPage from "../modules/vendor/pages/VendorVerificationPage";
+import MarketplaceRedirect from "./MarketplaceRedirect";
 import VendorProfilePage from "../modules/vendor/pages/VendorProfilePage";
 import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { lazy, Suspense } from "react";
@@ -86,14 +87,6 @@ const ServiceApprovalPage = lazy(
 const CustomerLayout = lazy(() => import("../modules/customer/layouts/CustomerLayout"));
 const CustomerDashboardPage = lazy(
   () => import("../modules/customer/pages/CustomerDashboard"),
-);
-const CustomerDiscovery = lazy(
-  () => import("../modules/customer/pages/CustomerDiscovery"),
-);
-const CustomerServiceDetails = lazy(() =>
-  import("../modules/customer/pages/CustomerDiscovery").then((m) => ({
-    default: m.CustomerServiceDetails,
-  })),
 );
 const CustomerEvents = lazy(
   () => import("../modules/customer/pages/CustomerEvents"),
@@ -338,6 +331,9 @@ export default function AppRoutes() {
         path="/wishlist"
         element={<Navigate to="/customer/wishlist" replace />}
       />
+      {["discover", "services", "services/:id", "vendors", "vendors/:id"].map((path) => (
+        <Route key={`marketplace-redirect-${path}`} path={`/customer/${path}`} element={<MarketplaceRedirect />} />
+      ))}
       <Route element={<GuestRoute />}>
         <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/auth/signup" element={<RegisterPage />} />
@@ -373,16 +369,6 @@ export default function AppRoutes() {
             <Route path="refunds" element={<CustomerRefundHistory />} />
             <Route path="events" element={<CustomerEvents />} />
             <Route path="events/:id" element={<CustomerEventDetails />} />
-            <Route path="discover" element={<CustomerDiscovery />} />
-            <Route
-              path="services"
-              element={<Navigate to="/customer/discover" replace />}
-            />
-            <Route path="services/:id" element={<CustomerServiceDetails />} />
-            <Route
-              path="vendors/:id"
-              element={<CustomerServiceDetails vendor />}
-            />
             <Route path="cart" element={<CartPage/>}/>
             <Route path="checkout" element={<CartCheckout/>}/>
             <Route path="orders" element={<MyOrders/>}/>

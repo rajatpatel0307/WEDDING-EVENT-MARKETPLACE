@@ -3,7 +3,7 @@ import { MediaGallery } from '../media/MediaLibrary';
 import { PublicReviews } from '../reviews/Reviews';
 import { useReviews } from '../reviews/api';
 import WishlistButton from "../customer/components/WishlistButton";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   Link,
   useParams,
@@ -30,6 +30,7 @@ import { save } from "../customer/services/workspace.api";
 import { useMarketplace, money } from "./api";
 import { offerState } from "../commerce/offer-state";
 import { DiscoveryCard, ReadState } from "./BrowsePage";
+const ServiceInquiry = lazy(() => import("../customer/components/ServiceInquiryForm"));
 
 
 
@@ -121,7 +122,7 @@ export function AvailabilityCalendar({ id }) {
 export default function DetailPage() {
   const { id } = useParams(),
     location = useLocation(),
-    [params] = useSearchParams(),
+    [params, setParams] = useSearchParams(),
     vendor = location.pathname.startsWith("/vendors"),
     pack = location.pathname.startsWith("/packages"),
     packageRoute = useMarketplace(pack ? `/packages/${id}` : null);
@@ -150,7 +151,7 @@ export default function DetailPage() {
     );
   const d = state.data,
     item = vendor ? d.vendor : d.service,
-    privatePath = `/customer/${vendor ? "vendors" : "services"}/${item.id}`;
+    listingPath = `/${vendor ? "vendors" : "services"}/${item.id}`;
   const bookingAllowed = item.bookingAccessStatus === "Approved" && item.bookEnabled !== false && item.bookEnabled !== 0;
   const packageBookingAllowed = item.offer ? offerState(item).canBook : bookingAllowed;
   function begin(action, packageId) {
@@ -161,7 +162,7 @@ export default function DetailPage() {
       navigate(user ? path : `/auth/login?redirect=${encodeURIComponent(path)}`);
       return;
     }
-    const path = `${privatePath}?${new URLSearchParams({ ...(!vendor ? { action } : {}), ...(packageId ? { package: packageId } : {}) })}`;
+    const path = `${listingPath}?${new URLSearchParams({ ...Object.fromEntries(params), ...(!vendor ? { action } : {}), ...(packageId ? { package: packageId } : {}) })}`;
     navigate(user ? path : `/auth/login?redirect=${encodeURIComponent(path)}`);
   }
   async function message() {
@@ -346,6 +347,11 @@ export default function DetailPage() {
           <div className="cm-booking-note [.customer-marketplace.cm-detail-page_&]:flex [.customer-marketplace.cm-detail-page_&]:items-start [.customer-marketplace.cm-detail-page_&]:gap-[9px] [.customer-marketplace.cm-detail-page_&]:mt-[17px] [.customer-marketplace.cm-detail-page_&]:text-[#75645d] [.customer-marketplace.cm-detail-page_&_svg]:shrink-0 [.customer-marketplace.cm-detail-page_&_svg]:mt-[2px] [.customer-marketplace.cm-detail-page_&_p]:text-[10px] [.customer-marketplace.cm-detail-page_&_p]:leading-[1.7] [.customer-marketplace.cm-detail-page_&_p]:m-0"><CalendarDays size={17} strokeWidth={1.5} aria-hidden="true" /><p>Discuss your date, guest count, and the little details that make it yours.</p></div>
         </aside>
       </div>
+      {!vendor && user?.role === "Customer" && !item.offer && ["book", "quote"].includes(params.get("action")) && (params.get("action") !== "book" || bookingAllowed) && (
+        <Suspense fallback={<p role="status">Loading request form…</p>}>
+          <ServiceInquiry service={item} packages={d.packages || []} items={d.items || []} coverage={{ ...d.coverage, businessLocations: d.businessLocations || [] }} mode={params.get("action")} close={() => setParams((current) => { const next = new URLSearchParams(current); next.delete("action"); return next; }, { replace: true })} />
+        </Suspense>
+      )}
     </main>
   );
 }

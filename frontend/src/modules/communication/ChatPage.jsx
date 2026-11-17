@@ -537,7 +537,7 @@ export default function ChatPage({ role, emptyState, renderHeader, inboxFooter }
                       </Link>
                     )}
                     {role === "Customer" && conversation?.vendorId && (
-                      <Link to={`/customer/vendors/${conversation.vendorId}`}>
+                      <Link to={`/vendors/${conversation.vendorId}`}>
                         Vendor profile
                       </Link>
                     )}
