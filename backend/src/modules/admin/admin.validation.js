@@ -4,6 +4,7 @@ export const listQuery = z
     q: z.string().trim().max(200).default(""),
     category: z.coerce.number().int().min(0).max(2147483647).default(0),
     location: z.string().trim().max(100).default(""),
+    city: z.string().trim().max(100).default(""),
     gateway: z.string().trim().max(50).default(""),
     status: z.string().max(40).default(""),
     page: z.coerce.number().int().min(1).max(100000).default(1),

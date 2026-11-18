@@ -37,6 +37,7 @@ export async function list(name, query) {
     q: `%${query.q.replace(/[\[\]%_]/g, (c) => `[${c}]`)}%`,
     category: query.category,
     location: `%${query.location.replace(/[\[\]%_]/g, (c) => `[${c}]`)}%`,
+    city: query.city,
     gateway: query.gateway,
     offset: (query.page - 1) * query.pageSize,
     size: query.pageSize,
@@ -61,6 +62,9 @@ export async function list(name, query) {
       : "1=1",
     query.location && ["vendors", "applications"].includes(name)
       ? "EXISTS(SELECT 1 FROM dbo.VendorLocations l WHERE l.VendorId=t.VendorId AND (l.City LIKE :location OR l.State LIKE :location))"
+      : "1=1",
+    query.city && ["vendors", "applications"].includes(name)
+      ? "EXISTS(SELECT 1 FROM dbo.VendorLocations l WHERE l.VendorId=t.VendorId AND LTRIM(RTRIM(l.City))=:city)"
       : "1=1",
     query.gateway && name === "payments" ? "t.GatewayName=:gateway" : "1=1",
   ].join(" AND ");
@@ -105,6 +109,11 @@ export async function list(name, query) {
   ))[0] : undefined;
   return {
     ...(summary ? { summary: Object.fromEntries(Object.entries(summary).map(([key, value]) => [key, Number(value)])) } : {}),
+    ...(name === "vendors" ? {
+      cityOptions: (await select(
+        "SELECT DISTINCT LTRIM(RTRIM(l.City)) AS name FROM dbo.VendorLocations l JOIN dbo.Vendors v ON v.VendorId=l.VendorId JOIN dbo.Users u ON u.UserId=v.UserId WHERE NULLIF(LTRIM(RTRIM(l.City)), '') IS NOT NULL ORDER BY name",
+      )).map(row => row.name),
+    } : {}),
     gatewayOptions:
       name === "payments"
         ? (

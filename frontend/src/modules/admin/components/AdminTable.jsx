@@ -206,6 +206,7 @@ export default function AdminTable({
   const [locationFilter, setLocationFilter] = useState("");
   const [gateway, setGateway] = useState("");
   const [data, setData] = useState(null);
+  const [loadedParams, setLoadedParams] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [revision, setRevision] = useState(0);
@@ -255,7 +256,7 @@ export default function AdminTable({
     q: search, status: activeStatus, page: String(page),
     pageSize: String(compact ? 5 : size), sort, direction,
     ...(category ? { category } : {}),
-    ...(locationFilter ? { location: locationFilter } : {}),
+    ...(locationFilter ? { [resource === "vendors" ? "city" : "location"]: locationFilter } : {}),
     ...(gateway ? { gateway } : {}),
     ...(from ? { from } : {}),
     ...(to ? { to } : {}),
@@ -270,6 +271,7 @@ export default function AdminTable({
         if (abort.signal.aborted) return;
         const result = normalizeTableData(response, resource);
         setData(result);
+        setLoadedParams(params);
         const totalPages = Math.max(1, Math.ceil(result.total / (compact ? 5 : size)));
         setPage((current) => Math.min(current, totalPages));
         const defaults = defaultColumns(result.columns, resource, compact);
@@ -390,7 +392,22 @@ export default function AdminTable({
     }
   }
 
+  const canExport = !exporting && !loading && !error && data?.total > 0 &&
+    q === search && loadedParams === params;
+
+  function clearVendorFilters() {
+    setQ("");
+    setSearch("");
+    setStatus("");
+    setCategory("");
+    setLocationFilter("");
+    setFrom("");
+    setTo("");
+    setPage(1);
+  }
+
   async function exportData() {
+    if (!canExport) return;
     setExporting(true);
     try {
       const blob = await adminRequest(`/${resource}/export?${params}`, { download: true });
@@ -438,7 +455,7 @@ export default function AdminTable({
         )}
       </div>
       <button type="button" className="ad-button inline-flex justify-center items-center gap-[7px] [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7df] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7df] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7df] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7df] rounded-[7px] [padding:8px_12px] text-[#63786a] text-[10px] whitespace-nowrap leading-[1.6] [transition:background_0.2s,_box-shadow_0.2s] [&:hover]:[background:#f0f5ef] [&:hover]:[box-shadow:0_2px_5px_#244d3410] [&.ad-primary]:[background:#176b60] [&.ad-primary]:[border-top-color:#176b60] [&.ad-primary]:[border-right-color:#176b60] [&.ad-primary]:[border-bottom-color:#176b60] [&.ad-primary]:[border-left-color:#176b60] [&.ad-primary]:text-[#fff] [&.ad-primary:hover]:[background:#11594f] [&.ad-primary:hover]:text-[#fff] [&.ad-danger]:text-[#b25454] [&.ad-danger]:[border-top-color:#efd7d3] [&.ad-danger]:[border-right-color:#efd7d3] [&.ad-danger]:[border-bottom-color:#efd7d3] [&.ad-danger]:[border-left-color:#efd7d3] [&.ad-danger]:[background:#fff8f5] [&.ad-danger:hover]:[background:#f9e8e3]" onClick={exportData}
-        disabled={exporting || loading || !data?.total}>
+        disabled={!canExport}>
         {exporting ? <LoaderCircle className="animate-spin" size={15} /> : <Download size={15} />}
         Export
       </button>
@@ -517,12 +534,14 @@ export default function AdminTable({
       {resource === "vendors" && !compact ? (
         <VendorFilters
           query={q} onQueryChange={setQ}
+          category={category} onCategoryChange={value => { setCategory(value); setPage(1); }}
           location={locationFilter} onLocationChange={value => { setLocationFilter(value); setPage(1); }}
+          cityOptions={asArray(data?.cityOptions)}
           status={status} statuses={statuses} onStatusChange={value => { setStatus(value); setPage(1); }}
-          onCategoryChange={value => { setCategory(value); setPage(1); }}
           from={from} to={to}
           onFromChange={value => { setFrom(value); setPage(1); }}
           onToChange={value => { setTo(value); setPage(1); }}
+          onClear={clearVendorFilters}
         >
           {toolbarActions}
         </VendorFilters>

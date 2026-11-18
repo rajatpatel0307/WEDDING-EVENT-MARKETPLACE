@@ -5,6 +5,7 @@ export default function RecordPicker({
   name,
   initialValue = "",
   initialLabel = "",
+  value,
   onChange,
   required = true,
   showSearch = true,
@@ -55,7 +56,7 @@ export default function RecordPicker({
       <select
         className={controlClassName}
         name={name}
-        value={selected}
+        value={value ?? selected}
         required={required}
         onChange={(e) => {
           setSelected(e.target.value);
