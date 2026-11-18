@@ -42,18 +42,23 @@ export function ReadState({ state }) {
     </div>
   ) : null;
 }
-export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
+export function DiscoveryCard({ item, compare, toggleCompare, compareFull, saved: savedItem = false }) {
   const { user, notify, reload } = useAuth(),
     navigate = useNavigate(),
     [busy, setBusy] = useState(false),
     [failed, setFailed] = useState(false);
   const wishState = useWishlist(),
-    saved = !!wishState.find(item.type || "Service", item.id);
+    type = item.type || "Service",
+    target = savedItem
+      ? type === "Vendor" ? item.vendorId : type === "Package" ? item.packageId : item.savedServiceId
+      : item.id,
+    saved = !!wishState.find(type, target);
+  const image = savedItem && type === "Vendor" && item.cover ? item.cover : item.image;
   const offer = offerState(item);
   const path =
     item.type === "Vendor"
       ? `/vendors/${item.vendorId || item.id}`
-      : `/services/${item.serviceId || item.id}${item.type === "Package" ? `?package=${item.id}` : ""}`;
+      : `/services/${item.serviceId || item.id}${item.type === "Package" ? `?package=${savedItem ? item.packageId : item.id}` : ""}`;
   const wish = async () => {
     if (!user) {
       navigate(`/auth/login?redirect=${encodeURIComponent(path)}`);
@@ -61,7 +66,7 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
     }
     setBusy(true);
     try {
-      const result = await wishState.toggle(item.type || "Service", item.id);
+      const result = await wishState.toggle(type, target);
       notify(result.message);
       await reload();
     } catch (e) {
@@ -74,9 +79,9 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
     <article className="cm-card [.customer-marketplace_&]:overflow-hidden [.customer-marketplace_&]:border [.customer-marketplace_&]:border-[#e8dfd9] [.customer-marketplace_&]:rounded-[16px] [.customer-marketplace_&]:bg-white [.customer-marketplace_&]:min-w-0 [.customer-marketplace_&_.cm-actions]:mb-0 [.customer-marketplace.cm-browse_&]:flex [.customer-marketplace.cm-browse_&]:flex-col [.customer-marketplace.cm-browse_&]:rounded-[14px] [.customer-marketplace.cm-browse_&]:border-[#e9e0db] [.customer-marketplace.cm-browse_&]:shadow-[0_4px_18px_#55393108] [.customer-marketplace.cm-browse_&]:transition-[border-color,box-shadow,transform] [.customer-marketplace.cm-browse_&]:duration-200 [.customer-marketplace.cm-browse_&]:ease-[ease] [.customer-marketplace.cm-browse_&:hover]:border-[#cfaaa4] [.customer-marketplace.cm-browse_&:hover]:shadow-[0_10px_26px_#5539310d] [.customer-marketplace.cm-browse_&:hover]:[transform:translateY(-3px)] [.customer-marketplace.cm-browse_&:hover_.cm-photo_img]:[transform:scale(1.035)] [.customer-marketplace.cm-browse_&_h3]:mt-[6px] [.customer-marketplace.cm-browse_&_h3]:mx-0 [.customer-marketplace.cm-browse_&_h3]:mb-[4px] [.customer-marketplace.cm-browse_&_h3]:text-[21px] [.customer-marketplace.cm-browse_&_h3]:leading-[1.3] [.customer-marketplace.cm-browse_&_h3]:tracking-[-0.4px] [.customer-marketplace.cm-browse_&_h3]:text-[#4a353a] [.customer-marketplace.cm-browse_&_h3]:capitalize [.customer-marketplace.cm-browse_&_.cm-meta]:mb-0 [.customer-marketplace.cm-browse_&_.cm-meta]:text-[11px] [.customer-marketplace.cm-browse_&_.cm-meta]:text-[#8e7c76] [.customer-marketplace.cm-browse_&_.cm-meta]:capitalize cm-discovery-card [.customer-marketplace_&_.commerce-price]:[flex-wrap:nowrap] [.customer-marketplace_&_.commerce-price]:gap-[8px] [.customer-marketplace_&_.commerce-price]:m-0 [.customer-marketplace_&_.commerce-price_>_div]:flex-1 [.customer-marketplace_&_.commerce-price_>_div]:min-w-0 [.customer-marketplace_&_.commerce-price_>_div]:py-[7px] [.customer-marketplace_&_.commerce-price_>_div]:px-[9px] [.customer-marketplace_&_.commerce-price_>_div]:border [.customer-marketplace_&_.commerce-price_>_div]:border-[#eee5df] [.customer-marketplace_&_.commerce-price_>_div]:rounded-[8px] [.customer-marketplace_&_.commerce-price_>_div]:bg-[#faf7f3] [.customer-marketplace_&_.commerce-price_small]:mt-0 [.customer-marketplace_&_.commerce-price_small]:mx-0 [.customer-marketplace_&_.commerce-price_small]:mb-[3px] [.customer-marketplace_&_.commerce-price_small]:text-[#9a7c76] [.customer-marketplace_&_.commerce-price_small]:text-[9px] [.customer-marketplace_&_.commerce-price_small]:tracking-[0.1px] [.customer-marketplace_&_.commerce-price_strong]:block [.customer-marketplace_&_.commerce-price_strong]:text-[#76434d] [.customer-marketplace_&_.commerce-price_strong]:text-[19px] [.customer-marketplace_&_.commerce-price_strong]:font-semibold [.customer-marketplace_&_.commerce-price_strong]:leading-[1.2] [.customer-marketplace_&_.commerce-price_strong]:tabular-nums [.customer-marketplace_&_.commerce-price_p]:mt-[3px] [.customer-marketplace_&_.commerce-price_p]:mx-0 [.customer-marketplace_&_.commerce-price_p]:mb-0 [.customer-marketplace_&_.commerce-price_p]:text-[#a18d83] [.customer-marketplace_&_.commerce-price_p]:text-[9px] [.customer-marketplace_&_.commerce-price_p]:leading-[1.5] [.customer-marketplace_&_.commerce-offer-actions]:[flex-wrap:nowrap] [.customer-marketplace_&_.commerce-offer-actions]:gap-[7px] [.customer-marketplace_&_.commerce-offer-actions]:mt-[8px] [.customer-marketplace_&_.commerce-offer-actions]:mx-0 [.customer-marketplace_&_.commerce-offer-actions]:mb-0 [.customer-marketplace_&_.commerce-offer-actions_>_button]:inline-flex [.customer-marketplace_&_.commerce-offer-actions_>_button]:[flex:1_1_0] [.customer-marketplace_&_.commerce-offer-actions_>_button]:items-center [.customer-marketplace_&_.commerce-offer-actions_>_button]:justify-center [.customer-marketplace_&_.commerce-offer-actions_>_button]:min-w-0 [.customer-marketplace_&_.commerce-offer-actions_>_button]:min-h-[36px] [.customer-marketplace_&_.commerce-offer-actions_>_button]:py-[7px] [.customer-marketplace_&_.commerce-offer-actions_>_button]:px-[5px] [.customer-marketplace_&_.commerce-offer-actions_>_button]:border [.customer-marketplace_&_.commerce-offer-actions_>_button]:border-[#e6d6d0] [.customer-marketplace_&_.commerce-offer-actions_>_button]:rounded-[7px] [.customer-marketplace_&_.commerce-offer-actions_>_button]:bg-[#fffdfa] [.customer-marketplace_&_.commerce-offer-actions_>_button]:text-[#80555d] [.customer-marketplace_&_.commerce-offer-actions_>_button]:text-[10px] [.customer-marketplace_&_.commerce-offer-actions_>_button]:font-medium [.customer-marketplace_&_.commerce-offer-actions_>_button]:leading-[1.4] [.customer-marketplace_&_.commerce-offer-actions_>_button]:whitespace-nowrap [.customer-marketplace_&_.commerce-offer-actions_>_a]:inline-flex [.customer-marketplace_&_.commerce-offer-actions_>_a]:[flex:1_1_0] [.customer-marketplace_&_.commerce-offer-actions_>_a]:items-center [.customer-marketplace_&_.commerce-offer-actions_>_a]:justify-center [.customer-marketplace_&_.commerce-offer-actions_>_a]:min-w-0 [.customer-marketplace_&_.commerce-offer-actions_>_a]:min-h-[36px] [.customer-marketplace_&_.commerce-offer-actions_>_a]:py-[7px] [.customer-marketplace_&_.commerce-offer-actions_>_a]:px-[5px] [.customer-marketplace_&_.commerce-offer-actions_>_a]:border [.customer-marketplace_&_.commerce-offer-actions_>_a]:border-[#e6d6d0] [.customer-marketplace_&_.commerce-offer-actions_>_a]:rounded-[7px] [.customer-marketplace_&_.commerce-offer-actions_>_a]:bg-[#fffdfa] [.customer-marketplace_&_.commerce-offer-actions_>_a]:text-[#80555d] [.customer-marketplace_&_.commerce-offer-actions_>_a]:text-[10px] [.customer-marketplace_&_.commerce-offer-actions_>_a]:font-medium [.customer-marketplace_&_.commerce-offer-actions_>_a]:leading-[1.4] [.customer-marketplace_&_.commerce-offer-actions_>_a]:whitespace-nowrap [.customer-marketplace_&_.commerce-offer-actions_>_button.cm-primary]:border-[#d8b5b7] [.customer-marketplace_&_.commerce-offer-actions_>_button.cm-primary]:bg-[#f8edef] [.customer-marketplace_&_.commerce-offer-actions_>_button.cm-primary]:text-[#8c414e] [.customer-marketplace_&_.commerce-offer-actions_>_a.cm-primary]:border-[#d8b5b7] [.customer-marketplace_&_.commerce-offer-actions_>_a.cm-primary]:bg-[#f8edef] [.customer-marketplace_&_.commerce-offer-actions_>_a.cm-primary]:text-[#8c414e] [.customer-marketplace_&_.commerce-offer-actions_>_button:hover:not(:disabled)]:border-[#743440] [.customer-marketplace_&_.commerce-offer-actions_>_button:hover:not(:disabled)]:bg-[#743440] [.customer-marketplace_&_.commerce-offer-actions_>_button:hover:not(:disabled)]:text-[#fff] [.customer-marketplace_&_.commerce-offer-actions_>_a:hover]:border-[#743440] [.customer-marketplace_&_.commerce-offer-actions_>_a:hover]:bg-[#743440] [.customer-marketplace_&_.commerce-offer-actions_>_a:hover]:text-[#fff] [.customer-marketplace_&_.commerce-offer-actions_>_span]:text-[#a08b83] [.customer-marketplace_&_.commerce-offer-actions_>_span]:text-[11px]">
       <div className="cm-card-visual [.customer-marketplace_&]:relative [.customer-marketplace_&]:min-w-0 [.customer-marketplace_&]:overflow-hidden">
         <Link to={path} className="cm-photo [.customer-marketplace_&]:[aspect-ratio:4/3] [.customer-marketplace_&]:bg-[#f3ece7] [.customer-marketplace_&]:grid [.customer-marketplace_&]:[place-items:center] [.customer-marketplace_&]:overflow-hidden [.customer-marketplace_&_img]:w-full [.customer-marketplace_&_img]:h-full [.customer-marketplace_&_img]:object-cover [.customer-marketplace.cm-browse_&]:h-[145px] [.customer-marketplace.cm-browse_&]:[aspect-ratio:auto] [.customer-marketplace.cm-browse_&]:text-[#b7a298] [.customer-marketplace.cm-browse_&_img]:transition-[transform] [.customer-marketplace.cm-browse_&_img]:duration-500 [.customer-marketplace.cm-browse_&_img]:ease-[ease]" aria-label={`View ${item.name}`}>
-          {item.image && !failed ? (
+          {image && !failed ? (
             <img
-              src={optimizedMediaUrl(item.image, "card")}
+              src={optimizedMediaUrl(image, "card")}
               alt={item.name}
               loading="lazy"
               onError={() => setFailed(true)}
@@ -88,7 +93,7 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull }) {
         <button
           className="cm-save-button [.customer-marketplace_&]:absolute [.customer-marketplace_&]:top-[12px] [.customer-marketplace_&]:right-[12px] [.customer-marketplace_&]:grid [.customer-marketplace_&]:[place-items:center] [.customer-marketplace_&]:w-[36px] [.customer-marketplace_&]:h-[36px] [.customer-marketplace_&]:p-0 [.customer-marketplace_&]:border [.customer-marketplace_&]:border-[#ffffffa8] [.customer-marketplace_&]:rounded-[50%] [.customer-marketplace_&]:bg-[#fffcf5f2] [.customer-marketplace_&]:text-[#8c414e] [.customer-marketplace_&]:shadow-[0_2px_8px_#3323230d] [.customer-marketplace_&]:[backdrop-filter:blur(8px)] [.customer-marketplace_&[aria-pressed=true]]:bg-[#8c414e] [.customer-marketplace_&[aria-pressed=true]]:text-[#fff] [.customer-marketplace_&[aria-pressed=true]]:border-[#8c414e]"
           onClick={wish}
-          disabled={busy}
+          disabled={busy || (savedItem && wishState.loading)}
           aria-pressed={saved}
           aria-label={`${saved ? "Remove" : "Save"} ${item.name}`}
         >

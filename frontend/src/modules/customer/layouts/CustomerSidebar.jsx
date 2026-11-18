@@ -22,11 +22,11 @@ const groups = [
   },
   {
     label: "PLAN YOUR CELEBRATION",
-    items: navigation.slice(1, 7),
+    items: navigation.slice(1, 6),
   },
   {
     label: "COMMUNICATION",
-    items: navigation.slice(7, 9),
+    items: navigation.slice(6, 9),
   },
   {
     label: "MY ACCOUNT",

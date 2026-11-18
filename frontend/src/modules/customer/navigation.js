@@ -21,17 +21,17 @@ import {
 export const customerNavigation = [
   ["dashboard", "Dashboard", LayoutDashboard],
   ["profile", "My Profile", UserRound],
-  ["bookings", "My Bookings", ShoppingBag],
-  ["quotations", "My Quotations", FileText],
   ["wishlist", "Wishlist", Heart],
+  ["cart", "My Cart", ShoppingBag],
+  ["orders", "My Orders", ShoppingBag],
+  ["bookings", "My Bookings", ShoppingBag],
   ["messages", "Messages", MessagesSquare],
   ["notifications", "Notifications", Bell],
+  ["quotations", "My Quotations", FileText],
   ["payments", "Payments", Wallet],
   ["reviews", "Reviews", Star],
   ["addresses", "Addresses", MapPin],
   ["settings", "Settings", Settings],
-  ["cart", "My Cart", ShoppingBag],
-  ["orders", "My Orders", ShoppingBag],
   ["legal", "Legal & Privacy", FileText],
 ];
 
@@ -44,4 +44,3 @@ export const marketplaceLinks = [
   ["Offers", "/offers", BadgePercent],
   ["My Events", "/customer/events", CalendarHeart],
 ];
-
