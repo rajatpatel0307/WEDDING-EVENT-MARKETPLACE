@@ -1,14 +1,17 @@
 import { RotateCcw, Search } from "lucide-react";
 import RecordPicker from "./RecordPicker";
+import SearchableFilterSelect from "./SearchableFilterSelect";
+import { vendorDateOptions } from "../vendor-date-range";
 
 const control = "h-[40px]! min-w-0 rounded-[8px]! border! border-[#dfe7e1]! bg-white! px-[9px]! py-2! text-[11px]! font-normal! leading-normal! text-[#385649]! transition-colors hover:border-[#b5cbbd]! focus:border-[#176b60]! focus:outline-none! focus:ring-2! focus:ring-[#176b6014]!";
 
 export default function VendorFilters({
   query, onQueryChange, status, statuses, onStatusChange,
   category, onCategoryChange, location, onLocationChange, cityOptions = [],
+  datePeriod = "", onDatePeriodChange,
   from, to, onFromChange, onToChange, onClear, children,
 }) {
-  const hasFilters = Boolean(query || category || location || status || from || to);
+  const hasFilters = Boolean(query || category || location || status || datePeriod || from || to);
 
   return (
     <div className="ad-vendor-toolbar @container min-w-0 border-b border-[#edf1ed] bg-white px-4 py-3">
@@ -32,20 +35,22 @@ export default function VendorFilters({
           name="filterCategory"
           required={false}
           showSearch={false}
+          searchableDropdown
           controlClassName={`${control} w-[124px]! shrink-0`}
           value={category}
           onChange={onCategoryChange}
         />
-        <select
+        <SearchableFilterSelect
           className={`${control} w-[112px]! shrink-0`}
-          aria-label="Filter vendor location"
+          ariaLabel="Filter vendor location"
+          searchLabel="Search cities"
+          searchPlaceholder="Search cities..."
+          placeholder="All cities"
+          fallbackLabel={location}
           value={location}
-          onChange={event => onLocationChange(event.target.value)}
-        >
-          <option value="">All cities</option>
-          {location && !cityOptions.includes(location) && <option value={location}>{location}</option>}
-          {cityOptions.map(city => <option key={city} value={city}>{city}</option>)}
-        </select>
+          options={cityOptions.map(city => ({ value: city, label: city }))}
+          onChange={onLocationChange}
+        />
         <select
           className={`${control} w-[108px]! shrink-0`}
           aria-label="Filter by status"
@@ -56,16 +61,14 @@ export default function VendorFilters({
           {statuses.map(value => <option key={value} value={value}>{value === "UnderReview" ? "Under Review" : value}</option>)}
         </select>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <label className="flex min-w-0 items-center gap-[7px] text-[10px] font-normal text-[#91a094]">
-            <span>From</span>
-            <input className={`${control} w-[112px]!`} aria-label="Created from" type="date" value={from} max={to || undefined} onChange={event => onFromChange(event.target.value)} />
-          </label>
-          <label className="flex min-w-0 items-center gap-[7px] text-[10px] font-normal text-[#91a094]">
-            <span>To</span>
-            <input className={`${control} w-[112px]!`} aria-label="Created until" type="date" value={to} min={from || undefined} onChange={event => onToChange(event.target.value)} />
-          </label>
-        </div>
+        <select
+          className={`${control} w-[128px]! shrink-0`}
+          aria-label="Filter by registration date"
+          value={datePeriod}
+          onChange={event => onDatePeriodChange(event.target.value)}
+        >
+          {vendorDateOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
 
         {children}
         {hasFilters && (
@@ -75,6 +78,18 @@ export default function VendorFilters({
         )}
       </div>
       </div>
+      {datePeriod === "custom" && (
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-3 border-t border-[#edf1ed] pt-3" role="group" aria-label="Custom registration dates">
+          <label className="flex min-w-0 items-center gap-2 text-[11px] font-normal text-[#6d8375]">
+            <span>From</span>
+            <input className={`${control} w-[140px]!`} aria-label="Created from" type="date" value={from} max={to || undefined} onChange={event => onFromChange(event.target.value)} />
+          </label>
+          <label className="flex min-w-0 items-center gap-2 text-[11px] font-normal text-[#6d8375]">
+            <span>To</span>
+            <input className={`${control} w-[140px]!`} aria-label="Created until" type="date" value={to} min={from || undefined} onChange={event => onToChange(event.target.value)} />
+          </label>
+        </div>
+      )}
     </div>
   );
 }

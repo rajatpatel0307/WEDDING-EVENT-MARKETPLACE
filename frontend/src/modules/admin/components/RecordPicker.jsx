@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { adminRequest } from "../api";
+import SearchableFilterSelect from "./SearchableFilterSelect";
 export default function RecordPicker({
   resource,
   name,
@@ -14,6 +15,7 @@ export default function RecordPicker({
   searchPlaceholder = "Search to find a record…",
   controlClassName,
   labelClassName,
+  searchableDropdown = false,
 }) {
   const [query, setQuery] = useState(""),
     [selected, setSelected] = useState(initialValue),
@@ -29,7 +31,9 @@ export default function RecordPicker({
         `/${resource}?${new URLSearchParams({ q: query, pageSize: "100", sort: "name", direction: "asc" })}`,
         { signal: abort.signal },
       )
-        .then((result) => setRows(result.rows))
+        .then((result) => {
+          if (!abort.signal.aborted) setRows(result.rows);
+        })
         .catch((e) => {
           if (e.name !== "AbortError") setError(e.message);
         })
@@ -52,7 +56,25 @@ export default function RecordPicker({
         onChange={(e) => setQuery(e.target.value)}
       />
   );
-  const selectInput = (
+  const selectInput = searchableDropdown ? (
+      <SearchableFilterSelect
+        value={value ?? selected}
+        options={[
+          ...(initialValue && !rows.some(row => String(row.id) === String(initialValue))
+            ? [{ value: initialValue, label: initialLabel || "Current selection" }] : []),
+          ...rows.map(row => ({ value: row.id, label: row.name })),
+        ]}
+        placeholder={required ? "Select a record" : "All categories"}
+        fallbackLabel={initialLabel}
+        ariaLabel={`Select ${resource}`}
+        searchLabel={`Search ${resource}`}
+        searchPlaceholder={`Search ${resource}...`}
+        className={controlClassName}
+        loading={loading}
+        onSearchChange={setQuery}
+        onChange={next => { setSelected(next); onChange?.(next); }}
+      />
+  ) : (
       <select
         className={controlClassName}
         name={name}

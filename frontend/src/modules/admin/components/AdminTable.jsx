@@ -14,6 +14,7 @@ import { useAuth } from "../../../context/AuthContext";
 import AdminDialog from "./AdminDialog";
 import RecordPicker from "./RecordPicker";
 import VendorFilters from "./VendorFilters";
+import { vendorDateRange } from "../vendor-date-range";
 import ResourceStatistics from "./ResourceStatistics";
 import PaymentRecords from "./PaymentRecords";
 import { categoryImages } from "../../../components/home/categoryImages";
@@ -202,6 +203,7 @@ export default function AdminTable({
   const [direction, setDirection] = useState("desc");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [vendorDatePeriod, setVendorDatePeriod] = useState("");
   const [category, setCategory] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [gateway, setGateway] = useState("");
@@ -403,6 +405,17 @@ export default function AdminTable({
     setLocationFilter("");
     setFrom("");
     setTo("");
+    setVendorDatePeriod("");
+    setPage(1);
+  }
+
+  function changeVendorDatePeriod(period) {
+    const range = vendorDateRange(period);
+    setVendorDatePeriod(period);
+    if (range) {
+      setFrom(range.from);
+      setTo(range.to);
+    }
     setPage(1);
   }
 
@@ -537,6 +550,7 @@ export default function AdminTable({
           category={category} onCategoryChange={value => { setCategory(value); setPage(1); }}
           location={locationFilter} onLocationChange={value => { setLocationFilter(value); setPage(1); }}
           cityOptions={asArray(data?.cityOptions)}
+          datePeriod={vendorDatePeriod} onDatePeriodChange={changeVendorDatePeriod}
           status={status} statuses={statuses} onStatusChange={value => { setStatus(value); setPage(1); }}
           from={from} to={to}
           onFromChange={value => { setFrom(value); setPage(1); }}
