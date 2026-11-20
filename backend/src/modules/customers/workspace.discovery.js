@@ -1,6 +1,7 @@
 import { commerceFields, publicOffer } from "../shopping/public-options.js";
 import { visibleVendor as eligibleVendor, registeredLocation } from "../addresses/location-policy.js";
 import { customerLocations } from "../addresses/admin-locations.service.js";
+import { marketplaceSearch } from "./marketplace-search.js";
 import { publicPredicate } from '../reviews/reviews.policy.js';
 import { z } from "zod";
 import { assertServiceSchedule } from "../vendors/service-schedule.js";
@@ -15,7 +16,7 @@ import {
 } from "./workspace.common.js";
 export const discoveryInput = pageInput
   .extend({
-    q: z.string().trim().max(150).default(""),
+    q: z.string().trim().max(200).default(""),
     category: z.coerce.number().int().nonnegative().default(0),
     subcategory: z.coerce.number().int().nonnegative().default(0),
     city: z.string().trim().max(100).default(""),
@@ -44,8 +45,6 @@ const serviceRatings =
 const source = `dbo.Services s JOIN dbo.Vendors v ON v.VendorId=s.VendorId JOIN dbo.Users u ON u.UserId=v.UserId JOIN dbo.Categories c ON c.CategoryId=s.CategoryId LEFT JOIN dbo.SubCategories sc ON sc.SubCategoryId=s.SubCategoryId ${location} ${serviceRatings}`;
 const image = `OUTER APPLY(SELECT TOP(1) MediaUrl FROM dbo.Media WHERE EntityId=s.ServiceId AND LOWER(EntityType)='service' AND MediaType='Image' AND ModerationStatus='Approved' AND UploadStatus='Ready' AND DeletedAt IS NULL ORDER BY IsPrimary DESC,SortOrder,CreatedAt) m`;
 const fields = `${commerceFields},s.ServiceId AS serviceId,v.VendorId AS vendorId,v.BusinessName AS vendor,v.BookingAccessStatus AS bookingAccessStatus,c.CategoryName AS category,c.CategoryId AS categoryId,sc.SubCategoryName AS subcategory,l.City AS city,COALESCE(sr.rating,0) AS rating,COALESCE(sr.reviews,0) AS reviews,m.MediaUrl AS image`;
-const escapeLike = (value) =>
-  `%${value.replace(/[\[\]%_]/g, (c) => `[${c}]`)}%`;
 export async function catalog(ctx) {
   scope(ctx);
   return publicCatalog();
@@ -70,7 +69,6 @@ export async function publicDiscover(input) {
   const q = discoveryInput.parse(input),
     p = {
       ...q,
-      q: escapeLike(q.q),
       city: q.city,
       date: q.date || null,
       guests: q.guests || null,
@@ -79,7 +77,12 @@ export async function publicDiscover(input) {
     };
   const city = `(:city ='' OR l.City=:city OR l.LocationId=:city)`;
   if (q.type === "vendors") {
-    const where = `${eligibleVendor} AND v.BusinessName LIKE :q AND (:category =0 OR EXISTS(SELECT 1 FROM dbo.VendorCategories vc JOIN dbo.Categories ac ON ac.CategoryId=vc.CategoryId WHERE vc.VendorId=v.VendorId AND vc.CategoryId=:category AND ac.IsActive=1)) AND ${city} AND v.AverageRating>=:rating`;
+    const search = marketplaceSearch(q.q, [
+      "v.BusinessName", "v.BusinessDescription", "l.City", "l.State",
+      "(SELECT STRING_AGG(CONVERT(nvarchar(max),ac.CategoryName),', ') FROM dbo.VendorCategories vc JOIN dbo.Categories ac ON ac.CategoryId=vc.CategoryId WHERE vc.VendorId=v.VendorId AND ac.IsActive=1)",
+    ]);
+    Object.assign(p, search.params);
+    const where = `${eligibleVendor} AND ${search.sql} AND (:category =0 OR EXISTS(SELECT 1 FROM dbo.VendorCategories vc JOIN dbo.Categories ac ON ac.CategoryId=vc.CategoryId WHERE vc.VendorId=v.VendorId AND vc.CategoryId=:category AND ac.IsActive=1)) AND ${city} AND v.AverageRating>=:rating`;
     const from = `dbo.Vendors v JOIN dbo.Users u ON u.UserId=v.UserId ${location}`;
     const [count] = await repo.select(
       `SELECT COUNT(*) AS total FROM ${from} WHERE ${where}`,
@@ -100,13 +103,19 @@ export async function publicDiscover(input) {
   }
   const packages = q.type === "packages",
     price = packages ? "p.FinalPrice" : "COALESCE(s.BasePrice,s.MinimumPrice)";
+  const search = marketplaceSearch(q.q, [
+    "s.ServiceName", "s.Description", "v.BusinessName", "v.BusinessDescription",
+    "c.CategoryName", "sc.SubCategoryName", "l.City", "l.State",
+    ...(packages ? ["p.PackageName", "p.Description"] : []),
+  ]);
+  Object.assign(p, search.params);
   const conditions = [
     eligibleVendor,
     "s.IsActive=1 AND s.ApprovalStatus='Approved' AND c.IsActive=1",
     packages ? "p.IsActive=1" : "1=1",
     "(:category =0 OR s.CategoryId=:category)",
     "(:subcategory =0 OR s.SubCategoryId=:subcategory)",
-    `(s.ServiceName LIKE :q OR v.BusinessName LIKE :q ${packages ? "OR p.PackageName LIKE :q" : ""})`,
+    search.sql,
     city,
     "(:postalCode ='' OR JSON_VALUE(s.DetailsJson,'$.location.zip')=:postalCode OR EXISTS(SELECT 1 FROM OPENJSON(s.DetailsJson,'$.location.postalCodes') WHERE value=:postalCode))",
     `(${price} BETWEEN :min AND :max OR (${price} IS NULL AND :min =0))`,

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, ArrowRight } from "lucide-react";
+import { marketplaceSearchPath } from "../../modules/marketplace/search-path";
 export default function SearchBar({ city, onSearch, compact = false }) {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
@@ -11,9 +12,7 @@ export default function SearchBar({ city, onSearch, compact = false }) {
       onSubmit={(e) => {
         e.preventDefault();
         if (!query.trim()) return;
-        const params = new URLSearchParams({ q: query.trim() });
-        if (city) params.set("city", city);
-        navigate(`/search?${params}`);
+        navigate(marketplaceSearchPath(query, city));
         onSearch?.();
       }}
     >
@@ -21,6 +20,7 @@ export default function SearchBar({ city, onSearch, compact = false }) {
       <input
         aria-label="Search venues, vendors, services, locations and packages"
         type="search"
+        maxLength={200}
         required
         placeholder="Search venues, vendors…"
         value={query}

@@ -1,24 +1,25 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, MapPin, ArrowUpRight, Flower2, Volume2, VolumeX, Sparkles } from "lucide-react";
+import { Search, MapPin, ArrowUpRight, Flower2, Volume2, VolumeX } from "lucide-react";
 import { useCustomerLocations, useSelectedLocation, setSelectedLocation } from "../../modules/marketplace/location-selection";
+import { marketplaceSearchPath } from "../../modules/marketplace/search-path";
+import { useMarketplace } from "../../modules/marketplace/api";
 
 // Video asset path
 import heroVideo from "../../assets/gemini_generated_video_95816cb3.mp4";
 
 export default function Hero() {
-  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
   const city = useSelectedLocation(), setCity = setSelectedLocation;
   const locations = useCustomerLocations();
+  const catalog = useMarketplace("/catalog");
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef(null);
   const navigate = useNavigate();
 
   function search(e) {
     e.preventDefault();
-    const params = new URLSearchParams({ q: query.trim() });
-    if (city) params.set("city", city);
-    navigate(`/search?${params}`);
+    navigate(marketplaceSearchPath("", city, category));
   }
 
   const toggleSound = () => {
@@ -111,43 +112,27 @@ export default function Hero() {
           onSubmit={search}
           className="p-2 sm:p-2.5 rounded-2xl sm:rounded-full bg-white/90 backdrop-blur-xl border border-white/60 shadow-xl shadow-stone-300/40 grid grid-cols-1 md:grid-cols-12 gap-2"
         >
-          {/* Wishlist / Service Input */}
-          <label className="md:col-span-5 flex items-center gap-3 px-4 py-2.5 rounded-xl sm:rounded-full bg-stone-50/90 border border-stone-200/80 focus-within:border-amber-700 focus-within:bg-white transition-all cursor-text">
+          {/* Categories load from the active marketplace catalog. */}
+          <label className="md:col-span-5 flex items-center gap-3 px-4 py-2.5 rounded-xl sm:rounded-full bg-stone-50/90 border border-stone-200/80 focus-within:border-amber-700 focus-within:bg-white transition-all cursor-pointer">
             <Search size={18} className="text-amber-700 shrink-0" />
             <div className="flex flex-col text-left w-full overflow-hidden">
               <span className="text-[10px] tracking-wider uppercase text-stone-500 font-bold">
                 Your Wedding Wish List
               </span>
-              <input
-                type="search"
-                list="wedding-search-suggestions"
-                placeholder="What are you looking for?"
-                aria-label="Search service, vendor or venue"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                maxLength={200}
-                className="bg-transparent text-sm text-stone-900 placeholder-stone-400 focus:outline-none w-full font-medium"
-              />
+              <select
+                aria-label="Search category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                disabled={catalog.loading || Boolean(catalog.error)}
+                className="bg-transparent text-sm text-stone-900 focus:outline-none cursor-pointer w-full min-w-0 font-medium disabled:cursor-wait disabled:text-stone-400"
+              >
+                <option value="">{catalog.loading ? "Loading categories..." : catalog.error ? "Categories unavailable" : "All categories"}</option>
+                {(catalog.data?.categories || []).map((item) => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </select>
             </div>
           </label>
-
-          {/* Datalist for Quick Selection */}
-          <datalist id="wedding-search-suggestions">
-            {[
-              "Venue",
-              "Catering",
-              "Decoration",
-              "Photography",
-              "DJ",
-              "Makeup",
-              "Mehndi",
-              "Wedding Clothing",
-              "Jewellery",
-              "Transportation",
-            ].map((n) => (
-              <option key={n} value={n} />
-            ))}
-          </datalist>
 
           {/* Location Selector */}
           <label className="md:col-span-4 flex items-center gap-3 px-4 py-2.5 rounded-xl sm:rounded-full bg-stone-50/90 border border-stone-200/80 focus-within:border-amber-700 focus-within:bg-white transition-all cursor-pointer">
@@ -181,6 +166,12 @@ export default function Hero() {
             <Search size={15} />
           </button>
         </form>
+        {catalog.error && (
+          <p role="alert" className="mt-3 text-center text-xs text-stone-700">
+            Categories could not be loaded.{" "}
+            <button type="button" onClick={catalog.retry} className="font-medium text-amber-800 underline underline-offset-2">Try again</button>
+          </p>
+        )}
       </div>
     </section>
   );
