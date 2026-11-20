@@ -184,7 +184,7 @@ export default function MarketplaceListingsPage() {
             name="city"
             defaultValue={city || ""}
           >
-            <option value="">All cities</option>
+            <option value="">All locations</option>
             {(locations.data || []).map((c) => (
               <option key={c.id} value={c.id}>{c.city}, {c.state}</option>
             ))}

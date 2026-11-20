@@ -22,8 +22,11 @@ export default function Navbar() {
     setSelectedLocation(value);
     if (["/services", "/products", "/vendors", "/venues", "/packages", "/offers", "/search"].includes(location.pathname)) {
       const params = new URLSearchParams(location.search);
-      params.set("city", value); params.delete("page");
-      navigate(`${location.pathname}?${params}`);
+      if (value) params.set("city", value);
+      else params.delete("city");
+      params.delete("page");
+      const query = params.toString();
+      navigate(`${location.pathname}${query ? `?${query}` : ""}`);
     }
   };
   const location = useLocation();

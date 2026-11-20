@@ -16,7 +16,9 @@ export default function Hero() {
 
   function search(e) {
     e.preventDefault();
-    navigate(`/search?${new URLSearchParams({ q: query.trim(), city })}`);
+    const params = new URLSearchParams({ q: query.trim() });
+    if (city) params.set("city", city);
+    navigate(`/search?${params}`);
   }
 
   const toggleSound = () => {
@@ -160,7 +162,7 @@ export default function Hero() {
                 onChange={(e) => setCity(e.target.value)}
                 className="bg-transparent text-sm text-stone-900 focus:outline-none cursor-pointer w-full font-medium"
               >
-                <option value="">Select location</option>
+                <option value="">All locations</option>
                 {(locations.data || []).map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.city}, {c.state}

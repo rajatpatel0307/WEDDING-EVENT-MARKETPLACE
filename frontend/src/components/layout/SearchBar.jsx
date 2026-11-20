@@ -11,9 +11,9 @@ export default function SearchBar({ city, onSearch, compact = false }) {
       onSubmit={(e) => {
         e.preventDefault();
         if (!query.trim()) return;
-        navigate(
-          `/search?q=${encodeURIComponent(query.trim())}&city=${encodeURIComponent(city)}`,
-        );
+        const params = new URLSearchParams({ q: query.trim() });
+        if (city) params.set("city", city);
+        navigate(`/search?${params}`);
         onSearch?.();
       }}
     >

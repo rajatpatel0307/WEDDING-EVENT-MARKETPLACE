@@ -328,7 +328,7 @@ export default function BrowsePage({ embedded = false }) {
         }
         onChange={(e) => filter(key, e.target.value)}
       >
-        <option value="">All {label.toLowerCase()}</option>
+        <option value="">{key === "city" ? "All locations" : `All ${label.toLowerCase()}`}</option>
         {options.map((o) => (
           <option key={o.id ?? o.name} value={o.id ?? o.name}>
             {o.name}

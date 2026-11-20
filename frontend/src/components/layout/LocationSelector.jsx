@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, ChevronDown, Check, Search } from "lucide-react";
+import { Globe2, MapPin, ChevronDown, Check, Search } from "lucide-react";
 import Popover from "./Popover";
 import { useCustomerLocations } from "../../modules/marketplace/location-selection";
 export default function LocationSelector({ city, setCity, open, setOpen }) {
@@ -15,7 +15,7 @@ export default function LocationSelector({ city, setCity, open, setOpen }) {
       label={
         <>
           <MapPin size={15} />
-          <span>{cities.find(l => l.id === city)?.name || "Select location"}</span>
+          <span>{city ? cities.find(l => l.id === city)?.name || "Select location" : "All locations"}</span>
           <ChevronDown size={12} />
         </>
       }
@@ -31,6 +31,20 @@ export default function LocationSelector({ city, setCity, open, setOpen }) {
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
+        <button
+          type="button"
+          aria-label="All locations"
+          aria-pressed={!city}
+          onClick={() => {
+            setCity("");
+            setQuery("");
+            setOpen(null);
+          }}
+        >
+          <Globe2 size={15} />
+          All locations
+          {!city && <Check size={15} className="ml-auto" />}
+        </button>
         {cities
           .filter((c) => c.name.toLowerCase().includes(query.toLowerCase()))
           .map((c) => (
@@ -39,6 +53,7 @@ export default function LocationSelector({ city, setCity, open, setOpen }) {
               key={c.id}
               onClick={() => {
                 setCity(c.id);
+                setQuery("");
                 setOpen(null);
               }}
             >

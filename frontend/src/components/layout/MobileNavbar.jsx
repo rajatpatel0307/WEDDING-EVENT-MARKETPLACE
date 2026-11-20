@@ -39,7 +39,7 @@ export default function MobileNavbar({ user, city, setCity, close }) {
         <MapPin size={16} />
         <span className="sr-only">Your city</span>
         <select value={city} onChange={(e) => setCity(e.target.value)}>
-          <option value="">Select location</option>
+          <option value="">All locations</option>
           {(locations.data || []).map((c) => (
             <option key={c.id} value={c.id}>{c.city}, {c.state}</option>
           ))}
