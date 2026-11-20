@@ -6,6 +6,7 @@ import { requireRole, requireApprovedVendor } from "../../middleware/auth.middle
 import { notify, notifyBusiness } from "../customers/workspace.common.js";
 import { afterCommit, emitUser } from "../messaging/realtime-bus.js";
 import { orderStatuses, aggregateOrderStatus, assertOrderTransition } from "./order-policy.js";
+import { queueLifecycleEmail } from "../notifications/email.service.js";
 
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
 const currency = value => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
@@ -160,6 +161,8 @@ export async function updateOrderStatus(id, input, ctx, role) {
     }, tx);
     await repo.auditAdmin(ctx, "ORDER_STATUS_UPDATED", "Orders", id, { status: o.OrderStatus, version: o.StatusVersion },
       { status, vendorId: vendor, fulfillmentStatus: body.status, override: body.override, note: body.note }, tx);
+    if (status === "Delivered" && o.OrderStatus !== "Delivered")
+      await queueLifecycleEmail("order.delivered", id, tx);
     const statusLabel = body.status === "OutForDelivery" ? "Out for delivery" : body.status;
     await notify(o.CustomerId, "Order status updated", `${o.OrderNumber}: ${statusLabel.toLowerCase()}.`, "Order", id, tx);
     for (const vendorId of new Set(selected.map(line => line.VendorId)))

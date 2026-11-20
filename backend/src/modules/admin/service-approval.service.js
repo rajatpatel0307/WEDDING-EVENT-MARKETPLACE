@@ -2,6 +2,7 @@ import { currentOffer, validateOffer } from "../shopping/configuration.js";
 import { z } from "zod";
 import { requireRole } from "../../middleware/auth.middleware.js";
 import * as repo from "./admin.repository.js";
+import { queueLifecycleEmail } from "../notifications/email.service.js";
 
 const resource = { table: "Services", id: "ServiceId" };
 const fail = (message, status = 409) => {
@@ -235,6 +236,7 @@ export async function decide(id, action, input, ctx) {
         AdminNote: body.notes || null,
       });
     await repo.update(resource, id, values, tx);
+    if (action === "approve") await queueLifecycleEmail("service.approved", id, tx);
     if (action === "approve") {
       const images = await repo.select(
         "UPDATE dbo.Media SET ModerationStatus='Approved',ModeratedBy=:admin,ModeratedAt=:now,ModerationReason=NULL,UpdatedAt=:now OUTPUT inserted.MediaId AS id WHERE EntityType='Service' AND EntityId=:id AND MediaType='Image' AND ModerationStatus='Pending' AND UploadStatus='Ready' AND DeletedAt IS NULL",

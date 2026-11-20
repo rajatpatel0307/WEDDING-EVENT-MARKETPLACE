@@ -2,6 +2,7 @@ import { z } from "zod";
 import { requireRole } from "../../middleware/auth.middleware.js";
 import * as repo from "./admin.repository.js";
 import { dateBounds } from "./admin.validation.js";
+import { queueLifecycleEmail } from "../notifications/email.service.js";
 
 const error = (message, status = 400) => {
   throw Object.assign(new Error(message), { status });
@@ -163,6 +164,7 @@ export async function decideVendor(
         ? "Your application has been reopened for a new verification cycle."
         : "";
     await repo.notifyVendor(vendor.UserId, id, next, vendorMessage, tx);
+    if (target === "Approved") await queueLifecycleEmail("vendor.approved", id, tx);
     return {
       success: true,
       message:

@@ -1,6 +1,7 @@
 import { randomUUID, createHash } from "node:crypto";
 import { allocateOrderNumber } from "./order-numbers.js";
 import { normalizeOrderStatus } from "./order-policy.js";
+import { queueLifecycleEmail } from "../notifications/email.service.js";
 import { orderDetails as managedOrderDetails, listOrders, publishOrderChange } from "./order-management.js";
 import { z } from "zod";
 import {
@@ -473,6 +474,7 @@ export async function settleProductPayment(paymentId, gatewayOrderId) {
         tx,
       );
     await publishOrderChange(order, tx);
+    await queueLifecycleEmail("order.placed", p.OrderId, tx);
   });
   return true;
 }

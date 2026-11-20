@@ -20,12 +20,16 @@ export function createMailTransport() {
     tls: { rejectUnauthorized: true },
   });
 }
-export async function sendTransactionalMail({ to, subject, text }) {
+export async function sendTransactionalMail({ to, subject, text, html, messageId, replyTo, attachments }) {
   const result = await createMailTransport().sendMail({
     from: required("SMTP_FROM"),
     to,
     subject,
     text,
+    ...(html ? { html } : {}),
+    ...(messageId ? { messageId } : {}),
+    ...(replyTo ? { replyTo } : {}),
+    ...(attachments ? { attachments } : {}),
   });
   if (!result.accepted?.length)
     throw new Error("The recipient was not accepted.");

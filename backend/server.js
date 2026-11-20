@@ -1,6 +1,7 @@
 import { startBookingJobs } from "./src/modules/admin/booking-jobs.js";
 import { startMediaJobs } from "./src/modules/media/media.jobs.js";
 import { startSupportJobs } from './src/modules/cms/support.jobs.js';
+import { startEmailJobs } from "./src/modules/notifications/email.jobs.js";
 import { validateEnvironment } from "./src/config/environment.js";
 import { sequelize } from "./src/config/database.js";
 import { createApp } from "./src/app.js";
@@ -91,6 +92,7 @@ try {
     await stopJobs();
     await stopMedia();
     await stopSupport();
+    await stopEmail();
     await new Promise((resolve) => io.close(resolve));
     await apollo.stop();
     await sequelize.close();
@@ -100,6 +102,7 @@ try {
       ? async () => {}
       : startMediaJobs();
   const stopSupport=process.env.SUPPORT_MAIL_JOBS_ENABLED==='false'?async()=>{}:startSupportJobs();
+  const stopEmail = process.env.EMAIL_JOBS_ENABLED === "false" ? async () => {} : startEmailJobs();
   process.once("SIGTERM", stop);
   process.once("SIGINT", stop);
 } catch (error) {

@@ -1,4 +1,5 @@
 import { createNotification } from '../notifications/notification-center.service.js';
+import { queueLifecycleEmail } from "../notifications/email.service.js";
 import { notifyAdmins } from "../notifications/admin-events.js";
 import { z } from "zod";
 import * as repo from "./admin.repository.js";
@@ -92,6 +93,9 @@ export async function milestone(
   );
   const targets = [{UserId:row.CustomerId}, ...(recipient==='customer'?[]:await repo.select('SELECT UserId FROM dbo.Vendors WHERE VendorId=:id',{id:row.VendorId},tx))];
   for(const target of targets) await createNotification({userId:target.UserId,title,message,referenceType:'Booking',referenceId:row.BookingId,eventKey:'booking:'+row.BookingId+':'+key,essential:!/reminder/i.test(title)},tx);
+  if (key === "created") await queueLifecycleEmail("booking.placed", row.BookingId, tx);
+  if (["status:Accepted", "status:Confirmed"].includes(key))
+    await queueLifecycleEmail("booking.accepted", row.BookingId, tx);
 }
 export async function history(
   row,
