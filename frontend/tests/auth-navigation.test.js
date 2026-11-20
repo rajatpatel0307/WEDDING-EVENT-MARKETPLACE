@@ -1,6 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { destination, canAccessVendorWorkspace } from "../src/routes/authNavigation.js";
+import { destination, emailVerificationDestination, canAccessVendorWorkspace, canEnterAccount, canAccessVendorPage } from "../src/routes/authNavigation.js";
+
+test("email verification sends authenticated users to their role-specific page", () => {
+  assert.equal(emailVerificationDestination({ role: "Customer" }), "/");
+  assert.equal(emailVerificationDestination({ role: "Admin" }), "/admin/dashboard");
+  for (const verificationStatus of ["Pending", "UnderReview", "Approved", "Rejected", "Suspended"]) {
+    const vendor = { role: "Vendor", accountStatus: "Active", vendor: { verificationStatus, active: false } };
+    const path = emailVerificationDestination(vendor);
+    assert.equal(path, "/vendor/verification");
+    assert.equal(canEnterAccount(vendor), true);
+    assert.equal(canAccessVendorPage(vendor, path), true);
+    assert.equal(canAccessVendorWorkspace(vendor), false);
+  }
+});
 
 test("vendor login always lands on the vendor dashboard", () => {
   for (const verificationStatus of ["Pending", "UnderReview", "Approved", "Rejected", "Suspended"]) {

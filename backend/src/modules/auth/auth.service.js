@@ -197,11 +197,22 @@ export async function verifyEmailOtp(input, ctx) {
   const user = await User.findOne({
     where: { email: email.parse(input.email) },
   });
+  let verifiedUser;
   await consumeOtp(user, "email", input.code, async (transaction) => {
     await user.update({ emailVerified: true }, { transaction });
+    const loaded = await User.findByPk(user.id, {
+      include: [
+        { model: Role, as: "roles" },
+        { model: Vendor, as: "vendor" },
+      ],
+      transaction,
+    });
+    if (!eligible(loaded)) fail("Account unavailable.", "FORBIDDEN");
+    await issueSession(loaded, ctx, transaction);
     await audit("EMAIL_VERIFIED", ctx, user.id, null, transaction);
+    verifiedUser = publicUser(loaded);
   });
-  return response("Email verified. Please sign in.");
+  return response("Email verified successfully.", verifiedUser);
 }
 export async function resendEmailOtp(input, ctx) {
   await limit(`resend-ip:${ctx.req.ip}`, 10, 3600);

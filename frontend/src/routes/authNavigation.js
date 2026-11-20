@@ -7,6 +7,11 @@ export function customerLoginDestination(user) {
   return destination(user);
 }
 
+export function emailVerificationDestination(user) {
+  if (user?.role === "Vendor") return "/vendor/verification";
+  return destination(user);
+}
+
 export function canAccessVendorWorkspace(user) {
   return (
     user?.role === "Vendor" &&

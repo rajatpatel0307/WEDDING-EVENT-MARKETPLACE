@@ -5,6 +5,7 @@ import AuthLayout from "../components/AuthLayout";
 import { Field, Submit, ErrorBox } from "../components/FormControls";
 import { mutate } from "../../../services/apollo";
 import { useAuth } from "../../../context/AuthContext";
+import { emailVerificationDestination } from "../../../routes/authNavigation";
 export default function OtpPage({ reset = false }) {
   const [digits, setDigits] = useState(Array(6).fill("")),
     [busy, setBusy] = useState(false),
@@ -17,7 +18,7 @@ export default function OtpPage({ reset = false }) {
     );
   const inputs = useRef([]),
     navigate = useNavigate(),
-    { notify, setResetToken } = useAuth();
+    { notify, setResetToken, setUser } = useAuth();
   useEffect(() => {
     inputs.current[0]?.focus();
     const interval = setInterval(
@@ -54,9 +55,11 @@ export default function OtpPage({ reset = false }) {
         setResetToken(r.resetToken);
         navigate("/auth/reset-password");
       } else {
+        setUser(r.user);
         sessionStorage.removeItem("verifyEmail");
-        notify("Email verified successfully. Sign in to continue.");
-        navigate("/auth/login", { replace: true });
+        sessionStorage.removeItem("verifyRole");
+        notify(r.message);
+        navigate(emailVerificationDestination(r.user), { replace: true });
       }
     } catch (err) {
       setError(err.message);
