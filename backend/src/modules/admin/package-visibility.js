@@ -1,7 +1,7 @@
 import { activeRegisteredLocation } from "../addresses/location-policy.js";
 
 // Read current publication requirements without changing the package's own status.
-// These fields mirror public package discovery, including the registered location.
+// These fields mirror public package discovery, including the business location.
 export const packageVisibilityFields = `s.ApprovalStatus AS serviceStatus,
   s.IsActive AS serviceActive,c.IsActive AS categoryActive,
   v.IsActive AS vendorActive,v.VerificationStatus AS vendorStatus,
@@ -22,7 +22,7 @@ export function packageVisibility(row) {
   if (!row.accountActive) reasons.push("Vendor account is inactive.");
   if (row.accountBlocked) reasons.push("Vendor account is blocked.");
   if (!row.emailVerified) reasons.push("Vendor email is not verified.");
-  if (!row.locationActive) reasons.push("Vendor registered location is missing or inactive.");
+  if (!row.locationActive) reasons.push("Vendor business location is missing or inactive.");
   return {
     customerVisible: reasons.length === 0,
     visibilityReasons: reasons,

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { requireRole } from "../../middleware/auth.middleware.js";
 import * as repo from "../admin/admin.repository.js";
-import { approvedVendor } from "./location-policy.js";
+import { approvedVendor, visibleVendor, registeredLocation } from "./location-policy.js";
 
 export function normalizeLocation(value) {
   const country = /^(india|in|ind)$/i.test(value.country.trim())
@@ -39,9 +39,10 @@ export async function availableLocations() {
   );
 }
 export async function customerLocations() {
-  return repo.select(`SELECT ${fields} FROM dbo.AdminLocations al WHERE al.IsActive=1 AND al.DeletedAt IS NULL
-    AND EXISTS(SELECT 1 FROM dbo.Vendors v JOIN dbo.Users u ON u.UserId=v.UserId
-      WHERE v.AdminLocationId=al.LocationId AND ${approvedVendor}) ORDER BY City,State,Country,LocationId`);
+  return repo.select(`SELECT l.LocationId AS id,MIN(l.City) AS city,MIN(l.State) AS state,MIN(l.Country) AS country,CAST(1 AS bit) AS active
+    FROM dbo.Vendors v JOIN dbo.Users u ON u.UserId=v.UserId ${registeredLocation("l")}
+    WHERE ${visibleVendor} AND l.LocationId IS NOT NULL
+    GROUP BY l.LocationId ORDER BY city,state,country,l.LocationId`);
 }
 export async function assertActiveLocation(id, tx) {
   z.guid().parse(id);

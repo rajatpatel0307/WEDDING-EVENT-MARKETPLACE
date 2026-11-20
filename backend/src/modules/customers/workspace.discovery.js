@@ -77,7 +77,7 @@ export async function publicDiscover(input) {
       offset: (q.page - 1) * q.pageSize,
       size: q.pageSize,
     };
-  const city = `(:city ='' OR l.City=:city OR CONVERT(varchar(36),l.LocationId)=:city)`;
+  const city = `(:city ='' OR l.City=:city OR l.LocationId=:city)`;
   if (q.type === "vendors") {
     const where = `${eligibleVendor} AND v.BusinessName LIKE :q AND (:category =0 OR EXISTS(SELECT 1 FROM dbo.VendorCategories vc JOIN dbo.Categories ac ON ac.CategoryId=vc.CategoryId WHERE vc.VendorId=v.VendorId AND vc.CategoryId=:category AND ac.IsActive=1)) AND ${city} AND v.AverageRating>=:rating`;
     const from = `dbo.Vendors v JOIN dbo.Users u ON u.UserId=v.UserId ${location}`;
@@ -241,7 +241,7 @@ export async function publicVendorDetails(id) {
       { id },
     ),
     repo.select(
-      "SELECT al.City AS city,al.State AS state FROM dbo.AdminLocations al JOIN dbo.Vendors v ON v.AdminLocationId=al.LocationId WHERE v.VendorId=:id AND al.IsActive=1 AND al.DeletedAt IS NULL",
+      `SELECT l.City AS city,l.State AS state FROM dbo.Vendors v ${registeredLocation("l")} WHERE v.VendorId=:id`,
       { id },
     ),
     repo.select(

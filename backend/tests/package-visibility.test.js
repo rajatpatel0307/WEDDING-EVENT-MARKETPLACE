@@ -38,7 +38,7 @@ test("each public discovery prerequisite gives an actionable blocker", () => {
     [{ accountActive: false }, /account is inactive/],
     [{ accountBlocked: true }, /account is blocked/],
     [{ emailVerified: false }, /email is not verified/],
-    [{ locationActive: 0 }, /registered location is missing or inactive/],
+    [{ locationActive: 0 }, /business location is missing or inactive/],
   ];
   for (const [change, reason] of cases) {
     const result = packageVisibility({ ...eligible, ...change });
@@ -71,6 +71,7 @@ test("package index reads current blockers and does not change the package or it
   const sql = query.mock.calls.at(-1).arguments[0];
   assert.match(sql, /JOIN dbo.Users u/);
   assert.match(sql, /al.LocationId=v.AdminLocationId AND al.IsActive=1 AND al.DeletedAt IS NULL/);
+  assert.match(sql, /vl.VendorId=v.VendorId AND vl.IsActive=1/);
 });
 
 test("service package details carry the same visibility reasons as the index", async (t) => {
