@@ -6,6 +6,7 @@ export function notificationLink(item) {
   )
     return `/admin/${type === "ContactInquiry" ? "contact-inquiries" : "privacy-requests"}`;
   const paths = {
+    Order: "orders",
     Booking: "bookings",
     Vendor: "vendors",
     Vendors: "vendors",

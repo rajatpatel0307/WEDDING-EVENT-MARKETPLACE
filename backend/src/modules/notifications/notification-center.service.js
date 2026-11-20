@@ -41,6 +41,7 @@ export function notificationUrl(row, role) {
   if(row.ReferenceType==='AdminContactInquiry')return '/admin/contact-inquiries';
   if (['Review','Reviews','AdminReviews'].includes(row.ReferenceType)) return `${root}/reviews`;
   if (!id) return `${root}/notifications`;
+  if (row.ReferenceType === "Order") return `${root}/orders/${id}`;
   if (row.ReferenceType === "Conversation" && role !== "Admin")
     return `${root}/messages?conversation=${id}`;
   if (row.ReferenceType === "Booking") return `${root}/bookings/${id}`;

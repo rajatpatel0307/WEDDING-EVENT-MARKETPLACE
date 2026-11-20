@@ -25,6 +25,7 @@ import CartItem from "./CartItem";
 import AddressForm from "../customer/components/CustomerAddressForm";
 import CustomerOrdersPage from "./CustomerOrdersPage";
 import PurchaseOrderDetails from "./PurchaseOrderDetails";
+import { useOrderUpdates } from "./order-live";
 import { categoryImages } from "../../components/home/categoryImages";
 
 
@@ -678,6 +679,7 @@ export function PurchaseOrder() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  useOrderUpdates(state.retry, id);
   async function action(pay) {
     setBusy(true);
     setError("");
@@ -704,8 +706,8 @@ export function PurchaseOrder() {
       setBusy(false);
     }
   }
-  if (state.loading) return <Loading />;
   if (state.error) return <ErrorView error={state.error} retry={state.retry} />;
+  if (!state.data || state.data.id?.toLowerCase() !== id.toLowerCase()) return <Loading />;
   return <PurchaseOrderDetails
     data={state.data}
     busy={busy}

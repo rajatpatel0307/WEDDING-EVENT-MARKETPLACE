@@ -1,4 +1,4 @@
-import { orders as productOrders } from "../shopping/shopping.service.js";
+import * as productOrders from "../shopping/order-management.js";
 import * as adminLocations from "../addresses/admin-locations.service.js";
 import * as vendorAccess from "../vendors/access.service.js";
 import * as commission from "./commission.service.js";
@@ -59,7 +59,9 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
   router.put("/locations/:id", standardJson, async (req, res) => res.json(await adminLocations.save(req.params.id, req.body, req.admin)));
   router.delete("/locations/:id", standardJson, async (req, res) => res.json(await adminLocations.save(req.params.id, req.body || {}, req.admin, true)));
   router.put("/vendors/:id/registered-location", standardJson, async (req, res) => res.json(await adminLocations.assignVendor(req.params.id, req.body, req.admin)));
-  router.get("/orders", async (req,res) => res.json({success:true,data:await productOrders(req.admin,"Admin")}));
+  router.get("/orders", async (req,res) => res.json({success:true,data:await productOrders.listOrders(req.query,req.admin,"Admin")}));
+  router.get("/orders/:id", async (req,res) => res.json({success:true,data:await productOrders.orderDetails(req.params.id,req.admin,"Admin")}));
+  router.patch("/orders/:id/status", standardJson, async (req,res) => res.json(await productOrders.updateOrderStatus(req.params.id,req.body,req.admin,"Admin")));
   router.get("/bookings/:id/change-requests", async (req, res) =>
     res.json(
       (await lifecycle.details(req.params.id, req.admin, "Admin")).requests,

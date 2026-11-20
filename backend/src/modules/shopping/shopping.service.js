@@ -1,4 +1,7 @@
 import { randomUUID, createHash } from "node:crypto";
+import { allocateOrderNumber } from "./order-numbers.js";
+import { normalizeOrderStatus } from "./order-policy.js";
+import { orderDetails as managedOrderDetails, listOrders, publishOrderChange } from "./order-management.js";
 import { z } from "zod";
 import {
   scope,
@@ -235,18 +238,20 @@ export async function purchase(input, ctx) {
     if (prior) {
       if (prior.RequestHash !== requestHash)
         fail("Checkout key was already used with different details.", 409);
-      return { id: prior.OrderId, message: "Continue your saved order." };
+      return { id: prior.OrderId, number: prior.OrderNumber, message: "Continue your saved order." };
     }
     const q = await quote(body, id, tx);
     if (!body.termsAccepted || body.reviewToken !== q.reviewToken)
       fail("Review your current order total and accept the terms.", 409);
     const orderId = randomUUID(),
-      number = `ORD-${Date.now().toString(36).toUpperCase()}-${orderId.slice(0, 8).toUpperCase()}`;
+      number = await allocateOrderNumber(tx);
     await repo.insert(
       { table: "Orders", id: "OrderId" },
       {
         OrderId: orderId,
         OrderNumber: number,
+        OrderStatus: "Pending",
+        StatusUpdatedAt: new Date(),
         CustomerId: id,
         CheckoutKey: body.idempotencyKey,
         RequestHash: requestHash,
@@ -271,6 +276,7 @@ export async function purchase(input, ctx) {
           ProductNameSnapshot: r.ProductName,
           SKUSnapshot: r.SKU,
           ImageSnapshot: r.ImageUrl,
+          DescriptionSnapshot: r.Description || null,
           UnitPrice: r.UnitPrice,
           Quantity: r.Quantity,
           TaxAmount: r.tax,
@@ -279,6 +285,10 @@ export async function purchase(input, ctx) {
         },
         tx,
       );
+    for (const vendorId of new Set(q.lines.map(line => line.VendorId)))
+      await repo.insert({ table: "ProductOrderHistory", id: "HistoryId" }, {
+        HistoryId: randomUUID(), OrderId: orderId, VendorId: vendorId, ActorId: id, Status: "Pending", Note: "Order received.",
+      }, tx);
     await repo.select(
       "DELETE i FROM dbo.CartAndProducts i JOIN dbo.Cart c ON c.CartId=i.CartId WHERE c.CustomerId=:id",
       { id },
@@ -293,6 +303,7 @@ export async function purchase(input, ctx) {
       { number, total: q.total },
       tx,
     );
+    await publishOrderChange({ OrderId: orderId, OrderNumber: number, CustomerId: id, StatusVersion: 0 }, tx);
     return {
       id: orderId,
       number,
@@ -427,7 +438,8 @@ export async function settleProductPayment(paymentId, gatewayOrderId) {
       p.OrderId,
       {
         PaymentStatus: "Paid",
-        OrderStatus: "Confirmed",
+        OrderStatus: normalizeOrderStatus(order.OrderStatus),
+        PaymentMethod: payment.method || "Razorpay",
         StockReserved: 0,
         UpdatedAt: new Date(),
       },
@@ -460,6 +472,7 @@ export async function settleProductPayment(paymentId, gatewayOrderId) {
         p.OrderId,
         tx,
       );
+    await publishOrderChange(order, tx);
   });
   return true;
 }
@@ -510,6 +523,7 @@ export async function refreshPurchase(id, ctx) {
   return { message: "Payment status checked." };
 }
 export async function orders(ctx, role = "Customer") {
+  if (role !== "Customer") return (await listOrders({}, ctx, role)).rows;
   const user =
     role === "Customer"
       ? scope(ctx).user
@@ -529,21 +543,5 @@ export async function orders(ctx, role = "Customer") {
   );
 }
 export async function orderDetails(id, ctx) {
-  const o = await ownedOrder(id, ctx);
-  const lines = await repo.select(
-    "SELECT ProductNameSnapshot AS name,Quantity AS quantity,UnitPrice AS price,TaxAmount AS tax,ShippingAmount AS shipping,LineTotal AS total FROM dbo.OrderLineItems WHERE OrderId=:id",
-    { id },
-  );
-  return {
-    id: o.OrderId,
-    number: o.OrderNumber,
-    status: o.OrderStatus,
-    paymentStatus: o.PaymentStatus,
-    subtotal: Number(o.Subtotal),
-    tax: Number(o.TaxAmount),
-    shipping: Number(o.ShippingAmount),
-    total: Number(o.TotalAmount),
-    address: JSON.parse(o.AddressSnapshot),
-    lines,
-  };
+  return managedOrderDetails(id, ctx, "Customer");
 }

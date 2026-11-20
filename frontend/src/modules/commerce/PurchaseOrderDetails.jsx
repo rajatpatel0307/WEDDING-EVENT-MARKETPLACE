@@ -4,9 +4,11 @@ import {
   LockKeyhole, MapPin, Package, Phone, ReceiptText, RefreshCw, ShieldCheck, ShoppingBag,
 } from "lucide-react";
 import { money } from "../customer/services/workspace.api";
+import OrderTracking from "./OrderTracking";
+import { orderStatusLabels, orderTime } from "./order-status";
 
 function Status({ value, payment = false, compact = false, className = "" }) {
-  const labels = { AwaitingPayment: "Awaiting payment", PaymentPending: "Payment pending", PartiallyPaid: "Partially paid", InProgress: "In progress" };
+  const labels = { ...orderStatusLabels, AwaitingPayment: "Awaiting payment", PaymentPending: "Payment pending", PartiallyPaid: "Partially paid", InProgress: "In progress" };
   const positive = ["Paid", "Confirmed", "Completed", "Delivered", "Success"].includes(value);
   const closed = ["Cancelled", "Refunded", "Failed", "Rejected", "Expired"].includes(value);
   const Icon = positive ? Check : Clock3;
@@ -46,6 +48,8 @@ export default function PurchaseOrderDetails({ data, busy, error, notice, onPay,
       </div>
     </section>
 
+    <OrderTracking data={data} />
+    <p className="mb-5 text-[11px]! text-[#8d7e80]!">Placed: {orderTime(data.createdAt)} · Payment method: {data.paymentMethod || "Not paid"}</p>
     {paid && <div className="mb-[22px] flex items-start gap-[11px] rounded-[9px] border border-[#dce6d3] bg-[#f4f8ee] px-[19px] py-4 text-[12px] text-[#80976b]" role="status"><CheckCheck size={18} aria-hidden="true" /><div><strong className="text-[12px] font-medium">Payment received</strong><p className="mt-[3px] text-[11px]! text-[#97a78a]!">Payment verified. Your purchase is confirmed.</p></div></div>}
     {error && <div className="mb-[22px] flex items-start gap-[11px] rounded-[9px] border border-[#eacbd0] bg-[#fff4f4] px-[19px] py-4 text-[12px] text-[#a14a5c]" role="alert">{error}</div>}
     {notice && <div className="mb-[22px] flex items-start gap-[11px] rounded-[9px] border border-[#e8dcd0] bg-[#fffbf3] px-[19px] py-4 text-[12px] text-[#a18c63]" role="status"><Clock3 size={17} aria-hidden="true" /><p className="text-[#a18c63]!">{notice}</p></div>}
@@ -88,7 +92,7 @@ export default function PurchaseOrderDetails({ data, busy, error, notice, onPay,
             <dl className="mt-[22px]! mb-0! grid grid-cols-[minmax(0,1fr)]! gap-[15px]! border-t border-[#eee4dc] pt-[21px] text-[12px]! [&_>_div]:flex [&_>_div]:items-baseline [&_>_div]:justify-between [&_>_div]:gap-[14px] [&_dt]:text-[#a0878c]! [&_dd]:m-0! [&_dd]:text-right [&_dd]:text-[#866572]! [&_dd]:tabular-nums">
               <div><dt>Subtotal</dt><dd>{money(data.subtotal)}</dd></div>{data.shipping != null && <div><dt>Delivery charges</dt><dd>{money(data.shipping)}</dd></div>}<div><dt>Tax</dt><dd>{money(data.tax)}</dd></div><div className="mt-[3px] border-t border-dashed border-[#e7d9d2] pt-4 font-semibold [&&_dt]:text-[#78525f]! [&&_dd]:text-[#78525f]!"><dt>Total amount</dt><dd>{money(data.total)}</dd></div>
             </dl>
-            {paid ? <div className="mt-6 flex items-start gap-[10px] rounded-lg border border-[#dfe8d5] bg-[#f5f9ef] p-[15px] text-[#8b9f76]"><CheckCheck size={18} aria-hidden="true" /><div><strong className="block text-[12px] font-medium text-[#78915f]">Paid in full</strong><p className="mt-[3px] text-[10px]! text-[#8b9f76]!">Your payment has been verified.</p></div></div> : <div className="mt-6 grid gap-[11px]">
+            {paid ? <div className="mt-6 flex items-start gap-[10px] rounded-lg border border-[#dfe8d5] bg-[#f5f9ef] p-[15px] text-[#8b9f76]"><CheckCheck size={18} aria-hidden="true" /><div><strong className="block text-[12px] font-medium text-[#78915f]">Paid in full</strong><p className="mt-[3px] text-[10px]! text-[#8b9f76]!">Your payment has been verified.</p></div></div> : data.status === "Cancelled" ? <p className="mt-6 rounded-lg bg-[#fff4f2] p-4 text-[12px]! text-[#a65353]!">This order has been cancelled.</p> : <div className="mt-6 grid gap-[11px]">
               <button type="button" className="inline-flex min-h-[42px] w-full items-center justify-center gap-[9px] rounded-[7px] border border-[#873f52] bg-[#873f52] px-4 py-[11px] text-center text-[11px] font-medium leading-[1.5] text-white shadow-[0_4px_12px_#74314712] transition-[background,box-shadow] duration-180 enabled:hover:border-[#723247] enabled:hover:bg-[#723247] enabled:hover:shadow-[0_5px_18px_#74314722] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#873f52] motion-reduce:transition-none" disabled={busy} onClick={onPay}>{busy ? <LoaderCircle size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <LockKeyhole size={16} aria-hidden="true" />}{busy ? "Please wait…" : `Pay ${money(data.total)}`}<ArrowRight size={16} aria-hidden="true" /></button>
               <button type="button" className="inline-flex min-h-[42px] w-full items-center justify-center gap-[9px] rounded-[7px] border border-[#e3d2d8] bg-white px-4 py-[11px] text-center text-[11px] font-medium leading-[1.5] text-[#996377] transition-[background,box-shadow] duration-180 enabled:hover:border-[#cda8b6] enabled:hover:bg-[#fcf4f6] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#873f52] motion-reduce:transition-none" disabled={busy} onClick={onRefresh}><RefreshCw size={14} aria-hidden="true" /> Refresh payment status</button>
               <p className="text-center text-[9px]! leading-[1.8]! text-[#ad9295]!">Already paid? Refresh your payment status to check for confirmation.</p>

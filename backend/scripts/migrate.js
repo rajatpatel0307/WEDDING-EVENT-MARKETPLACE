@@ -1,4 +1,6 @@
 import { up as sellBookUp } from "../migrations/030-sell-book.js";
+import { up as orderManagementUp } from "../migrations/033-order-management.js";
+import { up as outForDeliveryUp } from "../migrations/034-order-out-for-delivery.js";
 import { up as adminLocationsUp } from "../migrations/031-admin-locations.js";
 import { up as bookingNumbersUp } from "../migrations/032-booking-numbers.js";
 import { up as vendorAccessUp } from "../migrations/029-vendor-access.js";
@@ -462,6 +464,22 @@ try {
     if (!rows.length) {
       await bookingNumbersUp(sequelize.getQueryInterface(), transaction);
       await sequelize.query("INSERT dbo.AuthMigrations(Name) VALUES('032-booking-numbers')", { transaction });
+    }
+  });
+  await sequelize.transaction(async transaction => {
+    await sequelize.query("DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;", { transaction });
+    const [rows] = await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='033-order-management'", { transaction });
+    if (!rows.length) {
+      await orderManagementUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query("INSERT dbo.AuthMigrations(Name) VALUES('033-order-management')", { transaction });
+    }
+  });
+  await sequelize.transaction(async transaction => {
+    await sequelize.query("DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;", { transaction });
+    const [rows] = await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='034-order-out-for-delivery'", { transaction });
+    if (!rows.length) {
+      await outForDeliveryUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query("INSERT dbo.AuthMigrations(Name) VALUES('034-order-out-for-delivery')", { transaction });
     }
   });
   console.log("Database migrations are current.");

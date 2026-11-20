@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Users,
   Store,
+  ShoppingBag,
   Files,
   Tags,
   Layers,
@@ -50,6 +51,7 @@ const navigationGroups = [
     label: "BOOKINGS",
     items: [
       ["bookings", "All Bookings", CalendarCheck],
+      ["orders", "Orders", ShoppingBag],
       ...[].map((s) => [
         `bookings?status=${s}`,
         s === "InProgress" ? "In Progress" : s,
@@ -138,6 +140,7 @@ export const adminNavigation = [
   },
 ];
 export const resourceTitle = (key) =>
+  key.startsWith("orders/") ? "Order details" :
   paymentNavigation.find(([path]) => path === key)?.[1] ||
   adminNavigation.flatMap((g) => g.items).find((i) => i[0] === key)?.[1] ||
   "Overview";

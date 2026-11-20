@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useOrderUpdates } from "./order-live";
+import { orderStatusLabels } from "./order-status";
 import { Link } from "react-router-dom";
 import {
   ArrowRight, ArrowUpRight, CalendarDays, Check, CheckCheck, Clock3,
@@ -10,7 +12,7 @@ import { date, money } from "../customer/services/workspace.api";
 
 const closedStatuses = ["Cancelled", "Rejected", "Expired", "Refunded", "Failed"];
 const awaitingPayment = (order) => order.paymentStatus !== "Paid" && !closedStatuses.includes(order.status) && !["Refunded", "Cancelled"].includes(order.paymentStatus);
-const labels = { AwaitingPayment: "Awaiting payment", PaymentPending: "Payment pending", PartiallyPaid: "Partially paid", InProgress: "In progress" };
+const labels = { ...orderStatusLabels, AwaitingPayment: "Awaiting payment", PaymentPending: "Payment pending", PartiallyPaid: "Partially paid", InProgress: "In progress" };
 
 function OrderBadge({ value, payment = false }) {
   const label = labels[value] || value || "Not available";
@@ -50,7 +52,7 @@ export function CustomerOrdersView({ orders = [], loading, error, retry, filter 
   const filtered = orders.filter((order) => (filter === "all" || (filter === "paid" ? order.paymentStatus === "Paid" : awaitingPayment(order))) && String(order.number || "").toLowerCase().includes(search.trim().toLowerCase()));
   const stats = [
     { label: "Recent orders", value: String(orders.length).padStart(2, "0"), caption: "Your celebration essentials", icon: ShoppingBag, tone: "rose" },
-    { label: "Confirmed orders", value: String(orders.filter((order) => order.status === "Confirmed").length).padStart(2, "0"), caption: "One more detail taken care of", icon: CheckCheck, tone: "sage" },
+    { label: "Delivered orders", value: String(orders.filter((order) => order.status === "Delivered").length).padStart(2, "0"), caption: "One more detail taken care of", icon: CheckCheck, tone: "sage" },
     { label: "Awaiting payment", value: String(pendingOrders.length).padStart(2, "0"), caption: "Ready for your next step", icon: Clock3, tone: "gold" },
     { label: "Paid order value", value: money(paidOrders.reduce((total, order) => total + Number(order.total || 0), 0)), caption: "Across your recent paid orders", icon: Wallet, tone: "sand" },
   ];
@@ -71,7 +73,8 @@ export function CustomerOrdersView({ orders = [], loading, error, retry, filter 
 
 export default function CustomerOrdersPage() {
   const state = useCustomerData("/orders");
+  useOrderUpdates(state.retry);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
-  return <CustomerOrdersView orders={state.data || []} loading={state.loading} error={state.error} retry={state.retry} filter={filter} onFilter={setFilter} search={search} onSearch={setSearch} onReset={() => { setFilter("all"); setSearch(""); }} />;
+  return <CustomerOrdersView orders={state.data || []} loading={state.loading && !state.data} error={state.error} retry={state.retry} filter={filter} onFilter={setFilter} search={search} onSearch={setSearch} onReset={() => { setFilter("all"); setSearch(""); }} />;
 }

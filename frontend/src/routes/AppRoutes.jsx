@@ -5,6 +5,8 @@ import MarketplaceRedirect from "./MarketplaceRedirect";
 import VendorProfilePage from "../modules/vendor/pages/VendorProfilePage";
 import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { lazy, Suspense } from "react";
+const OrderManagement = lazy(() => import("../modules/commerce/OrderManagement"));
+const ManagedOrderDetails = lazy(() => import("../modules/commerce/OrderManagement").then(module => ({ default: module.ManagedOrderDetails })));
 import GuestRoute from "./GuestRoute";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
@@ -467,6 +469,8 @@ export default function AppRoutes() {
                 element={<VendorDashboardPage analyticsOnly />}
               />
               <Route path="business/profile" element={<VendorBusinessPage />} />
+              <Route path="orders" element={<OrderManagement role="Vendor" />} />
+              <Route path="orders/:id" element={<ManagedOrderDetails role="Vendor" />} />
               <Route path="settings" element={<Navigate to="/vendor/business/profile" replace />} />
               <Route
                 path="business/details"
@@ -708,6 +712,8 @@ export default function AppRoutes() {
               }
             />
             <Route path="finance/:kind/:id" element={<FinancialDetails />} />
+            <Route path="orders" element={<OrderManagement role="Admin" />} />
+            <Route path="orders/:id" element={<ManagedOrderDetails role="Admin" />} />
             <Route path="bookings" element={<BookingsManagementPage />} />
             <Route
               path="bookings/:bookingId"

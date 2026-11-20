@@ -2,6 +2,7 @@ import { canAccessVendorWorkspace } from "../../routes/authNavigation.js";
 import {
   LayoutDashboard,
   Store,
+  ShoppingBag,
   MapPin,
   Files,
   ShieldCheck,
@@ -52,6 +53,7 @@ export const vendorNavigation = [
     label: "BOOKINGS",
     items: [["bookings/all", "All Bookings", ListChecks]],
   },
+  { label: "ORDERS", items: [["orders", "Orders", ShoppingBag]] },
   {
     label: "QUOTATIONS",
     items: [["quotations/all", "All Quotations", ReceiptText]],
@@ -85,6 +87,7 @@ export const vendorNavigation = [
   },
 ];
 export function vendorTitle(path) {
+  if (path === "orders" || path.startsWith("orders/")) return path === "orders" ? "Orders" : "Order details";
   return (
     vendorNavigation
       .flatMap((g) => g.items)

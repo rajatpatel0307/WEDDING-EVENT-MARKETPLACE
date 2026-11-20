@@ -1,4 +1,4 @@
-import { orders as productOrders } from "../shopping/shopping.service.js";
+import * as productOrders from "../shopping/order-management.js";
 import { categoryOptions } from "../shopping/configuration.js";
 import { completeBooking } from "../shopping/booking-management.js";
 import { vendorStatus } from "./access.service.js";
@@ -80,7 +80,9 @@ export function createVendorRouter({
     const file = await onboarding.document(req.params.id, req.vendorContext);
     res.type(file.mimeType).set("Content-Disposition", `attachment; filename="${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}"`).send(Buffer.from(file.base64, "base64"));
   });
-  get("/orders", req => productOrders(req.vendorContext,"Vendor"));
+  get("/orders", req => productOrders.listOrders(req.query, req.vendorContext, "Vendor"));
+  get("/orders/:id", req => productOrders.orderDetails(req.params.id, req.vendorContext, "Vendor"));
+  mutation("patch", "/orders/:id/status", req => productOrders.updateOrderStatus(req.params.id, req.body, req.vendorContext, "Vendor"));
   get("/earnings", (req) => earnings(req.vendorContext));
   get("/bookings/statistics", (req) => workspace.bookingStatistics(req.vendorContext));
   mutation("post", "/bookings/:id/complete", req => completeBooking(req.params.id,req.body,req.vendorContext));
