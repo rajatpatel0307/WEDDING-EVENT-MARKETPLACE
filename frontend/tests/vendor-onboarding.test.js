@@ -38,7 +38,8 @@ test("verification submission requires all business fields, categories, location
   };
   const documents = requiredDocs;
   assert.ok(readyToSubmit(fields, documents));
-  assert.equal(readyToSubmit({ ...fields, adminLocationId: "" }, documents), false);
+  assert.equal(readyToSubmit({ ...fields, adminLocationId: "" }, documents), true);
+  assert.equal(readyToSubmit({ ...fields, adminLocationId: undefined }, documents), true);
   for (const name of [
     "businessName",
     "businessDescription",
@@ -91,7 +92,7 @@ test("verification steps validate their required fields before moving forward", 
     location: { address: "Main Road", city: "Pune", state: "Maharashtra", country: "India", postalCode: "411001" },
   };
   for (let step = 0; step < 4; step++) assert.deepEqual(verificationStepErrors(step, fields, requiredDocs), []);
-  assert.deepEqual(verificationStepErrors(2, { ...fields, adminLocationId: "" }), ["Select an active registered business / service location."]);
+  assert.deepEqual(verificationStepErrors(2, { ...fields, adminLocationId: "" }), []);
   assert.equal(verificationStepErrors(0, { ...fields, businessName: " ", businessDescription: "short", businessEmail: "bad-email", businessPhone: "123" }).length, 4);
   assert.deepEqual(verificationStepErrors(1, { ...fields, categories: [] }), ["Select at least one service category."]);
   for (const [key, label] of [["address", "Street address"], ["city", "City"], ["state", "State"], ["country", "Country"], ["postalCode", "Postal code"]]) {

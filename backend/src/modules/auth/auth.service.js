@@ -1,5 +1,4 @@
 import { signupAcceptances } from '../cms/cms.service.js';
-import { assertActiveLocation } from "../addresses/admin-locations.service.js";
 import { randomBytes, randomUUID } from "node:crypto";
 import { z } from "zod";
 import { Op, TableHints } from "sequelize";
@@ -73,13 +72,8 @@ export async function register(input, role, ctx) {
   await limit(`signup:${ctx.req.ip}`, 5, 3600);
   const data = account.parse(input);
   const vendor = role === "VENDOR";
-  const adminLocationId = vendor ? z.guid().parse(input.adminLocationId) : null;
   const passwordHash = await hashPassword(data.password);
   const user = await sequelize.transaction(async (transaction) => {
-    if (vendor) {
-      try { await assertActiveLocation(adminLocationId, transaction); }
-      catch (error) { if (error.status === 400) fail(error.message); throw error; }
-    }
     if (
       await User.findOne({
         where: { [Op.or]: [{ email: data.email }, { phone: data.phone }] },
@@ -113,7 +107,6 @@ export async function register(input, role, ctx) {
     );
     if (vendor) {
       await Vendor.create({
-        adminLocationId,
         userId: user.id,
         businessName: `${data.firstName} ${data.lastName}`.slice(0, 200),
         slug: `vendor-${randomUUID()}`,

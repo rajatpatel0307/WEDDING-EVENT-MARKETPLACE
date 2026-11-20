@@ -9,7 +9,7 @@ import { downloadDocument } from "./documents.service.js";
 const text = (max) => z.string().trim().max(max).default("");
 export const draftInput = z
   .object({
-    adminLocationId: z.union([z.guid(), z.literal("")]).default(""),
+    adminLocationId: z.union([z.guid(), z.literal("")]).optional(),
     businessName: text(200),
     businessDescription: text(5000),
     businessEmail: text(320),
@@ -149,7 +149,6 @@ export async function saveProfile(input, ctx, submit = false) {
       return { message: "Profile progress saved. You can continue later." };
     }
     const body = validateSubmission(fields, await documents(id, tx));
-    await assertActiveLocation(fields.adminLocationId, tx);
     const names = [...new Set(body.categories)];
     const selected = await repo.select(
       "SELECT CategoryId AS id FROM dbo.Categories WHERE IsActive=1 AND CategoryName IN (:names)",
@@ -163,7 +162,7 @@ export async function saveProfile(input, ctx, submit = false) {
       id,
       {
         BusinessName: body.businessName,
-        AdminLocationId: fields.adminLocationId,
+        ...(fields.adminLocationId ? { AdminLocationId: fields.adminLocationId } : {}),
         BusinessDescription: body.businessDescription,
         ContactEmail: body.businessEmail,
         ContactPhone: body.businessPhone,

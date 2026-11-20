@@ -167,7 +167,7 @@ test("registration validation rejects nonexistent, inactive and deleted selectio
   assert.equal(query.mock.callCount(), 1);
 });
 
-test("vendor signup rejects unavailable locations before creating a user or vendor", async (t) => {
+test("vendor signup checks duplicate accounts without requiring or looking up a location", async (t) => {
   t.mock.method(Limit, "findByPk", async () => ({
     count: 0,
     expiresAt: new Date(Date.now() + 60000),
@@ -176,7 +176,8 @@ test("vendor signup rejects unavailable locations before creating a user or vend
   t.mock.method(sequelize, "transaction", async (options, fn) =>
     (fn || options)({}),
   );
-  t.mock.method(sequelize, "query", async () => []);
+  const query = t.mock.method(sequelize, "query", async () => []);
+  t.mock.method(User, "findOne", async () => ({ id }));
   const createUser = t.mock.method(User, "create", async () => {
     throw Error("Unexpected account");
   });
@@ -192,21 +193,12 @@ test("vendor signup rejects unavailable locations before creating a user or vend
     confirmPassword: "TestPass123!",
     terms: true,
     privacy: true,
-    adminLocationId: id,
   };
   await assert.rejects(
     () => register(input, "VENDOR", ctx("VENDOR")),
-    /active location/,
+    /already uses these details/,
   );
-  await assert.rejects(
-    () =>
-      register(
-        { ...input, adminLocationId: undefined },
-        "VENDOR",
-        ctx("VENDOR"),
-      ),
-    (e) => e.name === "ZodError",
-  );
+  assert.ok(!query.mock.calls.some(call => call.arguments[0].includes("AdminLocations")));
   assert.equal(createUser.mock.callCount(), 0);
   assert.equal(createVendor.mock.callCount(), 0);
 });

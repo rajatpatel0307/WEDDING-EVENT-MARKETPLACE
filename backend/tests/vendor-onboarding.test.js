@@ -103,10 +103,10 @@ test("vendors, buyers and admins must verify email before authentication", () =>
   assert.throws(() => requireApprovedVendor(ctx), /approval required/);
 });
 
-test("basic account registration creates an inactive draft vendor without business details or documents", async (t) => {
+test("basic account registration creates an inactive draft vendor without location, business details or documents", async (t) => {
   const tx = {};
   t.mock.method(sequelize, "transaction", async (opts, fn) => (fn || opts)(tx));
-  t.mock.method(sequelize, "query", async sql => sql.includes("FROM dbo.AdminLocations") ? [{ LocationId: id }] : []);
+  const query = t.mock.method(sequelize, "query", async () => []);
   t.mock.method(Limit, "findByPk", async () => ({
     count: 0,
     expiresAt: new Date(Date.now() + 60000),
@@ -124,7 +124,6 @@ test("basic account registration creates an inactive draft vendor without busine
   });
   const result = await register(
     {
-      adminLocationId: id,
       firstName: "Test",
       lastName: "Vendor",
       email: "vendor@example.com",
@@ -142,7 +141,8 @@ test("basic account registration creates an inactive draft vendor without busine
   const data = created.mock.calls[0].arguments[0];
   assert.equal(data.userId, owner);
   assert.equal(data.active, false);
-  assert.equal(data.adminLocationId, id);
+  assert.equal(data.adminLocationId, undefined);
+  assert.ok(!query.mock.calls.some(call => call.arguments[0].includes("AdminLocations")));
   assert.equal(data.profileDraftJson, "{}");
 });
 
@@ -270,6 +270,19 @@ test("rejected profiles can be corrected and resubmitted into a new verification
     c.arguments[0].startsWith("UPDATE dbo.[Vendors]"),
   );
   assert.ok(Object.values(update.arguments[1].replacements).includes(4));
+});
+
+test("onboarding submits a business address without a registered-location dropdown selection", async (t) => {
+  const { query } = setup(t, { ...row, AdminLocationId: id });
+  const { adminLocationId: _registeredLocation, ...input } = fields;
+  const result = await saveProfile(input, ctx, true);
+  assert.match(result.message, /Pending Approval/);
+  const update = query.mock.calls.find(call => call.arguments[0].startsWith("UPDATE dbo.[Vendors]"));
+  assert.doesNotMatch(update.arguments[0], /AdminLocationId/);
+  assert.ok(!query.mock.calls.some(call => call.arguments[0].includes("FROM dbo.AdminLocations")));
+  const address = writes(query).find(call => call.arguments[0].includes("INSERT INTO dbo.[VendorLocations]"));
+  for (const value of ["1 Main Road", "Pune", "Maharashtra", "India", "411001"])
+    assert.ok(Object.values(address.arguments[1].replacements).includes(value));
 });
 
 test("stale writes, missing documents and review/approved/suspended edits fail before mutation", async (t) => {

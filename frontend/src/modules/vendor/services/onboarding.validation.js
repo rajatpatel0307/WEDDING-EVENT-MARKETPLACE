@@ -16,7 +16,6 @@ export function verificationStepErrors(step, fields, documents = []) {
   if (step === 1 && !fields.categories.length)
     errors.push("Select at least one service category.");
   if (step === 2) {
-    if (!fields.adminLocationId) errors.push("Select an active registered business / service location.");
     for (const [key, label] of [
       ["address", "Street address"],
       ["city", "City"],
