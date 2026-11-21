@@ -86,6 +86,17 @@ export function createCommunicationRouter({
       return counts;
     }),
   );
+  r.get(
+    "/overview/conversations",
+    handle(async (q) => {
+      const result = await s.adminConversationOverview(q.query, q.ctx);
+      await n.query(
+        "INSERT dbo.AuditLogs(UserId,ActionType,EntityType,IPAddress) VALUES(:user,'COMMUNICATION_PARTICIPANTS_VIEWED','Communication',:ip)",
+        { user: q.ctx.auth.user.id, ip: q.ip },
+      );
+      return result;
+    }),
+  );
   // Admin role alone never grants private conversation access.
   r.use((q, res, next) => {
     try {

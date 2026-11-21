@@ -40,6 +40,37 @@ export async function membership(id, ctx, tx, lock = false) {
   return c;
 }
 const lower = (v) => String(v).toLowerCase();
+// Operational metadata only. Private messages still require participant access.
+export async function adminConversationOverview(input, ctx) {
+  requireRole(ctx, "ADMIN");
+  const { page, q } = z.object({
+    page: z.coerce.number().int().min(1).max(10000).default(1),
+    q: z.string().trim().max(100).default(""),
+  }).parse(input);
+  const pageSize = 10;
+  const replacements = {
+    search: `%${q.replace(/[\[\]%_]/g, (character) => `[${character}]`)}%`,
+    offset: (page - 1) * pageSize,
+    pageSize,
+  };
+  const from = `FROM dbo.Conversations c
+    JOIN dbo.Users u ON u.UserId=c.CustomerId
+    JOIN dbo.Vendors v ON v.VendorId=c.VendorId
+    LEFT JOIN dbo.Events e ON e.EventId=c.EventId
+    LEFT JOIN dbo.Booking b ON b.BookingId=c.BookingId
+    WHERE c.IsActive=1 AND (CONCAT(u.FirstName,' ',u.LastName) LIKE :search
+      OR v.BusinessName LIKE :search OR e.EventName LIKE :search OR b.BookingNumber LIKE :search)`;
+  const [count] = await query(`SELECT COUNT(*) AS total ${from}`, replacements);
+  const rows = await query(`SELECT c.ConversationId AS id,c.CustomerId AS customerId,c.VendorId AS vendorId,
+    LTRIM(RTRIM(CONCAT(u.FirstName,' ',u.LastName))) AS customerName,v.BusinessName AS vendorName,
+    e.EventName AS eventName,b.BookingNumber AS bookingNumber,
+    COALESCE(c.LastMessageAt,c.CreatedAt) AS updatedAt,
+    (SELECT COUNT(*) FROM dbo.Messages m WHERE m.ConversationId=c.ConversationId AND m.DeletedAt IS NULL) AS messageCount
+    ${from}
+    ORDER BY COALESCE(c.LastMessageAt,c.CreatedAt) DESC,c.ConversationId DESC
+    OFFSET :offset ROWS FETCH NEXT :pageSize ROWS ONLY`, replacements);
+  return { rows, total: count.total, page, pageSize, hasMore: page * pageSize < count.total };
+}
 export async function conversationDetails(id, ctx) {
   await membership(id, ctx);
   const user = requireAuth(ctx);

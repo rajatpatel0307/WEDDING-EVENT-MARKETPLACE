@@ -46,6 +46,61 @@ test("membership binds the JWT user and denies a foreign customer, vendor and ad
     /c.CustomerId=:user OR v.UserId=:user/,
   );
 });
+
+test("admin participant overview rejects other roles and invalid pages before querying", async (t) => {
+  const sql = t.mock.method(sequelize, "query", async () => []);
+  await assert.rejects(() => s.adminConversationOverview({}, { auth: null }), /sign in/);
+  await assert.rejects(() => s.adminConversationOverview({}, ctx), /Access denied/);
+  await assert.rejects(() => s.adminConversationOverview({}, { auth: { user: { ...user, roles: [{ code: "VENDOR", active: true }] } } }), /Access denied/);
+  const admin = { auth: { user: { ...user, roles: [{ code: "ADMIN", active: true }] } } };
+  for (const input of [{ page: 0 }, { page: 1.5 }, { page: 10001 }, { q: "a".repeat(101) }]) {
+    await assert.rejects(() => s.adminConversationOverview(input, admin));
+  }
+  assert.equal(sql.mock.callCount(), 0);
+});
+
+test("admin participant overview paginates metadata and escapes search wildcards", async (t) => {
+  const row = { id, customerId: user.id, vendorId: randomUUID(), customerName: "Test Customer", vendorName: "Test Vendor", eventName: "Wedding", bookingNumber: null, updatedAt: "2026-01-01T00:00:00Z", messageCount: 0 };
+  const sql = t.mock.method(sequelize, "query", async statement => statement.startsWith("SELECT COUNT(*) AS total") ? [{ total: 21 }] : [row]);
+  const admin = { auth: { user: { ...user, roles: [{ code: "ADMIN", active: true }] } } };
+  const result = await s.adminConversationOverview({ page: "2", q: "  50%_[  " }, admin);
+  assert.deepEqual(result, { rows: [row], total: 21, page: 2, pageSize: 10, hasMore: true });
+  for (const call of sql.mock.calls) {
+    const [statement, options] = call.arguments;
+    assert.equal(options.replacements.search, "%50[%][_][[]%");
+    assert.equal(options.replacements.offset, 10);
+    assert.equal(options.replacements.pageSize, 10);
+    assert.match(statement, /c\.IsActive=1/);
+    assert.doesNotMatch(statement, /MessageText|AttachmentUrl|Email|Phone|ProfilePhotoUrl/);
+  }
+  assert.match(sql.mock.calls[1].arguments[0], /ORDER BY COALESCE\(c\.LastMessageAt,c\.CreatedAt\) DESC,c\.ConversationId DESC/);
+  assert.match(sql.mock.calls[1].arguments[0], /m\.DeletedAt IS NULL/);
+  const lastPage = await s.adminConversationOverview({ page: 3 }, admin);
+  assert.equal(lastPage.hasMore, false);
+});
+
+test("participant overview REST route is admin-only and audited while private chat stays restricted", async (t) => {
+  let who = user;
+  const app = express();
+  app.use(createCommunicationRouter({ authenticateRequest: async () => ({ user: who }) }));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const sql = t.mock.method(sequelize, "query", async statement => statement.startsWith("SELECT COUNT(*) AS total") ? [{ total: 0 }] : []);
+  const denied = await fetch(`${base}/overview/conversations`, { headers: { "X-Communication-Role": "Customer" } });
+  assert.equal(denied.status, 403);
+  assert.equal(sql.mock.callCount(), 0);
+  who = { ...user, roles: [{ code: "ADMIN", active: true }] };
+  const allowed = await fetch(`${base}/overview/conversations`, { headers: { "X-Communication-Role": "Admin" } });
+  assert.equal(allowed.status, 200);
+  assert.deepEqual((await allowed.json()).data, { rows: [], total: 0, page: 1, pageSize: 10, hasMore: false });
+  assert.ok(sql.mock.calls.some(call => call.arguments[0].includes("COMMUNICATION_PARTICIPANTS_VIEWED") && call.arguments[1].replacements.user === user.id));
+  for (const path of ["/conversations", `/conversations/${id}`, `/conversations/${id}/messages`]) {
+    assert.equal((await fetch(base + path, { headers: { "X-Communication-Role": "Admin" } })).status, 403);
+  }
+  assert.equal(sql.mock.callCount(), 3);
+});
 test("database write failure never broadcasts success", async (t) => {
   const emissions = [];
   setRealtimeServer({

@@ -80,6 +80,7 @@ Base: `/api/communication`. JSON responses use `{success:true,data:...}`. Errors
 | GET | `/notification-preferences` | `{chatEnabled,bookingEnabled,quotationEnabled}`. |
 | PUT | `/notification-preferences` | Same three booleans, with strict validation. |
 | GET | `/overview` | Admin-only aggregate counts; access is audited. No private message bodies or attachments. |
+| GET | `/overview/conversations` | Admin-only active conversation participants, event/booking names, non-deleted message counts and last activity. Search `q` by customer/vendor/event/booking; `page` returns 10 rows with `{rows,total,page,pageSize,hasMore}`. Access is audited. Private message bodies and attachments remain participant-only. |
 
 The existing `/api/customer/conversations...` and `/api/vendor/conversations...` routes remain compatible; they invoke the same service, ownership checks, limits and persistence. Their historical list shape is retained, bounded to the first 30 rows. The new screen uses the paginated API. Legacy callers without a client key receive a generated key; reliable client retries must supply their own stable GUID. Conversation-level read/delivery endpoints are intentionally used instead of a duplicate message-level read API.
 
@@ -159,7 +160,7 @@ Optional chat notifications respect both user preference and per-conversation mu
 
 Customer/vendor APIs require current session and role. Vendor communication also requires approved, active vendor status. Reading, sending, room joins, receipts, attachment operations, archive/mute and deletion check backend membership. SQL replacements bind all user-controlled values; queries never interpolate request-supplied identifiers. React renders message content as text, preserving literal text without interpreting HTML. Errors omit SQL, credentials and internal stack traces.
 
-Admin role does not authorize private conversations. The generic admin message resource, vendor message collection, and customer message collection are denied; corresponding message navigation tabs are removed. No exceptional message-support access is introduced. The admin overview contains aggregate metrics only and writes an audit entry. The existing admin audit tools remain available. Pending delivery counts mean recipients have not acknowledged messages, not that database saves failed. Email/push failure monitoring is omitted because those communication channels are not configured.
+Admin role does not authorize private conversations. The generic admin message resource, vendor message collection, and customer message collection are denied; corresponding message navigation tabs are removed. No exceptional message-support access is introduced. The admin overview shows aggregate metrics and a searchable, paginated list of active customer/vendor participants with activity metadata. Overview and participant-list access write audit entries; private message content and attachments remain unavailable to admins. The existing admin audit tools remain available. Pending delivery counts mean recipients have not acknowledged messages, not that database saves failed. Email/push failure monitoring is omitted because those communication channels are not configured.
 
 ## Verification
 
