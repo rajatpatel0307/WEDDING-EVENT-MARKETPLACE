@@ -182,7 +182,9 @@ export default function AdminSidebar({
       <nav>
         {adminNavigation.map((group) => (
           <div
-            className="ad-nav-group mb-[15px]"
+            className="ad-nav-group mb-[15px] border-t border-[#edf0ec] pt-3 first:border-t-0 first:pt-0"
+            role="group"
+            aria-label={group.label}
             key={group.label}
           >
             {/* Static group heading, no dropdown */}

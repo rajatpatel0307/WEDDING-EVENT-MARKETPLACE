@@ -77,14 +77,25 @@ const navigationGroups = [
     items: [
       ["reviews", "Reviews", Star],
       ["wishlists", "Wishlists", Heart],
+    ],
+  },
+  {
+    label: "COMMUNICATION",
+    items: [
       ["communication-overview", "Communication Overview", MessagesSquare],
       ["notifications", "Notifications", Bell],
+      ["contact-inquiries", "Contact Inquiries", MessagesSquare],
+    ],
+  },
+  {
+    label: "PROMOTIONS",
+    items: [
       ["coupons", "Coupons", TicketPercent],
       ["offers", "Offers", BadgePercent],
     ],
   },
   {
-    label: "SYSTEM",
+    label: "EVENTS & LOCATIONS",
     items: [
       ["events", "Events", CalendarDays],
       ["customer-addresses", "Customer Addresses", CalendarDays],
@@ -93,9 +104,18 @@ const navigationGroups = [
       ["service-locations", "Service Coverage", CalendarDays],
       ["event-locations", "Event Locations", CalendarDays],
       ["guests", "Event Guests", ContactRound],
+    ],
+  },
+  {
+    label: "CONTENT",
+    items: [
       ["media", "Media", Image],
       ["content", "Content Management", FileText],
-      ["contact-inquiries", "Contact Inquiries", MessagesSquare],
+    ],
+  },
+  {
+    label: "SYSTEM",
+    items: [
       ["privacy-requests", "Privacy Requests", ScrollText],
       ["audit-logs", "Audit Logs", ScrollText],
       ["settings", "Settings", Settings],
@@ -133,10 +153,7 @@ export const adminNavigation = [
       .filter(([path]) => !paymentNavigation.some(([paymentPath]) => paymentPath === path) || path === "payments")
       .map((item) => item[0] === "payments" ? ["payments", "All Payments", CreditCard] : item),
   },
-  {
-    label: "SYSTEM",
-    items: [...navigationGroups[5].items, ...navigationGroups[6].items],
-  },
+  ...navigationGroups.slice(5),
 ];
 export const resourceTitle = (key) =>
   key.startsWith("orders/") ? "Order details" :
