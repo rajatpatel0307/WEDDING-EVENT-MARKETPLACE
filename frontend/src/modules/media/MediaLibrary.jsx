@@ -56,7 +56,7 @@ function Badge({ children }) {
     </span>
   );
 }
-export function MediaPreview({ title, close, children }) {
+export function MediaPreview({ title, close, children, fitImage = false }) {
   const ref = useRef(null),
     id = useId();
   useEffect(() => {
@@ -67,7 +67,7 @@ export function MediaPreview({ title, close, children }) {
   return (
     <dialog
       ref={ref}
-      className="mm-dialog [&&]:w-[min(850px,calc(100%_-_32px))] [&&]:max-h-[90dvh] [&&]:overflow-auto [&&]:border [&&]:border-[#dce5d7] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:bg-white [&&]:text-[#354b3b] [&&]:fixed [&&]:inset-0 [&&]:m-auto [&&]:z-[2100] [&&::backdrop]:bg-[#14271cb3] max-[600.001px]:[&&]:p-[16px] mm-module min-w-0 text-[#354b3b] [font-family:inherit] text-[14px] leading-[1.5] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#6f916b] [&_:focus-visible]:outline-offset-3"
+      className={`mm-dialog [&&]:w-[min(850px,calc(100%_-_32px))] [&&]:max-h-[90dvh] ${fitImage ? "[&&]:h-[min(720px,90dvh)] [&&]:overflow-hidden [&&[open]]:flex [&&]:flex-col [&&]:gap-4" : "[&&]:overflow-auto"} [&&]:border [&&]:border-[#dce5d7] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:bg-white [&&]:text-[#354b3b] [&&]:fixed [&&]:inset-0 [&&]:m-auto [&&]:z-[2100] [&&::backdrop]:bg-[#14271cb3] max-[600.001px]:[&&]:p-[16px] mm-module min-w-0 text-[#354b3b] [font-family:inherit] text-[14px] leading-[1.5] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#6f916b] [&_:focus-visible]:outline-offset-3`}
       aria-labelledby={id}
       onSubmit={(e) => e.stopPropagation()}
       onCancel={(e) => {
@@ -75,12 +75,12 @@ export function MediaPreview({ title, close, children }) {
         close();
       }}
     >
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <h2 id={id} className="text-xl font-semibold">
+      <div className={`${fitImage ? "shrink-0" : "mb-5"} flex items-center justify-between gap-3`}>
+        <h2 id={id} className={`text-xl font-semibold${fitImage ? " [&&]:m-0 [&&]:min-w-0 [&&]:truncate [&&]:text-xl" : ""}`} title={fitImage ? title : undefined}>
           {title}
         </h2>
         <button
-          className={button}
+          className={`${button} shrink-0`}
           onClick={close}
           type="button"
           aria-label="Close dialog"
@@ -99,13 +99,16 @@ export function ImageLightbox({ images, index = 0, close }) {
     <MediaPreview
       title={image.fileName || image.name || "Image preview"}
       close={close}
+      fitImage
     >
-      <img
-        className="mm-full [&&]:w-full [&&]:max-h-[65dvh] [&&]:object-contain [&&]:bg-[#f3f5ee] rounded-xl"
-        src={mediaContent(image.id, "gallery")}
-        alt={image.fileName || "Gallery image"}
-      />
-      <div className="mt-4 flex items-center justify-between">
+      <div className="min-h-0 flex-1 overflow-hidden rounded-xl bg-[#f3f5ee]">
+        <img
+          className="mm-full [&&]:block [&&]:h-full [&&]:w-full [&&]:max-h-full [&&]:object-contain"
+          src={mediaContent(image.id, "gallery")}
+          alt={image.fileName || "Gallery image"}
+        />
+      </div>
+      <div className="flex shrink-0 items-center justify-between gap-3">
         <button type="button"
           className={button}
           onClick={() =>

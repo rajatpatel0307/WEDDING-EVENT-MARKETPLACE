@@ -217,6 +217,7 @@ export default function VendorHeader({
   // ============================================
 
   const [profileOpen, setProfileOpen] = useState(false);
+  const [failedProfilePhoto, setFailedProfilePhoto] = useState(null);
 
   const [logoutError, setLogoutError] = useState("");
 
@@ -632,11 +633,20 @@ export default function VendorHeader({
               className="
                 flex h-9 w-9 shrink-0
                 items-center justify-center
-                rounded-full bg-[#273e35]
+                overflow-hidden rounded-full bg-[#273e35]
                 text-sm font-bold text-white
               "
             >
-              {vendorInitial}
+              {user?.profilePhotoUrl && user.profilePhotoUrl !== failedProfilePhoto ? (
+                <img
+                  src={user.profilePhotoUrl}
+                  alt="Profile"
+                  className="h-full w-full rounded-full object-cover"
+                  onError={() => setFailedProfilePhoto(user.profilePhotoUrl)}
+                />
+              ) : (
+                vendorInitial
+              )}
             </span>
 
             {/* Vendor Name */}
