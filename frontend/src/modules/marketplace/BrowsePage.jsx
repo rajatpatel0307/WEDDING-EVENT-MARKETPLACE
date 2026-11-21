@@ -55,6 +55,7 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull, saved
       : item.id,
     saved = !!wishState.find(type, target);
   const image = savedItem && type === "Vendor" && item.cover ? item.cover : item.image;
+  const startingPrice = Number(item.startingPrice);
   const [messageBusy, setMessageBusy] = useState(false);
   const offer = offerState(item);
   const path =
@@ -189,6 +190,13 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull, saved
             </div>
           </>
         )}
+        {type === "Vendor" && (
+          <p className="relative z-20 mt-3 flex cursor-default select-text items-baseline gap-1.5 border-t border-[#efe7e1] pt-3 text-sm text-[#99868e]">
+            {Number.isFinite(startingPrice) && startingPrice > 0
+              ? <>From <strong className="text-lg font-semibold text-rose-brand">{money(startingPrice)}</strong></>
+              : <span>Price on request</span>}
+          </p>
+        )}
         {(type !== "Vendor" || toggleCompare) && <div className="cm-card-footer [.customer-marketplace_&]:flex [.customer-marketplace_&]:items-center [.customer-marketplace_&]:justify-between [.customer-marketplace_&]:gap-[10px] [.customer-marketplace_&]:mt-[9px] [.customer-marketplace_&]:pt-[6px] [.customer-marketplace_&]:border-t [.customer-marketplace_&]:border-t-[#efe7e1]">
           {toggleCompare && (
             <label className="cm-compare-label relative z-20 [.customer-marketplace_&]:flex [.customer-marketplace_&]:items-center [.customer-marketplace_&]:mt-[14px] [.customer-marketplace_&_input]:w-[16px] [.customer-marketplace.cm-browse_&]:gap-[7px] [.customer-marketplace.cm-browse_&]:mt-0 [.customer-marketplace.cm-browse_&]:text-[10px] [.customer-marketplace.cm-browse_&]:text-[#9c8b86] [.customer-marketplace.cm-browse_&_input]:w-[13px] [.customer-marketplace.cm-browse_&_input]:h-[13px] [.customer-marketplace.cm-browse_&_input]:[accent-color:#8c414e]">
@@ -218,7 +226,7 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull, saved
               {messageBusy ? "Opening chat…" : "Send message"}
             </button>
             <Link
-              to={`${path}#vendor-services`}
+              to={`/services?${new URLSearchParams({ vendor: item.vendorId || item.id })}`}
               aria-label={`Explore services by ${item.name}`}
               className="flex min-h-11 min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-[#edf5ef] px-2 py-2.5 text-xs font-semibold text-[#35634d] hover:bg-[#e0eee4]"
             >
@@ -300,6 +308,7 @@ export default function BrowsePage({ embedded = false }) {
   const query = new URLSearchParams();
   for (const k of [
     "q",
+    "vendor",
     "city",
     "postalCode",
     "min",
@@ -606,6 +615,8 @@ export default function BrowsePage({ embedded = false }) {
                       ?.name || v
                   : k === "city"
                     ? `Location: ${catalog.data?.cities.find(l => String(l.id).toLowerCase() === v.toLowerCase() || l.city === v)?.name || "Unavailable location"}`
+                    : k === "vendor"
+                      ? `Vendor: ${results.data?.rows[0]?.vendor || "Selected vendor"}`
                     : `${{ q: "Search", min: "Min price", max: "Max price", postalCode: "Postal code", serviceType: "Service type", date: "Event date", guests: "Guests", rating: "Rating" }[k] || k}: ${v}`}{" "}
               <X size={12} />
             </button>
@@ -638,7 +649,9 @@ export default function BrowsePage({ embedded = false }) {
             <div>
               <p className="cm-kicker [.customer-marketplace_&]:tracking-[0.16em] [.customer-marketplace_&]:text-[11px] [.customer-marketplace_&]:uppercase [.customer-marketplace_&]:text-[#8c414e]">YOUR CELEBRATION STARTS HERE</p>
               <h1>
-                {matched?.name ||
+                {params.has("vendor")
+                  ? `${matched?.name || "Services"} by ${results.data?.rows[0]?.vendor || "this vendor"}`
+                  : matched?.name ||
                   (kind === "vendors"
                     ? "Meet the professionals"
                     : kind === "packages"

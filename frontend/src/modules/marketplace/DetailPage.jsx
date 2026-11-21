@@ -347,7 +347,7 @@ function PriceEstimate({ services }) {
   );
 }
 
-function VendorEnquiry({ vendor, services, onMessage, busy, contextId, exploreHref = "#vendor-services", exploreLabel = "Explore services" }) {
+function VendorEnquiry({ vendor, services, onMessage, busy, contextId, exploreHref = `/services?${new URLSearchParams({ vendor: vendor.id })}`, exploreLabel = "Explore services" }) {
   const { user, notify } = useAuth();
   const navigate = useNavigate();
   const draftKey = `vendor-enquiry:${contextId || vendor.id}`;

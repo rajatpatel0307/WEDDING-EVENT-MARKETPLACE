@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { sequelize } from "../src/config/database.js";
 import { marketplaceSearch } from "../src/modules/customers/marketplace-search.js";
-import { publicDiscover, discoveryInput } from "../src/modules/customers/workspace.discovery.js";
+import { publicDiscover, discoveryInput, wishlist } from "../src/modules/customers/workspace.discovery.js";
 
 test("homepage search recognizes category names and common professional names", () => {
   for (const [query, expected] of [
@@ -54,4 +54,49 @@ test("vendor and package searches include their service categories", async (t) =
 test("the results API accepts the same search length as the homepage form", () => {
   assert.equal(discoveryInput.safeParse({ q: "a".repeat(200) }).success, true);
   assert.equal(discoveryInput.safeParse({ q: "a".repeat(201) }).success, false);
+});
+
+test("vendor filters restrict both result counts and rows while retaining public visibility rules", async (t) => {
+  const query = t.mock.method(sequelize, "query", async sql => sql.includes("COUNT(*) AS total") ? [{ total: 0 }] : []);
+  const vendor = "C654E7F2-F568-4BDD-BC1E-80C01670D0AE";
+  for (const type of ["services", "packages", "vendors"]) {
+    const result = await publicDiscover({ vendor, type, page: 2 });
+    assert.equal(result.vendor, vendor);
+    for (const { arguments: [sql, { replacements }] } of query.mock.calls.slice(-2)) {
+      assert.match(sql, /v\.VendorId=:vendor/);
+      assert.equal(replacements.vendor, vendor);
+      assert.equal(replacements.offset, 12);
+      assert.match(sql, /v\.VerificationStatus='Approved'/);
+      if (type !== "vendors") assert.match(sql, /s\.ApprovalStatus='Approved'/);
+    }
+  }
+});
+
+test("vendor filters reject invalid IDs before querying and remain optional", async (t) => {
+  const query = t.mock.method(sequelize, "query", async sql => sql.includes("COUNT(*) AS total") ? [{ total: 0 }] : []);
+  await assert.rejects(publicDiscover({ vendor: "not-a-vendor-id" }));
+  assert.equal(query.mock.callCount(), 0);
+  await publicDiscover({});
+  for (const { arguments: [sql] } of query.mock.calls) assert.doesNotMatch(sql, /v\.VendorId=:vendor/);
+});
+
+test("vendor cards and saved vendors receive the lowest positive published service price", async (t) => {
+  const query = t.mock.method(sequelize, "query", async sql => sql.includes("COUNT(*) AS total") ? [{ total: 0 }] : []);
+  await publicDiscover({ type: "vendors" });
+  await wishlist({ auth: { user: {
+    id: "1D375B0C-89D2-F111-8F30-14133304FA5C", active: true, emailVerified: true,
+    roles: [{ code: "CUSTOMER", active: true }],
+  } } });
+  for (const { arguments: [sql] } of query.mock.calls.slice(1)) {
+    assert.match(sql, /SELECT MIN\(prices\.Price\)/);
+    assert.match(sql, /AS startingPrice/);
+    assert.match(sql, /vs\.VendorId=v\.VendorId AND vs\.IsActive=1 AND vs\.ApprovalStatus='Approved'/);
+    assert.match(sql, /ac\.IsActive=1 AND prices\.Price>0/);
+    assert.match(sql, /vs\.PricingType<>'CustomQuote'/);
+    assert.match(sql, /COALESCE\(NULLIF\(vs\.BasePrice,0\),vs\.MinimumPrice\)/);
+    assert.match(sql, /IN\('Sell','Both'\) AND ac\.AllowBuyOnline=1/);
+    assert.match(sql, /IN\('Book','Both'\) AND ac\.AllowBooking=1/);
+    assert.match(sql, /TRY_CONVERT\(decimal\(18,2\),JSON_VALUE\(vs\.DetailsJson,'\$\.offer\.sell\.price'\)\)/);
+    assert.match(sql, /TRY_CONVERT\(decimal\(18,2\),JSON_VALUE\(vs\.DetailsJson,'\$\.offer\.book\.price'\)\)/);
+  }
 });

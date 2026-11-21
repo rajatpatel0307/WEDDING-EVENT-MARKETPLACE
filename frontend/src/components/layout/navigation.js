@@ -1,7 +1,7 @@
 export const publicNavigation = [
   ["Home", "/"],
   ["Services", "/services"],
-  ["Venues", "/venues"],
+  // ["Venues", "/venues"],
   ["Vendors", "/vendors"],
   ["Packages", "/packages"],
   ["Offers", "/offers"],
