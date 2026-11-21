@@ -135,6 +135,33 @@ export function ImageLightbox({ images, index = 0, close }) {
 export function MediaGallery({ type, id, variant, fallbackImage, title }) {
   const state = useMedia(`/${type}/${id}/media`),
     [index, setIndex] = useState(null);
+  if (variant === "profile") {
+    const images = state.data?.rows || [];
+    const image = images[0];
+    return (
+      <section aria-label="Image gallery" className="relative isolate aspect-[4/3] min-h-[260px] overflow-hidden rounded-xl bg-[#eee5df] sm:aspect-[1.8/1] sm:min-h-0">
+        {state.loading ? (
+          <div role="status" className="flex h-full animate-pulse items-center justify-center gap-3 text-sm text-[#9a7f89]"><Images size={24} aria-hidden="true" />Loading gallery…</div>
+        ) : image ? (
+          <button type="button" onClick={() => setIndex(0)} className="group block h-full w-full overflow-hidden" aria-label={`Open photo gallery for ${title || "vendor"}`}>
+            <img src={mediaContent(image.id, "gallery")} alt={image.fileName || `${title || "Vendor"} cover`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]" fetchPriority="high" />
+          </button>
+        ) : fallbackImage ? (
+          <img src={fallbackImage} alt={title || "Vendor cover"} className="h-full w-full object-cover" fetchPriority="high" />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#f4e8e9] via-[#f6efea] to-[#e8eee7] px-6 pb-10 text-center">
+            <span className="flex size-14 items-center justify-center rounded-full border border-white/80 bg-white/60 text-[#a97d88]"><Images size={25} strokeWidth={1.2} aria-hidden="true" /></span>
+            <h2 className="font-serif text-2xl text-[#765461]">A beautiful day starts here.</h2>
+            <p className="max-w-xs text-sm leading-6 text-[#947e87]">{state.error ? "Photos are unavailable right now." : "The vendor’s photos will appear here."}</p>
+            <a href="#listing-booking" className="text-sm font-medium text-rose-brand underline underline-offset-4">Ask the vendor for photos</a>
+          </div>
+        )}
+        {image && <button type="button" onClick={() => setIndex(0)} className="absolute right-4 bottom-14 inline-flex items-center gap-2 rounded-lg border border-white/80 bg-white/95 px-3.5 py-2.5 text-sm font-medium text-[#624852] shadow-sm hover:bg-white sm:right-5"><Images size={16} aria-hidden="true" />View all {images.length} {images.length === 1 ? "photo" : "photos"}</button>}
+        {state.error && fallbackImage && <span role="status" className="absolute top-3 left-3 right-3 rounded-lg bg-white/95 px-3 py-2 text-sm text-[#765461]">Additional photos are unavailable right now.</span>}
+        {index !== null && images[index] && <ImageLightbox images={images} index={index} close={() => setIndex(null)} />}
+      </section>
+    );
+  }
   if (variant === "editorial") {
     const images = state.data?.rows || [];
     return (
