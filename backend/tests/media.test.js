@@ -11,7 +11,8 @@ import {
   reorderInput,
 } from "../src/modules/media/media.validation.js";
 import { createMediaRouter } from "../src/modules/media/media.routes.js";
-import { variants, folderFor } from "../src/modules/media/media.policy.js";
+import { isPublic, mutate, upload } from "../src/modules/media/media.service.js";
+import { variants, folderFor, publicMedia } from "../src/modules/media/media.policy.js";
 test("images are fully decoded, dimensions bounded, and metadata stripped before storage", async () => {
   const png = await sharp({
     create: { width: 20, height: 12, channels: 3, background: "#43744c" },
@@ -157,7 +158,9 @@ test("private image responses allow the same-site frontend while retaining owner
     StorageKey: `cloudinary:image:authenticated:wedding-marketplace/services/gallery/${id}`,
     PublicId: `wedding-marketplace/services/gallery/${id}`,
   };
-  t.mock.method(sequelize, "query", async () => [row]);
+  t.mock.method(sequelize, "query", async (sql) =>
+    sql.startsWith("SELECT * FROM dbo.Media") ? [row] : [],
+  );
   for (const key of ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"]) {
     const previous = process.env[key];
     process.env[key] = "test";
@@ -200,4 +203,86 @@ test("private image responses allow the same-site frontend while retaining owner
   const metadata = await fetch(`${base}/media/metadata`);
   assert.equal(metadata.status, 401);
   assert.equal(metadata.headers.get("Cross-Origin-Resource-Policy"), "same-origin");
+});
+
+test("completed images ignore legacy approval states while parent visibility and deletion still apply", async (t) => {
+  const query = t.mock.method(sequelize, "query", async () => [{ ServiceId: randomUUID() }]);
+  const row = { EntityType: "Service", EntityId: randomUUID(), UploadStatus: "Ready" };
+  for (const ModerationStatus of ["Pending", "Approved", "Rejected", "Hidden"]) {
+    assert.equal(await isPublic({ ...row, ModerationStatus }), true);
+  }
+  assert.equal(await isPublic({ ...row, UploadStatus: "Uploading" }), false);
+  assert.equal(await isPublic({ ...row, UploadStatus: "Failed" }), false);
+  assert.equal(await isPublic({ ...row, DeletedAt: new Date() }), false);
+  query.mock.mockImplementation(async () => []);
+  assert.equal(await isPublic(row), false, "draft or unavailable parents stay private");
+  assert.doesNotMatch(publicMedia(), /ModerationStatus/);
+  assert.match(publicMedia(), /UploadStatus='Ready'.*DeletedAt IS NULL/);
+  for (const action of ["approve", "reject", "hide", "restore"]) {
+    await assert.rejects(() => mutate(randomUUID(), action, {}, {}), /Unsupported media action/);
+  }
+});
+
+test("image uploads complete without review and immediately project vendor logos and covers", async (t) => {
+  const owner = randomUUID(), entityId = randomUUID();
+  const ctx = { req: { ip: "127.0.0.1" }, auth: { user: {
+    id: owner, active: true, emailVerified: true,
+    roles: [{ code: "ADMIN", active: true }, { code: "CUSTOMER", active: true }],
+  } } };
+  const image = await sharp({ create: { width: 20, height: 12, channels: 3, background: "#43744c" } }).png().toBuffer();
+  for (const key of ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"]) {
+    const previous = process.env[key];
+    process.env[key] = "test";
+    t.after(() => previous === undefined ? delete process.env[key] : process.env[key] = previous);
+  }
+  t.mock.method(globalThis, "fetch", async (_url, options) => new Response(JSON.stringify({
+    public_id: options.body.get("public_id"), secure_url: "https://res.cloudinary.com/test/image.webp", eager: [],
+  })));
+  const tx = { fixture: true };
+  t.mock.method(sequelize, "transaction", async (fn) => fn(tx));
+  let row;
+  const query = t.mock.method(sequelize, "query", async (sql, options) => {
+    if (sql.startsWith("SELECT v.*") || sql.startsWith("SELECT s.*") || sql.startsWith("SELECT p.*") || sql.startsWith("SELECT r.*"))
+      return [{ OwnerId: owner, VendorId: entityId, ServiceId: entityId, BookingId: entityId, CreatedAt: new Date(), ModerationStatus: "Approved", ApprovalStatus: "Approved", VerificationStatus: "Approved", IsActive: true }];
+    if (sql.startsWith("SELECT * FROM dbo.Booking"))
+      return [{ CustomerId: owner, BookingStatus: "Completed" }];
+    if (sql.startsWith("SELECT COUNT(*)")) return [{ total: 0 }];
+    if (sql.startsWith("UPDATE dbo.Media SET ErrorMessage='UPLOAD_IN_PROGRESS'")) return [{ id: row.MediaId }];
+    if (sql.startsWith("INSERT INTO dbo.[Media]")) {
+      const columns = sql.match(/\(([^)]+)\)/)[1].split(",").map((key) => key.replace(/[\[\]]/g, ""));
+      row = Object.fromEntries(columns.map((key, i) => [key, options.replacements[`v${i}`]]));
+      return [{ id: row.MediaId }];
+    }
+    if (sql.startsWith("UPDATE dbo.[Media]")) {
+      for (const [, column, key] of sql.matchAll(/\[([^\]]+)\]=:(v\d+)/g)) row[column] = options.replacements[key];
+      return [];
+    }
+    if (sql.startsWith("SELECT * FROM dbo.Media") && !sql.includes("RequestKey")) return [row];
+    if (sql.startsWith("SELECT TOP(1) MediaId FROM dbo.Media")) return [{ MediaId: row.MediaId }];
+    return [];
+  });
+  for (const [entityType, purpose] of [["Vendor", "Logo"], ["Vendor", "Cover"], ["Service", "Gallery"], ["Package", "Gallery"], ["Review", "Gallery"], ["Admin", "Banner"]]) {
+    query.mock.resetCalls();
+    const result = await upload({
+      entityType, entityId: entityType === "Admin" ? owner : entityId, purpose,
+      requestKey: randomUUID(), fileName: "image.png", mimeType: "image/png", base64: image.toString("base64"),
+    }, ctx);
+    assert.equal(result.uploadStatus, "Ready");
+    assert.equal(row.UploadStatus, "Ready");
+    assert.equal(await isPublic({ ...row, EntityType: "Admin" }), true);
+    await mutate(result.id, "rename", { fileName: "Celebration image" }, ctx);
+    const calls = query.mock.calls;
+    if (entityType === "Vendor") {
+      const column = purpose === "Logo" ? "LogoUrl" : "CoverImageUrl";
+      const projection = calls.find((c) => c.arguments[0].startsWith(`UPDATE dbo.Vendors SET ${column}=`));
+      assert.ok(projection.arguments[1].replacements.url.includes(result.id));
+      assert.equal(projection.arguments[1].transaction, tx);
+    }
+    for (const call of calls.filter((c) => c.arguments[0].startsWith("UPDATE dbo.Services"))) {
+      assert.doesNotMatch(call.arguments[0], /ApprovalStatus=|IsActive=/);
+    }
+    for (const call of calls.filter((c) => c.arguments[0].startsWith("UPDATE dbo.Reviews"))) {
+      assert.doesNotMatch(call.arguments[0], /ModerationStatus=|IsPublished=/);
+    }
+  }
 });

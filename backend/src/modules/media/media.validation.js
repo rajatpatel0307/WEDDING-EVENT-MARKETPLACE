@@ -42,14 +42,12 @@ export const pageInput = z.object({
   category: z.enum(types).optional(),
   vendorId: z.guid().optional(),
   entityId: z.guid().optional(),
-  status: z.enum(["Pending", "Approved", "Rejected", "Hidden"]).optional(),
   uploadStatus: z.enum(["Uploading", "Ready", "Failed"]).optional(),
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
   deleted: z.enum(["true", "false"]).default("false"),
   orphaned: z.enum(["true", "false"]).optional(),
 });
-export const noteInput = z.object({ reason: text(2000).default("") }).strict();
 export const renameInput = z.object({ fileName: text(255).min(1) }).strict();
 export const reorderInput = z
   .object({

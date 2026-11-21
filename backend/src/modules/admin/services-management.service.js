@@ -454,7 +454,7 @@ export async function submit(id, input, ctx) {
       items: [],
     });
     const [media] = await repo.select(
-      "SELECT COUNT(*) AS total FROM dbo.Media WHERE EntityType='Service' AND EntityId=:id AND MediaType='Image' AND DeletedAt IS NULL AND UploadStatus='Ready' AND ModerationStatus NOT IN('Hidden','Rejected')",
+      "SELECT COUNT(*) AS total FROM dbo.Media WHERE EntityType='Service' AND EntityId=:id AND MediaType='Image' AND DeletedAt IS NULL AND UploadStatus='Ready'",
       { id },
       tx,
     );
@@ -545,7 +545,7 @@ export async function duplicate(id, input, ctx) {
           EntityId: next,
           MediaType: "Image",
           MediaUrl: image.StorageKey ? (await import('../media/media.service.js')).mediaUrl(nextImage) : image.MediaUrl,
-          OwnerId: image.OwnerId || null, UploadedBy: ctx.auth.user.id, VendorId:row.VendorId,MediaCategory:'Service',Purpose:image.Purpose||'Gallery',PublicId:image.PublicId||null,StorageKey:image.StorageKey||null,SecureUrl:image.SecureUrl||null,ResourceType:image.ResourceType||'image',DeliveryType:image.DeliveryType||'upload',MimeType:image.MimeType||null,FileName:image.FileName||null,FileSize:image.FileSize||null,Width:image.Width||null,Height:image.Height||null,VariantsJson:image.VariantsJson||null,ModerationStatus:'Pending',
+          OwnerId: image.OwnerId || null, UploadedBy: ctx.auth.user.id, VendorId:row.VendorId,MediaCategory:'Service',Purpose:image.Purpose||'Gallery',PublicId:image.PublicId||null,StorageKey:image.StorageKey||null,SecureUrl:image.SecureUrl||null,ResourceType:image.ResourceType||'image',DeliveryType:image.DeliveryType||'upload',MimeType:image.MimeType||null,FileName:image.FileName||null,FileSize:image.FileSize||null,Width:image.Width||null,Height:image.Height||null,VariantsJson:image.VariantsJson||null,ModerationStatus:'Approved',
           IsPrimary: image.IsPrimary,
           SortOrder: image.SortOrder,
         },

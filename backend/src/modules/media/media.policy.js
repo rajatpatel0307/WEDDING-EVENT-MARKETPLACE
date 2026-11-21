@@ -33,4 +33,4 @@ export const purposesFor = {
 export const folderFor = (type, purpose) =>
   `wedding-marketplace/${{ Vendor: "vendors", Service: "services", Package: "packages", Review: "reviews", Admin: "admin" }[type]}/${purpose.toLowerCase()}`;
 export const publicMedia = (alias = "m") =>
-  `${alias}.ModerationStatus='Approved' AND ${alias}.UploadStatus='Ready' AND ${alias}.DeletedAt IS NULL`;
+  `${alias}.UploadStatus='Ready' AND ${alias}.DeletedAt IS NULL`;

@@ -35,7 +35,7 @@ const row = {
   ApprovalCycle: 2,
   IsActive: false,
 };
-function setup(t, service = row, vendor = {}, notificationFails = false, images = []) {
+function setup(t, service = row, vendor = {}, notificationFails = false) {
   const tx = { fixture: true };
   t.mock.method(sequelize, "transaction", async (fn) => fn(tx));
   const runQuery = async (sql) => {
@@ -134,56 +134,13 @@ test("approval activates and stores admin identity with audit and notification i
   );
   assert.ok(calls.every((c) => c.arguments[1].transaction === tx));
 });
-test("approval publishes pending service photos with the same reviewer, timestamp and transaction", async (t) => {
-  for (const status of ["Pending", "UnderReview"]) {
-    await t.test(status, async (st) => {
-      const imageIds = [owner, admin];
-      const { query, tx } = setup(st, { ...row, ApprovalStatus: status }, {}, false, imageIds.map((id) => ({ id })));
-      await decide(id, "approve", {}, ctx);
-      const calls = query.mock.calls;
-      const photoUpdate = calls.find((c) => c.arguments[0].startsWith("UPDATE dbo.Media"));
-      const [sql, options] = photoUpdate.arguments;
-      assert.match(sql, /EntityType='Service' AND EntityId=:id AND MediaType='Image'/);
-      assert.match(sql, /ModerationStatus='Pending' AND UploadStatus='Ready' AND DeletedAt IS NULL/);
-      assert.equal(options.replacements.id, id);
-      assert.equal(options.replacements.admin, admin);
-      const serviceUpdate = calls.find((c) => c.arguments[0].startsWith("UPDATE dbo.[Services]"));
-      assert.ok(Object.values(serviceUpdate.arguments[1].replacements).includes(options.replacements.now));
-      const audits = calls.filter((c) => c.arguments[1].replacements?.action === "MEDIA_APPROVE");
-      assert.deepEqual(audits.map((c) => c.arguments[1].replacements.id), imageIds);
-      for (const audit of audits) {
-        assert.equal(audit.arguments[1].replacements.user, admin);
-        assert.deepEqual(JSON.parse(audit.arguments[1].replacements.next), {
-          status: "Approved", serviceId: id, source: "ServiceApproval",
-        });
-      }
-      assert.ok(calls.every((c) => c.arguments[1].transaction === tx));
-    });
-  }
-});
-
-test("other service decisions leave photo moderation unchanged", async (t) => {
-  for (const action of ["reject", "start-review", "suspend", "deactivate", "activate"]) {
+test("service decisions leave individual images unchanged", async (t) => {
+  for (const action of ["approve", "reject", "start-review", "suspend", "deactivate", "activate"]) {
     await t.test(action, async (st) => {
-      const { query } = setup(st, { ...row, ApprovalStatus: ["reject", "start-review"].includes(action) ? "Pending" : "Approved" });
+      const { query } = setup(st, { ...row, ApprovalStatus: ["approve", "reject", "start-review"].includes(action) ? "Pending" : "Approved" });
       await decide(id, action, action === "reject" ? { reason: "Invalid pricing" } : {}, ctx);
       assert.ok(!query.mock.calls.some((c) => c.arguments[0].startsWith("UPDATE dbo.Media")));
-    });
-  }
-});
-
-test("photo approval or audit failures abort the service decision before notifications", async (t) => {
-  for (const failure of ["update", "audit"]) {
-    await t.test(failure, async (st) => {
-      const { query, runQuery } = setup(st, row, {}, false, [{ id: owner }]);
-      query.mock.mockImplementation(async (sql, options) => {
-        if ((failure === "update" && sql.startsWith("UPDATE dbo.Media")) ||
-            (failure === "audit" && options.replacements?.action === "MEDIA_APPROVE"))
-          throw new Error("Photo approval failed");
-        return runQuery(sql, options);
-      });
-      await assert.rejects(() => decide(id, "approve", {}, ctx), /Photo approval failed/);
-      assert.ok(!query.mock.calls.some((c) => c.arguments[0].startsWith("INSERT INTO dbo.Notifications")));
+      assert.ok(!query.mock.calls.some((c) => c.arguments[1].replacements?.action === "MEDIA_APPROVE"));
     });
   }
 });

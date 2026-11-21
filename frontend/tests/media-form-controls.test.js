@@ -17,9 +17,11 @@ test("embedded service galleries expose image uploads without submitting the ser
         }
         if (id.endsWith("/src/modules/media/api.js")) {
           return `
+            let rows = [];
+            export const setRows = value => { rows = value; };
             export const useMedia = () => ({ data: {
-              rows: [], total: 0, pageSize: 24, maxMb: 5,
-              categories: [], statuses: []
+              rows, total: rows.length, pageSize: 24, maxMb: 5,
+              categories: [], vendors: [], services: [], packages: [], reviews: []
             }});
             export const mediaContent = id => id;
             export const mediaRequest = () => {};
@@ -54,6 +56,7 @@ test("embedded service galleries expose image uploads without submitting the ser
         for (const [, attributes] of addImages) {
           assert.equal(attributes.includes("disabled="), disabled, "locked services retain upload restrictions");
         }
+        assert.doesNotMatch(html, /Moderation|Approved|Rejected|Hidden|>Approve</);
       }
     }
     const uploader = renderToStaticMarkup(createElement("form", null,
@@ -63,6 +66,20 @@ test("embedded service galleries expose image uploads without submitting the ser
     ));
     assert.match(uploader, /type="file"/);
     assert.match(uploader, /<button type="button"[^>]*>[\s\S]*Upload selected images/);
+    const { setRows } = await server.ssrLoadModule("/src/modules/media/api.js");
+    for (const role of ["Vendor", "Admin"]) {
+      for (const status of ["Pending", "Approved", "Rejected", "Hidden"]) {
+        setRows([{ id: "logo", entityId: "vendor", entityType: "Vendor", purpose: "Logo",
+          status, uploadStatus: "Ready", fileName: "Business logo", thumbnail: "/logo.png" }]);
+        const html = renderToStaticMarkup(createElement(MemoryRouter, null,
+          createElement(MediaLibrary, { role }),
+        ));
+        assert.match(html, /Business logo/);
+        assert.match(html, /Set primary/);
+        assert.match(html, /Delete/);
+        assert.doesNotMatch(html, /Moderation|Approved|Rejected|Hidden|>Approve<|>Reject<|>Hide<|>Restore</);
+      }
+    }
   } finally {
     await server.close();
   }

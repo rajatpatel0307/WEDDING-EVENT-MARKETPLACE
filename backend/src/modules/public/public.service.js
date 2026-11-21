@@ -10,7 +10,7 @@ const locationSql = registeredLocation("loc");
 const imageSql = (
   entity,
 ) => `OUTER APPLY (SELECT TOP (1) MediaUrl FROM dbo.Media m
-  WHERE m.EntityId = ${entity} AND m.MediaType = 'Image' AND LOWER(m.EntityType) = 'service' AND m.ModerationStatus='Approved' AND m.UploadStatus='Ready' AND m.DeletedAt IS NULL
+  WHERE m.EntityId = ${entity} AND m.MediaType = 'Image' AND LOWER(m.EntityType) = 'service' AND m.UploadStatus='Ready' AND m.DeletedAt IS NULL
   ORDER BY m.IsPrimary DESC, m.SortOrder, m.MediaId) img`;
 const select = (sql, replacements = {}) =>
   sequelize.query(sql, { type: QueryTypes.SELECT, replacements });

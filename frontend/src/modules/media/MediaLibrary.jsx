@@ -10,7 +10,6 @@ import {
   RefreshCw,
   X,
   Upload,
-  ShieldCheck,
   Info,
   Search,
   SlidersHorizontal,
@@ -50,15 +49,9 @@ function State({ state }) {
     </p>
   ) : null;
 }
-function Badge({ children, tone }) {
-  const colors = {
-    Approved: "bg-[#edf6ee] text-[#3c7048]",
-    Pending: "bg-[#fff6e3] text-[#91691e]",
-    Rejected: "bg-[#fff0ed] text-[#ad5345]",
-    Hidden: "bg-[#f0f1f3] text-[#68717b]",
-  };
+function Badge({ children }) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${colors[tone] || "bg-[#eef3e9] text-[#5c7152]"}`}>
+    <span className="inline-flex items-center gap-1 rounded-full bg-[#eef3e9] px-2.5 py-1 text-[11px] font-medium text-[#5c7152]">
       {children}
     </span>
   );
@@ -469,8 +462,8 @@ export function MediaUploader({
         {busy ? "Uploading…" : "Upload selected images"}
       </button>
       <p className="text-xs text-[#77866f]">
-        Images remain private until their image and entity publishing policies
-        allow public access.
+        Images are available once uploaded. Public visibility follows the
+        associated vendor, service or review's publishing settings.
       </p>
     </div>
   );
@@ -512,7 +505,7 @@ function MediaDetails({ id, close }) {
             <dd>{date(r.createdAt)}</dd>
             <dt>Status</dt>
             <dd>
-              {r.status} · {r.uploadStatus}
+              {r.uploadStatus}
             </dd>
             <dt>Cleanup</dt>
             <dd>{r.cleanupStatus}</dd>
@@ -522,7 +515,6 @@ function MediaDetails({ id, close }) {
               Uploaded by {u.name} · {u.email}
             </p>
           ))}
-          {r.reason && <p className="my-3 text-sm">Moderation: {r.reason}</p>}
           <h3 className="my-4 font-semibold">History</h3>
           {r.history?.length ? (
             r.history.map((h, i) => (
@@ -577,18 +569,6 @@ function Confirmation({ action, close, done }) {
           {action.description ||
             "This action is checked for ownership, publishing policy and retention, and recorded in the audit history."}
         </p>
-        {action.reason && (
-          <label className="block text-sm">
-            Moderation reason
-            <textarea
-              className={`${input} mt-2`}
-              name="reason"
-              rows={3}
-              required={action.required}
-              maxLength={2000}
-            />
-          </label>
-        )}
         {action.rename && (
           <label className="block text-sm">
             Display file name
@@ -642,7 +622,6 @@ export default function MediaLibrary({
       category: fixedTarget?.entityType || params.get("category") || "",
       entityId: fixedTarget?.entityId || params.get("entityId") || "",
       vendorId: "",
-      status: "",
       uploadStatus: "",
       from: "",
       to: "",
@@ -675,7 +654,7 @@ export default function MediaLibrary({
   const clearFilters = () => {
     setFilters((old) => ({
       ...old, category: fixedTarget?.entityType || "", entityId: fixedTarget?.entityId || "",
-      vendorId: "", status: "", uploadStatus: "", from: "", to: "", deleted: "false", orphaned: "",
+      vendorId: "", uploadStatus: "", from: "", to: "", deleted: "false", orphaned: "",
     }));
     setPage(1);
   };
@@ -721,12 +700,8 @@ export default function MediaLibrary({
           ? `/media/${r.id}`
           : name === "primary"
             ? `/media/${r.id}/primary`
-            : name === "rename"
-              ? `/media/${r.id}`
-              : `/admin/media/${r.id}/${name}`,
+            : `/media/${r.id}`,
       method: name === "delete" ? "DELETE" : "PATCH",
-      reason: ["approve", "reject", "hide", "restore"].includes(name),
-      required: ["reject", "hide"].includes(name),
       rename: name === "rename",
       fileName: r.fileName,
       description:
@@ -851,15 +826,6 @@ export default function MediaLibrary({
                   <span className="ml-2 text-xs">{bytes(c.bytes)}</span>
                 </div>
               ))}
-              {stats.data.statuses.map((s) => (
-                <button type="button"
-                  className={button}
-                  key={s.status}
-                  onClick={() => choose("status", s.status)}
-                >
-                  {s.status}: {s.count}
-                </button>
-              ))}
             </div>
           )}
         </>
@@ -923,19 +889,6 @@ export default function MediaLibrary({
               </select>
             </label>
           )}
-          <label className="text-xs">
-            Moderation
-            <select
-              className={`${input} mt-1`}
-              value={filters.status}
-              onChange={(e) => choose("status", e.target.value)}
-            >
-              <option value="">All statuses</option>
-              {["Pending", "Approved", "Rejected", "Hidden"].map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-          </label>
           <label className="text-xs">
             Upload state
             <select
@@ -1090,7 +1043,7 @@ export default function MediaLibrary({
             <div className="space-y-3 p-4">
               <div className="flex flex-wrap gap-2">
                 <Badge>{r.entityType}</Badge>
-                <Badge tone={r.deletedAt ? "Retained" : r.status}>{r.deletedAt ? "Retained" : r.status}</Badge>
+                {r.deletedAt && <Badge>Retained</Badge>}
                 {r.uploadStatus !== "Ready" && <Badge>{r.uploadStatus}</Badge>}
                 {r.primary && !embedded && <Badge>Primary</Badge>}
               </div>
@@ -1184,19 +1137,6 @@ export default function MediaLibrary({
                     Delete
                   </button>
                 )}
-                {role === "Admin" &&
-                  !r.deletedAt &&
-                  r.uploadStatus === "Ready" &&
-                  ["approve", "reject", "hide", "restore"].map((name) => (
-                    <button type="button"
-                      className={button}
-                      key={name}
-                      onClick={() => perform(r, name)}
-                    >
-                      <ShieldCheck size={13} />
-                      {name[0].toUpperCase() + name.slice(1)}
-                    </button>
-                  ))}
               </div>
             </div>
           </article>

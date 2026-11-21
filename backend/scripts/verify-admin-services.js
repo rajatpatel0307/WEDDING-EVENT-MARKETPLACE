@@ -290,7 +290,7 @@ try {
       await request(`/services/${id}`, "DELETE", version(d));
       passed = true;
       console.log(
-        "PASS: admin REST create/edit; server filtering/sorting; pricing and tax; metadata; items; packages; image moderation; submission/approval; stale edits; withdrawn listings; performance; CSV; duplication; deletion; audit history.",
+        "PASS: admin REST create/edit; server filtering/sorting; pricing and tax; metadata; items; packages; image management; submission/approval; stale edits; withdrawn listings; performance; CSV; duplication; deletion; audit history.",
       );
     } finally {
       if (server) await new Promise((r) => server.close(r));

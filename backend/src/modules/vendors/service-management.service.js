@@ -429,7 +429,7 @@ export async function submit(serviceId, input, ctx) {
       items: [],
     });
     const [media] = await repo.select(
-      "SELECT TOP(1) MediaId FROM dbo.Media WHERE EntityType='Service' AND EntityId=:serviceId AND MediaType='Image' AND DeletedAt IS NULL AND UploadStatus='Ready' AND ModerationStatus NOT IN('Hidden','Rejected')",
+      "SELECT TOP(1) MediaId FROM dbo.Media WHERE EntityType='Service' AND EntityId=:serviceId AND MediaType='Image' AND DeletedAt IS NULL AND UploadStatus='Ready'",
       { serviceId },
       tx,
     );
@@ -571,7 +571,7 @@ export async function duplicate(serviceId, ctx) {
           EntityId: next,
           MediaType: "Image",
           MediaUrl: image.StorageKey ? (await import('../media/media.service.js')).mediaUrl(nextImage) : image.MediaUrl,
-          OwnerId: image.OwnerId || null, UploadedBy: ctx.auth.user.id, VendorId:row.VendorId,MediaCategory:'Service',Purpose:image.Purpose||'Gallery',PublicId:image.PublicId||null,StorageKey:image.StorageKey||null,SecureUrl:image.SecureUrl||null,ResourceType:image.ResourceType||'image',DeliveryType:image.DeliveryType||'upload',MimeType:image.MimeType||null,FileName:image.FileName||null,FileSize:image.FileSize||null,Width:image.Width||null,Height:image.Height||null,VariantsJson:image.VariantsJson||null,ModerationStatus:'Pending',
+          OwnerId: image.OwnerId || null, UploadedBy: ctx.auth.user.id, VendorId:row.VendorId,MediaCategory:'Service',Purpose:image.Purpose||'Gallery',PublicId:image.PublicId||null,StorageKey:image.StorageKey||null,SecureUrl:image.SecureUrl||null,ResourceType:image.ResourceType||'image',DeliveryType:image.DeliveryType||'upload',MimeType:image.MimeType||null,FileName:image.FileName||null,FileSize:image.FileSize||null,Width:image.Width||null,Height:image.Height||null,VariantsJson:image.VariantsJson||null,ModerationStatus:'Approved',
           IsPrimary: image.IsPrimary,
           SortOrder: image.SortOrder,
         },
@@ -690,7 +690,7 @@ export async function images(serviceId, input, ctx, removeId = null) {
   version(initial, body.expectedUpdatedAt);
   if (body.base64) {
     const [count] = await repo.select(
-      "SELECT COUNT_BIG(*) AS total FROM dbo.Media WHERE EntityType='Service' AND EntityId=:serviceId AND MediaType='Image' AND DeletedAt IS NULL AND UploadStatus='Ready' AND ModerationStatus NOT IN('Hidden','Rejected')",
+      "SELECT COUNT_BIG(*) AS total FROM dbo.Media WHERE EntityType='Service' AND EntityId=:serviceId AND MediaType='Image' AND DeletedAt IS NULL AND UploadStatus='Ready'",
       { serviceId },
     );
     if (Number(count?.total || 0) >= 30)

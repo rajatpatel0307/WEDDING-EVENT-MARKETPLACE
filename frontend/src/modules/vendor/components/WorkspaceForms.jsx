@@ -26,7 +26,7 @@ import {
 } from "../services/workspace.api";
 
 export function ImageUpload({kind,src}) {
- return <div className="grid gap-3">{src&&<img src={src} alt={`${kind} image`} className="max-h-44 w-full rounded-lg object-cover"/>}<Link to="/vendor/media?category=Vendor" className="rounded-lg border border-[#dce5d7] px-3 py-2 text-center text-sm">Manage images in your Media Library</Link><p className="text-xs text-[#77866f]">New images are published after moderation.</p></div>;
+ return <div className="grid gap-3">{src&&<img src={src} alt={`${kind} image`} className="max-h-44 w-full rounded-lg object-cover"/>}<Link to="/vendor/media?category=Vendor" className="rounded-lg border border-[#dce5d7] px-3 py-2 text-center text-sm">Manage images in your Media Library</Link><p className="text-xs text-[#77866f]">New images are available as soon as the upload finishes.</p></div>;
 }
 const inputNumber = (value) =>
   value === "" || value === null || value === undefined ? null : Number(value);

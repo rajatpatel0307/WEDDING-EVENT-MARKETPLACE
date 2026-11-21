@@ -169,11 +169,11 @@ async function validateMedia(content, tx) {
   ].filter(Boolean);
   for (const id of new Set(ids)) {
     const [row] = await db.select(
-      "SELECT MediaId FROM dbo.Media WHERE MediaId=:id AND EntityType='Admin' AND ModerationStatus='Approved' AND UploadStatus='Ready' AND DeletedAt IS NULL",
+      "SELECT MediaId FROM dbo.Media WHERE MediaId=:id AND EntityType='Admin' AND UploadStatus='Ready' AND DeletedAt IS NULL",
       { id },
       tx,
     );
-    if (!row) fail("Choose an approved platform image from the Media Library.");
+    if (!row) fail("Choose an uploaded platform image from the Media Library.");
   }
   if (
     content.contact.mapUrl &&

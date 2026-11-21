@@ -19,8 +19,6 @@ import {
   publicPredicate as publicReview,
   assertEligibility,
 } from "../reviews/reviews.policy.js";
-import { reconcile } from "../reviews/reviews.service.js";
-import { createNotification } from "../notifications/notification-center.service.js";
 const insert = async (values, tx) =>
   (await db.insert({ table: "Media", id: "MediaId" }, values, tx))[0];
 const update = (id, values, tx) =>
@@ -175,11 +173,10 @@ export async function lockMedia(id, ctx, tx, write = false) {
 }
 async function touch(entity, ctx, tx) {
   const user = actor(ctx);
-  if (entity.type === "Review" && isAdmin(user)) return user;
   if (["Service", "Package"].includes(entity.type)) {
     const id = entity.type === "Service" ? entity.id : entity.row.ServiceId;
     await db.select(
-      "UPDATE dbo.Services SET ApprovalStatus=CASE WHEN ApprovalStatus='Approved' THEN 'Draft' ELSE ApprovalStatus END,IsActive=CASE WHEN ApprovalStatus='Approved' THEN 0 ELSE IsActive END,UpdatedAt=SYSUTCDATETIME() WHERE ServiceId=:id",
+      "UPDATE dbo.Services SET UpdatedAt=SYSUTCDATETIME() WHERE ServiceId=:id",
       { id },
       tx,
     );
@@ -189,23 +186,16 @@ async function touch(entity, ctx, tx) {
       "Services",
       id,
       { status: entity.row.ApprovalStatus },
-      {
-        status:
-          entity.row.ApprovalStatus === "Approved"
-            ? "Draft"
-            : entity.row.ApprovalStatus,
-        mediaChanged: true,
-      },
+      { status: entity.row.ApprovalStatus, mediaChanged: true },
       tx,
     );
   }
   if (entity.type === "Review") {
     await db.select(
-      "UPDATE dbo.Reviews SET ModerationStatus='Pending',IsPublished=0,UpdatedAt=SYSUTCDATETIME() WHERE ReviewId=:id",
+      "UPDATE dbo.Reviews SET UpdatedAt=SYSUTCDATETIME() WHERE ReviewId=:id",
       { id: entity.id },
       tx,
     );
-    await reconcile(entity.vendorId, tx);
     await db.auditAdmin(
       ctx,
       "REVIEW_EDITED",
@@ -215,22 +205,6 @@ async function touch(entity, ctx, tx) {
       { imagesUpdated: true },
       tx,
     );
-    const [vendor] = await db.select(
-      "SELECT UserId FROM dbo.Vendors WHERE VendorId=:id",
-      { id: entity.vendorId },
-      tx,
-    );
-    if (vendor)
-      await createNotification(
-        {
-          userId: vendor.UserId,
-          title: "Customer updated review photos",
-          message: "Updated review photos are awaiting moderation.",
-          referenceType: "Review",
-          referenceId: entity.id,
-        },
-        tx,
-      );
   }
   if (entity.type === "Vendor")
     await db.select(
@@ -245,7 +219,7 @@ async function syncVendor(row, tx) {
     return;
   const column = row.Purpose === "Logo" ? "LogoUrl" : "CoverImageUrl";
   const [current] = await db.select(
-    "SELECT TOP(1) MediaId FROM dbo.Media WHERE EntityType='Vendor' AND EntityId=:id AND Purpose=:purpose AND ModerationStatus='Approved' AND UploadStatus='Ready' AND DeletedAt IS NULL ORDER BY IsPrimary DESC,SortOrder,CreatedAt DESC",
+    "SELECT TOP(1) MediaId FROM dbo.Media WHERE EntityType='Vendor' AND EntityId=:id AND Purpose=:purpose AND UploadStatus='Ready' AND DeletedAt IS NULL ORDER BY IsPrimary DESC,SortOrder,CreatedAt DESC",
     { id: row.EntityId, purpose: row.Purpose },
     tx,
   );
@@ -358,7 +332,8 @@ export async function upload(input, ctx, providedTx) {
         Height: file.height,
         ResourceType: "image",
         DeliveryType: "authenticated",
-        ModerationStatus: b.entityType === "Review" ? "Approved" : "Pending",
+        // Retained for compatibility with older database schemas.
+        ModerationStatus: "Approved",
         UploadStatus: "Uploading",
         RequestKey: b.requestKey,
         RequestHash: hash,
@@ -449,6 +424,7 @@ export async function upload(input, ctx, providedTx) {
       }
       if (!(providedTx && b.entityType === "Review"))
         await touch(entity, ctx, tx);
+      await syncVendor(media, tx);
       if (b.entityType === "Review") {
         await db.insert(
           { table: "ReviewImages", id: "ReviewImageId" },
@@ -482,8 +458,7 @@ export async function upload(input, ctx, providedTx) {
     return {
       id: media.MediaId,
       uploadStatus: "Ready",
-      message:
-        "Image uploaded. Publishing follows entity and image moderation.",
+      message: "Image uploaded successfully.",
     };
   } catch (error) {
     await update(
@@ -542,7 +517,6 @@ export async function queueRolledBack(rows) {
       MimeType: row.MimeType,
       FileSize: row.FileSize,
       UploadStatus: "Failed",
-      ModerationStatus: "Hidden",
       DeletedAt: new Date(),
       ErrorMessage: "Owning transaction rolled back.",
       CleanupStatus: "Pending",
@@ -551,26 +525,22 @@ export async function queueRolledBack(rows) {
   }
 }
 export async function mutate(id, action, input, ctx, providedTx) {
+  if (!["rename", "primary", "delete"].includes(action))
+    fail("Unsupported media action.");
   const user = actor(ctx),
     admin = isAdmin(user),
     b =
       action === "rename"
         ? validation.renameInput.parse(input)
-        : validation.noteInput.parse(input || {});
-  if (["approve", "reject", "hide", "restore"].includes(action) && !admin)
-    fail("Administrator access required.", 403);
-  if (["reject", "hide"].includes(action) && !b.reason)
-    fail("A moderation reason is required.");
+        : {};
   const transact = (fn) => (providedTx ? fn(providedTx) : db.transaction(fn));
   return transact(async (tx) => {
     const { row, entity } = await lockMedia(id, ctx, tx, !admin);
     if (row.DeletedAt) fail("Deleted media cannot be changed.", 409);
-    if (entity.missing && ["approve", "restore", "primary"].includes(action))
+    if (entity.missing && action === "primary")
       fail("The associated entity no longer exists.", 409);
     if (row.UploadStatus !== "Ready" && action !== "delete")
       fail("Only completed uploads can be changed.", 409);
-    if (!admin && row.ModerationStatus === "Hidden" && action !== "delete")
-      fail("Moderator-hidden media cannot be republished.", 409);
     let values = { UpdatedAt: new Date() };
     if (action === "delete")
       values = {
@@ -597,46 +567,17 @@ export async function mutate(id, action, input, ctx, providedTx) {
       values.IsPrimary = 1;
     } else if (action === "rename") {
       values.FileName = b.fileName;
-    } else {
-      const status = {
-        approve: "Approved",
-        restore: "Approved",
-        reject: "Rejected",
-        hide: "Hidden",
-      }[action];
-      if (!status) fail("Unsupported media action.");
-      values = {
-        ...values,
-        ModerationStatus: status,
-        ModeratedBy: user.id,
-        ModeratedAt: new Date(),
-        ModerationReason: b.reason,
-      };
     }
     await update(id, values, tx);
-    if (
-      row.UploadStatus === "Ready" &&
-      (!admin || ["primary", "rename", "delete"].includes(action))
-    )
+    if (row.UploadStatus === "Ready")
       await touch(entity, ctx, tx);
-    if (
-      row.EntityType === "Vendor" &&
-      ["Logo", "Cover"].includes(row.Purpose) &&
-      ["approve", "restore"].includes(action)
-    ) {
-      await db.select(
-        "UPDATE dbo.Media SET IsPrimary=CASE WHEN MediaId=:id THEN 1 ELSE 0 END WHERE EntityType='Vendor' AND EntityId=:entity AND Purpose=:purpose",
-        { id, entity: row.EntityId, purpose: row.Purpose },
-        tx,
-      );
-    }
     if (entity.type === "Vendor") await syncVendor(row, tx);
     await audit(
       ctx,
       action.toUpperCase(),
       id,
-      { status: row.ModerationStatus, primary: row.IsPrimary },
-      { ...values, reason: b.reason },
+      { primary: row.IsPrimary },
+      values,
       tx,
     );
     return {
@@ -684,7 +625,6 @@ async function publicEntity(row) {
 }
 export async function isPublic(row) {
   return (
-    row.ModerationStatus === "Approved" &&
     row.UploadStatus === "Ready" &&
     !row.DeletedAt &&
     (await publicEntity(row))
@@ -722,7 +662,6 @@ const safe = (row) => ({
   size: Number(row.FileSize || 0),
   width: row.Width,
   height: row.Height,
-  status: row.ModerationStatus,
   uploadStatus: row.UploadStatus,
   primary: !!row.IsPrimary,
   order: row.SortOrder,
@@ -749,7 +688,6 @@ export async function details(id, ctx) {
       "SELECT UserId,ActionType,OldValue,NewValue,CreatedAt FROM dbo.AuditLogs WHERE EntityType='Media' AND EntityId=:id ORDER BY CreatedAt DESC",
       { id },
     );
-    result.reason = row.ModerationReason;
   }
   return result;
 }
@@ -791,7 +729,6 @@ export async function list(input, ctx, publicTarget) {
     category: "MediaCategory",
     vendorId: "VendorId",
     entityId: "EntityId",
-    status: "ModerationStatus",
     uploadStatus: "UploadStatus",
   }))
     if (b[key]) {
@@ -870,9 +807,6 @@ export async function statistics(ctx) {
   const rows = await db.select(
     "SELECT MediaCategory AS category,COUNT_BIG(*) AS count,COALESCE(SUM(FileSize),0) AS bytes FROM dbo.Media WHERE DeletedAt IS NULL AND UploadStatus='Ready' GROUP BY MediaCategory",
   );
-  const statuses = await db.select(
-    "SELECT ModerationStatus AS status,COUNT_BIG(*) AS count FROM dbo.Media WHERE DeletedAt IS NULL AND UploadStatus='Ready' GROUP BY ModerationStatus",
-  );
   const [counts] = await db.select(
     "SELECT SUM(CASE WHEN UploadStatus='Failed' THEN 1 ELSE 0 END) AS failedUploads,SUM(CASE WHEN CleanupStatus IN('Pending','Failed','Blocked','Processing') THEN 1 ELSE 0 END) AS cleanupQueue,COUNT_BIG(*) AS retainedRecords FROM dbo.Media",
   );
@@ -887,10 +821,6 @@ export async function statistics(ctx) {
           count: 0,
           bytes: 0,
         },
-    ),
-    statuses: ["Pending", "Approved", "Rejected", "Hidden"].map(
-      (status) =>
-        statuses.find((r) => r.status === status) || { status, count: 0 },
     ),
     ...counts,
     ...storage,

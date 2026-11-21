@@ -377,7 +377,7 @@ async function enrich(rows, role) {
   if (!rows.length) return rows;
   const ids = rows.map((r) => r.id);
   const images = await db.select(
-    "SELECT i.ReviewId AS reviewId,i.ReviewImageId AS id,i.ImageName AS name FROM dbo.ReviewImages i JOIN dbo.Media m ON m.MediaId=i.MediaId WHERE i.ReviewId IN(:ids) AND m.DeletedAt IS NULL AND m.UploadStatus='Ready' AND m.ModerationStatus='Approved' ORDER BY m.SortOrder,i.ReviewImageId",
+    "SELECT i.ReviewId AS reviewId,i.ReviewImageId AS id,i.ImageName AS name FROM dbo.ReviewImages i JOIN dbo.Media m ON m.MediaId=i.MediaId WHERE i.ReviewId IN(:ids) AND m.DeletedAt IS NULL AND m.UploadStatus='Ready' ORDER BY m.SortOrder,i.ReviewImageId",
     { ids },
   );
   const responses = await db.select(

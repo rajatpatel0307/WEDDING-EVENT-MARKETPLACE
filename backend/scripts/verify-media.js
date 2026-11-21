@@ -12,6 +12,7 @@ import {
   processCleanup,
 } from "../src/modules/media/media.cleanup.js";
 import { createMediaRouter } from "../src/modules/media/media.routes.js";
+import { allocateBookingNumber } from "../src/modules/bookings/booking-numbers.js";
 const rollback = new Error("ROLLBACK_MEDIA_FIXTURES");
 let passed = false,
   checks = 0;
@@ -168,7 +169,7 @@ try {
         "INSERT dbo.Booking(BookingId,BookingNumber,EventId,CustomerId,VendorId,BookingDate,BookingStatus) VALUES(:id,:number,:event,:customer,:vendor,'2026-10-01','Completed')",
         {
           id: ids.booking,
-          number: `M-${ids.booking}`,
+          number: await allocateBookingNumber(tx),
           event: ids.event,
           customer: ids.customer,
           vendor: ids.vendor,
@@ -201,22 +202,6 @@ try {
         () => media.upload({ ...logoBody, purpose: "Cover" }, vendor),
         409,
       );
-      await assert.rejects(
-        () => media.content(logo.id, { auth: null }),
-        (e) => e.extensions?.code === "UNAUTHENTICATED",
-      );
-      checks++;
-      await denies(() => media.content(logo.id, foreign), 404);
-      equal(
-        (await media.content(logo.id, vendor, "thumb")).bytes.equals(webp),
-        true,
-      );
-      await media.mutate(
-        logo.id,
-        "approve",
-        { reason: "Verified business image" },
-        admin,
-      );
       equal(
         (await media.content(logo.id, { auth: null })).mimeType,
         "image/webp",
@@ -232,8 +217,6 @@ try {
           vendor,
         ),
         gallery = await media.upload(body("Vendor", ids.vendor), vendor);
-      await media.mutate(cover.id, "approve", {}, admin);
-      await media.mutate(gallery.id, "approve", {}, admin);
       await media.mutate(gallery.id, "primary", {}, vendor);
       equal((await media.details(gallery.id, vendor)).primary, true);
       await media.reorder(
@@ -263,7 +246,11 @@ try {
         body("Service", ids.service),
         vendor,
       );
-      await media.mutate(serviceImage.id, "approve", {}, admin);
+      await assert.rejects(() => media.content(serviceImage.id, { auth: null }),
+        (e) => e.extensions?.code === "UNAUTHENTICATED");
+      checks++;
+      await denies(() => media.content(serviceImage.id, foreign), 404);
+      equal((await media.content(serviceImage.id, vendor, "thumb")).bytes.equals(webp), true);
       equal(
         (await media.list({}, null, { type: "Service", id: ids.service }))
           .total,
@@ -286,9 +273,8 @@ try {
         "SELECT ApprovalStatus,IsActive FROM dbo.Services WHERE ServiceId=:id",
         { id: ids.service },
       );
-      equal(withdrawn.ApprovalStatus, "Draft");
-      equal(withdrawn.IsActive, false);
-      await media.mutate(secondImage.id, "approve", {}, admin);
+      equal(withdrawn.ApprovalStatus, "Approved");
+      equal(withdrawn.IsActive, true);
       await query(
         "UPDATE dbo.Services SET ApprovalStatus='Approved',IsActive=1 WHERE ServiceId=:id",
         { id: ids.service },
@@ -297,7 +283,6 @@ try {
         body("Package", ids.package, "Cover"),
         vendor,
       );
-      await media.mutate(packageImage.id, "approve", {}, admin);
       await query(
         "UPDATE dbo.Services SET ApprovalStatus='Approved',IsActive=1 WHERE ServiceId=:id",
         { id: ids.service },
@@ -333,21 +318,9 @@ try {
         (await media.list({}, null, { type: "Review", id: review.id })).total,
         1,
       );
-      await media.mutate(
-        reviewImage.id,
-        "hide",
-        { reason: "Individual image moderation" },
-        admin,
-      );
-      equal(
-        (await reviews.details(review.id, customer)).ModerationStatus,
-        "Approved",
-      );
-      equal(
-        (await media.list({}, null, { type: "Review", id: review.id })).total,
-        0,
-      );
-      await media.mutate(reviewImage.id, "restore", {}, admin);
+      await media.mutate(reviewImage.id, "rename", { fileName: "Updated celebration photo" }, customer);
+      equal((await reviews.details(review.id, customer)).ModerationStatus, "Approved");
+      equal((await media.list({}, null, { type: "Review", id: review.id })).total, 1);
       equal(
         (await reviews.list({}, customer, "Customer")).rows[0].images.length,
         1,
@@ -372,7 +345,6 @@ try {
         body("Admin", ids.admin, "Banner"),
         admin,
       );
-      await media.mutate(asset.id, "approve", {}, admin);
       await media.mutate(asset.id, "delete", {}, admin);
       await query(
         "UPDATE dbo.Media SET NextCleanupAt=DATEADD(day,-1,SYSUTCDATETIME()) WHERE MediaId=:id",
@@ -422,7 +394,7 @@ try {
       assert.ok(stats.categories.some((c) => c.category === "Review"));
       checks++;
       const info = await media.details(logo.id, admin);
-      assert.ok(info.history.length >= 2);
+      assert.ok(info.history.some((entry) => entry.ActionType === "MEDIA_UPLOADED"));
       checks++;
       const app = express();
       app.use(

@@ -298,7 +298,7 @@ function ContentEditor({ version, onSaved, onDirty, dirty }) {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     media = useContent(
-      "/admin/media?category=Admin&status=Approved&uploadStatus=Ready&pageSize=60",
+      "/admin/media?category=Admin&uploadStatus=Ready&pageSize=60",
     );
   const change = (field, value) => {
     setContent((c) => ({ ...c, [field]: value }));
@@ -404,7 +404,7 @@ function ContentEditor({ version, onSaved, onDirty, dirty }) {
       ) : null}
       {(about || !legal) && (
         <section className={`${editorPanel} grid gap-4 sm:grid-cols-2`}>
-          <div className="sm:col-span-2"><EditorSectionTitle title="Page visual" description="Choose an approved image and add an accessible description." Icon={LayoutTemplate} /></div>
+          <div className="sm:col-span-2"><EditorSectionTitle title="Page visual" description="Choose an uploaded image and add an accessible description." Icon={LayoutTemplate} /></div>
           <label className="flex min-w-0 flex-col gap-2 text-[12px] font-medium text-[#52675b]">
             Page image
             <select

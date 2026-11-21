@@ -121,10 +121,6 @@ export function createMediaRouter({ authenticateRequest = authenticate } = {}) {
   route("get", "/admin/media/:id", "Admin", (q, c) =>
     media.details(q.params.id, c),
   );
-  for (const action of ["approve", "reject", "hide", "restore"])
-    route("patch", `/admin/media/:id/${action}`, "Admin", (q, c) =>
-      media.mutate(q.params.id, action, q.body, c),
-    );
   for (const [path, type] of [
     ["services", "Service"],
     ["packages", "Package"],

@@ -818,7 +818,7 @@ export default function ServiceManagementDetails() {
             {!d.images.length && (
               <Empty
                 title="No service images"
-                description="Add images before submitting for approval."
+                description="Add and manage service images."
               />
             )}
           </>
@@ -924,7 +924,7 @@ export default function ServiceManagementDetails() {
               <p>
                 {dialog.kind === "image"
                   ? dialog.action === "delete"
-                    ? "Delete this image from the service? Approved content will require review again."
+                    ? "Delete this image from the service?"
                     : "Set this as the primary image?"
                   : dialog.kind === "remove-item"
                     ? `Remove “${dialog.record.ItemName}” from this service?`

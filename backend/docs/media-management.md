@@ -2,7 +2,7 @@
 
 > Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
 
-The module extends the existing `Media` table and Cloudinary upload utility. Vendor, service, package, review and administrator images share ownership checks, validation, storage, moderation, delivery, idempotency, audit and cleanup services. `ReviewImages` remains a compatibility relationship table linked to its canonical `Media` record; it is not a second upload system.
+The module extends the existing `Media` table and Cloudinary upload utility. Vendor, service, package, review and administrator images share ownership checks, validation, storage, delivery, idempotency, audit and cleanup services. `ReviewImages` remains a compatibility relationship table linked to its canonical `Media` record; it is not a second upload system.
 
 ## Setup and operation
 
@@ -53,17 +53,17 @@ Existing MSSQL/JWT/session configuration is reused. Sharp is the only new packag
 
 | Category | Owner and checks                                                                                                   | Public delivery                                                                                      |
 | -------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| Vendor   | Vendor's `UserId`; vendors manage their own approved, active business.                                             | Image approved/ready/undeleted; vendor and account approved/active.                                  |
-| Service  | Service → vendor → user. Draft editing follows the existing service policy.                                        | Image approved; service approved/active; category and vendor/account active.                         |
-| Package  | Package → service → vendor → user, checked on every write.                                                         | Image approved; package active and parent service/vendor publicly eligible.                          |
-| Review   | Review → customer; only its author with the customer role may upload/edit during the existing review window.       | Image approved **and** review approved/published/verified/undeleted with a completed, owned booking. |
-| Admin    | Uploader's administrator account for new platform uploads. Active administrators can moderate platform-wide media. | Image explicitly approved. Uploading a banner does not attach it to any website section.             |
+| Vendor   | Vendor's `UserId`; vendors manage their own approved, active business.                                             | Image ready/undeleted; vendor and account approved/active.                                  |
+| Service  | Service → vendor → user. Draft editing follows the existing service policy.                                        | Image ready/undeleted; service approved/active; category and vendor/account active.                         |
+| Package  | Package → service → vendor → user, checked on every write.                                                         | Image ready/undeleted; package active and parent service/vendor publicly eligible.                          |
+| Review   | Review → customer; only its author with the customer role may upload/edit during the existing review window.       | Image ready/undeleted **and** review approved/published/verified/undeleted with a completed, owned booking. |
+| Admin    | Uploader's administrator account for new platform uploads. Active administrators can manage platform-wide media. | Image ready/undeleted. Uploading a banner does not attach it to any website section.             |
 
-Owners can preview private images through authenticated delivery; administrators can inspect private images for moderation. Vendors cannot read another vendor's private media. Public visitors receive only approved, eligible images. Metadata details require ownership or administrator access. The active ADMIN role is the project's existing admin permission boundary; no fictitious media-specific permission claim is introduced.
+Owners can preview private images through authenticated delivery; administrators can inspect private images for management. Vendors cannot read another vendor's private media. Public visitors receive completed, undeleted images of publicly eligible entities. Metadata details require ownership or administrator access. The active ADMIN role is the project's existing admin permission boundary; no fictitious media-specific permission claim is introduced.
 
-Vendor logo/cover approval projects the selected image into existing vendor profile fields. Other vendor portfolio/gallery images remain in the library. Service/package image changes withdraw an approved service to Draft/inactive so it can follow the existing resubmission workflow. Image approval and parent-service approval are independent requirements; either can happen first. Rejected media remain visible to owners for correction. Review image changes send the parent review back to Pending, except an administrator's individual image moderation, which does not alter the customer's rating or review text.
+Vendor logo/cover uploads project the selected image into existing vendor profile fields immediately. Other vendor portfolio/gallery images remain in the library. Uploading, replacing, renaming, deleting or reordering images does not reset service or review approval. Vendor, service and review publishing requirements remain in force, with no separate image approval step.
 
-Each entity has ordered images and a primary selection. Vendor logos/covers are separate slots; a service/package has one primary across its purposes. Replacement preserves the previous primary/order and retains the previous record for safe cleanup. Renaming changes the display name and never changes storage identifiers. Moderator-hidden images cannot be made public by their owner.
+Each entity has ordered images and a primary selection. Vendor logos/covers are separate slots; a service/package has one primary across its purposes. Replacement preserves the previous primary/order and retains the previous record for safe cleanup. Renaming changes the display name and never changes storage identifiers.
 
 All writes use JWT sessions, exact-origin checks, `X-Media-Request: 1` (or the corresponding existing role request header), role checks, parameterized SQL, and entity ownership checks. Read limits are 240 requests/minute/IP; mutations are limited to 30. Private responses and image proxies use `Cache-Control: no-store` and `nosniff`.
 
@@ -86,12 +86,11 @@ Paths are relative to `/api`. Success is `{ "success": true, "data": ... }`; err
 | GET / POST   | `/admin/media`, `/admin/media/upload`                          | Admin aliases using the same service.                                                  |
 | GET          | `/admin/media/statistics`                                      | Database-derived category/status/failed/retained/storage metrics.                      |
 | GET / DELETE | `/admin/media/:id`                                             | Details or withdrawal.                                                                 |
-| PATCH        | `/admin/media/:id/{approve,reject,hide,restore}`               | Audited image moderation; rejection/hiding require `reason`.                           |
 | GET / POST   | `/services/:id/media`, `/packages/:id/media`                   | Public eligible listings; owner uploads.                                               |
 | DELETE       | `/services/:id/media/:mediaId`, `/packages/:id/media/:mediaId` | Validate both the requested entity and image.                                          |
 | GET          | `/vendors/:id/media`                                           | Public business gallery.                                                               |
 | GET / POST   | `/reviews/:id/images`                                          | Public eligible photos; author uploads.                                                |
-| DELETE       | `/reviews/:id/images/:imageId`                                 | Author withdrawal within review editing policy, or admin moderation.                   |
+| DELETE       | `/reviews/:id/images/:imageId`                                 | Author withdrawal within review editing policy, or admin management.                   |
 
 Vendor/service/package aliases force the entity type/ID from the route. Existing service-image APIs delegate to this implementation after their existing ownership/version checks. The old unassociated `/vendor/images` token upload is retired; business image controls link to the library, preventing unmoderated token URLs from bypassing the new policy. Account-authentication profile photos and protected vendor-document workflows are separate existing features and remain in place.
 
@@ -112,9 +111,9 @@ Example upload:
 }
 ```
 
-Purposes are category-specific: Vendor uses Logo/Cover/Gallery/Portfolio/Office/Team; Service and Package use Cover/Gallery/Portfolio; Review uses Gallery; Admin uses Banner/Category/Promotion/General. Admin platform uploads use the authenticated administrator's ID as `entityId`. Clients cannot submit owner IDs, storage public IDs, arbitrary URLs, transformation parameters, or moderation overrides.
+Purposes are category-specific: Vendor uses Logo/Cover/Gallery/Portfolio/Office/Team; Service and Package use Cover/Gallery/Portfolio; Review uses Gallery; Admin uses Banner/Category/Promotion/General. Admin platform uploads use the authenticated administrator's ID as `entityId`. Clients cannot submit owner IDs, storage public IDs, arbitrary URLs, transformation parameters, or storage overrides.
 
-Reordering sends `{ "entityType": "Service", "entityId": "...", "ids": ["..."] }`. Every current ready image must appear exactly once. Moderation sends `{ "reason": "..." }`.
+Reordering sends `{ "entityType": "Service", "entityId": "...", "ids": ["..."] }`. Every current ready image must appear exactly once.
 
 ## Validation, Cloudinary and optimization
 
@@ -142,11 +141,13 @@ The library's storage figure sums recorded sizes of successful originals, dedupl
 
 ## Legacy records and Home Page protection
 
+The legacy image moderation columns remain only for database compatibility and are not used in image delivery, filtering, details or statistics. Approval endpoints and controls have been removed.
+
 Migration 025 backfills ownership from existing relationships, imports vendor logo/cover references, and links existing review images to `Media`. Existing published service media are preserved as approved/ready records. Historical uploader identities/sizes that were never recorded cannot be reconstructed. Existing review raw authenticated assets remain readable through the old storage helper and can be cleaned only after reference checks. Legacy non-image assets keep their original document/file workflows.
 
 Existing public Cloudinary URLs may already have been distributed outside the application; hiding metadata cannot revoke copies of such historical URLs. Legacy assets without reliable managed storage IDs require controlled storage reconciliation rather than arbitrary URL fetching or destructive guessing. All **new** uploads use private authenticated storage and the authorized proxy.
 
-No Home Page, navbar, footer, global style, shared public layout, or existing static asset was edited. The public image query now excludes pending/withdrawn/failed media while retaining the existing legacy image selection. Admin banner/category/promotional uploads are library records only; there is no API that automatically attaches them to Home Page sections. Changing existing Home Page assets still requires a separate explicit request.
+No Home Page, navbar, footer, global style, shared public layout, or existing static asset was edited. The public image query now excludes incomplete/withdrawn/failed media while retaining the existing legacy image selection. Admin banner/category/promotional uploads are library records only; there is no API that automatically attaches them to Home Page sections. Changing existing Home Page assets still requires a separate explicit request.
 
 ## Verification
 
@@ -154,7 +155,7 @@ Completed: 205 backend tests, 36 frontend tests, 69 live MSSQL/HTTP media checks
 
 Live Cloudinary verification also passed: private upload, unsigned-access denial, 320×240 thumbnail delivery, 720×540 card delivery, gallery/original delivery, and deletion of the disposable generated asset. No customer image was used.
 
-`tests/media.test.js` covers full decode/corruption/MIME/size validation, ownership/storage override rejection, reordering validation, role enforcement and origin checks. `scripts/verify-media.js` uses real MSSQL plus HTTP with rollback-only fixtures to exercise vendor logo/cover/gallery upload, duplicates, private delivery, foreign owners, replacement, primary/order, service/package relationships, independent publication gates, review photos, admin history/statistics, failed uploads, historical retention, cleanup failure/retry and public image endpoints. Cloudinary network calls are mocked; no fixture is uploaded to a live account.
+`tests/media.test.js` covers full decode/corruption/MIME/size validation, ownership/storage override rejection, reordering validation, role enforcement and origin checks. `scripts/verify-media.js` uses real MSSQL plus HTTP with rollback-only fixtures to exercise vendor logo/cover/gallery upload, duplicates, private delivery, foreign owners, replacement, primary/order, service/package relationships, parent publication requirements, review photos, admin history/statistics, failed uploads, historical retention, cleanup failure/retry and public image endpoints. Cloudinary network calls are mocked; no fixture is uploaded to a live account.
 
 The existing review integration script is updated to exercise the central image pipeline using valid generated fixtures. Frontend tests retain the established Home Page hash manifest and add a scoped-media-CSS check.
 
