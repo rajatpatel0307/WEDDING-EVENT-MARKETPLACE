@@ -191,7 +191,7 @@ export default function AdminSidebar({
             </div>
 
             {/* All links always visible */}
-            {group.items.filter(([path]) => !["settings", "profile"].includes(path)).map(
+            {group.items.filter(([path]) => !["settings", "profile", "event-locations", "guests", "media"].includes(path)).map(
               ([path, label, Icon]) => {
                 const active = isActivePage(
                   path,

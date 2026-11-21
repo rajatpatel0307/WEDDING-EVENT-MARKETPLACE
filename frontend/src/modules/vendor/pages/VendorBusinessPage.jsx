@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import {
   Building2,
   FileCheck2,
+  Images,
   Info,
   LoaderCircle,
   Mail,
@@ -143,8 +144,9 @@ export default function VendorBusinessPage() {
           close={closeEditor}
           busy={busy || childBusy}
           wide
+          className="[&&]:flex [&&]:flex-col [&&]:overflow-hidden [&>header]:shrink-0"
         >
-          <div className="border-b border-[#e3e9dc] px-5 pt-3">
+          <div className="shrink-0 border-b border-[#e3e9dc] px-5 pt-3 max-sm:px-4">
             <p className="mb-3 text-xs leading-relaxed text-[#78866e]">
               Choose a section to edit. Save each section using its own save or
               upload button.
@@ -152,7 +154,7 @@ export default function VendorBusinessPage() {
             <div
               role="group"
               aria-label="Profile sections"
-              className="flex flex-wrap gap-2 pb-3"
+              className="flex gap-2 overflow-x-auto pb-3"
             >
               {editorTabs.map(([key, label]) => (
                 <button
@@ -166,13 +168,15 @@ export default function VendorBusinessPage() {
                       tabs.includes(key) ? tabs : [...tabs, key],
                     );
                   }}
-                  className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50 ${editorTab === key ? "border-[#385b3d] bg-[#385b3d] text-white" : "border-[#dfe6d8] bg-white text-[#66795a] hover:bg-[#f1f5eb]"}`}
+                  className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50 ${editorTab === key ? "border-[#385b3d] bg-[#385b3d] text-white" : "border-[#dfe6d8] bg-white text-[#66795a] hover:bg-[#f1f5eb]"}`}
                 >
+                  {key === "images" && <Images size={14} aria-hidden="true" />}
                   {label}
                 </button>
               ))}
             </div>
           </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <div hidden={editorTab !== "business"}>
             <form
               className="p-5 max-sm:p-3 min-w-0 [&_input]:min-h-11 [&_input]:w-full [&_input]:min-w-0 [&_input]:rounded-lg [&_input]:border [&_input]:border-[#dbe3d5] [&_input]:bg-[#fcfdfb] [&_input]:px-3.5 [&_input]:py-2.5 [&_input]:text-[13px] [&_input]:font-normal [&_input]:text-[#354c38] [&_input]:transition-colors [&_input::placeholder]:text-[#a0aa96] [&_textarea]:w-full [&_textarea]:resize-y [&_textarea]:rounded-lg [&_textarea]:border [&_textarea]:border-[#dbe3d5] [&_textarea]:bg-[#fcfdfb] [&_textarea]:px-3.5 [&_textarea]:py-3 [&_textarea]:text-[13px] [&_textarea]:font-normal [&_textarea]:leading-relaxed [&_textarea]:text-[#354c38] [&_textarea::placeholder]:text-[#a0aa96] [&_input:focus]:border-[#829e6b] [&_input:focus]:bg-white [&_input:focus]:outline-2 [&_input:focus]:outline-[#e2ebd9] [&_textarea:focus]:border-[#829e6b] [&_textarea:focus]:bg-white [&_textarea:focus]:outline-2 [&_textarea:focus]:outline-[#e2ebd9]"
@@ -472,7 +476,7 @@ export default function VendorBusinessPage() {
             </div>
           )}
           {visitedTabs.includes("images") && (
-            <div hidden={editorTab !== "images"} className="p-5">
+            <div hidden={editorTab !== "images"} className="bg-[#f7f9f5] p-5 max-sm:p-4">
               <Suspense fallback={<Loading />}>
                 <BrandImagesEditor
                   role="Vendor"
@@ -496,13 +500,17 @@ export default function VendorBusinessPage() {
               </Suspense>
             </div>
           )}
+          </div>
           {editorTab !== "business" && (
-            <footer className="sticky bottom-0 border-t border-[#e3e9dc] bg-white/95 px-5 py-4 text-right backdrop-blur-md">
+            <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-[#e3e9dc] bg-white px-5 py-3.5">
+              <p className="text-xs text-[#78866e]">
+                {editorTab === "images" ? "Image changes are saved as you go." : "Save your changes in this section before closing."}
+              </p>
               <button
                 type="button"
                 disabled={childBusy}
                 onClick={closeEditor}
-                className="rounded-lg border border-[#dce4d5] px-4 py-2.5 text-xs text-[#617456] hover:bg-[#f3f6ee] disabled:opacity-50"
+                className="shrink-0 rounded-lg border border-[#385b3d] bg-[#385b3d] px-6 py-2.5 text-xs font-medium text-white hover:bg-[#2c4a31] disabled:opacity-50"
               >
                 Done
               </button>

@@ -185,7 +185,7 @@ export function Panel({
     </section>
   );
 }
-export function Modal({ title, close, busy, children, wide = false }) {
+export function Modal({ title, close, busy, children, wide = false, className = "" }) {
   const ref = useRef(null),
     label = useId();
   useEffect(() => {
@@ -234,7 +234,7 @@ export function Modal({ title, close, busy, children, wide = false }) {
         [&::backdrop]:[backdrop-filter:blur(3px)] [&_>_header]:sticky [&_>_header]:top-[0]
         [&_>_header]:flex [&_>_header]:items-center [&_>_header]:justify-between [&_>_header]:gap-[15px]
         [&_>_header]:[padding:18px_23px] [&_>_header]:[border-bottom:1px_solid_#e8eedf]
-        [&_>_header]:[background:white] [&_>_header]:z-[1] ${wide ? "vw-modal-wide" : ""}`}
+        [&_>_header]:[background:white] [&_>_header]:z-[1] ${wide ? "vw-modal-wide" : ""} ${className}`}
       ref={ref}
       aria-labelledby={label}
       onCancel={(e) => {

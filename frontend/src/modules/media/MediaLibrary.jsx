@@ -12,6 +12,12 @@ import {
   Upload,
   ShieldCheck,
   Info,
+  Search,
+  SlidersHorizontal,
+  LayoutGrid,
+  List,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -44,9 +50,15 @@ function State({ state }) {
     </p>
   ) : null;
 }
-function Badge({ children }) {
+function Badge({ children, tone }) {
+  const colors = {
+    Approved: "bg-[#edf6ee] text-[#3c7048]",
+    Pending: "bg-[#fff6e3] text-[#91691e]",
+    Rejected: "bg-[#fff0ed] text-[#ad5345]",
+    Hidden: "bg-[#f0f1f3] text-[#68717b]",
+  };
   return (
-    <span className="inline-flex rounded-full bg-[#eef3e9] px-2.5 py-1 text-[11px] text-[#5c7152]">
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${colors[tone] || "bg-[#eef3e9] text-[#5c7152]"}`}>
       {children}
     </span>
   );
@@ -355,15 +367,17 @@ export function MediaUploader({
   return (
     <div className="space-y-4">
       <label
-        className="flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed border-[#b8c9ab] bg-[#f8faf5] p-7 text-center"
+        className="flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-[#b8c9ab] bg-[#f8faf5] px-5 py-9 text-center transition-colors hover:border-[#708d60] hover:bg-[#f1f6ea] focus-within:border-[#708d60] focus-within:ring-2 focus-within:ring-[#dce8d2]"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
           if (!busy) choose(e.dataTransfer.files);
         }}
       >
-        <ImagePlus size={30} className="mb-2 text-[#789369]" />
-        <strong>Choose images or drop them here</strong>
+        <span className="mb-4 grid size-14 place-items-center rounded-2xl border border-[#dce6d3] bg-white text-[#6a8658] shadow-sm"><ImagePlus size={25} strokeWidth={1.5} aria-hidden="true" /></span>
+        <strong className="text-sm font-semibold">Drop your images here</strong>
+        <span className="mt-1 text-xs text-[#77866f]">or browse files on your device</span>
+        <span className={`${button} mt-4 !px-5`}>Choose files</span>
         <span className="mt-1 text-xs text-[#77866f]">
           JPEG, PNG, WebP · Up to {maxMb} MB each
         </span>
@@ -372,13 +386,15 @@ export function MediaUploader({
           accept="image/jpeg,image/png,image/webp"
           multiple={!replaceId}
           disabled={busy}
-          className="mt-4 max-w-full text-xs"
+          aria-label="Choose images to upload"
+          className="sr-only"
           onChange={(e) => {
             choose(e.target.files);
             e.target.value = "";
           }}
         />
       </label>
+      {files.length > 0 && <p className="text-xs font-medium text-[#56714a]">{files.length} {files.length === 1 ? "image" : "images"} selected · {bytes(files.reduce((total, item) => total + item.file.size, 0))}</p>}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {files.map((item) => (
           <div
@@ -620,6 +636,7 @@ export default function MediaLibrary({
     [version, setVersion] = useState(0),
     [page, setPage] = useState(1),
     [view, setView] = useState("grid"),
+    [showFilters, setShowFilters] = useState(false),
     [filters, setFilters] = useState({
       q: "",
       category: fixedTarget?.entityType || params.get("category") || "",
@@ -650,6 +667,18 @@ export default function MediaLibrary({
     [lightbox, setLightbox] = useState(null),
     [action, setAction] = useState(null),
     [notice, setNotice] = useState("");
+  const filtersId = useId();
+  const filterCount = Object.entries(filters).filter(([key, value]) =>
+    value && !["q", "entityId"].includes(key) &&
+    !(key === "category" && fixedTarget) && !(key === "deleted" && value === "false"),
+  ).length;
+  const clearFilters = () => {
+    setFilters((old) => ({
+      ...old, category: fixedTarget?.entityType || "", entityId: fixedTarget?.entityId || "",
+      vendorId: "", status: "", uploadStatus: "", from: "", to: "", deleted: "false", orphaned: "",
+    }));
+    setPage(1);
+  };
   const query = new URLSearchParams({ page: String(page) });
   for (const [k, v] of Object.entries(filters)) if (v) query.set(k, v);
   const state = useMedia(`/media?${query}`, version),
@@ -741,30 +770,38 @@ export default function MediaLibrary({
   }
   return (
     <section className="mm-module min-w-0 text-[#354b3b] [font-family:inherit] text-[14px] leading-[1.5] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-[#6f916b] [&_:focus-visible]:outline-offset-3 space-y-5" aria-label="Media management">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+      <div className={embedded ? "flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#dfe7da] bg-white p-5 max-sm:p-4" : "flex flex-wrap items-center justify-between gap-4"}>
+        <div className="flex min-w-0 items-center gap-3.5">
+          {embedded && <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#eef4e8] text-[#56714a]"><Images size={23} strokeWidth={1.6} aria-hidden="true" /></span>}
+          <div>
           {!embedded && (
             <p className="mb-2 text-xs tracking-widest text-[#8c9c81]">
               {role.toUpperCase()} / MEDIA LIBRARY
             </p>
           )}
-          <h1 className={`${embedded ? "text-xl" : "text-3xl"} font-semibold`}>
+          <h1 className={`${embedded ? "m-0! font-sans! text-lg! tracking-[-0.4px]" : "text-3xl"} font-semibold`}>
             {embedded ? "Image library" : "Your work, beautifully presented"}
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-[#77866f]">
+          <p className={`${embedded ? "mt-1 max-w-sm text-xs leading-relaxed" : "mt-2 max-w-2xl text-sm"} text-[#77866f]`}>
             {role === "Admin"
               ? "Review uploads, control publication, and preserve assets used by existing bookings."
+              : embedded && fixedTarget?.entityType === "Vendor"
+                ? "Your logo, cover and gallery. Make a great first impression."
               : "Manage your profile, services and package galleries in one place."}
           </p>
+          </div>
         </div>
+        <div className={embedded ? "flex shrink-0 flex-col gap-2 max-sm:w-full" : ""}>
         <button type="button"
-          className={primary}
+          className={`${primary} ${embedded ? "min-h-10 px-4 shadow-sm" : ""}`}
           disabled={disabled || metadata.loading}
           onClick={() => setUploading({})}
         >
           <ImagePlus size={17} />
           {embedded ? "Add images" : "Upload images"}
         </button>
+        {embedded && <p className="text-center text-[10px] text-[#85917c]">JPEG, PNG, WebP · Up to {metadata.data?.maxMb || 5} MB</p>}
+        </div>
       </div>
       {notice && (
         <p className="rounded-lg bg-[#edf5e7] p-3 text-sm" role="status">
@@ -827,8 +864,30 @@ export default function MediaLibrary({
           )}
         </>
       )}
-      <div className={panel}>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className={embedded ? "rounded-2xl border border-[#e0e7db] bg-white p-3.5" : panel}>
+        {embedded && (
+          <div className="flex flex-wrap items-center gap-2.5">
+            <label className="relative min-w-[160px] flex-1">
+              <span className="sr-only">Search images</span>
+              <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#91a087]" />
+              <input type="search" className={`${input} [&&]:pl-10 [&&]:text-xs [&&]:bg-[#fafbf8]`} placeholder="Search your images..." value={filters.q} onChange={(e) => choose("q", e.target.value)} maxLength={200} />
+            </label>
+            <button type="button" className={`${button} min-h-10 ${showFilters ? "!border-[#8ca67b] !bg-[#f0f5ec]" : ""}`} aria-expanded={showFilters} aria-controls={filtersId} onClick={() => setShowFilters((open) => !open)}>
+              <SlidersHorizontal size={14} aria-hidden="true" /> Filters
+              {filterCount > 0 && <span className="grid size-4 place-items-center rounded-full bg-[#36583e] text-[10px] text-white">{filterCount}</span>}
+              <ChevronDown size={13} aria-hidden="true" className={showFilters ? "rotate-180" : ""} />
+            </button>
+            <div role="group" aria-label="Image view" className="inline-flex rounded-lg border border-[#dce5d7] bg-[#f7f9f4] p-0.5">
+              {[["grid", LayoutGrid, "Grid view"], ["list", List, "List view"]].map(([mode, Icon, label]) => (
+                <button key={mode} type="button" aria-label={label} aria-pressed={view === mode} title={label} onClick={() => setView(mode)} className={`grid size-8 place-items-center rounded-md ${view === mode ? "bg-white text-[#36583e] shadow-sm" : "text-[#89977e] hover:text-[#36583e]"}`}><Icon size={16} aria-hidden="true" /></button>
+              ))}
+            </div>
+            <button type="button" className={`${button} size-10 !p-0`} aria-label="Refresh images" title="Refresh images" onClick={() => setVersion((v) => v + 1)}><RefreshCw size={15} className={state.loading ? "animate-spin" : ""} aria-hidden="true" /></button>
+          </div>
+        )}
+        <div id={filtersId} hidden={embedded && !showFilters} className={embedded ? "mt-3.5 border-t border-[#edf0e8] pt-3.5" : ""}>
+        <div className={`grid gap-3 ${embedded ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
+          {!embedded && (
           <label className="text-xs">
             Search
             <input
@@ -839,6 +898,7 @@ export default function MediaLibrary({
               maxLength={200}
             />
           </label>
+          )}
           {!fixedTarget && (
             <label className="text-xs">
               Category
@@ -949,7 +1009,9 @@ export default function MediaLibrary({
             </>
           )}
         </div>
-        <div className="mt-4 flex gap-2">
+        {embedded && filterCount > 0 && <button type="button" className="mt-3 text-xs font-medium text-[#56714a] underline underline-offset-4" onClick={clearFilters}>Clear filters</button>}
+        </div>
+        {!embedded && <div className="mt-4 flex gap-2">
           <button type="button"
             className={button}
             onClick={() => setView(view === "grid" ? "list" : "grid")}
@@ -961,8 +1023,14 @@ export default function MediaLibrary({
             <RefreshCw size={14} />
             Refresh
           </button>
-        </div>
+        </div>}
       </div>
+      {embedded && state.data && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
+          <p className="text-xs font-semibold text-[#40563c]">{state.data.total} {state.data.total === 1 ? "image" : "images"}{filters.q || filterCount ? " found" : " in your library"}</p>
+          <p className="text-[11px] text-[#849078]">Select an image to preview</p>
+        </div>
+      )}
       <State state={state} />
       {state.data?.rows.length === 0 && (
         <div className={`${panel} py-12 text-center`}>
@@ -988,17 +1056,17 @@ export default function MediaLibrary({
       <div
         className={
           view === "grid"
-            ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+            ? embedded ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-4" : "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
             : "grid gap-4"
         }
       >
         {state.data?.rows.map((r, index) => (
           <article
             key={r.id}
-            className={`overflow-hidden rounded-2xl border border-[#e0e7db] bg-white ${view === "list" ? "sm:grid sm:grid-cols-[200px_1fr]" : ""}`}
+            className={`min-w-0 overflow-hidden rounded-2xl border border-[#e0e7db] bg-white transition-shadow hover:shadow-[0_6px_20px_#233c2b0a] ${view === "list" ? "sm:grid sm:grid-cols-[180px_minmax(0,1fr)]" : ""}`}
           >
             <button type="button"
-              className="block w-full text-left"
+              className="group relative block w-full overflow-hidden text-left disabled:cursor-default"
               onClick={() => setLightbox(index)}
               disabled={r.uploadStatus !== "Ready" || !!r.deletedAt}
               aria-label={`Preview ${r.fileName}`}
@@ -1006,7 +1074,7 @@ export default function MediaLibrary({
               {r.uploadStatus === "Ready" && !r.deletedAt ? (
                 <img
                   src={r.thumbnail}
-                  className="mm-image [&&]:w-full [&&]:aspect-[4/3] [&&]:object-cover [&&]:bg-[#f3f5ee] max-[600.001px]:[&&]:aspect-square"
+                  className={`mm-image [&&]:w-full [&&]:aspect-[4/3] [&&]:bg-[#f3f5ee] ${r.purpose === "Logo" ? "[&&]:object-contain [&&]:p-5" : "[&&]:object-cover"}`}
                   alt={r.fileName || "Uploaded image"}
                   loading="lazy"
                 />
@@ -1015,19 +1083,23 @@ export default function MediaLibrary({
                   <Info size={28} />
                 </div>
               )}
+              {embedded && <span className="pointer-events-none absolute left-3 top-3 rounded-md bg-white/95 px-2 py-1 text-[10px] font-medium text-[#4d6543] shadow-sm">{r.purpose || r.entityType}</span>}
+              {embedded && r.primary && <span className="pointer-events-none absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-md bg-[#36583e] px-2 py-1 text-[10px] font-medium text-white"><Star size={10} fill="currentColor" aria-hidden="true" /> Primary image</span>}
+              {embedded && r.uploadStatus === "Ready" && !r.deletedAt && <span className="pointer-events-none absolute bottom-3 right-3 grid size-7 place-items-center rounded-full bg-white/95 text-[#4d6543] opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"><Search size={13} aria-hidden="true" /></span>}
             </button>
             <div className="space-y-3 p-4">
               <div className="flex flex-wrap gap-2">
                 <Badge>{r.entityType}</Badge>
-                <Badge>{r.deletedAt ? "Retained" : r.status}</Badge>
-                {r.primary && <Badge>Primary</Badge>}
+                <Badge tone={r.deletedAt ? "Retained" : r.status}>{r.deletedAt ? "Retained" : r.status}</Badge>
+                {r.uploadStatus !== "Ready" && <Badge>{r.uploadStatus}</Badge>}
+                {r.primary && !embedded && <Badge>Primary</Badge>}
               </div>
               <h2 className="truncate text-sm font-semibold" title={r.fileName}>
                 {r.fileName || "Legacy image"}
               </h2>
               <p className="text-xs text-[#77866f]">
                 {r.vendor || r.service || r.package || r.purpose} ·{" "}
-                {bytes(r.size)} · {date(r.createdAt)}
+                {bytes(r.size)}{!embedded && <> · {date(r.createdAt)}</>}
               </p>
               {r.orphaned && (
                 <p className="text-xs text-amber-800">
@@ -1045,12 +1117,15 @@ export default function MediaLibrary({
                   <>
                     <button type="button"
                       className={button}
-                      disabled={disabled}
+                      disabled={disabled || !!r.primary}
                       onClick={() => perform(r, "primary")}
                     >
-                      <Star size={13} />
-                      Primary
+                      {r.primary ? <Check size={13} /> : <Star size={13} />}
+                      {r.primary ? "Primary" : "Set primary"}
                     </button>
+                    <details open={embedded ? undefined : true} className={embedded ? "basis-full rounded-lg border border-[#e7ecdf] text-xs" : "contents"}>
+                      <summary className={embedded ? "cursor-pointer px-3 py-2 text-[#6c7f5e]" : "hidden"}>More actions</summary>
+                      <div className={embedded ? "flex flex-wrap gap-2 border-t border-[#e7ecdf] p-2" : "flex flex-wrap gap-2"}>
                     <button type="button"
                       className={button}
                       disabled={disabled}
@@ -1092,9 +1167,14 @@ export default function MediaLibrary({
                     >
                       <ArrowRight size={13} />
                     </button>
+                    {!r.deletedAt && (
+                      <button type="button" className={`${button} !text-red-700`} disabled={disabled} onClick={() => perform(r, "delete")}><Trash2 size={13} /> Delete</button>
+                    )}
+                      </div>
+                    </details>
                   </>
                 )}
-                {!r.deletedAt && (
+                {!r.deletedAt && r.uploadStatus !== "Ready" && (
                   <button type="button"
                     className={`${button} !text-red-700`}
                     disabled={disabled}
