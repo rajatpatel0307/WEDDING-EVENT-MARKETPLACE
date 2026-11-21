@@ -1,5 +1,7 @@
 # Admin dashboard and operations
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 This extends the existing React/Tailwind/Lucide admin workspace and Express/MSSQL REST API. The customer/vendor detail pages, independent approval queues, service studio, booking management, private document viewer, JWT authentication, session refresh, API client, generic record tables, confirmation dialogs, audit log and refund worker remain the shared implementation. Production pages use database data; fixtures exist only in tests.
 
 ## Rollout

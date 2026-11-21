@@ -171,7 +171,6 @@ export async function dashboard(input, ctx) {
     UNION ALL SELECT CONVERT(nvarchar(100),PayoutId),'PAYOUT_REQUESTED',CONVERT(nvarchar(100),PayoutId),CreatedAt FROM dbo.VendorPayouts WHERE PayoutStatus IN ('Pending','Processing')
     UNION ALL SELECT CONVERT(nvarchar(100),RefundId),'REFUND_REQUESTED',RefundReference,CreatedAt FROM dbo.Refunds
     UNION ALL SELECT CONVERT(nvarchar(100),ReviewId),'REVIEW_SUBMITTED',COALESCE(ReviewTitle,'New review'),CreatedAt FROM dbo.Reviews
-    UNION ALL SELECT CONVERT(nvarchar(100),QuotationId),'NEW_QUOTATION',QuotationNumber,CreatedAt FROM dbo.Quotations
     UNION ALL SELECT CONVERT(nvarchar(100),UserId),'CUSTOMER_REGISTERED',CONCAT(FirstName,' ',LastName),CreatedAt FROM dbo.Users u WHERE EXISTS(SELECT 1 FROM dbo.UserRoles ur JOIN dbo.Roles r ON r.RoleId=ur.RoleId WHERE ur.UserId=u.UserId AND r.RoleCode='CUSTOMER')
     ) a WHERE createdAt>=:start AND createdAt< :end ORDER BY createdAt DESC`,
     params,

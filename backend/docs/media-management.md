@@ -1,5 +1,7 @@
 # Central media management
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 The module extends the existing `Media` table and Cloudinary upload utility. Vendor, service, package, review and administrator images share ownership checks, validation, storage, moderation, delivery, idempotency, audit and cleanup services. `ReviewImages` remains a compatibility relationship table linked to its canonical `Media` record; it is not a second upload system.
 
 ## Setup and operation

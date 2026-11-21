@@ -64,15 +64,13 @@ export async function customerDetails(id, ctx) {
     (SELECT COALESCE(SUM(p.Amount),0) FROM dbo.Payments p JOIN dbo.Booking b ON b.BookingId=p.BookingId WHERE b.CustomerId=:id AND p.PaymentStatus='Success' AND p.Currency='INR') AS spending,
     (SELECT COALESCE(SUM(CASE WHEN RemainingAmount>0 THEN RemainingAmount ELSE 0 END),0) FROM dbo.Booking WHERE CustomerId=:id AND BookingStatus NOT IN ('Cancelled','Rejected','Refunded')) AS pending,
     (SELECT COUNT(*) FROM dbo.Wishlists WHERE CustomerId=:id) AS wishlist,
-    (SELECT COUNT(*) FROM dbo.Reviews WHERE CustomerId=:id) AS reviews,
-    (SELECT COUNT(*) FROM dbo.Quotations WHERE CustomerId=:id) AS quotations`,
+    (SELECT COUNT(*) FROM dbo.Reviews WHERE CustomerId=:id) AS reviews`,
     { id },
   );
   const timeline = await repo.select(
     `SELECT TOP(30) * FROM (
     SELECT CONVERT(varchar(100),UserId) AS id,'account' AS type,'Account created' AS title,'Joined MarryNest' AS detail,CreatedAt AS createdAt FROM dbo.Users WHERE UserId=:id
     UNION ALL SELECT CONVERT(varchar(100),EventId),'event','Event created',EventName,CreatedAt FROM dbo.Events WHERE CustomerId=:id
-    UNION ALL SELECT CONVERT(varchar(100),QuotationId),'quotation','Quotation requested',QuotationNumber,CreatedAt FROM dbo.Quotations WHERE CustomerId=:id
     UNION ALL SELECT CONVERT(varchar(100),BookingId),'booking','Booking created',BookingNumber,CreatedAt FROM dbo.Booking WHERE CustomerId=:id
     UNION ALL SELECT CONVERT(varchar(100),p.PaymentId),'payment','Payment completed',CONCAT(p.PaymentReference,' · ',p.Currency,' ',p.Amount),COALESCE(p.PaidAt,p.CreatedAt) FROM dbo.Payments p JOIN dbo.Booking b ON b.BookingId=p.BookingId WHERE b.CustomerId=:id AND p.PaymentStatus='Success'
     UNION ALL SELECT CONVERT(varchar(100),ReviewId),'review','Review submitted',CONCAT(Rating,' / 5 · ',ReviewTitle),CreatedAt FROM dbo.Reviews WHERE CustomerId=:id
@@ -96,12 +94,7 @@ export const customerReadCollections = {
     fields:
       "t.BookingId AS id,t.BookingNumber AS number,v.BusinessName AS vendor,(SELECT STRING_AGG(CONVERT(nvarchar(max),bi.ItemName),', ') FROM dbo.BookingItems bi WHERE bi.BookingId=t.BookingId) AS services,e.EventName AS event,t.TotalAmount AS amount,t.PaymentStatus AS paymentStatus,t.BookingStatus AS status,t.CreatedAt AS createdAt",
   },
-  quotations: {
-    from: "dbo.Quotations t JOIN dbo.Vendors v ON v.VendorId=t.VendorId",
-    where: "t.CustomerId=:id",
-    fields:
-      "t.QuotationId AS id,t.QuotationNumber AS number,v.BusinessName AS vendor,t.TotalAmount AS amount,t.Status AS status,t.ValidUntil AS validUntil,t.CreatedAt AS createdAt",
-  },
+
   payments: {
     from: "dbo.Payments t JOIN dbo.Booking b ON b.BookingId=t.BookingId",
     where: "b.CustomerId=:id",
@@ -137,7 +130,6 @@ export const customerReadCollections = {
     where: `(t.UserId=:id OR (t.EntityType IN ('Users','Customer','customers') AND t.EntityId=CONVERT(varchar(100),:id))
     OR (t.EntityType='Booking' AND EXISTS(SELECT 1 FROM dbo.Booking b WHERE b.CustomerId=:id AND CONVERT(varchar(100),b.BookingId)=t.EntityId))
     OR (t.EntityType='Events' AND EXISTS(SELECT 1 FROM dbo.Events e WHERE e.CustomerId=:id AND CONVERT(varchar(100),e.EventId)=t.EntityId))
-    OR (t.EntityType='Quotations' AND EXISTS(SELECT 1 FROM dbo.Quotations q WHERE q.CustomerId=:id AND CONVERT(varchar(100),q.QuotationId)=t.EntityId))
     OR (t.EntityType='Reviews' AND EXISTS(SELECT 1 FROM dbo.Reviews r WHERE r.CustomerId=:id AND CONVERT(varchar(100),r.ReviewId)=t.EntityId))
     OR (t.EntityType='Payments' AND EXISTS(SELECT 1 FROM dbo.Payments p JOIN dbo.Booking b ON b.BookingId=p.BookingId WHERE b.CustomerId=:id AND CONVERT(varchar(100),p.PaymentId)=t.EntityId))
     OR (t.EntityType='Addresses' AND EXISTS(SELECT 1 FROM dbo.Addresses a WHERE a.UserId=:id AND CONVERT(varchar(100),a.AddressId)=t.EntityId)))`,

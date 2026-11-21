@@ -1,5 +1,7 @@
 # Category-based selling and booking
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 This extension uses the existing `Services` catalog and service approval workflow. It reuses `Categories`, `Products`, `Cart`, `CartAndProducts`, `Orders`, `OrderLineItems`, `ProductPaymentOrders`, users, vendors, addresses, and the existing booking/payment/refund system. It does not create purchase orders for reservations.
 
 ## Rollout

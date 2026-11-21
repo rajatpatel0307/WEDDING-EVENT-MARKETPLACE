@@ -370,7 +370,7 @@ export function ServiceActions({ service, onChange, full = false }) {
           title={`${confirm === "active" ? (service.active ? "Deactivate" : "Activate") : confirm[0].toUpperCase() + confirm.slice(1)} service`}
           text={
             confirm === "delete"
-              ? "Permanently delete this service and its items, packages and availability? Services with booking or quotation history cannot be deleted."
+              ? "Permanently delete this service and its items, packages and availability? Services with historical records cannot be deleted."
               : confirm === "submit"
                 ? "Submit this service for admin review? Editing will be locked while it is pending."
                 : "Continue with this action?"

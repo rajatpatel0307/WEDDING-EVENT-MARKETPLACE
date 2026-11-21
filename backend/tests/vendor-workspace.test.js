@@ -13,7 +13,6 @@ import {
   availabilityInput,
   packageInput,
   promotionInput,
-  quoteInput,
   serviceInput,
   validateAttributes,
 } from "../src/modules/vendors/workspace.validation.js";
@@ -149,20 +148,17 @@ test("every workspace service rejects non-approved contexts before database acce
         },
       },
     };
-    for (const operation of [
-      () => workspace.records("services", {}, blocked),
-      () => workspace.saveService(null, {}, blocked),
-      () => workspace.savePackage(null, {}, blocked),
-      () => workspace.business(blocked),
-      () => workspace.saveSimple("coupons", null, {}, blocked),
-      () => operations.bookingDecision(vendorId, {}, blocked),
-      () => operations.saveQuote(null, {}, blocked),
-      () => operations.setAvailability({}, blocked),
-      () => messaging.conversations(blocked),
-      () => messaging.sendMessage(vendorId, {}, blocked),
-      () => messaging.attachmentFile(vendorId, vendorId, blocked),
-      () => dashboard({}, blocked),
-    ])
+    for (const operation of [() => workspace.records("services", {}, blocked),
+() => workspace.saveService(null, {}, blocked),
+() => workspace.savePackage(null, {}, blocked),
+() => workspace.business(blocked),
+() => workspace.saveSimple("coupons", null, {}, blocked),
+() => operations.bookingDecision(vendorId, {}, blocked),
+() => operations.setAvailability({}, blocked),
+() => messaging.conversations(blocked),
+() => messaging.sendMessage(vendorId, {}, blocked),
+() => messaging.attachmentFile(vendorId, vendorId, blocked),
+() => dashboard({}, blocked)])
       await assert.rejects(
         operation,
         (e) => e.extensions?.code === "FORBIDDEN",
@@ -289,32 +285,7 @@ test("availability limits ranges and rejects partial or backwards time windows",
   ])
     assert.throws(() => availabilityInput.parse({ ...valid, ...patch }));
 });
-test("quotation validation preserves customer authority and prevents negative line totals", () => {
-  const quote = {
-    eventId: vendorId,
-    validUntil: "2027-01-01",
-    status: "Draft",
-    items: [
-      {
-        serviceId: vendorId,
-        name: "Venue",
-        quantity: 1,
-        price: 1000,
-        discount: 0,
-        tax: 0,
-      },
-    ],
-  };
-  assert.doesNotThrow(() => quoteInput.parse(quote));
-  assert.throws(() => quoteInput.parse({ ...quote, status: "Accepted" }));
-  assert.throws(() => quoteInput.parse({ ...quote, customerId: ownerId }));
-  assert.throws(() =>
-    quoteInput.parse({
-      ...quote,
-      items: [{ ...quote.items[0], discount: 1001 }],
-    }),
-  );
-});
+
 test("promotion and analytics date ranges are bounded and validated", () => {
   const offer = {
     name: "Offer",

@@ -38,7 +38,7 @@ const tabs = [
   ["personal", "Personal Information"],
   ["events", "Events"],
   ["bookings", "Bookings"],
-  ["quotations", "Quotations"],
+
   ["payments", "Payments"],
   ["reviews", "Reviews"],
   ["wishlist", "Wishlist"],
@@ -77,14 +77,7 @@ const columns = {
     ["status", "Booking status"],
     ["createdAt", "Created date"],
   ],
-  quotations: [
-    ["number", "Quotation number"],
-    ["vendor", "Vendor"],
-    ["amount", "Total"],
-    ["status", "Status"],
-    ["validUntil", "Valid until"],
-    ["createdAt", "Created date"],
-  ],
+
   payments: [
     ["reference", "Payment reference"],
     ["booking", "Booking"],
@@ -128,7 +121,7 @@ const columns = {
 const activityIcons = {
   account: UserRound,
   event: CalendarDays,
-  quotation: ReceiptText,
+
   booking: ShoppingBag,
   payment: CreditCard,
   review: Star,
@@ -400,7 +393,7 @@ function Timeline({ items }) {
           const Icon = activityIcons[item.type] || Activity;
           return (
             <li key={`${item.type}-${item.id}`}>
-              <span className={`cd-timeline-icon grid place-items-center shrink-0 h-[32px] w-[32px] rounded-[50%] [background:#edf3ee] text-[#47866a] [&.cd-tone-payment]:[background:#e8f3ee] [&.cd-tone-payment]:text-[#2c8768] [&.cd-tone-quotation]:[background:#f7f1e6] [&.cd-tone-quotation]:text-[#a38a4e] [&.cd-tone-review]:[background:#f7f1e6] [&.cd-tone-review]:text-[#a38a4e] cd-tone-${item.type}`}>
+              <span className={`cd-timeline-icon grid place-items-center shrink-0 h-[32px] w-[32px] rounded-[50%] [background:#edf3ee] text-[#47866a] [&.cd-tone-payment]:[background:#e8f3ee] [&.cd-tone-payment]:text-[#2c8768] [&.cd-tone-review]:[background:#f7f1e6] [&.cd-tone-review]:text-[#a38a4e] cd-tone-${item.type}`}>
                 <Icon size={15} />
               </span>
               <div>
@@ -619,7 +612,7 @@ export default function CustomerDetailsPage() {
             {[
               "events",
               "bookings",
-              "quotations",
+
               "wishlist",
               "reviews",
             ].includes(key) && <span>{number(s[key])}</span>}

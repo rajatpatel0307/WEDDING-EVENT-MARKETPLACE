@@ -1,12 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowRight, ArrowUpRight, CalendarDays, CalendarHeart, Camera, Check,
-  ChevronDown, FileText, Flower2, Heart, MapPin, Music2, Plus,
-  ShoppingBag, Sparkles, Users, Utensils, Wallet,
-} from "lucide-react";
+import { ArrowRight, ArrowUpRight, CalendarDays, CalendarHeart, Camera, Check, Flower2, Heart, MapPin, Music2, Plus, ShoppingBag, Sparkles, Users, Utensils, Wallet } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
-import { QuotationOverview } from "../../quotations/QuotationPages";
+
 import { Badge, ErrorView, useCustomerData } from "../components/WorkspaceUI";
 import { ServiceCard } from "../components/ServiceCards";
 import { date, money } from "../services/workspace.api";
@@ -30,7 +26,7 @@ const categories = [
 const statistics = [
   ["Active events", "events", "Your celebrations", CalendarHeart, "bg-[#edf3e8] text-[#60804f]", "events"],
   ["Upcoming bookings", "bookings", "Getting closer to the day", ShoppingBag, "bg-[#f7f0e5] text-[#a57d42]", "bookings"],
-  ["Pending quotations", "quotations", "Ready for your decision", FileText, "bg-[#edf1f7] text-[#6a819e]", "quotations"],
+
   ["Wishlist items", "wishlist", "Saved with love", Heart, "bg-[#f8edf0] text-[#b07688]", "wishlist"],
   ["Total spent", "spent", "Successful INR payments", Wallet, "bg-[#eff2ee] text-[#627e71]", "payments"],
 ];
@@ -80,7 +76,6 @@ export default function CustomerDashboard() {
   const catalog = useCustomerData("/catalog");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [now] = useState(() => Date.now());
-  const [showQuotations, setShowQuotations] = useState(false);
 
   if (dashboard.error) return <ErrorView error={dashboard.error} retry={dashboard.retry} />;
 
@@ -132,7 +127,7 @@ export default function CustomerDashboard() {
         <div className="absolute right-8 bottom-8 hidden text-right xl:block"><p className="text-[8px] uppercase tracking-[0.3em] text-[#fff8eb]/85">The beginning of forever</p><p className="mt-2 font-serif text-xl italic text-[#fff8eb]">A day as extraordinary as your story.</p></div>
       </section>
 
-      <section aria-label="Your celebration at a glance" aria-busy={loading} className="grid grid-cols-2 gap-3 min-[700px]:grid-cols-3 min-[1280px]:grid-cols-5 sm:gap-4">
+      <section aria-label="Your celebration at a glance" aria-busy={loading} className="grid grid-cols-2 gap-3 min-[1280px]:grid-cols-4 sm:gap-4">
         {statistics.map(([label, key, description, Icon, tone, path], index) => (
           <Link key={key} to={`/customer/${path}`} className={`group min-w-0 rounded-2xl border border-[#e1e7dc] bg-white p-4 shadow-[0_3px_16px_#263c2803] transition hover:-translate-y-0.5 hover:border-[#bdcdb0] hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none sm:p-5 ${index === 4 ? "max-[700px]:col-span-2" : ""}`}>
             <div className="flex items-center justify-between gap-3"><span className={`inline-flex size-9 shrink-0 items-center justify-center rounded-xl ${tone}`}><Icon size={18} strokeWidth={1.7} aria-hidden="true" /></span><ArrowUpRight size={15} className="text-[#a9b09e] transition group-hover:text-[#426637] motion-reduce:transition-none" aria-hidden="true" /></div>
@@ -208,11 +203,6 @@ export default function CustomerDashboard() {
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-5 rounded-2xl border border-[#e6dfd0] bg-[#f7f2e9] p-6"><div><h3 className="font-serif text-2xl text-[#766849]">A dream team for your dream day</h3><p className="mt-2 text-xs leading-6 text-[#8e8470]">From the perfect venue to the final flourish, explore the possibilities.</p></div><Link to="/services" className={textLink}>Explore all services<ArrowUpRight size={15} aria-hidden="true" /></Link></div>
         )}
-      </section>
-
-      <section className={panel} aria-label="Quotation details">
-        <button type="button" aria-expanded={showQuotations} aria-controls="dashboard-quotations" onClick={() => setShowQuotations((value) => !value)} className="flex min-h-20 w-full cursor-pointer items-center gap-3 p-5 text-left transition hover:bg-[#fafbf8] motion-reduce:transition-none sm:px-6"><span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#f3f0e8] text-[#a48d65]"><FileText size={18} aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block font-serif text-xl text-[#43583d]">Your quotations, in one place</span><span className="mt-1 block text-[11px] text-[#87917b]">Requests, conversations and the details that matter.</span></span><ChevronDown size={18} className={`shrink-0 text-[#8c9b7c] transition motion-reduce:transition-none ${showQuotations ? "rotate-180" : ""}`} aria-hidden="true" /></button>
-        <div id="dashboard-quotations" hidden={!showQuotations} className="border-t border-[#edf0e8] p-5 sm:px-6">{showQuotations && <QuotationOverview role="Customer" />}</div>
       </section>
 
       <footer className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t border-[#e3e8db] pt-6 pb-2 text-center"><span className="font-serif text-lg text-[#849274]">MarryNest</span><span className="text-[10px] tracking-wide text-[#929d88]">Thoughtfully planned. Wholeheartedly celebrated.</span><Heart size={11} className="text-[#b9a48e]" aria-hidden="true" /></footer>

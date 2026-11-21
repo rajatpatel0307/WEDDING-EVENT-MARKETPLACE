@@ -648,7 +648,7 @@ export async function remove(serviceId, input, ctx) {
     );
     if (used)
       fail(
-        "This service has booking, quotation or offer history. Deactivate it instead.",
+        "This service has historical booking or offer records. Deactivate it instead.",
         409,
       );
     await removeProduct(serviceId,tx);
@@ -818,10 +818,7 @@ export async function performance(serviceId, ctx) {
     "SELECT COUNT(DISTINCT b.BookingId) AS bookings,COUNT(DISTINCT CASE WHEN b.BookingStatus='Completed' THEN b.BookingId END) AS completedBookings,COALESCE(SUM(CASE WHEN b.BookingStatus='Completed' THEN bi.LineTotal ELSE 0 END),0) AS revenue FROM dbo.BookingItems bi JOIN dbo.Booking b ON b.BookingId=bi.BookingId WHERE bi.ServiceId=:serviceId",
     { serviceId },
   );
-  const [quotes] = await repo.select(
-    "SELECT COUNT(DISTINCT QuotationId) AS quotations FROM dbo.QuotationItems WHERE ServiceId=:serviceId",
-    { serviceId },
-  );
+
   const [reviews] = await repo.select(
     `SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS averageRating,COUNT_BIG(*) AS reviewCount FROM dbo.Reviews r WHERE ${publicPredicate()} AND r.ServiceId=:serviceId`,
     { serviceId },
@@ -833,7 +830,6 @@ export async function performance(serviceId, ctx) {
   return {
     ...totals,
     ...bookings,
-    ...quotes,
     ...reviews,
     conversionRate: Number(totals.views)
       ? Math.round((Number(bookings.bookings) / Number(totals.views)) * 10000) /

@@ -176,7 +176,7 @@ export async function publicServiceDetails(id, track = true, query = {}) {
     .enum(["newest", "highest", "lowest"])
     .parse(query.reviewSort || "newest");
   const [row] = await repo.select(
-    `SELECT s.ServiceId AS id,s.ServiceName AS name,s.Description AS description,s.PricingType AS pricingType,s.IsCustomQuoteAvailable AS customQuote,s.BasePrice AS price,s.MinimumPrice AS minimumPrice,s.MaximumPrice AS maximumPrice,s.MinimumGuests AS minGuests,s.MaximumGuests AS maxGuests,s.AttributesJson AS attributes,s.DetailsJson,${fields} FROM ${source} ${image} WHERE s.ServiceId=:id AND c.IsActive=1 AND s.IsActive=1 AND s.ApprovalStatus='Approved' AND ${eligibleVendor}`,
+    `SELECT s.ServiceId AS id,s.ServiceName AS name,s.Description AS description,s.PricingType AS pricingType,s.BasePrice AS price,s.MinimumPrice AS minimumPrice,s.MaximumPrice AS maximumPrice,s.MinimumGuests AS minGuests,s.MaximumGuests AS maxGuests,s.AttributesJson AS attributes,s.DetailsJson,${fields} FROM ${source} ${image} WHERE s.ServiceId=:id AND c.IsActive=1 AND s.IsActive=1 AND s.ApprovalStatus='Approved' AND ${eligibleVendor}`,
     { id },
   );
   if (!row) fail("This service is no longer available.", 404);
@@ -242,7 +242,7 @@ export async function publicVendorDetails(id) {
   if (!vendor) fail("Vendor unavailable.", 404);
   const [services, categories, locations, reviews] = await Promise.all([
     repo.select(
-      `SELECT s.ServiceId AS id,s.ServiceId AS serviceId,s.ServiceName AS name,s.BasePrice AS price,s.PricingType AS pricingType,s.IsCustomQuoteAvailable AS customQuote,'Service' AS type,${fields} FROM ${source} ${image} WHERE v.VendorId=:id AND ${eligibleVendor} AND s.IsActive=1 AND s.ApprovalStatus='Approved' AND c.IsActive=1 ORDER BY s.CreatedAt DESC`,
+      `SELECT s.ServiceId AS id,s.ServiceId AS serviceId,s.ServiceName AS name,s.BasePrice AS price,s.PricingType AS pricingType,'Service' AS type,${fields} FROM ${source} ${image} WHERE v.VendorId=:id AND ${eligibleVendor} AND s.IsActive=1 AND s.ApprovalStatus='Approved' AND c.IsActive=1 ORDER BY s.CreatedAt DESC`,
       { id },
     ),
     repo.select(

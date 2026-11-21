@@ -1,5 +1,7 @@
 # Automated email notifications
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 The backend sends six lifecycle emails through the existing Nodemailer SMTP transport. No frontend screens, routes, authentication rules, prices, status transitions or existing in-app notifications are changed.
 
 ## Database rollout — review the SQL first

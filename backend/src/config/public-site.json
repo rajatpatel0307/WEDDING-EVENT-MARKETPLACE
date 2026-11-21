@@ -24,7 +24,7 @@
         "title": "Definitions",
         "paragraphs": [
           "In this draft, ‘platform’ means the MarryNest website; ‘customer’ means a person exploring or requesting services; ‘vendor’ means a wedding professional applying to or listing on the marketplace; and ‘listing’ means information about a venue, service or package.",
-          "Finalize definitions for confirmed bookings, quotations, fees, payment providers and other business-specific terms before publishing."
+          "Finalize definitions for confirmed bookings, fees, payment providers and other business-specific terms before publishing."
         ]
       },
       {
@@ -88,13 +88,6 @@
         "paragraphs": [
           "A customer, a vendor and the platform have distinct roles. Vendors supply the services they agree to provide; the platform currently supports discovery and account onboarding. A listing, inquiry or account registration is not a confirmed booking.",
           "Before enabling bookings, publish the request, acceptance, confirmation and change process and accurately define the platform’s contractual role. Do not imply that an unimplemented booking workflow is available."
-        ]
-      },
-      {
-        "id": "quotations",
-        "title": "Quotations",
-        "paragraphs": [
-          "The final quotation policy must specify the scope of work, included and excluded services, pricing basis, taxes, validity, availability conditions and how a customer accepts a quotation. No quotation validity period is specified in this draft."
         ]
       },
       {

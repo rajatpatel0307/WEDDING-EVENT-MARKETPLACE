@@ -1,10 +1,14 @@
 import { randomInt, createHmac } from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { TableHints } from "sequelize";
 import { createMailTransport } from "./mail.service.js";
 import { sequelize } from "../../config/database.js";
 import { Otp, User } from "../../models/index.js";
 import { digest, fail, limit } from "./security.service.js";
 import { required } from "../../config/environment.js";
+import { renderOtpEmail } from "./otp-email.js";
+const OTP_VALIDITY_MS = 10 * 60 * 1000;
+const logoPath = fileURLToPath(new URL("../notifications/assets/marrynest-logo.png", import.meta.url));
 const hash = (id, code) =>
   createHmac("sha256", required("OTP_SECRET"))
     .update(`${id}:${code}`)
@@ -14,6 +18,12 @@ export async function sendOtp(user, purpose) {
   const from = required("SMTP_FROM");
   const id = digest(`${user.id}:${purpose}`),
     code = String(randomInt(100000, 1000000));
+  const mail = renderOtpEmail({
+    code, purpose, firstName: user.firstName,
+    expiresInMinutes: OTP_VALIDITY_MS / 60000,
+    siteUrl: process.env.PUBLIC_SITE_URL || process.env.FRONTEND_URL,
+    supportEmail: process.env.EMAIL_SUPPORT_EMAIL,
+  });
   await sequelize.transaction(async (transaction) => {
     await User.findByPk(user.id, {
       transaction,
@@ -29,7 +39,7 @@ export async function sendOtp(user, purpose) {
       userId: user.id,
       purpose,
       digest: hash(id, code),
-      expiresAt: new Date(Date.now() + 600000),
+      expiresAt: new Date(Date.now() + OTP_VALIDITY_MS),
       sentAt: new Date(),
       attempts: 0,
       consumedAt: null,
@@ -41,8 +51,11 @@ export async function sendOtp(user, purpose) {
     const result = await transport.sendMail({
       from,
       to: user.email,
-      subject: "Your MarryNest verification code",
-      text: `Your verification code is ${code}. It expires in 10 minutes. If you did not request this code, ignore this email.`,
+      ...mail,
+      attachments: [{
+        filename: "marrynest-logo.png", path: logoPath, cid: "marrynest-logo",
+        contentType: "image/png", contentDisposition: "inline",
+      }],
     });
     if (!result.accepted?.length) {
       const error = new Error("SMTP did not accept the recipient.");

@@ -5,7 +5,7 @@ import {
   capturePolicy,
   milestone as bookingMilestone,
 } from "../admin/booking-finance.js";
-import * as quotations from "../quotations/quotations.service.js";
+
 import { randomUUID, createHash } from "node:crypto";
 import { bookingInput } from "../bookings/bookings.validation.js";
 import { allocateBookingNumber } from "../bookings/booking-numbers.js";
@@ -63,7 +63,6 @@ export async function createBooking(
   items,
   ctx,
   tx,
-  quotationId = null,
   snapshot = null,
 ) {
   const { id } = scope(ctx);
@@ -115,7 +114,7 @@ export async function createBooking(
     0,
   );
   if (total <= 0 || total > 1e8)
-    fail("This booking requires a vendor quotation with a valid total.");
+    fail("This booking requires a valid catalog price.");
   const number = await allocateBookingNumber(tx);
   await insert(
     "Booking",
@@ -127,7 +126,6 @@ export async function createBooking(
       CustomerId: id,
       VendorId: vendorId,
       BookingDate: event.EventDate,
-      QuotationId: quotationId,
       SubTotal: items.reduce(
         (n, i) => n + Number(i.Quantity) * Number(i.UnitPrice),
         0,
@@ -157,7 +155,7 @@ export async function createBooking(
       EndTime: event.EndTime,
       PriceSnapshotJson: snapshot
         ? JSON.stringify(snapshot)
-        : JSON.stringify({ source: "Quotation", quotationId }),
+        : JSON.stringify({ source: "Booking" }),
       CustomerNotes: snapshot?.requirements || null,
     },
     tx,
@@ -215,7 +213,7 @@ export async function createBooking(
     "Booking",
     bookingId,
     null,
-    { number, total, quotationId },
+    { number, total },
     tx,
   );
   return {
@@ -232,7 +230,7 @@ async function prepareBooking(input, ctx, tx) {
   const event = await futureEvent(b.eventId, id, tx),
     { s, pack } = await availableService(b.serviceId, b.packageId, tx);
   if (!pack && s.PricingType === "CustomQuote")
-    fail("Request a quotation for this service.");
+    fail("This service does not have a bookable catalog price. Contact the vendor.");
   const document = s.DetailsJson ? JSON.parse(s.DetailsJson) : null;
   if (document?.offer) fail("Use the dedicated booking checkout for this listing.", 409);
   const flexible = !pack && !!document?.pricing;
@@ -251,7 +249,7 @@ async function prepareBooking(input, ctx, tx) {
     ? breakdown.total
     : Number(pack ? pack.FinalPrice : s.BasePrice);
   if (!Number.isFinite(price) || price <= 0)
-    fail("Request a quotation to confirm the price.");
+    fail("A published price is required before this service can be booked.");
   const guests = Number(event.GuestCount);
   if (
     (pack?.MinimumGuests || s.MinimumGuests) > guests ||
@@ -550,7 +548,6 @@ export async function book(input, ctx) {
       p.items,
       ctx,
       tx,
-      null,
       p.snapshot,
     );
     if (p.snapshot.coupon)
@@ -568,11 +565,6 @@ export async function book(input, ctx) {
     return result;
   });
 }
-export const requestQuote = (input, ctx) => quotations.request(input, ctx);
-export const quoteDetails = (id, ctx) =>
-  quotations.details(id, ctx, "Customer");
-export const decideQuote = (id, input, ctx) =>
-  quotations.decide(id, input, ctx);
 export async function bookingDetails(recordId, ctx) {
   scope(ctx);
   return lifecycleDetails(recordId, ctx, "Customer");

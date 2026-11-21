@@ -88,8 +88,7 @@ export async function loadVendorDetails(id) {
     (SELECT COUNT(*) FROM dbo.VendorDocuments WHERE VendorId=:id AND VerificationStatus='Pending') AS pendingDocuments,
     (SELECT COUNT(*) FROM dbo.VendorDocuments WHERE VendorId=:id AND VerificationStatus='Rejected') AS rejectedDocuments,
     (SELECT COUNT(*) FROM dbo.VendorDocuments WHERE VendorId=:id) AS documents,
-    (SELECT COUNT(*) FROM dbo.VendorDocuments WHERE VendorId=:id AND VerificationStatus='Approved') AS approvedDocuments,
-    (SELECT COUNT(*) FROM dbo.Quotations WHERE VendorId=:id) AS quotations`,
+    (SELECT COUNT(*) FROM dbo.VendorDocuments WHERE VendorId=:id AND VerificationStatus='Approved') AS approvedDocuments`,
     { id },
   );
   const [revenue] = await repo.select(
@@ -166,14 +165,9 @@ const collections = {
     fields:
       "t.BookingId AS id,t.BookingNumber AS number,CONCAT(u.FirstName,' ',u.LastName) AS customer,t.CustomerId AS customerId,e.EventName AS event,t.BookingDate AS eventDate,(SELECT STRING_AGG(CONVERT(nvarchar(max),bi.ItemName),', ') FROM dbo.BookingItems bi WHERE bi.BookingId=t.BookingId) AS services,t.TotalAmount AS amount,t.PaidAmount AS paid,t.RemainingAmount AS remaining,t.PaymentStatus AS paymentStatus,t.BookingStatus AS status,t.CustomerNotes AS customerNotes,t.VendorNotes AS vendorNotes,t.CreatedAt AS createdAt",
   },
-  quotations: {
-    from: "dbo.Quotations t JOIN dbo.Users u ON u.UserId=t.CustomerId JOIN dbo.Events e ON e.EventId=t.EventId",
-    where: "t.VendorId=:id",
-    fields:
-      "t.QuotationId AS id,t.QuotationNumber AS number,CONCAT(u.FirstName,' ',u.LastName) AS customer,t.CustomerId AS customerId,e.EventName AS event,t.TotalAmount AS amount,t.Status AS status,t.ValidUntil AS validUntil,t.CustomerMessage AS customerMessage,t.VendorMessage AS vendorMessage,t.CreatedAt AS createdAt",
-  },
+
   customers: {
-    from: "dbo.Users t JOIN (SELECT CustomerId,MAX(CreatedAt) AS lastInteractionAt FROM (SELECT CustomerId,CreatedAt FROM dbo.Booking WHERE VendorId=:id UNION ALL SELECT CustomerId,CreatedAt FROM dbo.Quotations WHERE VendorId=:id UNION ALL SELECT CustomerId,CreatedAt FROM dbo.Conversations WHERE VendorId=:id) interactions GROUP BY CustomerId) c ON c.CustomerId=t.UserId LEFT JOIN (SELECT CustomerId,COUNT(*) AS bookings,SUM(TotalAmount) AS amount,MAX(CreatedAt) AS lastBookingAt FROM dbo.Booking WHERE VendorId=:id GROUP BY CustomerId) b ON b.CustomerId=t.UserId",
+    from: "dbo.Users t JOIN (SELECT CustomerId,MAX(CreatedAt) AS lastInteractionAt FROM (SELECT CustomerId,CreatedAt FROM dbo.Booking WHERE VendorId=:id UNION ALL SELECT CustomerId,CreatedAt FROM dbo.Conversations WHERE VendorId=:id) interactions GROUP BY CustomerId) c ON c.CustomerId=t.UserId LEFT JOIN (SELECT CustomerId,COUNT(*) AS bookings,SUM(TotalAmount) AS amount,MAX(CreatedAt) AS lastBookingAt FROM dbo.Booking WHERE VendorId=:id GROUP BY CustomerId) b ON b.CustomerId=t.UserId",
     where: "1=1",
     fields:
       "t.UserId AS id,CONCAT(t.FirstName,' ',t.LastName) AS name,t.Email AS email,t.PhoneNumber AS phone,COALESCE(b.bookings,0) AS bookings,COALESCE(b.amount,0) AS amount,b.lastBookingAt,c.lastInteractionAt,CASE WHEN t.IsBlocked=1 THEN 'Blocked' WHEN t.IsActive=0 THEN 'Inactive' ELSE 'Active' END AS status,t.CreatedAt AS createdAt",
@@ -223,7 +217,6 @@ const collections = {
     OR (t.EntityType='Services' AND EXISTS(SELECT 1 FROM dbo.Services s WHERE s.VendorId=:id AND CONVERT(varchar(100),s.ServiceId)=t.EntityId))
     OR (t.EntityType='ServicePackages' AND EXISTS(SELECT 1 FROM dbo.ServicePackages p JOIN dbo.Services s ON s.ServiceId=p.ServiceId WHERE s.VendorId=:id AND CONVERT(varchar(100),p.PackageId)=t.EntityId))
     OR (t.EntityType='Booking' AND EXISTS(SELECT 1 FROM dbo.Booking b WHERE b.VendorId=:id AND CONVERT(varchar(100),b.BookingId)=t.EntityId))
-    OR (t.EntityType='Quotations' AND EXISTS(SELECT 1 FROM dbo.Quotations q WHERE q.VendorId=:id AND CONVERT(varchar(100),q.QuotationId)=t.EntityId))
     OR (t.EntityType='VendorLocations' AND EXISTS(SELECT 1 FROM dbo.VendorLocations l WHERE l.VendorId=:id AND CONVERT(varchar(100),l.VendorLocationId)=t.EntityId))
     OR (t.EntityType='VendorPayouts' AND EXISTS(SELECT 1 FROM dbo.VendorPayouts p WHERE p.VendorId=:id AND CONVERT(varchar(100),p.PayoutId)=t.EntityId))
     OR (t.EntityType='Reviews' AND EXISTS(SELECT 1 FROM dbo.Reviews r WHERE r.VendorId=:id AND CONVERT(varchar(100),r.ReviewId)=t.EntityId))

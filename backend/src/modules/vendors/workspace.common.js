@@ -27,7 +27,7 @@ export const targets = {
   offers: { table: "Offers", pk: "OfferId", noDate: true },
   coupons: { table: "Coupons", pk: "CouponId", noDate: true },
   bookings: { table: "Booking", pk: "BookingId" },
-  quotations: { table: "Quotations", pk: "QuotationId" },
+
   documents: { table: "VendorDocuments", pk: "VendorDocumentId" },
   conversations: { table: "Conversations", pk: "ConversationId", noDate: true },
   items: {

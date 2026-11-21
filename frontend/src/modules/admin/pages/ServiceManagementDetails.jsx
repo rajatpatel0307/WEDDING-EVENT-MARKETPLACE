@@ -116,11 +116,11 @@ function Performance({ id, revision }) {
   const d = state.data;
   return (
     <>
-      <div className="asm-stats grid grid-cols-[repeat(5,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(767px<width<=1200px)]:grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[12px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e1e9e4] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e1e9e4] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e1e9e4] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e1e9e4] [&_article]:rounded-[12px] [&_article]:[background:#fff] [&_article]:p-[18px] [@media(width<=767px)]:[&_article]:p-[13px] [&_article]:min-w-0 [&_article_>_div]:flex [&_article_>_div]:justify-between [&_article_>_div]:items-center [&_article_>_div]:gap-[10px] [&_span]:text-[12px] [&_span]:text-[#71827a] [&_strong]:block [&_strong]:text-[25px] [@media(width<=767px)]:[&_strong]:text-[21px] [&_strong]:font-[650] [&_strong]:mt-[9px] [&_strong]:tracking-[-0.6px] [&_strong]:[overflow-wrap:anywhere] [&_svg]:text-[#73978b]">
+      <div className="asm-stats grid grid-cols-[repeat(4,_minmax(0,_1fr))] [@media(width<=767px)]:grid-cols-[repeat(2,_minmax(0,_1fr))] [@media(767px<width<=1200px)]:grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[12px] [&_article]:[border-top-width:1px] [&_article]:[border-top-style:solid] [&_article]:[border-top-color:#e1e9e4] [&_article]:[border-right-width:1px] [&_article]:[border-right-style:solid] [&_article]:[border-right-color:#e1e9e4] [&_article]:[border-bottom-width:1px] [&_article]:[border-bottom-style:solid] [&_article]:[border-bottom-color:#e1e9e4] [&_article]:[border-left-width:1px] [&_article]:[border-left-style:solid] [&_article]:[border-left-color:#e1e9e4] [&_article]:rounded-[12px] [&_article]:[background:#fff] [&_article]:p-[18px] [@media(width<=767px)]:[&_article]:p-[13px] [&_article]:min-w-0 [&_article_>_div]:flex [&_article_>_div]:justify-between [&_article_>_div]:items-center [&_article_>_div]:gap-[10px] [&_span]:text-[12px] [&_span]:text-[#71827a] [&_strong]:block [&_strong]:text-[25px] [@media(width<=767px)]:[&_strong]:text-[21px] [&_strong]:font-[650] [&_strong]:mt-[9px] [&_strong]:tracking-[-0.6px] [&_strong]:[overflow-wrap:anywhere] [&_svg]:text-[#73978b]">
         {[
           ["views", "Total Views"],
           ["enquiries", "Total Enquiries"],
-          ["quotations", "Total Quotations"],
+
           ["bookings", "Total Bookings"],
           ["completed", "Completed Bookings"],
           ["cancelled", "Cancelled Bookings"],

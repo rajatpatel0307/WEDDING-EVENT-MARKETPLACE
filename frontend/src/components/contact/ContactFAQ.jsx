@@ -41,7 +41,7 @@ export default function ContactFAQ() {
             "How do payments work?",
             <>
               Online checkout is not currently live. Before any future payment,
-              review the quoted total, payment schedule and published
+              review the booking total, payment schedule and published
               cancellation and refund terms. Never send payment passwords or
               one-time codes through this form.
             </>,

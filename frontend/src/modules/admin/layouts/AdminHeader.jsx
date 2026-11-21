@@ -167,7 +167,7 @@ function SearchResults({
         <Link
           key={`${record.kind}-${record.id}`}
           to={
-            ["payments", "quotations"].includes(record.kind)
+            ["payments", ].includes(record.kind)
               ? `/admin/finance/${record.kind}/${record.id}`
               : `/admin/${record.kind}/${record.id}`
           }

@@ -55,7 +55,7 @@ export default function EventLocationPanel({ eventId, onChange }) {
       ) : (
         <p>
           Add a venue or copy a saved address before requesting bookings or
-          quotations.
+          bookings.
         </p>
       )}
       <div className="cw-detail-actions flex gap-[12px] flex-wrap mt-[22px] [@media(width<=520px)]:[&_>_.cw-button]:text-[11px]">

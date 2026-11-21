@@ -734,7 +734,7 @@ export default function CustomerHeader({
               </div>
 
               <div className="py-2">
-                {customerNavigation.filter(([path]) => ["profile", "addresses", "bookings", "quotations", "payments", "settings"].includes(path)).map(([path, label, Icon]) => (
+                {customerNavigation.filter(([path]) => ["profile", "addresses", "bookings", "payments", "settings"].includes(path)).map(([path, label, Icon]) => (
                   <Link key={path} to={`/customer/${path}`} onClick={() => setProfileOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-700 transition-colors hover:bg-slate-50 hover:text-emerald-700">
                     <Icon size={17} /><span>{label}</span>
                   </Link>

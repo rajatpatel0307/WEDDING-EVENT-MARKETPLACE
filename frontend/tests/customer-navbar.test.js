@@ -51,6 +51,7 @@ test("customer workspace renders its customer header, sidebar, counts and nested
   try {
     const { render } = await server.ssrLoadModule("virtual:customer-navbar-check.jsx");
     const workspace = render();
+    assert.doesNotMatch(workspace, /quotations/i);
     assert.equal((workspace.match(/<header\b/g) || []).length, 1);
     assert.ok(workspace.includes('aria-label="Marketplace navigation"'));
     assert.ok(workspace.includes('aria-label="Customer profile menu"'));
@@ -58,7 +59,7 @@ test("customer workspace renders its customer header, sidebar, counts and nested
     assert.ok(workspace.includes('aria-label="Open search"'));
     assert.ok(workspace.includes('id="customer-sidebar"'));
     assert.ok(workspace.includes('aria-label="Customer pages"'));
-    for (const path of ["dashboard", "profile", "events", "discover", "bookings", "quotations", "wishlist", "messages", "notifications", "payments", "reviews", "addresses", "settings", "cart", "orders", "legal"]) {
+    for (const path of ["dashboard", "profile", "events", "discover", "bookings", "wishlist", "messages", "notifications", "payments", "reviews", "addresses", "settings", "cart", "orders", "legal"]) {
       assert.ok(workspace.includes(`href="/customer/${path}"`), `${path} is reachable`);
     }
     assert.ok(workspace.includes('aria-label="Wishlist, 3 items"'));

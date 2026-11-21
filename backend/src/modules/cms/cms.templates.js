@@ -8,7 +8,7 @@ export const termsTitles = [
   "Vendor Verification and Approval",
   "Marketplace Services",
   "Service Listings and Packages",
-  "Pricing and Quotations",
+  "Pricing",
   "Booking Rules",
   "Booking Confirmation",
   "Payment Terms",
@@ -112,10 +112,7 @@ export function template(key) {
       metaDescription:
         "Contact the MarryNest team about accounts, vendors, services and event planning.",
       faqs: [
-        section(
-          "How do I request a quotation?",
-          "Open a service and choose Request quotation. Sign in to send your event requirements to the vendor.",
-        ),
+        section("How do I contact a vendor?", "Open a vendor or service and choose Message vendor to discuss your event requirements."),
         section(
           "Where can I find my bookings?",
           "Sign in to your customer account and open My Bookings.",
@@ -135,7 +132,7 @@ export function template(key) {
     sections: [
       section(
         "Our purpose",
-        "Planning an event means coordinating venues, services, dates and budgets. This marketplace brings discovery, quotations, bookings and conversations into one place.",
+        "Planning an event means coordinating venues, services, dates and budgets. This marketplace brings discovery, bookings and conversations into one place.",
       ),
       section(
         "Our mission",
@@ -153,7 +150,7 @@ export function template(key) {
       ),
       section(
         "Clearer choices",
-        "Compare services and packages and request quotations for your event.",
+        "Compare services and packages for your event.",
       ),
       section(
         "Plans in one place",
@@ -163,7 +160,7 @@ export function template(key) {
     steps: [
       "Explore services",
       "Discover vendors",
-      "Request quotations",
+
       "Compare options",
       "Book services",
       "Plan your event",
@@ -171,7 +168,7 @@ export function template(key) {
     customerBenefits: [
       "Discover vendors",
       "Compare services and packages",
-      "Request quotations",
+
       "Communicate with vendors",
       "Manage bookings",
       "Share verified booking reviews",
@@ -179,7 +176,7 @@ export function template(key) {
     vendorBenefits: [
       "Create a business profile",
       "List services and packages",
-      "Receive quotation requests",
+
       "Manage bookings",
       "Communicate with customers",
       "Respond to customer reviews",

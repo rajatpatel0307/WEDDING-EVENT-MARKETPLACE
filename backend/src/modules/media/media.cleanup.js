@@ -63,7 +63,7 @@ export async function references(row, tx, includeShared = true) {
   if (queries[type]) {
     const [result] = await db.select(queries[type], p, tx);
     if (result.count)
-      return "The owning entity is active or has booking/quotation history.";
+      return "The owning entity is active or has historical records.";
   }
   return null;
 }

@@ -70,7 +70,7 @@ export const types = {
   CUSTOMER: "Customer support",
   VENDOR: "Vendor support",
   BOOKING: "Booking related",
-  QUOTATION: "Quotation related",
+
   PAYMENT: "Payment related",
   TECHNICAL: "Technical issue",
   PARTNERSHIP: "Partnership inquiry",

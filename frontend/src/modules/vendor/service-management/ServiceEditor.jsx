@@ -896,7 +896,7 @@ export default function ServiceEditor() {
                         {units.map((u) => (
                           <option key={u} value={u}>
                             {u === "Custom"
-                              ? "Custom Quote"
+                              ? "Custom pricing"
                               : u === "Per KM"
                                 ? "Per Kilometer"
                                 : u}
@@ -904,7 +904,7 @@ export default function ServiceEditor() {
                         ))}
                       </select>
                     </Field>
-                    <Field label="Booking pricing method" hint="Choose fixed pricing, a per-unit rate or a custom quote. Leave the default to match your pricing unit.">
+                    <Field label="Booking pricing method" hint="Choose fixed pricing, a per-unit rate or a custom price. Leave the default to match your pricing unit.">
                       <select
                         value={data.pricing.type || ""}
                         onChange={(e) =>
@@ -918,7 +918,7 @@ export default function ServiceEditor() {
                           ["PerHour", "Hourly"],
                           ["PerDay", "Daily"],
                           ["PerItem", "Per item"],
-                          ["CustomQuote", "Custom quote"],
+                          ["CustomQuote", "Custom pricing"],
                         ].map(([value, label]) => (
                           <option key={value} value={value}>
                             {label}
@@ -928,22 +928,7 @@ export default function ServiceEditor() {
                     </Field>
                     {field("pricing", "seasonalFrom", "Season starts", "date")}
                     {field("pricing", "seasonalTo", "Season ends", "date")}
-                    <label
-                      className="
-                      flex gap-[9px] items-center text-[#61765f] text-[12px] [&_input[type=checkbox]]:w-[16px]
-                      [&_input[type=checkbox]]:h-[16px] [&_input[type=checkbox]]:min-h-[0]
-                      [&_input[type=checkbox]]:[accent-color:#396d4d]
-                    "
-                    >
-                      <input
-                        type="checkbox"
-                        checked={data.pricing.customQuote}
-                        onChange={(e) =>
-                          nested("pricing", "customQuote", e.target.checked)
-                        }
-                      />
-                      Custom quotation available
-                    </label>
+
                   </div>
                   <div
                     className="

@@ -250,7 +250,7 @@ async function validateReschedule(row, body, tx) {
         Number(original) !== Number(current)
       )
         fail(
-          "The new venue requires revised travel pricing. Request a replacement quotation before changing this booking.",
+          "The new venue requires revised travel pricing. Create a new booking with updated pricing.",
           409,
         );
     }
@@ -276,7 +276,7 @@ async function validateReschedule(row, body, tx) {
   const price = JSON.parse(row.PriceSnapshotJson || "null");
   if (!price)
     fail(
-      "Historical booking terms require a new quotation before rescheduling.",
+      "Historical booking terms require a new booking before rescheduling.",
     );
   if (price.pricing) {
     const before = calculatePrice(
@@ -287,7 +287,7 @@ async function validateReschedule(row, body, tx) {
       after = calculatePrice(price.pricing, price.quantity, body.date);
     if (Math.round(before * 100) !== Math.round(after * 100))
       fail(
-        "The new date changes the agreed price. Request a revised quotation and agree payment terms before rescheduling.",
+        "The new date changes the agreed price. Create a new booking with the updated price and payment terms.",
       );
   }
 }

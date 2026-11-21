@@ -477,7 +477,7 @@ export function CustomerEventDetails() {
           busy={busy}
         >
           <p>
-            Your history will be preserved. Active bookings or quotations must
+            Your history will be preserved. Active bookings must
             be resolved first.
           </p>
           <button
@@ -684,19 +684,7 @@ export function CustomerEventDetails() {
           <p>Discover a service to send your first booking request.</p>
         )}
       </section>
-      <section className="cw-panel cw-prose [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4eade] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4eade] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4eade] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4eade] rounded-[10px] min-w-0 overflow-x-hidden overflow-y-hidden pt-[25px] [@media(width<=520px)]:pt-[23px] pr-[28px] [@media(width<=520px)]:pr-[20px] pb-[25px] [@media(width<=520px)]:pb-[23px] pl-[28px] [@media(width<=520px)]:pl-[20px] mb-[24px] [&_>_h2]:mb-[20px] [&_>_h3]:mt-[24px] [&_p]:[white-space:pre-line]">
-        <h2>Event quotations</h2>
-        {r.data.quotations?.length ? (
-          r.data.quotations.map((q) => (
-            <p key={q.id}>
-              <Link to={`/customer/quotations/${q.id}`}>{q.number}</Link> ·{" "}
-              {q.status} · {money(q.amount)}
-            </p>
-          ))
-        ) : (
-          <p>No proposals received yet.</p>
-        )}
-      </section>
+
       {edit && (
         <EventForm
           event={e}

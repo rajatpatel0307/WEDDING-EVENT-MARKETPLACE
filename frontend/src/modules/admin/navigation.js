@@ -62,8 +62,7 @@ const navigationGroups = [
   {
     label: "TRANSACTIONS",
     items: [
-      ["quotations", "Quotations", FileText],
-      ["quotation-requests", "Quotation Requests", FileText],
+
       ["payments", "Payments", CreditCard],
       ["payment-overview", "Payment Overview", CreditCard],
       ["refund-requests", "Refund Review", RotateCcw],

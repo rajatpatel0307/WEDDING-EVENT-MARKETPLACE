@@ -21,7 +21,7 @@ import * as customers from "./customers.service.js";
 import * as vendorDetails from "./vendor-details.service.js";
 import * as verification from "./vendor-verification.service.js";
 import * as lifecycle from "../bookings/bookings.service.js";
-import * as quotations from "../quotations/quotations.service.js";
+
 export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
   const router = Router();
   router.use(
@@ -109,24 +109,7 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
     res.set({'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="payments-latest-10000.csv"'});
     res.send(await finance.exportReport(q.query,q.admin));
   });
-  router.get("/quotation-requests", async (req, res) =>
-    res.json(await quotations.list(req.query, req.admin, "Admin", true)),
-  );
-  router.get("/quotation-requests/:id", async (req, res) =>
-    res.json(await quotations.requestDetail(req.params.id, req.admin, "Admin")),
-  );
-  router.get("/quotations/statistics", async (req, res) =>
-    res.json(await quotations.statistics(req.admin, "Admin")),
-  );
-  router.get("/quotations", async (req, res) =>
-    res.json(await quotations.list(req.query, req.admin, "Admin")),
-  );
-  router.get("/quotations/:id", async (req, res) =>
-    res.json(await quotations.details(req.params.id, req.admin, "Admin")),
-  );
-  router.post("/quotations/:id/notes", async (req, res) =>
-    res.json(await quotations.adminNote(req.params.id, req.body, req.admin)),
-  );
+
   router.put(
     "/commission/configuration",
     rateLimit({ windowMs: 60000, limit: 15 }),

@@ -1,5 +1,7 @@
 # Communication module
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 Implemented against the existing React/Express/MSSQL architecture. Existing `Conversations`, `Messages`, `Notifications`, JWT cookies, booking milestones, quotation history, Cloudinary storage and dashboard routes are reused. Customer and vendor legacy chat endpoints delegate to one communication service.
 
 ## Setup and deployment
@@ -180,7 +182,7 @@ See [communication-testing.md](communication-testing.md) for executable checks, 
 - Backend `src/modules/vendors/workspace.messaging.js`, `workspace.common.js`
 - Backend `src/modules/notifications/admin-events.js`, `communications.service.js`
 - Backend `src/modules/admin/admin.repository.js`, `admin.resources.js`, `booking-finance.js`, `customers.service.js`, `vendor-details.service.js`, `operations.service.js`
-- Backend `scripts/verify-booking-lifecycle.js`, `scripts/verify-quotations.js` (current location fixtures and context-aware conversation expectation)
+- Backend `scripts/verify-booking-lifecycle.js` (current location fixtures and context-aware conversation expectation)
 - Backend `tests/communications.test.js`, `admin-http.test.js`, `customer-details.test.js`, `vendor-details.test.js` (new notification and private-admin-access expectations)
 - Frontend `package.json`, `package-lock.json`, `src/routes/AppRoutes.jsx`, `src/services/chat-sync.js`, `src/hooks/useCommunicationCounts.js`
 - Frontend `src/modules/customer/CustomerLayout.jsx`, `pages/CustomerMessagesPage.jsx`, `pages/CustomerDiscovery.jsx`, `pages/CustomerRecords.jsx`

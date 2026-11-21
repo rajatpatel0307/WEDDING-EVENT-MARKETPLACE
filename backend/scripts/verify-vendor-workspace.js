@@ -434,75 +434,6 @@ try {
         ).status,
         404,
       );
-      const quoteOptions = await ok("/quotation-options");
-      assert.ok(
-        quoteOptions.events.some(
-          (e) => e.id.toLowerCase() === ids.event.toLowerCase(),
-        ),
-      );
-      assert.ok(
-        !quoteOptions.events.some(
-          (e) => e.id.toLowerCase() === ids.privateEvent.toLowerCase(),
-        ),
-      );
-      const quote = {
-        eventId: ids.event,
-        validUntil: expiry,
-        message: "Fixture proposal",
-        status: "Draft",
-        items: [
-          {
-            serviceId: service,
-            name: "Venue service",
-            quantity: 2,
-            price: 1000,
-            discount: 100,
-            tax: 50,
-          },
-        ],
-      };
-      const createdQuote = await ok("/quotations", "POST", quote);
-      const [totals] = await query(
-        "SELECT TotalAmount FROM dbo.Quotations WHERE QuotationId=:quote",
-        { quote: createdQuote.id },
-      );
-      assert.equal(Number(totals[0].TotalAmount), 1950);
-      assert.equal(
-        (
-          await request("/quotations", "POST", {
-            ...quote,
-            eventId: ids.privateEvent,
-          })
-        ).status,
-        404,
-      );
-      assert.equal(
-        (await request("/quotations", "POST", { ...quote, status: "Accepted" }))
-          .status,
-        400,
-      );
-      assert.equal(
-        (
-          await request(`/quotations/${createdQuote.id}/action`, "POST", {
-            action: "Send",
-          })
-        ).status,
-        409,
-      );
-      await query(
-        "UPDATE dbo.Services SET ApprovalStatus='Approved',IsActive=1 WHERE ServiceId=:service",
-        { service },
-      );
-      await ok(`/quotations/${createdQuote.id}/action`, "POST", {
-        action: "Send",
-      });
-      assert.equal(
-        (await request(`/quotations/${createdQuote.id}`, "PUT", quote)).status,
-        409,
-      );
-      await ok(`/quotations/${createdQuote.id}/action`, "POST", {
-        action: "Cancel",
-      });
       const conversation = await ok("/conversations", "POST", {
         bookingId: ids.booking,
       });
@@ -651,7 +582,7 @@ try {
         "documents",
         "availability",
         "bookings",
-        "quotations",
+
         "customers",
         "revenue",
         "payouts",
@@ -706,5 +637,5 @@ try {
 }
 if (passed && !process.exitCode)
   console.log(
-    "PASS: all 17 category forms, service/item/package CRUD, pending approval, duplication, scoped locations/promotions/coupons, booking decisions, quotes and totals, calendar conflicts, private messages/attachments/documents, notifications, daily/weekly/monthly analytics, cross-vendor denial and live approval guard. All fixtures rolled back.",
+    "PASS: all 17 category forms, service/item/package CRUD, pending approval, duplication, scoped locations/promotions/coupons, booking decisions, calendar conflicts, private messages/attachments/documents, notifications, daily/weekly/monthly analytics, cross-vendor denial and live approval guard. All fixtures rolled back.",
   );

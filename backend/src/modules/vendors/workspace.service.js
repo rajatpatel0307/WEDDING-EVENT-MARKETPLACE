@@ -41,12 +41,7 @@ const listInput = z.object({
   payment: z.enum(["", "Pending", "PartiallyPaid", "Paid", "Failed", "RefundPending", "Refunded", "PartiallyRefunded"]).default(""),
 });
 const extra = {
-  requests: {
-    from: "dbo.QuotationRequests t JOIN dbo.Events e ON e.EventId=t.EventId JOIN dbo.Services s ON s.ServiceId=t.ServiceId JOIN dbo.Users u ON u.UserId=t.CustomerId",
-    where: "t.VendorId=:id",
-    fields:
-      "t.RequestId AS id,t.EventId AS eventId,e.EventName AS event,CONCAT(u.FirstName,' ',u.LastName) AS customer,s.ServiceName AS service,t.Message AS message,t.Status AS status,t.CreatedAt AS createdAt",
-  },
+
   items: {
     from: "dbo.ServiceItems t JOIN dbo.Services s ON s.ServiceId=t.ServiceId",
     where: "s.VendorId=:id",
@@ -68,13 +63,12 @@ const extra = {
   notifications: {
     from: "dbo.Notifications t",
     where:
-      "t.UserId=:ownerId AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation')",
+      "t.UserId=:ownerId AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation' AND ReferenceType NOT LIKE '%Quotation%')",
     fields:
       `t.NotificationId AS id,${bookingNotificationText("Title")} AS title,${bookingNotificationText("Message")} AS message,t.IsRead AS isRead,t.ReferenceType AS referenceType,t.ReferenceId AS referenceId,t.CreatedAt AS createdAt`,
   },
 };
 const allowed = new Set([
-  "requests",
   "services",
   "packages",
   "items",
@@ -82,7 +76,7 @@ const allowed = new Set([
   "documents",
   "availability",
   "bookings",
-  "quotations",
+
   "customers",
   "revenue",
   "payouts",
@@ -125,12 +119,7 @@ export async function records(section, input, ctx) {
   let condition = c.where;
   const filters = {
     bookings: bookingFilters,
-    quotations: {
-      sent: "t.Status IN ('Sent','Viewed')",
-      accepted: "t.Status='Accepted'",
-      rejected: "t.Status IN ('Rejected','Expired','Cancelled')",
-      drafts: "t.Status='Draft'",
-    },
+
     availability: {
       blocked: "t.Status='Blocked'",
       available: "t.Status='Available'",
@@ -145,7 +134,7 @@ export async function records(section, input, ctx) {
     services: "t.ServiceName",
     packages: "t.PackageName",
     bookings: "t.BookingNumber",
-    quotations: "t.QuotationNumber",
+
     customers: "CONCAT(t.FirstName,' ',t.LastName)",
     offers: "t.OfferName",
     coupons: "t.CouponCode",
@@ -173,8 +162,7 @@ export async function records(section, input, ctx) {
   if (
     section === "packages" ||
     section === "locations" ||
-    section === "bookings" ||
-    section === "quotations"
+    section === "bookings"
   )
     fields += ",t.UpdatedAt AS updatedAt";
   const bookingSort = { createdAt: "t.CreatedAt", eventDate: "t.BookingDate", amount: "t.TotalAmount", number: "t.BookingNumber" };

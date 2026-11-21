@@ -29,7 +29,6 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useMarketplace, money } from "./api";
 
-
 export function ReadState({ state }) {
   return state.loading ? (
     <div role="status" className="cm-state [.customer-marketplace_&]:border [.customer-marketplace_&]:border-[#e8dfd9] [.customer-marketplace_&]:p-[32px] [.customer-marketplace_&]:rounded-[16px]">
@@ -156,7 +155,7 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull, saved
                     {item.price ? "Starting from" : "Made for your celebration"}
                   </small>
                   <strong>
-                    {item.price ? money(item.price) : "Request a quotation"}
+                    {item.price ? money(item.price) : "Price unavailable"}
                   </strong>
                   {item.price ? <span> onwards</span> : null}
                 </p>

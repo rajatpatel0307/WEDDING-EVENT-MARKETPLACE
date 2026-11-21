@@ -213,7 +213,6 @@ try {
       await n.preferences(customer, {
         chatEnabled: false,
         bookingEnabled: false,
-        quotationEnabled: false,
       });
       const [before] = await n.query(
         "SELECT COUNT(*) AS count FROM dbo.Notifications WHERE UserId=:user",

@@ -49,7 +49,7 @@ export const serviceInput = z
   })
   .strict()
   .refine((v) => v.pricingType === "CustomQuote" || v.price !== null, {
-    message: "Provide a base price or choose custom quotation pricing.",
+    message: "Provide a base price or choose custom pricing.",
   })
   .refine(
     (v) =>
@@ -262,39 +262,3 @@ export const availabilityInput = z
       (v.startTime && v.endTime && v.endTime > v.startTime),
     { message: "Set both times, with the end after the start." },
   );
-export const quoteInput = z
-  .object({
-    eventId: z.guid(),
-    validUntil: z.iso.date(),
-    message: z.string().trim().max(5000).default(""),
-    status: z.enum(["Draft", "Sent"]),
-    items: z
-      .array(
-        z
-          .object({
-            serviceId: z.guid(),
-            packageId: z.guid().nullable().optional(),
-            name: z.string().trim().min(1).max(200),
-            quantity: z
-              .number()
-              .finite()
-              .min(0.001)
-              .max(100000)
-              .refine(
-                (v) => Math.abs(v * 1000 - Math.round(v * 1000)) < 0.00001,
-                { message: "Use at most three decimal places for quantities." },
-              ),
-            price: amount,
-            discount: amount,
-            tax: amount,
-          })
-          .strict()
-          .refine((v) => v.discount <= v.quantity * v.price, {
-            message: "Line discount cannot exceed the line amount.",
-          }),
-      )
-      .min(1)
-      .max(100),
-    expectedUpdatedAt: version,
-  })
-  .strict();

@@ -1,5 +1,7 @@
 # Customer website implementation report
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 Verified 30 October 2026 against the existing React/Tailwind, Express/JWT and MSSQL project. Work extends the existing repository and customer workspace. It does not publish a separate Site, replace authentication, introduce production mock data or create parallel booking/payment modules.
 
 ## Protected Home Page

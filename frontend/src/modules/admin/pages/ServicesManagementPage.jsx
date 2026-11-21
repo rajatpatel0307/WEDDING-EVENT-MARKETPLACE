@@ -648,7 +648,7 @@ export default function ServicesManagementPage({ kind }) {
           <div className="ad-form flex flex-col gap-[17px] [&_label]:flex [&_label]:flex-col [&_label]:gap-[7px] [&_label]:text-[11px] [&_label]:text-[#7c8e76] [&_input]:w-full [&_input]:text-[12px]! [&_textarea]:w-full [&_textarea]:text-[12px]! [&_select]:w-full [&_select]:text-[12px]! [&_textarea]:min-h-[90px] [&_textarea]:[resize:vertical] [&_p]:text-[12px] [&_p]:text-[#86977d] [&_p]:leading-[1.7]">
             <p>
               {dialog.action === "delete"
-                ? `Permanently delete “${dialog.service.name}”? Services with booking, quotation or offer history cannot be deleted.`
+                ? `Permanently delete “${dialog.service.name}”? Services with booking or offer history cannot be deleted.`
                 : `Create an inactive draft copy of “${dialog.service.name}”, including its items, packages and images?`}
             </p>
             {error && <p role="alert">{error}</p>}

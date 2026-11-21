@@ -36,7 +36,7 @@ export function useMarketplace(path) {
 }
 export const money = (value) =>
   value === null || value === undefined
-    ? "Custom quotation"
+    ? "Custom pricing"
     : new Intl.NumberFormat("en-IN", {
         style: "currency",
         currency: "INR",

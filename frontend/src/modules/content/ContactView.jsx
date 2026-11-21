@@ -124,7 +124,7 @@ export function ContactForm({ settings }) {
           </label>
           <label className={label}>
             Message <Required />
-            <textarea className={`${field} min-h-36 resize-y`} name="message" placeholder="Tell us a little more. If this is about a booking or quotation, include your reference number." required minLength={20} maxLength={5000} rows={5} aria-describedby="contact-message-help" />
+            <textarea className={`${field} min-h-36 resize-y`} name="message" placeholder="Tell us a little more. If this is about a booking, include your reference number." required minLength={20} maxLength={5000} rows={5} aria-describedby="contact-message-help" />
             <span id="contact-message-help" className="mt-2 block text-[11px] font-normal leading-relaxed text-[#9a8d84]">
               Please avoid sending passwords, payment card information or identity documents.
             </span>
@@ -209,7 +209,7 @@ export default function ContactView({ page, preview = false }) {
               <span className="relative mb-7 flex size-12 items-center justify-center rounded-full border border-[#d4aca7]/30 text-[#dfbdad]"><HeartHandshake size={25} strokeWidth={1.2} aria-hidden="true" /></span>
               <p className="relative text-[9px] font-medium uppercase tracking-[0.24em] text-[#dfbeb6]">{info.companyName}</p>
               <h2 className="relative mt-4 font-serif text-[31px] font-normal leading-[1.2] tracking-[-0.6px] text-[#fff8ef]">A little guidance.<br /><span className="italic text-[#e7c5bb]">A clearer next step.</span></h2>
-              <p className="relative mt-5 text-[13px] leading-[1.85] text-[#e3ced0]">For a booking or quotation inquiry, include the reference number so the team can locate the relevant record.</p>
+              <p className="relative mt-5 text-[13px] leading-[1.85] text-[#e3ced0]">For a booking inquiry, include the reference number so the team can locate the relevant record.</p>
               <ol className="relative mt-7 space-y-5 border-t border-white/15 pt-6">
                 {[
                   ["Choose a topic", "Pick the inquiry type that best fits your question."],

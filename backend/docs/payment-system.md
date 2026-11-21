@@ -1,5 +1,7 @@
 # Payment management implementation
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 ## Audit and integration decisions
 
 The live MSSQL schema and existing REST, authentication, booking, quotation,

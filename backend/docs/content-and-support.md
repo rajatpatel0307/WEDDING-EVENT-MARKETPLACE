@@ -1,5 +1,7 @@
 # Informational pages, content publishing and support
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 About and Contact now load published content from MSSQL. Terms and Privacy use the same versioned CMS, with complete editable outlines and a professional-review publication gate. Existing Home, shared navbar/footer, global CSS, assets and the `publicCompany` configuration used by Home remain unchanged.
 
 ## Run and configure

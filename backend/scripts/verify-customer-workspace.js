@@ -327,107 +327,6 @@ try {
       assert.equal((await api("/wishlist", "GET", null, "other")).length, 0);
       const wish = (await api("/wishlist"))[0];
       await api(`/wishlist/${wish.id}`, "DELETE", {});
-      await api("/quotation-requests", "POST", {
-        eventId: event.id,
-        serviceId: service,
-        message: "Please quote for our wedding.",
-      });
-      await api(
-        "/quotation-requests",
-        "POST",
-        {
-          eventId: event.id,
-          serviceId: service,
-          message: "Duplicate request.",
-        },
-        null,
-        409,
-      );
-      const options = await request("/api/vendor/quotation-options");
-      assert(
-        options.events.some(
-          (e) => e.id.toLowerCase() === event.id.toLowerCase(),
-        ),
-      );
-      const requests = await request("/api/vendor/records/requests");
-      assert.equal(requests.rows.length, 1);
-      const quote = await request("/api/vendor/quotations", "POST", {
-        eventId: event.id,
-        validUntil: future,
-        status: "Sent",
-        message: "A tailored proposal",
-        items: [
-          {
-            serviceId: service,
-            name: "Fixture Service",
-            quantity: 1,
-            price: 4500,
-            discount: 0,
-            tax: 0,
-          },
-        ],
-      });
-      assert.equal(
-        (await api("/records/requests")).rows[0].status,
-        "Responded",
-      );
-      await api(`/quotations/${quote.id}`, "GET", null, "other", 404);
-      await api(`/quotations/${quote.id}`);
-      for (const action of ["Reject", "Modify"]) {
-        const proposal = await request("/api/vendor/quotations", "POST", {
-          eventId: event.id,
-          validUntil: future,
-          status: "Sent",
-          message: "Additional proposal",
-          items: [
-            {
-              serviceId: service,
-              name: "Fixture Service",
-              quantity: 1,
-              price: 6000,
-              discount: 0,
-              tax: 0,
-            },
-          ],
-        });
-        await api(`/quotations/${proposal.id}/decision`, "POST", {
-          action,
-          message:
-            action === "Modify"
-              ? "Please revise the guest count."
-              : "We chose another proposal.",
-        });
-        const decided = await api(`/quotations/${proposal.id}`);
-        assert.equal(
-          decided.quotation.Status,
-          action === "Modify" ? "Cancelled" : "Rejected",
-        );
-      }
-      const draft = await request("/api/vendor/quotations", "POST", {
-        eventId: event.id,
-        validUntil: future,
-        status: "Draft",
-        message: "Revised proposal",
-        items: [
-          {
-            serviceId: service,
-            name: "Fixture Service",
-            quantity: 1,
-            price: 6000,
-            discount: 0,
-            tax: 0,
-          },
-        ],
-      });
-      await api(`/quotations/${draft.id}`, "GET", null, null, 404);
-      await request(`/api/vendor/quotations/${draft.id}/action`, "POST", {
-        action: "Send",
-      });
-      assert(
-        (await api("/records/requests")).rows.every(
-          (r) => r.status === "Responded",
-        ),
-      );
       const another = await api("/events", "POST", {
         name: "Second fixture event",
         type: "Reception",
@@ -523,17 +422,9 @@ try {
         venue.line1,
       );
 
-      const booking = await api(`/quotations/${quote.id}/decision`, "POST", {
-        action: "Accept",
-        message: "Looks good",
-      });
-      await api(
-        `/quotations/${quote.id}/decision`,
-        "POST",
-        { action: "Accept" },
-        null,
-        409,
-      );
+      const selection = { eventId: event.id, serviceId: service, quantity: 1 };
+      const review = await api("/bookings/preview", "POST", selection);
+      const booking = await api("/bookings", "POST", { ...selection, reviewToken: review.reviewToken });
       await api(`/bookings/${booking.id}`, "GET", null, "other", 404);
       await api(`/bookings/${booking.id}`);
       await api(
@@ -649,7 +540,7 @@ try {
           return Response.json({
             id: "pay_fixture123",
             order_id: "order_fixture123",
-            amount: 450000,
+            amount: 500000,
             currency: "INR",
             status: "captured",
             method: "upi",
@@ -661,7 +552,7 @@ try {
         idempotencyKey: randomUUID(),
         termsAccepted: true,
       });
-      assert.equal(order.amount, 450000);
+      assert.equal(order.amount, 500000);
       assert.equal(
         (
           await api(`/bookings/${booking.id}/payment-order`, "POST", {
@@ -698,7 +589,7 @@ try {
       assert.equal((await api("/records/payments")).total, 1);
       const paymentList = await api("/records/payments");
       const transaction = await api(`/payments/${paymentList.rows[0].id}`);
-      assert.equal(Number(transaction.payment.amount), 4500);
+      assert.equal(Number(transaction.payment.amount), 5000);
       await api(
         `/payments/${paymentList.rows[0].id}`,
         "GET",
@@ -707,12 +598,12 @@ try {
         404,
       );
       const paid = await api(`/bookings/${booking.id}`);
-      assert.equal(Number(paid.booking.PaidAmount), 4500);
+      assert.equal(Number(paid.booking.PaidAmount), 5000);
       assert.equal(paid.booking.BookingStatus, "Confirmed");
       const captured = {
         id: "pay_fixture123",
         order_id: "order_fixture123",
-        amount: 450000,
+        amount: 500000,
         currency: "INR",
         status: "captured",
         method: "upi",
@@ -755,8 +646,8 @@ try {
       for (const section of [
         "events",
         "bookings",
-        "quotations",
-        "requests",
+
+
         "payments",
         "reviews",
         "addresses",
@@ -785,7 +676,7 @@ try {
         409,
       );
       const dashboard = await api("/dashboard");
-      assert.equal(Number(dashboard.stats.spent), 4500);
+      assert.equal(Number(dashboard.stats.spent), 5000);
       assert.equal(dashboard.stats.events, 2);
       const notices = await api("/records/notifications");
       assert(notices.rows.length > 0);

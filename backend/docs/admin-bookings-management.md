@@ -1,5 +1,7 @@
 # Admin bookings management
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 The dashboard is `/admin/bookings`; full details are at `/admin/bookings/:bookingId`. The navigation includes pending, confirmed, in-progress, completed, cancelled, rejected and disputed bookings. The table fetches a single page from the server and presents cards on mobile. Detail tabs cover parties/event, booked items, payments, payouts, policy, status history, audit logs and a linked quotation.
 
 ## Database and runtime

@@ -1,5 +1,7 @@
 # Admin services management
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 The central catalog is `/admin/services`. Details are at `/admin/services/:serviceId`, creation at `/admin/services/new`, and editing at `/admin/services/:serviceId/edit`. The existing approval queue and review page remain available at `/admin/services/pending` and `/admin/services/:serviceId/review`.
 
 Navigation includes all, pending, approved, rejected and suspended services, categories, subcategories, service items and service packages. Item and package indexes use their own paginated endpoints; each entry links to management in the parent service.

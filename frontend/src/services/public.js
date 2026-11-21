@@ -120,7 +120,7 @@ export function safeImage(value) {
 }
 export const money = (value) =>
   value === null || value === undefined
-    ? "Request a quote"
+    ? "Price unavailable"
     : new Intl.NumberFormat("en-IN", {
         style: "currency",
         currency: "INR",

@@ -5,7 +5,7 @@ import {
 } from "../admin/booking-finance.js";
 import { assertBookingReservation } from "../bookings/bookings.service.js";
 import { notifyAdmins } from "../notifications/admin-events.js";
-import * as quotations from "../quotations/quotations.service.js";
+
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
@@ -112,41 +112,6 @@ export async function bookingDecision(recordId, input, ctx) {
     };
   });
 }
-export async function quotationOptions(ctx) {
-  const { id } = scope(ctx);
-  const events = await repo.select(
-    "SELECT e.EventId AS id,e.EventName AS name,e.EventDate AS eventDate,e.CustomerId AS customerId,CONCAT(u.FirstName,' ',u.LastName) AS customer FROM dbo.Events e JOIN dbo.Users u ON u.UserId=e.CustomerId WHERE EXISTS(SELECT 1 FROM dbo.Booking b WHERE b.VendorId=:id AND b.EventId=e.EventId) OR EXISTS(SELECT 1 FROM dbo.Quotations q WHERE q.VendorId=:id AND q.EventId=e.EventId) OR EXISTS(SELECT 1 FROM dbo.QuotationRequests qr WHERE qr.VendorId=:id AND qr.EventId=e.EventId) ORDER BY e.EventDate DESC",
-    { id },
-  );
-  const packages = await repo.select(
-    "SELECT p.PackageId AS id,p.ServiceId AS serviceId,p.PackageName AS name,p.FinalPrice AS price FROM dbo.ServicePackages p JOIN dbo.Services s ON s.ServiceId=p.ServiceId WHERE s.VendorId=:id AND p.IsActive=1",
-    { id },
-  );
-  const requests = await repo.select(
-    "SELECT RequestId AS id,RequestNumber AS number,EventId AS eventId,OriginalQuotationId AS previousQuotationId,Message AS message FROM dbo.QuotationRequests WHERE VendorId=:id AND Status='Pending' ORDER BY CreatedAt DESC",
-    { id },
-  );
-  const items = await repo.select(
-    "SELECT si.ServiceItemId AS id,si.ServiceId AS serviceId,si.ItemName AS name,si.Description AS description,si.Unit AS unit,si.UnitPrice AS price FROM dbo.ServiceItems si JOIN dbo.Services s ON s.ServiceId=si.ServiceId WHERE s.VendorId=:id ORDER BY s.ServiceName,si.SortOrder,si.ServiceItemId",
-    { id },
-  );
-  return { events, packages, requests, items };
-}
-export const saveQuote = (id, input, ctx) => quotations.save(id, input, ctx);
-export async function quoteDetails(id, ctx) {
-  const d = await quotations.details(id, ctx, "Vendor");
-  return {
-    ...d,
-    id: d.quotation.QuotationId,
-    eventId: d.quotation.EventId,
-    validUntil: d.quotation.ValidUntil,
-    message: d.quotation.VendorMessage || "",
-    status: d.quotation.Status,
-    updatedAt: d.quotation.UpdatedAt,
-  };
-}
-export const quoteAction = (id, input, ctx) =>
-  quotations.action(id, input, ctx);
 export async function calendar(month, ctx) {
   const { id } = scope(ctx);
   z.string()

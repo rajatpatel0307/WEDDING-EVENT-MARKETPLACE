@@ -276,12 +276,7 @@ export async function detail(id, ctx) {
     "SELECT s.ServiceName,s.DetailsJson FROM dbo.BookingItems bi JOIN dbo.Services s ON s.ServiceId=bi.ServiceId WHERE bi.BookingId=:id",
     { id },
   );
-  const [quotation] = row.QuotationId
-    ? await repo.select(
-        "SELECT QuotationNumber,Status,SubTotal,DiscountAmount,TaxAmount,TotalAmount,ValidUntil,VendorMessage FROM dbo.Quotations WHERE QuotationId=:id",
-        { id: row.QuotationId },
-      )
-    : [];
+
   return {
     booking: row,
     customer,
@@ -293,7 +288,7 @@ export async function detail(id, ctx) {
       startTime: row.StartTime ?? event?.startTime,
       endTime: row.EndTime ?? event?.endTime,
     },
-    quotation,
+
     items: bookedItems,
     history: statusHistory,
     audits,

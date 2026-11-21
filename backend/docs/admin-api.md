@@ -1,5 +1,7 @@
 # Admin workspace
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 The React workspace is at `/admin/dashboard`. It uses the existing admin role and
 cookie session. Express serves its REST API at `/api/admin`. Routes, controllers,
 services, validation, and repositories live in `src/modules/admin`.

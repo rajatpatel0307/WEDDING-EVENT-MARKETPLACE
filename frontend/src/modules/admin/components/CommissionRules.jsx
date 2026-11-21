@@ -48,7 +48,7 @@ export default function CommissionRules() {
       <p>
         Vendor rules take priority over category rules, then global rules.
         Priority resolves rules in the same scope. Category rules apply when all
-        services belong to that category. Each booking or quotation preserves
+        services belong to that category. Each booking preserves
         its applied rule.
       </p>
       {state.loading ? (

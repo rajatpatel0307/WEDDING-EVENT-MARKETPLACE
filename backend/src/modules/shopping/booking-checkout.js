@@ -70,7 +70,7 @@ export async function bookingCheckout(input, ctx, submit = false) {
       fail("This listing is unavailable for this booking checkout.", 409);
     const price = Number(pack ? pack.FinalPrice : config.price);
     if (!Number.isFinite(price) || price <= 0)
-      fail("Request a quotation to confirm the price.", 409);
+      fail("A published price is required before this service can be booked.", 409);
     const packageSnapshot = pack ? {
       id: pack.PackageId,
       name: pack.PackageName,
@@ -198,7 +198,6 @@ export async function bookingCheckout(input, ctx, submit = false) {
       ],
       ctx,
       tx,
-      null,
       snapshot,
     );
     await repo.update(

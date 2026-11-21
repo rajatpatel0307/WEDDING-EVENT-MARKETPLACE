@@ -11,7 +11,6 @@ import { up } from "../migrations/015-booking-lifecycle.js";
 import { loadUser } from "../src/modules/auth/token.service.js";
 import {
   book,
-  decideQuote,
 } from "../src/modules/customers/workspace.operations.js";
 import { bookingDecision } from "../src/modules/vendors/workspace.operations.js";
 import {
@@ -353,32 +352,20 @@ try {
         () => bookingDecision(next.id, { action: "Accept" }, v),
         /no longer pending/,
       );
-      // Quotation acceptance copies agreed item totals into the same booking aggregate.
-      const quote = randomUUID();
-      await sql(
-        "INSERT INTO dbo.Quotations(QuotationId,QuotationNumber,EventId,CustomerId,VendorId,Status,SubTotal,ValidUntil) VALUES(:quote,:number,:event,:customer,:vendor,'Draft',500,'2090-02-01')",
-        { quote, number: `Q-${quote.slice(0, 20)}`, event, customer, vendor },
-      );
-      await sql(
-        "INSERT INTO dbo.QuotationItems(QuotationId,ServiceId,ItemName,Quantity,UnitPrice) VALUES(:quote,:service,'Agreed lawn',1,500)",
-        { quote, service },
-      );
-      await sql(
-        "UPDATE dbo.Quotations SET Status='Sent',SentAt=SYSUTCDATETIME() WHERE QuotationId=:quote",
-        { quote },
-      );
-      const accepted = await decideQuote(quote, { action: "Accept" }, c);
+      const accepted = await book(body, c);
       d = await details(accepted.id, c, "Customer");
-      assert.equal(Number(d.booking.TotalAmount), 500);
+      const completionTotal = Number(d.booking.TotalAmount);
+      assert.ok(completionTotal > 0);
       await bookingDecision(accepted.id, { action: "Accept" }, v);
       await sql(
-        "UPDATE dbo.Booking SET BookingStatus='InProgress',BookingDate=DATEADD(day,-1,CONVERT(date,SYSUTCDATETIME())),PaidAmount=500,PaymentStatus='Paid' WHERE BookingId=:id",
-        { id: accepted.id },
+        "UPDATE dbo.Booking SET BookingStatus='InProgress',BookingDate=DATEADD(day,-1,CONVERT(date,SYSUTCDATETIME())),PaidAmount=:total,PaymentStatus='Paid' WHERE BookingId=:id",
+        { id: accepted.id, total: completionTotal },
       );
       await sql(
-        "INSERT INTO dbo.Payments(BookingId,PaymentReference,GatewayName,GatewayTransactionId,PaymentMethod,Amount,Currency,PaymentStatus) VALUES(:id,:reference,'Razorpay',:reference,'card',500,'INR','Success')",
+        "INSERT INTO dbo.Payments(BookingId,PaymentReference,GatewayName,GatewayTransactionId,PaymentMethod,Amount,Currency,PaymentStatus) VALUES(:id,:reference,'Razorpay',:reference,'card',:total,'INR','Success')",
         {
           id: accepted.id,
+          total: completionTotal,
           reference: `pay_${randomUUID().replaceAll("-", "")}`,
         },
       );
@@ -395,7 +382,7 @@ try {
       d = await details(accepted.id, c, "Customer");
       assert.equal(d.booking.BookingStatus, "Completed");
       console.log(
-        "PASS preview, snapshots, add-ons, duplicate rejection, ownership, private history, vendor acceptance/rejection, blocked reschedule rollback, reschedule approval/replay, captured settlement, vendor cancellation/admin decision, refund estimate, quotation and completion",
+        "PASS preview, snapshots, add-ons, duplicate rejection, ownership, private history, vendor acceptance/rejection, blocked reschedule rollback, reschedule approval/replay, captured settlement, vendor cancellation/admin decision, refund estimate and completion",
       );
       // Date-dependent pricing requires a revised agreement; original day survives.
       await sql(
@@ -437,7 +424,7 @@ try {
             { kind: "Reschedule", date: "2090-01-15", reason: "Seasonal date" },
             c,
           ),
-        /revised quotation/,
+        /updated price/,
       );
       const same = await details(priced.id, c, "Customer");
       assert.equal(Number(same.booking.TotalAmount), 900);

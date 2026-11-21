@@ -80,21 +80,18 @@ test("every vendor collection binds its owner and vendor IDs with bounded pagina
         ? [{ total: 42 }]
         : [{ id: "record" }],
   );
-  for (const section of [
-    "documents",
-    "services",
-    "packages",
-    "locations",
-    "availability",
-    "bookings",
-    "quotations",
-    "customers",
-    "revenue",
-    "payouts",
-    "reviews",
-    "offers",
-    "audit",
-  ]) {
+  for (const section of ["documents",
+"services",
+"packages",
+"locations",
+"availability",
+"bookings",
+"customers",
+"revenue",
+"payouts",
+"reviews",
+"offers",
+"audit"]) {
     const result = await vendorRecords(
       id,
       section,

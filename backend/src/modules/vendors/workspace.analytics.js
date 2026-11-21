@@ -55,7 +55,6 @@ export async function dashboard(input, ctx) {
     (SELECT COUNT(*) FROM dbo.Booking WHERE VendorId=:id) AS totalBookings,
     (SELECT COUNT(*) FROM dbo.Booking WHERE VendorId=:id AND BookingStatus IN ('Accepted','PaymentPending','Confirmed') AND BookingDate>=CONVERT(date,DATEADD(minute,330,SYSUTCDATETIME()))) AS upcomingBookings,
     (SELECT COUNT(*) FROM dbo.Booking WHERE VendorId=:id AND BookingStatus='Completed') AS completedBookings,
-    (SELECT COUNT(*) FROM dbo.Quotations WHERE VendorId=:id AND Status IN ('Draft','Sent','Viewed')) AS pendingQuotations,
     (SELECT COALESCE(SUM(p.Amount),0) FROM dbo.Payments p JOIN dbo.Booking b ON b.BookingId=p.BookingId WHERE b.VendorId=:id AND p.PaymentStatus='Success' AND p.Currency='INR') AS totalRevenue,
     (SELECT COALESCE(SUM(NetAmount),0) FROM dbo.VendorPayouts WHERE VendorId=:id AND PayoutStatus IN ('Pending','Processing')) AS pendingPayout,
     (SELECT AVG(CAST(r.Rating AS decimal(6,2))) FROM dbo.Reviews r WHERE r.VendorId=:id AND r.BookingItemId IS NULL AND ${publicPredicate()}) AS averageRating,

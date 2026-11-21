@@ -255,32 +255,7 @@ export const resources = {
       actions: ["Confirmed", "Completed", "Cancelled", "Disputed"],
     },
   ),
-  quotations: resource(
-    "Quotations",
-    "QuotationId",
-    {
-      name: "t.QuotationNumber",
-      customer: "CONCAT(u.FirstName,' ',u.LastName)",
-      event: "e.EventName",
-      vendor: "v.BusinessName",
-      amount: "t.TotalAmount",
-      status: "t.Status",
-      validUntil: "t.ValidUntil",
-    },
-    {
-      joins:
-        "JOIN dbo.Vendors v ON v.VendorId=t.VendorId JOIN dbo.Users u ON u.UserId=t.CustomerId JOIN dbo.Events e ON e.EventId=t.EventId",
-      statuses: [
-        "Draft",
-        "Sent",
-        "Viewed",
-        "Accepted",
-        "Rejected",
-        "Expired",
-        "Cancelled",
-      ],
-    },
-  ),
+
   payments: resource(
     "Payments",
     "PaymentId",

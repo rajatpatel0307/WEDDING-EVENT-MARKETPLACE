@@ -1,5 +1,7 @@
 # Vendor workspace
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 Service management now has its own [setup and API documentation](service-management.md), which supersedes the older service lifecycle and approval requirements below. Services are saved as inactive drafts; unapproved vendors can prepare drafts, and submission requires business approval. Apply migration 010 before starting the updated application.
 
 The approved-vendor application starts at `/vendor/dashboard`. It uses React, Tailwind utilities, scoped workspace CSS, Lucide icons, Express REST APIs and the existing MSSQL database. All menu entries lead to working pages with live records, loading, error and empty states. No demonstration business records are seeded into the application.

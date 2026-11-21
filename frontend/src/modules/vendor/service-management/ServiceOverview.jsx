@@ -50,7 +50,7 @@ export default function ServiceOverview({
   const unit = s.pricing?.unit;
   const customQuote = unit === "Custom" || s.pricing?.type === "CustomQuote";
   const pricingUnit = customQuote
-    ? "Custom quotation"
+    ? "Custom pricing"
     : unit === "Per KM"
       ? "Per kilometer"
       : unit;

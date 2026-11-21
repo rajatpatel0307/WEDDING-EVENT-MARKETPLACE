@@ -87,7 +87,7 @@ test("safe notification routes point to authorized workspace detail pages", () =
     );
     assert.equal(
       notificationUrl({ ReferenceType: "Quotation", ReferenceId: id }, role),
-      `/${role.toLowerCase()}/quotations/${id}`,
+      `/${role.toLowerCase()}/notifications`,
     );
   }
   assert.equal(

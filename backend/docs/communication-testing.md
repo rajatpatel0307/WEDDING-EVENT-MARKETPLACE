@@ -1,5 +1,7 @@
 # Communication verification
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 Verified on 31 October 2026 against the configured development Microsoft SQL Server.
 
 | Check | Result |
@@ -10,7 +12,6 @@ Verified on 31 October 2026 against the configured development Microsoft SQL Ser
 | Complete Express/Apollo application smoke check | Startup, health HTTP 200 and unauthenticated communication HTTP 401 passed |
 | `node scripts/verify-communication.js` from `backend` | 45 real MSSQL / REST / Socket.IO checks passed; fixtures and session/limiter writes rolled back |
 | `node scripts/verify-booking-lifecycle.js` from `backend` | Passed full booking lifecycle and independent MSSQL reservation-lock checks; fixtures rolled back |
-| `node scripts/verify-quotations.js` from `backend` | Passed requests, proposals, revisions, ownership, acceptance, conversion, expiry, audit and context-aware messaging; fixtures rolled back |
 | `npm run db:migrate` from `backend` | Migration 023 applied successfully |
 | Home protection | Existing integrity tests passed; all 49 files in the additional before/after SHA-256 snapshot were unchanged |
 | CSS isolation | All communication selectors remain under `.comm-*`; scoped-style regression test passed |

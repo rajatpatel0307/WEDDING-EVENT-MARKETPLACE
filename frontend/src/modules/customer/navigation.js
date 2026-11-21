@@ -27,7 +27,7 @@ export const customerNavigation = [
   ["bookings", "My Bookings", ShoppingBag],
   ["messages", "Messages", MessagesSquare],
   ["notifications", "Notifications", Bell],
-  ["quotations", "My Quotations", FileText],
+
   ["payments", "Payments", Wallet],
   ["reviews", "Reviews", Star],
   ["addresses", "Addresses", MapPin],

@@ -209,7 +209,6 @@ try {
         404,
       );
       for (const [kind, id] of [
-        ["quotations", quotation],
         ["payments", payment],
         ["refunds", refund],
         ["payouts", payout],

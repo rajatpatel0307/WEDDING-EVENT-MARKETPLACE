@@ -301,7 +301,7 @@ export default function ServicePackages({
                       onClick={() => {
                         if (
                           window.confirm(
-                            "Delete this package? Packages with booking or quotation history cannot be deleted.",
+                            "Delete this package? Packages with historical records cannot be deleted.",
                           )
                         )
                           run(() =>

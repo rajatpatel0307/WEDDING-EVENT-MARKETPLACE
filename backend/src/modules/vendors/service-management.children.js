@@ -194,7 +194,7 @@ export async function packageMutation(
       );
       if (used)
         fail(
-          "This package has booking or quotation history. Deactivate it instead.",
+          "This package has historical records. Deactivate it instead.",
           409,
         );
       await repo.select(

@@ -142,7 +142,7 @@ try {
       for (const section of [
         "events",
         "bookings",
-        "quotations",
+
         "payments",
         "reviews",
         "wishlist",
@@ -172,7 +172,6 @@ try {
         new Set([
           "account",
           "event",
-          "quotation",
           "booking",
           "payment",
           "review",

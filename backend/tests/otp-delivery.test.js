@@ -1,5 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
+import { access } from "node:fs/promises";
 import nodemailer from "nodemailer";
 import { sequelize } from "../src/config/database.js";
 import { Otp, User } from "../src/models/index.js";
@@ -22,13 +24,41 @@ function setup(t, sendMail, old = null) {
 const user = { id: "test-user", email: "recipient@example.test" };
 
 test("accepted OTP stays available for verification", async (t) => {
+  let sent;
   const { create, destroy } = setup(t, async (mail) => {
+    sent = mail;
     assert.equal(mail.to, user.email);
     assert.match(mail.text, /\b\d{6}\b/);
     return { accepted: [user.email] };
   });
   await sendOtp(user, "email");
   assert.equal(create.mock.callCount(), 1);
+  assert.equal(destroy.mock.callCount(), 0);
+  const code = sent.text.match(/\b\d{6}\b/)[0];
+  assert.ok(sent.html.includes(`>${code}</p>`));
+  assert.equal(sent.subject, "Your MarryNest verification code");
+  assert.equal(sent.attachments[0].cid, "marrynest-logo");
+  await access(sent.attachments[0].path);
+  const stored = create.mock.calls[0].arguments[0];
+  assert.equal(stored.digest, createHmac("sha256", process.env.OTP_SECRET).update(`${stored.id}:${code}`).digest("hex"));
+  assert.ok(Math.abs(stored.expiresAt - stored.sentAt - 600000) < 1000);
+});
+
+test("password reset OTP uses its own subject and instructions in HTML and plain text", async (t) => {
+  let sent;
+  const { create, destroy } = setup(t, async mail => {
+    sent = mail;
+    return { accepted: [user.email] };
+  });
+  await sendOtp({ ...user, firstName: "Riya" }, "reset");
+  assert.equal(sent.subject, "Your MarryNest password reset code");
+  for (const body of [sent.text, sent.html]) {
+    assert.match(body, /Hi Riya,/);
+    assert.match(body, /password reset screen/);
+    assert.match(body, /Your password will stay the same/);
+    assert.doesNotMatch(body, /confirm your email/);
+  }
+  assert.equal(create.mock.calls[0].arguments[0].purpose, "reset");
   assert.equal(destroy.mock.callCount(), 0);
 });
 

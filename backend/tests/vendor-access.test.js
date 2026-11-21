@@ -55,11 +55,10 @@ test("rejected service access blocks create, duplicate and submit before any wri
   assert.ok(query.mock.calls.every(c => c.arguments[0].startsWith("SELECT")));
 });
 
-test("new bookings are blocked before writes, including quotation conversion", async t => {
+test("new bookings are blocked before writes", async t => {
   const query = t.mock.method(sequelize, "query", async () => [{ ...liveVendor, accessStatus: "Suspended" }]);
-  for (const quotationId of [null, id])
-    await assert.rejects(createBooking({}, id, [], ctx("CUSTOMER"), { test: true }, quotationId), { status: 403 });
-  assert.equal(query.mock.callCount(), 2);
+  await assert.rejects(createBooking({}, id, [], ctx("CUSTOMER"), { test: true }), { status: 403 });
+  assert.equal(query.mock.callCount(), 1);
   assert.ok(query.mock.calls.every(c => c.arguments[0].startsWith("SELECT v.VerificationStatus")));
 });
 

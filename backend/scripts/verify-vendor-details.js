@@ -266,7 +266,6 @@ try {
         locations: 1,
         availability: 1,
         bookings: 3,
-        quotations: 1,
         customers: 2,
         revenue: 2,
         payouts: 2,

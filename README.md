@@ -4,7 +4,7 @@ React + Tailwind + Apollo Client frontend and Express + Apollo GraphQL + Sequeli
 
 [Automated email notifications](backend/docs/automated-email-notifications.md) covers approval, order and booking triggers, SMTP reuse, durable deduplication, delivery logs and the separate, unapplied `035-transactional-email.sql` migration.
 
-The customer planning workspace is at `/customer/dashboard`. See [Customer workspace and Razorpay setup](backend/docs/customer-workspace.md) for event and guest management, service discovery, quotations, bookings, private messaging, payments, migrations and verification commands.
+The customer planning workspace is at `/customer/dashboard`. See [Customer workspace and Razorpay setup](backend/docs/customer-workspace.md) for event and guest management, service discovery, bookings, private messaging, payments, migrations and verification commands.
 
 See the [Customer website implementation report](backend/docs/customer-website.md) for public discovery/details, protected Home Page checks, event/guest extensions, checkout/transaction pages, migration `016-customer-website`, API mapping and verification limits.
 
@@ -30,7 +30,7 @@ The role-based authentication implementation, environment setup, database mappin
 
 Run `npm test` in each project and `npm run build` in `frontend`. Configure MSSQL, SMTP and signing secrets before running the backend. Do not apply database migrations until the existing database has been inspected and backed up.
 
-Quotation lifecycle, API map, migration rollout and verification: [backend/docs/quotation-system.md](backend/docs/quotation-system.md).
+Quotations have been retired across customer, vendor and admin workspaces. Pages, request/proposal APIs, booking conversion, reminder jobs and notification preferences are removed. Existing booking snapshots, historical schema/migrations and reference protections are retained; no data cleanup is required.
 
 Wishlist, addresses, business locations, service coverage and approved booking venue changes: [implementation and verification report](backend/docs/wishlist-and-locations.md).
 

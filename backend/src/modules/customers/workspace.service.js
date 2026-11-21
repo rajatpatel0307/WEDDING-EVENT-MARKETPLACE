@@ -71,21 +71,11 @@ const extra = {
     where: "t.CustomerId=:id",
     fields: `t.BookingId AS id,t.BookingNumber AS number,t.VendorId AS vendorId,v.BusinessName AS vendor,e.EventName AS event,t.EventId AS eventId,t.BookingDate AS bookingDate,t.TotalAmount AS amount,t.PaidAmount AS paid,t.RemainingAmount AS remaining,t.BookingStatus AS status,t.PaymentStatus AS paymentStatus,t.CreatedAt AS createdAt,(SELECT STRING_AGG(CONVERT(nvarchar(max),ItemName),', ') FROM dbo.BookingItems WHERE BookingId=t.BookingId) AS services`,
   },
-  quotations: {
-    from: "dbo.Quotations t JOIN dbo.Vendors v ON v.VendorId=t.VendorId JOIN dbo.Events e ON e.EventId=t.EventId",
-    where: "t.CustomerId=:id AND t.Status<>'Draft' AND t.SentAt IS NOT NULL",
-    fields: `t.QuotationId AS id,t.QuotationNumber AS number,t.VendorId AS vendorId,v.BusinessName AS vendor,e.EventName AS event,t.TotalAmount AS amount,t.Status AS status,t.ValidUntil AS validUntil,t.CreatedAt AS createdAt,(SELECT STRING_AGG(CONVERT(nvarchar(max),ItemName),', ') FROM dbo.QuotationItems WHERE QuotationId=t.QuotationId) AS services`,
-  },
-  requests: {
-    from: "dbo.QuotationRequests t JOIN dbo.Vendors v ON v.VendorId=t.VendorId JOIN dbo.Services s ON s.ServiceId=t.ServiceId JOIN dbo.Events e ON e.EventId=t.EventId",
-    where: "t.CustomerId=:id",
-    fields:
-      "t.RequestId AS id,v.BusinessName AS vendor,s.ServiceName AS service,e.EventName AS event,t.Message AS message,t.Status AS status,t.CreatedAt AS createdAt",
-  },
+
   notifications: {
     from: "dbo.Notifications t",
     where:
-      "t.UserId=:id AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation')",
+      "t.UserId=:id AND (t.ReferenceType IS NULL OR t.ReferenceType<>'Conversation' AND ReferenceType NOT LIKE '%Quotation%')",
     fields:
       `t.NotificationId AS id,${bookingNotificationText("Title")} AS title,${bookingNotificationText("Message")} AS message,t.IsRead AS isRead,t.ReferenceType AS referenceType,t.ReferenceId AS referenceId,t.CreatedAt AS createdAt`,
   },
@@ -93,8 +83,7 @@ const extra = {
 const allowed = new Set([
   "events",
   "bookings",
-  "quotations",
-  "requests",
+
   "payments",
   "reviews",
   "addresses",
@@ -183,7 +172,7 @@ export async function records(section, input, ctx) {
 export async function dashboard(ctx) {
   const { id } = scope(ctx);
   const [stats] = await repo.select(
-    `SELECT (SELECT COUNT(*) FROM dbo.Events WHERE CustomerId=:id AND Status IN('Planning','Confirmed')) AS events,(SELECT COUNT(*) FROM dbo.Booking WHERE CustomerId=:id AND BookingDate>=:today AND BookingStatus NOT IN('Cancelled','Rejected','Refunded','Completed')) AS bookings,(SELECT COUNT(*) FROM dbo.Quotations WHERE CustomerId=:id AND Status IN('Sent','Viewed') AND (ValidUntil IS NULL OR ValidUntil>=SYSUTCDATETIME())) +(SELECT COUNT(*) FROM dbo.QuotationRequests WHERE CustomerId=:id AND Status='Pending') AS quotations,(SELECT COUNT(*) FROM dbo.Wishlists WHERE CustomerId=:id) AS wishlist,(SELECT COALESCE(SUM(p.Amount),0) FROM dbo.Payments p JOIN dbo.Booking b ON b.BookingId=p.BookingId WHERE b.CustomerId=:id AND p.Currency='INR' AND p.PaymentStatus='Success') AS spent,(SELECT COUNT(*) FROM dbo.Notifications WHERE UserId=:id AND IsRead=0 AND (ReferenceType IS NULL OR ReferenceType<>'Conversation')) AS unread`,
+    `SELECT (SELECT COUNT(*) FROM dbo.Events WHERE CustomerId=:id AND Status IN('Planning','Confirmed')) AS events,(SELECT COUNT(*) FROM dbo.Booking WHERE CustomerId=:id AND BookingDate>=:today AND BookingStatus NOT IN('Cancelled','Rejected','Refunded','Completed')) AS bookings,(SELECT COUNT(*) FROM dbo.Wishlists WHERE CustomerId=:id) AS wishlist,(SELECT COALESCE(SUM(p.Amount),0) FROM dbo.Payments p JOIN dbo.Booking b ON b.BookingId=p.BookingId WHERE b.CustomerId=:id AND p.Currency='INR' AND p.PaymentStatus='Success') AS spent,(SELECT COUNT(*) FROM dbo.Notifications WHERE UserId=:id AND IsRead=0 AND (ReferenceType IS NULL OR ReferenceType<>'Conversation' AND ReferenceType NOT LIKE '%Quotation%')) AS unread`,
     { id, today: localDay() },
   );
   const [event] = await repo.select(
@@ -326,10 +315,7 @@ export async function eventDetails(recordId, ctx, input = {}) {
       "SELECT BookingId AS id,BookingNumber AS number,TotalAmount AS amount,BookingStatus AS status FROM dbo.Booking WHERE EventId=:recordId AND CustomerId=:id ORDER BY CreatedAt DESC",
       { recordId, id },
     ),
-    quotations: await repo.select(
-      "SELECT QuotationId AS id,QuotationNumber AS number,TotalAmount AS amount,Status AS status FROM dbo.Quotations WHERE EventId=:recordId AND CustomerId=:id AND Status<>'Draft' AND SentAt IS NOT NULL ORDER BY CreatedAt DESC",
-      { recordId, id },
-    ),
+
     financial: (
       await repo.select(
         "SELECT COALESCE(SUM(b.TotalAmount),0) AS committed,(SELECT COALESCE(SUM(p.Amount),0) FROM dbo.Payments p JOIN dbo.Booking pb ON pb.BookingId=p.BookingId WHERE pb.EventId=:recordId AND pb.CustomerId=:id AND p.PaymentStatus IN('Success','Refunded')) AS captured FROM dbo.Booking b WHERE b.EventId=:recordId AND b.CustomerId=:id AND b.BookingStatus NOT IN('Cancelled','Rejected','Refunded')",
@@ -422,13 +408,13 @@ export async function archiveEvent(recordId, ctx) {
     if (event.Status === "Cancelled")
       return { message: "Event is already archived." };
     const [active] = await repo.select(
-      "SELECT CASE WHEN EXISTS(SELECT 1 FROM dbo.Booking WHERE EventId=:recordId AND BookingStatus NOT IN('Cancelled','Rejected','Refunded','Completed')) OR EXISTS(SELECT 1 FROM dbo.Quotations q WHERE q.EventId=:recordId AND (q.Status IN('Sent','Viewed') OR (q.Status='Accepted' AND NOT EXISTS(SELECT 1 FROM dbo.Booking qb WHERE qb.QuotationId=q.QuotationId AND qb.BookingStatus IN('Completed','Cancelled','Rejected','Refunded'))))) OR EXISTS(SELECT 1 FROM dbo.QuotationRequests WHERE EventId=:recordId AND Status='Pending') THEN 1 ELSE 0 END AS active",
+      "SELECT CASE WHEN EXISTS(SELECT 1 FROM dbo.Booking WHERE EventId=:recordId AND BookingStatus NOT IN('Cancelled','Rejected','Refunded','Completed')) THEN 1 ELSE 0 END AS active",
       { recordId },
       tx,
     );
     if (active.active)
       fail(
-        "Resolve active bookings and quotations before archiving this event.",
+        "Resolve active bookings before archiving this event.",
         409,
       );
     await repo.update(

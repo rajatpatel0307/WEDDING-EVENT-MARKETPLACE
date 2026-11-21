@@ -188,7 +188,7 @@ export default function BookingChanges({
                 )}
                 <p className="text-sm">
                   Your original reservation stays in place until approval. Price
-                  changes require a revised quotation.
+                  changes require a new booking with updated pricing.
                 </p>
               </>
             )}

@@ -5,14 +5,7 @@ const fail = (message, status = 404) => {
   throw Object.assign(new Error(message), { status });
 };
 const definitions = {
-  quotations: {
-    table: "Quotations",
-    pk: "QuotationId",
-    fields:
-      "t.QuotationNumber AS name,t.Status AS status,t.ValidUntil,t.SubTotal,t.DiscountAmount,t.TaxAmount,t.TotalAmount,t.CustomerMessage,t.VendorMessage,t.UpdatedAt",
-    joins: "JOIN dbo.Events e ON e.EventId=t.EventId",
-    extra: ",e.EventName,e.EventDate",
-  },
+
   payments: {
     table: "Payments",
     pk: "PaymentId",
@@ -65,16 +58,7 @@ export async function details(kind, id, ctx) {
     { id, entity: d.table },
   );
   let rows = [];
-  if (kind === "quotations") {
-    rows = await repo.select(
-      "SELECT ItemName,Quantity,UnitPrice,DiscountAmount,LineTotal,ServiceId,PackageId FROM dbo.QuotationItems WHERE QuotationId=:id ORDER BY QuotationItemId",
-      { id },
-    );
-    record.bookings = await repo.select(
-      "SELECT BookingId AS id,BookingNumber AS name,BookingStatus AS status FROM dbo.Booking WHERE QuotationId=:id",
-      { id },
-    );
-  } else if (kind === "payments") {
+  if (kind === "payments") {
     rows = await repo.select(
       "SELECT TransactionId AS id,TransactionType,Amount,TransactionStatus,GatewayTransactionId,CreatedAt FROM dbo.PaymentTransactions WHERE PaymentId=:id ORDER BY CreatedAt,TransactionId",
       { id },
@@ -132,15 +116,15 @@ export async function inbox(ctx, input = {}) {
     })
     .parse(input);
   const [count] = await repo.select(
-    "SELECT COUNT(*) AS unread FROM dbo.Notifications WHERE UserId=:user AND IsRead=0 AND DismissedAt IS NULL",
+    "SELECT COUNT(*) AS unread FROM dbo.Notifications WHERE UserId=:user AND IsRead=0 AND DismissedAt IS NULL AND (ReferenceType IS NULL OR ReferenceType NOT LIKE '%Quotation%')",
     { user: user.id },
   );
   const [total] = await repo.select(
-    "SELECT COUNT(*) AS total FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL AND (:unread = 0 OR IsRead=0)",
+    "SELECT COUNT(*) AS total FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL AND (ReferenceType IS NULL OR ReferenceType NOT LIKE '%Quotation%') AND (:unread = 0 OR IsRead=0)",
     { user: user.id, unread: query.unread === "1" ? 1 : 0 },
   );
   const rows = await repo.select(
-    "SELECT NotificationId AS id,Title AS title,Message AS message,ReferenceType AS referenceType,ReferenceId AS referenceId,IsRead AS [read],CreatedAt AS createdAt FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL AND (:unread = 0 OR IsRead=0) ORDER BY CreatedAt DESC,NotificationId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY",
+    "SELECT NotificationId AS id,Title AS title,Message AS message,ReferenceType AS referenceType,ReferenceId AS referenceId,IsRead AS [read],CreatedAt AS createdAt FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL AND (ReferenceType IS NULL OR ReferenceType NOT LIKE '%Quotation%') AND (:unread = 0 OR IsRead=0) ORDER BY CreatedAt DESC,NotificationId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY",
     {
       user: user.id,
       unread: query.unread === "1" ? 1 : 0,
@@ -228,14 +212,7 @@ export async function search(input, ctx) {
       "t.GatewayTransactionId",
       "1=1",
     ],
-    [
-      "quotations",
-      "Quotations t",
-      "t.QuotationId",
-      "t.QuotationNumber",
-      "t.QuotationNumber",
-      "1=1",
-    ],
+
   ];
   const groups = await Promise.all(
     sources.map(async ([kind, table, id, name, extra, where]) =>

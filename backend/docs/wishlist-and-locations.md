@@ -1,5 +1,7 @@
 # Wishlist and address/location implementation
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 Implemented for the existing React/Express/MSSQL application. The working customer/vendor workspace APIs and existing tables were extended; the empty legacy module placeholders were not wired into duplicate APIs.
 
 ## User-facing entry points

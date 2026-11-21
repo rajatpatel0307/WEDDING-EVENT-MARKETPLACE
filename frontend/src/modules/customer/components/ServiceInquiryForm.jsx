@@ -2,19 +2,24 @@ import { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import EventLocationPanel from "./EventLocationPanel";
-import { useCustomerData, Empty, ErrorView, Loading, Modal, Field } from "./WorkspaceUI";
+import {
+  useCustomerData,
+  Empty,
+  ErrorView,
+  Loading,
+  Modal,
+  Field,
+} from "./WorkspaceUI";
 import { save, money } from "../services/workspace.api";
 
 export default function ServiceInquiryForm({
   service,
   packages,
   items = [],
-  mode,
   close,
   coverage = {},
 }) {
-  const related = useCustomerData(`/vendors/${service.vendorId}`),
-    events = useCustomerData("/records/events?status=Upcoming&pageSize=50"),
+  const events = useCustomerData("/records/events?status=Upcoming&pageSize=50"),
     addresses = useCustomerData("/addresses?pageSize=50"),
     { notify } = useAuth(),
     navigate = useNavigate(),
@@ -22,68 +27,15 @@ export default function ServiceInquiryForm({
     [error, setError] = useState(""),
     [preview, setPreview] = useState(null),
     [reviewBody, setReviewBody] = useState(null),
-    [quoteDraft, setQuoteDraft] = useState(null),
     [locationEvent, setLocationEvent] = useState(""),
     [params] = useSearchParams();
   return (
-    <Modal
-      title={mode === "book" ? "Request a booking" : "Request a quotation"}
-      close={close}
-      busy={busy}
-    >
+    <Modal title={"Request a booking"} close={close} busy={busy}>
       <p>
         Final availability is confirmed by your vendor. All prices are
         calculated securely from the selected service or package.
       </p>
-      {quoteDraft && (
-        <section className="cw-panel cw-prose [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4eade] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4eade] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4eade] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4eade] rounded-[10px] min-w-0 overflow-x-hidden overflow-y-hidden pt-[25px] [@media(width<=520px)]:pt-[23px] pr-[28px] [@media(width<=520px)]:pr-[20px] pb-[25px] [@media(width<=520px)]:pb-[23px] pl-[28px] [@media(width<=520px)]:pl-[20px] mb-[24px] [&_>_h2]:mb-[20px] [&_>_h3]:mt-[24px] [&_p]:[white-space:pre-line]">
-          <h2>Review quotation request</h2>
-          <p>{service.name}</p>
-          <p>
-            {events.data?.rows.find((e) => e.id === quoteDraft.eventId)?.name} ·{" "}
-            {events.data?.rows
-              .find((e) => e.id === quoteDraft.eventId)
-              ?.eventDate?.slice(0, 10)}
-          </p>
-          <p>{quoteDraft.message}</p>
-          <p>
-            Your event location, guest count, budget and package preference will
-            be shared with this vendor. This request does not confirm a booking
-            or authorize payment.
-          </p>
-          <button
-            disabled={busy}
-            className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-            onClick={async () => {
-              setBusy(true);
-              try {
-                const result = await save(
-                  "/quotation-requests",
-                  "POST",
-                  quoteDraft,
-                );
-                notify(result.message);
-                close();
-                navigate("/customer/requests");
-              } catch (err) {
-                setError(err.message);
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            Send quotation request
-          </button>
-          <button
-            disabled={busy}
-            className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-            onClick={() => setQuoteDraft(null)}
-          >
-            Edit request
-          </button>
-          {error && <p role="alert">{error}</p>}
-        </section>
-      )}
+
       {preview && (
         <section
           className="my-4 rounded-xl border p-4"
@@ -180,7 +132,10 @@ export default function ServiceInquiryForm({
             </button>
           </div>
           {error && (
-            <p role="alert" className="cw-form-error [background:#fff4ee] [border-top-width:1px] [border-top-style:solid] [border-top-color:#f0ddcf] [border-right-width:1px] [border-right-style:solid] [border-right-color:#f0ddcf] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#f0ddcf] [border-left-width:1px] [border-left-style:solid] [border-left-color:#f0ddcf] text-[#b6836e]! pt-[12px] pr-[15px] pb-[12px] pl-[15px] rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]">
+            <p
+              role="alert"
+              className="cw-form-error [background:#fff4ee] [border-top-width:1px] [border-top-style:solid] [border-top-color:#f0ddcf] [border-right-width:1px] [border-right-style:solid] [border-right-color:#f0ddcf] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#f0ddcf] [border-left-width:1px] [border-left-style:solid] [border-left-color:#f0ddcf] text-[#b6836e]! pt-[12px] pr-[15px] pb-[12px] pl-[15px] rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]"
+            >
               {error}
             </p>
           )}
@@ -197,7 +152,10 @@ export default function ServiceInquiryForm({
           title="Create an event first"
           text="Add your date and guest count so the vendor can plan with you."
           action={
-            <Link className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" to="/customer/events?create=1">
+            <Link
+              className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
+              to="/customer/events?create=1"
+            >
               Create an event
             </Link>
           }
@@ -209,12 +167,11 @@ export default function ServiceInquiryForm({
               eventId={locationEvent || events.data.rows[0].id}
               onChange={() => {
                 setPreview(null);
-                setQuoteDraft(null);
               }}
             />
           )}
           <form
-            hidden={!!preview || !!quoteDraft}
+            hidden={!!preview}
             className="cw-form min-w-0 [&_fieldset]:[border-top-width:0] [&_fieldset]:[border-top-style:none] [&_fieldset]:[border-top-color:currentColor] [&_fieldset]:[border-right-width:0] [&_fieldset]:[border-right-style:none] [&_fieldset]:[border-right-color:currentColor] [&_fieldset]:[border-bottom-width:0] [&_fieldset]:[border-bottom-style:none] [&_fieldset]:[border-bottom-color:currentColor] [&_fieldset]:[border-left-width:0] [&_fieldset]:[border-left-style:none] [&_fieldset]:[border-left-color:currentColor] [&_fieldset]:pt-[0] [&_fieldset]:pr-[0] [&_fieldset]:pb-[0] [&_fieldset]:pl-[0] [&_fieldset]:mt-[0] [&_fieldset]:mr-[0] [&_fieldset]:mb-[0] [&_fieldset]:ml-[0] [&_fieldset]:min-w-0 [&_>_.cw-panel_+_.cw-panel]:mt-[22px] [&[hidden]]:hidden!"
             onSubmit={async (e) => {
               e.preventDefault();
@@ -227,64 +184,29 @@ export default function ServiceInquiryForm({
                   eventId: f.eventId,
                   serviceId: service.id,
                   ...(f.packageId ? { packageId: f.packageId } : {}),
-                  ...(mode === "book"
-                    ? {
-                        ...(f.locationMode
-                          ? { locationMode: f.locationMode }
-                          : {}),
-                        ...(f.vendorLocationId
-                          ? { vendorLocationId: f.vendorLocationId }
-                          : {}),
-                        ...(f.billingAddressId
-                          ? { billingAddressId: f.billingAddressId }
-                          : {}),
-                        quantity: Number(f.quantity),
-                        requirements: f.requirements,
-                        coupon: f.coupon,
-                        items: items
-                          .filter(
-                            (i) => !i.included && Number(f[`item-${i.id}`]) > 0,
-                          )
-                          .map((i) => ({
-                            id: i.id,
-                            quantity: Number(f[`item-${i.id}`]),
-                          })),
-                      }
-                    : {
-                        message: f.message,
-                        services: fields
-                          .getAll("additionalService")
-                          .map((serviceId) => ({ serviceId })),
-                        items: items
-                          .filter((i) => Number(f[`request-item-${i.id}`]) > 0)
-                          .map((i) => ({
-                            serviceId: service.id,
-                            id: i.id,
-                            quantity: Number(f[`request-item-${i.id}`]),
-                          })),
-                      }),
+
+                  ...(f.locationMode ? { locationMode: f.locationMode } : {}),
+                  ...(f.vendorLocationId
+                    ? { vendorLocationId: f.vendorLocationId }
+                    : {}),
+                  ...(f.billingAddressId
+                    ? { billingAddressId: f.billingAddressId }
+                    : {}),
+                  quantity: Number(f.quantity),
+                  requirements: f.requirements,
+                  coupon: f.coupon,
+                  items: items
+                    .filter((i) => !i.included && Number(f[`item-${i.id}`]) > 0)
+                    .map((i) => ({
+                      id: i.id,
+                      quantity: Number(f[`item-${i.id}`]),
+                    })),
                 };
-                if (mode === "quote") {
-                  setQuoteDraft(b);
-                  return;
-                }
-                const r = await save(
-                  mode === "book" ? "/bookings/preview" : "/quotation-requests",
-                  "POST",
-                  b,
-                );
-                if (mode === "book") {
-                  setPreview(r);
-                  setReviewBody({ ...b, reviewToken: r.reviewToken });
-                  return;
-                }
-                notify(r.message);
-                close();
-                navigate(
-                  mode === "book"
-                    ? `/customer/bookings/${r.id}`
-                    : "/customer/quotations",
-                );
+
+                const r = await save("/bookings/preview", "POST", b);
+
+                setPreview(r);
+                setReviewBody({ ...b, reviewToken: r.reviewToken });
               } catch (err) {
                 setError(err.message);
               } finally {
@@ -307,51 +229,47 @@ export default function ServiceInquiryForm({
                   ))}
               </select>
             </Field>
-            {mode === "book" && (
-              <>
-                <Field label="Service delivery">
-                  <select name="locationMode">
-                    {(coverage.mode === "Vendor location"
-                      ? ["Vendor location"]
-                      : coverage.mode === "Both"
-                        ? ["Customer location", "Vendor location"]
-                        : ["Customer location"]
-                    ).map((m) => (
-                      <option key={m}>{m}</option>
+            <>
+              <Field label="Service delivery">
+                <select name="locationMode">
+                  {(coverage.mode === "Vendor location"
+                    ? ["Vendor location"]
+                    : coverage.mode === "Both"
+                      ? ["Customer location", "Vendor location"]
+                      : ["Customer location"]
+                  ).map((m) => (
+                    <option key={m}>{m}</option>
+                  ))}
+                </select>
+              </Field>
+              {coverage.vendorLocationIds?.length > 0 && (
+                <Field label="Business location (for visits to the vendor)">
+                  <select name="vendorLocationId">
+                    <option value="">Choose when visiting the vendor</option>
+                    {coverage.vendorLocationIds.map((id, i) => (
+                      <option key={id} value={id}>
+                        {coverage.businessLocations?.find((l) => l.id === id)
+                          ?.name ||
+                          coverage.businessLocations?.find((l) => l.id === id)
+                            ?.address ||
+                          `Business location ${i + 1}`}
+                      </option>
                     ))}
                   </select>
                 </Field>
-                {coverage.vendorLocationIds?.length > 0 && (
-                  <Field label="Business location (for visits to the vendor)">
-                    <select name="vendorLocationId">
-                      <option value="">Choose when visiting the vendor</option>
-                      {coverage.vendorLocationIds.map((id, i) => (
-                        <option key={id} value={id}>
-                          {coverage.businessLocations?.find((l) => l.id === id)
-                            ?.name ||
-                            coverage.businessLocations?.find((l) => l.id === id)
-                              ?.address ||
-                            `Business location ${i + 1}`}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                )}
-              </>
-            )}
-            {mode === "book" && (
-              <Field label="Billing address (optional, separate from event venue)">
-                <select name="billingAddressId">
-                  <option value="">No billing address selected</option>
-                  {addresses.data?.rows?.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.type}: {a.line1}, {a.city}
-                    </option>
-                  ))}
-                </select>
-                <Link to="/customer/addresses">Manage billing addresses</Link>
-              </Field>
-            )}
+              )}
+            </>
+            <Field label="Billing address (optional, separate from event venue)">
+              <select name="billingAddressId">
+                <option value="">No billing address selected</option>
+                {addresses.data?.rows?.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.type}: {a.line1}, {a.city}
+                  </option>
+                ))}
+              </select>
+              <Link to="/customer/addresses">Manage billing addresses</Link>
+            </Field>
             <Field label="Service or package">
               <select
                 name="packageId"
@@ -365,7 +283,7 @@ export default function ServiceInquiryForm({
               >
                 <option value="">
                   {service.name} ·{" "}
-                  {service.price ? money(service.price) : "Custom quote"}
+                  {service.price ? money(service.price) : "Price unavailable"}
                 </option>
                 {packages.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -374,122 +292,56 @@ export default function ServiceInquiryForm({
                 ))}
               </select>
             </Field>
-            {mode === "book" ? (
-              <Field
-                label={`Quantity (${service.pricingType === "PerPerson" ? "people" : service.pricingType === "PerHour" ? "hours" : service.pricingType === "PerDay" ? "days" : "units"})`}
-              >
-                <input
-                  type="number"
-                  name="quantity"
-                  min="1"
-                  max="100000"
-                  defaultValue="1"
-                  required
-                />
+            <Field
+              label={`Quantity (${service.pricingType === "PerPerson" ? "people" : service.pricingType === "PerHour" ? "hours" : service.pricingType === "PerDay" ? "days" : "units"})`}
+            >
+              <input
+                type="number"
+                name="quantity"
+                min="1"
+                max="100000"
+                defaultValue="1"
+                required
+              />
+            </Field>
+
+            <>
+              <Field label="Coupon (base service or package only)">
+                <input name="coupon" maxLength={50} pattern="[A-Za-z0-9_-]*" />
               </Field>
-            ) : (
-              <Field label="Tell the vendor what you have in mind">
-                <textarea
-                  name="message"
-                  minLength="5"
-                  maxLength="2000"
-                  rows="4"
-                  required
-                  placeholder="Your requirements, preferred style and anything else that matters…"
-                />
+              <Field label="Special requirements">
+                <textarea name="requirements" maxLength={2000} rows={3} />
               </Field>
-            )}
-            {mode === "quote" && (
-              <fieldset>
-                <legend>Requested services and items</legend>
-                <p>
-                  The event supplies the date, time, location, guest count and
-                  estimated budget. Edit your event first if these need
-                  changing.
-                </p>
-                {related.loading ? (
-                  <p role="status">Loading this vendor's services...</p>
-                ) : related.error ? (
-                  <ErrorView error={related.error} retry={related.retry} />
-                ) : (
-                  related.data?.services
-                    .filter(
-                      (s) =>
-                        s.customQuote &&
-                        s.id.toLowerCase() !== service.id.toLowerCase(),
-                    )
-                    .map((s) => (
-                      <label key={s.id}>
-                        <input
-                          type="checkbox"
-                          name="additionalService"
-                          value={s.id}
-                        />
-                        {s.name}
-                      </label>
-                    ))
-                )}
-                {items.map((i) => (
+              {items
+                .filter((i) => !i.included)
+                .map((i) => (
                   <Field
+                    label={`${i.name} · ${money(i.price)} each (optional)`}
                     key={i.id}
-                    label={`Requested ${i.name} quantity (optional)`}
                   >
                     <input
                       type="number"
-                      name={`request-item-${i.id}`}
+                      name={`item-${i.id}`}
                       min={0}
                       max={100000}
                       defaultValue={0}
                     />
                   </Field>
                 ))}
-                <p>
-                  Share reference attachments securely through the vendor
-                  conversation after submitting.
-                </p>
-              </fieldset>
-            )}
-            {mode === "book" && (
-              <>
-                <Field label="Coupon (base service or package only)">
-                  <input
-                    name="coupon"
-                    maxLength={50}
-                    pattern="[A-Za-z0-9_-]*"
-                  />
-                </Field>
-                <Field label="Special requirements">
-                  <textarea name="requirements" maxLength={2000} rows={3} />
-                </Field>
-                {items
-                  .filter((i) => !i.included)
-                  .map((i) => (
-                    <Field
-                      label={`${i.name} · ${money(i.price)} each (optional)`}
-                      key={i.id}
-                    >
-                      <input
-                        type="number"
-                        name={`item-${i.id}`}
-                        min={0}
-                        max={100000}
-                        defaultValue={0}
-                      />
-                    </Field>
-                  ))}
-              </>
-            )}
+            </>
             {error && (
-              <p className="cw-form-error [background:#fff4ee] [border-top-width:1px] [border-top-style:solid] [border-top-color:#f0ddcf] [border-right-width:1px] [border-right-style:solid] [border-right-color:#f0ddcf] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#f0ddcf] [border-left-width:1px] [border-left-style:solid] [border-left-color:#f0ddcf] text-[#b6836e]! pt-[12px] pr-[15px] pb-[12px] pl-[15px] rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]" role="alert">
+              <p
+                className="cw-form-error [background:#fff4ee] [border-top-width:1px] [border-top-style:solid] [border-top-color:#f0ddcf] [border-right-width:1px] [border-right-style:solid] [border-right-color:#f0ddcf] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#f0ddcf] [border-left-width:1px] [border-left-style:solid] [border-left-color:#f0ddcf] text-[#b6836e]! pt-[12px] pr-[15px] pb-[12px] pl-[15px] rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]"
+                role="alert"
+              >
                 {error}
               </p>
             )}
-            <button disabled={busy} className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]">
-              {busy
-                ? "Sending…"
-                : mode === "book"
-                  ? "Review booking"
-                  : "Review quotation request"}
+            <button
+              disabled={busy}
+              className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
+            >
+              {busy ? "Sending…" : "Review booking"}
             </button>
           </form>
         </>

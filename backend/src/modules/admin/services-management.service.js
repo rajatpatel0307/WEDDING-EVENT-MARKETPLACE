@@ -604,7 +604,7 @@ export async function remove(id, input, ctx) {
     );
     if (used)
       fail(
-        "Service has booking, quotation or offer history. Deactivate it instead.",
+        "Service has historical booking or offer records. Deactivate it instead.",
         409,
       );
     await removeProduct(id,tx);
@@ -867,10 +867,7 @@ export async function performance(id, ctx) {
     "SELECT COUNT(DISTINCT b.BookingId) AS bookings,COUNT(DISTINCT CASE WHEN b.BookingStatus='Completed' THEN b.BookingId END) AS completed,COUNT(DISTINCT CASE WHEN b.BookingStatus='Cancelled' THEN b.BookingId END) AS cancelled,COALESCE(SUM(CASE WHEN b.BookingStatus='Completed' THEN bi.LineTotal ELSE 0 END),0) AS revenue FROM dbo.BookingItems bi JOIN dbo.Booking b ON b.BookingId=bi.BookingId WHERE bi.ServiceId=:id",
     { id },
   );
-  const [quotes] = await repo.select(
-    "SELECT COUNT(DISTINCT QuotationId) AS quotations FROM dbo.QuotationItems WHERE ServiceId=:id",
-    { id },
-  );
+
   const [rating] = await repo.select(
     `SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS rating,COUNT_BIG(*) AS reviews FROM dbo.Reviews r WHERE ${publicPredicate()} AND r.ServiceId=:id`,
     { id },
@@ -879,7 +876,7 @@ export async function performance(id, ctx) {
     `WITH days AS(SELECT CONVERT(date,DATEADD(minute,330,SYSUTCDATETIME())) AS day UNION ALL SELECT DATEADD(day,-1,day) FROM days WHERE day>DATEADD(day,-89,CONVERT(date,DATEADD(minute,330,SYSUTCDATETIME())))) SELECT d.day AS date,COALESCE(m.Views,0) AS views,COALESCE(b.bookings,0) AS bookings,COALESCE(b.revenue,0) AS revenue FROM days d LEFT JOIN dbo.ServiceDailyMetrics m ON m.ServiceId=:id AND m.MetricDate=d.day OUTER APPLY(SELECT COUNT(DISTINCT bk.BookingId) AS bookings,SUM(CASE WHEN bk.BookingStatus='Completed' THEN bi.LineTotal ELSE 0 END) AS revenue FROM dbo.BookingItems bi JOIN dbo.Booking bk ON bk.BookingId=bi.BookingId WHERE bi.ServiceId=:id AND CONVERT(date,DATEADD(minute,330,bk.CreatedAt))=d.day) b ORDER BY d.day OPTION(MAXRECURSION 90)`,
     { id },
   );
-  return { ...totals, ...bookings, ...quotes, ...rating, series };
+  return { ...totals, ...bookings, ...rating, series };
 }
 export async function childrenIndex(kind, input, ctx) {
   requireRole(ctx, "ADMIN");

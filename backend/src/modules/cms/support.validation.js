@@ -5,7 +5,7 @@ export const inquiryTypes = [
   "CUSTOMER",
   "VENDOR",
   "BOOKING",
-  "QUOTATION",
+
   "PAYMENT",
   "TECHNICAL",
   "PARTNERSHIP",

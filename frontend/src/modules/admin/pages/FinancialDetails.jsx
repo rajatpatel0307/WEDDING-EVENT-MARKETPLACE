@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import {
-  ArrowLeft, ArrowUpRight, ChevronRight, CreditCard, Wallet, CalendarDays,
-  CalendarCheck, Store, ShieldCheck, ShieldAlert, CheckCircle2,
-  XCircle, FilePlus2, ReceiptText, History, Inbox, RotateCcw, PauseCircle,
-  FileText, Landmark,
-} from "lucide-react";
+import { ArrowLeft, ArrowUpRight, ChevronRight, CreditCard, Wallet, CalendarDays, CalendarCheck, Store, ShieldCheck, ShieldAlert, CheckCircle2, XCircle, FilePlus2, ReceiptText, History, Inbox, RotateCcw, PauseCircle, Landmark } from "lucide-react";
 import { adminRequest, date } from "../api";
 import { useAdminData } from "../services-management.api";
 import { Skeleton, ErrorState } from "../components/AdminTable";
@@ -37,7 +32,7 @@ const resources = {
   payments: { title: "Payment details", icon: CreditCard, amount: "Amount", amountLabel: "Payment amount" },
   refunds: { title: "Refund details", icon: RotateCcw, amount: "RefundAmount", amountLabel: "Refund amount" },
   payouts: { title: "Payout details", icon: Wallet, amount: "NetAmount", amountLabel: "Net vendor payable" },
-  quotations: { title: "Quotation details", icon: FileText, amount: "TotalAmount", amountLabel: "Quotation total" },
+
   commission: { title: "Commission details", icon: Landmark, amount: "CommissionAmount", amountLabel: "Platform commission" },
 };
 
@@ -155,7 +150,7 @@ export default function FinancialDetails() {
             <div className="min-w-0">
               <span className="text-[9px] font-medium tracking-[1.5px] text-[#84988a] uppercase">{config.title}</span>
               <h1 className="mt-1! mb-2! text-xl! leading-tight! font-semibold! tracking-tight! [overflow-wrap:anywhere] sm:text-[26px]!">{row.name || row.id}</h1>
-              <p className="max-w-2xl text-xs! leading-relaxed text-[#819587]!">{kind === "quotations" ? "Agreed amounts are preserved. Administrative notes do not amend the quotation." : "Transaction details, linked records and administrative history."}</p>
+              <p className="max-w-2xl text-xs! leading-relaxed text-[#819587]!">{"Transaction details, linked records and administrative history."}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-3"><Status value={row.status || "Recorded"} /><button type="button" className={primaryButton} onClick={() => {setError("");setDecision(["note", "Add internal note"]);}}><FilePlus2 size={14} aria-hidden="true" />Add internal note</button></div>
@@ -212,8 +207,8 @@ export default function FinancialDetails() {
         </aside>
       </div>
 
-      <section className={panel} aria-label={kind === "quotations" ? "Quotation items" : "Related transactions"}>
-        <SectionHeading title={kind === "quotations" ? "Quotation items" : "Related transactions"} icon={ReceiptText} count={transactionRows.length} />
+      <section className={panel} aria-label={"Related transactions"}>
+        <SectionHeading title={"Related transactions"} icon={ReceiptText} count={transactionRows.length} />
         <Rows rows={transactionRows} currency={currency} />
       </section>
       <section className={panel} aria-label="Administrative history">

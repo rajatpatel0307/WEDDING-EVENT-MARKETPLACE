@@ -13,7 +13,7 @@ import * as m from "./workspace.messaging.js";
 import * as p from "./workspace.payments.js";
 import * as finance from "../payments/customer-finance.js";
 import * as lifecycle from "../bookings/bookings.service.js";
-import * as quotations from "../quotations/quotations.service.js";
+
 import { communicationCounts } from "../notifications/communications.service.js";
 export function createCustomerRouter({
   authenticateRequest = authenticate,
@@ -230,38 +230,6 @@ export function createCustomerRouter({
   );
   mut("delete", "/bookings/:id/items/:item", (q) =>
     lifecycle.editOptionalItem(q.params.id, q.params.item, q.body, q.ctx, true),
-  );
-  const quotationLimit = rateLimit({
-    windowMs: 60000,
-    limit: 20,
-    standardHeaders: "draft-8",
-    legacyHeaders: false,
-  });
-  r.use(["/quotation-requests", "/quotations"], (req, res, next) =>
-    ["GET", "HEAD"].includes(req.method)
-      ? next()
-      : quotationLimit(req, res, next),
-  );
-  mut("post", "/quotation-requests", (q) => o.requestQuote(q.body, q.ctx));
-  get("/quotation-requests", (q) =>
-    quotations.list(q.query, q.ctx, "Customer", true),
-  );
-  get("/quotation-requests/:id", (q) =>
-    quotations.requestDetail(q.params.id, q.ctx, "Customer"),
-  );
-  mut("post", "/quotation-requests/:id/action", (q) =>
-    quotations.requestAction(q.params.id, q.body, q.ctx, "Customer"),
-  );
-  get("/quotations", (q) => quotations.list(q.query, q.ctx, "Customer"));
-  get("/quotations/statistics", (q) =>
-    quotations.statistics(q.ctx, "Customer"),
-  );
-  mut("post", "/quotations/:id/convert", (q) =>
-    quotations.convert(q.params.id, q.ctx),
-  );
-  get("/quotations/:id", (q) => o.quoteDetails(q.params.id, q.ctx));
-  mut("post", "/quotations/:id/decision", (q) =>
-    o.decideQuote(q.params.id, q.body, q.ctx),
   );
   mut("post", "/reviews", (q) => o.review(q.body, q.ctx));
   mut("post", "/bookings/:id/payment-order", (q) =>

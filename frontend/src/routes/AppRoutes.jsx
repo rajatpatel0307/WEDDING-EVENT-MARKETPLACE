@@ -67,7 +67,7 @@ const VendorBookingDetails = lazy(
   () => import("../modules/vendor/pages/VendorBookingsPage"),
 );
 const VendorBookingsList = lazy(() => import("../modules/vendor/pages/VendorBookingsList"));
-const VendorQuotationsList = lazy(() => import("../modules/vendor/pages/VendorQuotationsList"));
+
 const BookingsManagementPage = lazy(
   () => import("../modules/admin/pages/BookingsManagementPage"),
 );
@@ -98,21 +98,7 @@ const CustomerEventDetails = lazy(() =>
     default: m.CustomerEventDetails,
   })),
 );
-const QuotationList = lazy(() =>
-  import("../modules/quotations/QuotationPages").then((m) => ({
-    default: m.QuotationList,
-  })),
-);
-const QuotationDetails = lazy(() =>
-  import("../modules/quotations/QuotationPages").then((m) => ({
-    default: m.QuotationDetails,
-  })),
-);
-const QuotationRequestDetails = lazy(() =>
-  import("../modules/quotations/QuotationPages").then((m) => ({
-    default: m.RequestDetails,
-  })),
-);
+
 const CustomerRecords = lazy(
   () => import("../modules/customer/pages/CustomerRecords"),
 );
@@ -179,11 +165,7 @@ const VendorServicePackages = lazy(
 const VendorServiceAvailability = lazy(
   () => import("../modules/vendor/service-management/ServiceAvailability"),
 );
-const QuotationForm = lazy(() =>
-  import("../modules/vendor/components/WorkspaceForms").then((m) => ({
-    default: m.QuotationForm,
-  })),
-);
+
 const AdminInbox = lazy(() => import("../modules/admin/pages/AdminInbox"));
 const FinancialDetails = lazy(
   () => import("../modules/admin/pages/FinancialDetails"),
@@ -389,22 +371,7 @@ export default function AppRoutes() {
               path="payments/:id"
               element={<CustomerCheckout transaction />}
             />
-            <Route
-              path="quotations/:id"
-              element={<QuotationDetails role="Customer" />}
-            />
-            <Route
-              path="requests"
-              element={<QuotationList role="Customer" requests />}
-            />
-            <Route
-              path="requests/:id"
-              element={<QuotationRequestDetails role="Customer" />}
-            />
-            <Route
-              path="quotations"
-              element={<QuotationList role="Customer" />}
-            />
+
             <Route path="legal" element={<LegalCenterPage />} />
             <Route path="media" element={<MediaLibrary role="Customer" />} />
             <Route path="messages" element={<CustomerMessages />} />
@@ -499,20 +466,7 @@ export default function AppRoutes() {
                 path="packages/:id/edit"
                 element={<VendorPackageRoute />}
               />
-              <Route
-                path="requests"
-                element={<VendorQuotationsList category="requests" />}
-              />
-              <Route
-                path="requests/:id"
-                element={<QuotationRequestDetails role="Vendor" />}
-              />
-              <Route
-                path="quotations/:id"
-                element={<QuotationDetails role="Vendor" />}
-              />
-              <Route path="quotations/new" element={<QuotationForm />} />
-              <Route path="quotations/:id/edit" element={<QuotationForm />} />
+
               <Route path="calendar" element={<VendorCalendarPage />} />
               <Route
                 path="availability"
@@ -604,28 +558,7 @@ export default function AppRoutes() {
                   element={<VendorBookingStatusRedirect status={filter} />}
                 />
               ))}
-              <Route
-                path="quotations"
-                element={<Navigate to="/vendor/quotations/all" replace />}
-              />
-              {Object.entries({
-                all: "",
-                drafts: "Draft",
-                sent: "Sent",
-                accepted: "Accepted",
-                rejected: "Rejected",
-                expired: "Expired",
-                negotiations: "Negotiation",
-                converted: "Converted",
-              }).map(([path]) => (
-                <Route
-                  key={path}
-                  path={`quotations/${path}`}
-                  element={
-                    <VendorQuotationsList key={path} category={path} />
-                  }
-                />
-              ))}
+
               <Route
                 path="*"
                 element={
@@ -895,50 +828,7 @@ export default function AppRoutes() {
                 </Suspense>
               }
             />
-            <Route
-              path="quotations"
-              element={
-                <Suspense
-                  fallback={<div role="status">Loading quotations?</div>}
-                >
-                  <QuotationList role="Admin" />
-                </Suspense>
-              }
-            />
-            <Route
-              path="quotations/:id"
-              element={
-                <Suspense
-                  fallback={<div role="status">Loading quotation?</div>}
-                >
-                  <QuotationDetails role="Admin" />
-                </Suspense>
-              }
-            />
-            <Route
-              path="quotation-requests"
-              element={
-                <Suspense fallback={<div role="status">Loading requests?</div>}>
-                  <QuotationList role="Admin" requests />
-                </Suspense>
-              }
-            />
-            <Route
-              path="requests/:id"
-              element={
-                <Suspense fallback={<div role="status">Loading request?</div>}>
-                  <QuotationRequestDetails role="Admin" />
-                </Suspense>
-              }
-            />
-            <Route
-              path="quotation-requests/:id"
-              element={
-                <Suspense fallback={<div role="status">Loading request?</div>}>
-                  <QuotationRequestDetails role="Admin" />
-                </Suspense>
-              }
-            />
+
             <Route path="categories/new" element={<Suspense fallback={<div role="status">Loading category...</div>}><CategoryManagementPage create /></Suspense>} />
             <Route path="categories/:id/edit" element={<Suspense fallback={<div role="status">Loading category...</div>}><CategoryManagementPage edit /></Suspense>} />
             <Route path="categories/:id" element={<Suspense fallback={<div role="status">Loading category...</div>}><CategoryManagementPage /></Suspense>} />

@@ -31,9 +31,7 @@ export const categoryFor = (type) =>
     ? "chat"
     : /booking/i.test(type || "")
       ? "booking"
-      : /quotation/i.test(type || "")
-        ? "quotation"
-        : "general";
+      : "general";
 export function notificationUrl(row, role) {
   const root = `/${role.toLowerCase()}`;
   const id = row.ReferenceId;
@@ -45,9 +43,7 @@ export function notificationUrl(row, role) {
   if (row.ReferenceType === "Conversation" && role !== "Admin")
     return `${root}/messages?conversation=${id}`;
   if (row.ReferenceType === "Booking") return `${root}/bookings/${id}`;
-  if (row.ReferenceType === "Quotation") return `${root}/quotations/${id}`;
-  if (row.ReferenceType === "QuotationRequest")
-    return `${root}/${role === "Admin" ? "quotation-requests" : "requests"}/${id}`;
+
   if (row.ReferenceType === "Service" && role === "Vendor")
     return `${root}/services/${id}`;
   if (row.ReferenceType === "Vendor" && role !== "Admin")
@@ -67,8 +63,7 @@ export function notificationUrl(row, role) {
       Payment: "finance/payments",
       Refunds: "finance/refunds",
       VendorPayouts: "finance/payouts",
-      Quotation: "quotations",
-      Quotations: "quotations",
+
     };
     if (paths[type]) return `${root}/${paths[type]}/${id}`;
   }
@@ -114,7 +109,7 @@ export async function createNotification(
     `
     IF NOT EXISTS(SELECT 1 FROM dbo.Notifications WITH(UPDLOCK,HOLDLOCK) WHERE UserId=:user AND EventKey=:key)
     AND (:essential =1 OR NOT EXISTS(SELECT 1 FROM dbo.NotificationPreferences WHERE UserId=:user AND
-      ((:category ='chat' AND ChatEnabled=0) OR (:category ='booking' AND BookingEnabled=0) OR (:category ='quotation' AND QuotationEnabled=0))))
+      ((:category ='chat' AND ChatEnabled=0) OR (:category ='booking' AND BookingEnabled=0))))
     BEGIN
       DECLARE @ids TABLE(id uniqueidentifier);
       INSERT INTO dbo.Notifications(UserId,NotificationType,Title,Message,ReferenceType,ReferenceId,Category,EventKey)
@@ -144,7 +139,7 @@ export const preferencesInput = z
   .object({
     chatEnabled: z.boolean(),
     bookingEnabled: z.boolean(),
-    quotationEnabled: z.boolean(),
+
   })
   .strict();
 export async function preferences(ctx, input) {
@@ -154,30 +149,30 @@ export async function preferences(ctx, input) {
     await sequelize.transaction(async (tx) => {
       await query(
         `IF EXISTS(SELECT 1 FROM dbo.NotificationPreferences WITH(UPDLOCK,HOLDLOCK) WHERE UserId=:user)
-        UPDATE dbo.NotificationPreferences SET ChatEnabled=:chat,BookingEnabled=:booking,QuotationEnabled=:quotation,UpdatedAt=SYSUTCDATETIME() WHERE UserId=:user;
-        ELSE INSERT dbo.NotificationPreferences(UserId,ChatEnabled,BookingEnabled,QuotationEnabled) VALUES(:user,:chat,:booking,:quotation);`,
+        UPDATE dbo.NotificationPreferences SET ChatEnabled=:chat,BookingEnabled=:booking,UpdatedAt=SYSUTCDATETIME() WHERE UserId=:user;
+        ELSE INSERT dbo.NotificationPreferences(UserId,ChatEnabled,BookingEnabled) VALUES(:user,:chat,:booking);`,
         {
           user: user.id,
           chat: b.chatEnabled ? 1 : 0,
           booking: b.bookingEnabled ? 1 : 0,
-          quotation: b.quotationEnabled ? 1 : 0,
+
         },
         tx,
       );
     });
   }
   const [p] = await query(
-    "SELECT ChatEnabled AS chatEnabled,BookingEnabled AS bookingEnabled,QuotationEnabled AS quotationEnabled FROM dbo.NotificationPreferences WHERE UserId=:user",
+    "SELECT ChatEnabled AS chatEnabled,BookingEnabled AS bookingEnabled FROM dbo.NotificationPreferences WHERE UserId=:user",
     { user: user.id },
   );
   return (
-    p || { chatEnabled: true, bookingEnabled: true, quotationEnabled: true }
+    p || { chatEnabled: true, bookingEnabled: true,  }
   );
 }
 const paging = z.object({
   page: z.coerce.number().int().min(1).max(10000).default(1),
   category: z
-    .enum(["all", "chat", "booking", "quotation", "general"])
+    .enum(["all", "chat", "booking",  "general"])
     .default("all"),
   unread: z.enum(["0", "1"]).default("0"),
 });
@@ -186,9 +181,9 @@ export async function inbox(input, ctx, role) {
     b = paging.parse(input);
   const rows = await query(
     `SELECT NotificationId AS id,${bookingNotificationText("Title")} AS title,${bookingNotificationText("Message")} AS message,ReferenceType,ReferenceId,IsRead AS isRead,CreatedAt AS createdAt,
-    CASE WHEN ReferenceType='Conversation' THEN 'chat' WHEN ReferenceType LIKE '%Booking%' THEN 'booking' WHEN ReferenceType LIKE '%Quotation%' THEN 'quotation' ELSE Category END AS category
-    FROM dbo.Notifications t WHERE UserId=:user AND DismissedAt IS NULL AND (:unread =0 OR IsRead=0)
-    AND (:category ='all' OR :category = CASE WHEN ReferenceType='Conversation' THEN 'chat' WHEN ReferenceType LIKE '%Booking%' THEN 'booking' WHEN ReferenceType LIKE '%Quotation%' THEN 'quotation' ELSE Category END)
+    CASE WHEN ReferenceType='Conversation' THEN 'chat' WHEN ReferenceType LIKE '%Booking%' THEN 'booking' ELSE Category END AS category
+    FROM dbo.Notifications t WHERE UserId=:user AND DismissedAt IS NULL AND (ReferenceType IS NULL OR ReferenceType NOT LIKE '%Quotation%') AND Category<>'quotation' AND (:unread =0 OR IsRead=0)
+    AND (:category ='all' OR :category = CASE WHEN ReferenceType='Conversation' THEN 'chat' WHEN ReferenceType LIKE '%Booking%' THEN 'booking' ELSE Category END)
     ORDER BY CreatedAt DESC,NotificationId DESC OFFSET :offset ROWS FETCH NEXT 21 ROWS ONLY`,
     {
       user: user.id,
@@ -204,7 +199,7 @@ export async function inbox(input, ctx, role) {
       COUNT_BIG(CASE WHEN IsRead=0 THEN 1 END) AS unread,
       COUNT_BIG(CASE WHEN IsRead=1 THEN 1 END) AS [read],
       COUNT_BIG(CASE WHEN CreatedAt>=@todayStart AND CreatedAt<DATEADD(day,1,@todayStart) THEN 1 END) AS today
-    FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL`,
+    FROM dbo.Notifications WHERE UserId=:user AND DismissedAt IS NULL AND (ReferenceType IS NULL OR ReferenceType NOT LIKE '%Quotation%') AND Category<>'quotation'`,
     { user: user.id },
   );
   return {
@@ -220,7 +215,7 @@ export async function inbox(input, ctx, role) {
 export async function unreadCount(ctx) {
   const user = requireAuth(ctx);
   const [row] = await query(
-    "SELECT COUNT(*) AS count FROM dbo.Notifications WHERE UserId=:user AND IsRead=0 AND DismissedAt IS NULL",
+    "SELECT COUNT(*) AS count FROM dbo.Notifications WHERE UserId=:user AND IsRead=0 AND DismissedAt IS NULL AND (ReferenceType IS NULL OR ReferenceType NOT LIKE '%Quotation%') AND Category<>'quotation'",
     { user: user.id },
   );
   return row;

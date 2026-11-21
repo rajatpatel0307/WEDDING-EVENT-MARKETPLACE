@@ -1,5 +1,7 @@
 # Vendor Service & Booking Access Control
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 The admin workspace now includes **Vendor Access Control** at `/admin/vendor-access`. Service and booking permissions are separate from vendor verification and from each other. Both support Pending, Approved, Rejected and Suspended. Permission approval does not approve or publish a service.
 
 The page provides vendor name, business name, email, phone, categories, both statuses, registration date, independent actions, search, status/category filters, pagination and paginated access history. Actions require confirmation; rejecting or suspending requires a nonblank reason. The UI changes only after backend success. Stale decisions return 409.

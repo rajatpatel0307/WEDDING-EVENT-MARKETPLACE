@@ -50,7 +50,7 @@ const tabs = [
   ["locations", "Locations"],
   ["availability", "Availability"],
   ["bookings", "Bookings"],
-  ["quotations", "Quotations"],
+
   ["customers", "Customers"],
   ["revenue", "Earnings"],
   ["payments", "Payments"],
@@ -62,7 +62,7 @@ const tabs = [
   ["audit", "Audit Logs"],
 ];
 const countedTabs = new Set([
-  "services", "packages", "bookings", "quotations", "reviews", "documents",
+  "services", "packages", "bookings",  "reviews", "documents",
 ]);
 const columns = {
   payments: [
@@ -137,17 +137,7 @@ const columns = {
     ["vendorNotes", "Vendor notes"],
     ["createdAt", "Created date"],
   ],
-  quotations: [
-    ["number", "Quotation number"],
-    ["customer", "Customer"],
-    ["event", "Event"],
-    ["amount", "Total"],
-    ["status", "Status"],
-    ["validUntil", "Valid until"],
-    ["customerMessage", "Customer message"],
-    ["vendorMessage", "Vendor message"],
-    ["createdAt", "Created date"],
-  ],
+
   customers: [
     ["name", "Customer"],
     ["email", "Email"],
@@ -813,10 +803,9 @@ export default function VendorDetailsPage() {
     availability:
       "Recorded availability slots, including unavailable and booked dates.",
     bookings: "Complete booking history, customer notes, and payment balances.",
-    quotations:
-      "Quotations prepared for customers, including drafts and sent quotations.",
+
     customers:
-      "Customers connected through bookings, quotations or conversations.",
+      "Customers connected through bookings or conversations.",
     reviews: "All submitted reviews, including hidden reviews.",
     audit:
       "Vendor, owner and administrator actions. Open a value to inspect its changes.",

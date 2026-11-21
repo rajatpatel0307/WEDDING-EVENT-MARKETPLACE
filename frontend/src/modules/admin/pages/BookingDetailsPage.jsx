@@ -41,13 +41,12 @@ import { useAuth } from "../../../context/AuthContext";
 import BookingChanges from "../../bookings/BookingChanges";
 import BookingItemDetails from "../../bookings/BookingItemDetails";
 
-
 const button = "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-[#dce6df] bg-white px-3 py-2 text-[11px] font-medium text-[#557160] transition-colors hover:border-[#afccba] hover:bg-[#f0f6f2] disabled:cursor-not-allowed disabled:opacity-40";
 const primaryButton = "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-[#176b60] bg-[#176b60] px-3 py-2 text-[11px] font-medium text-white transition-colors hover:bg-[#12574e] disabled:cursor-not-allowed disabled:opacity-40";
 const dangerButton = "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-medium text-rose-700 transition-colors hover:border-rose-300 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40";
 const tableClass = "w-full border-collapse text-left text-xs [&_th]:border-b [&_th]:border-[#e5ece7] [&_th]:bg-[#f5f8f6] [&_th]:px-3 [&_th]:py-3 [&_th]:text-[10px] [&_th]:font-medium [&_th]:tracking-wide [&_th]:whitespace-nowrap [&_th]:text-[#7b9081] [&_th]:uppercase [&_td]:border-b [&_td]:border-[#edf2ee] [&_td]:px-3 [&_td]:py-3.5 [&_td]:align-top [&_tbody_tr:last-child_td]:border-0 [&_tbody_tr:hover]:bg-[#fafcfb]";
 const pageClass = "grid w-full min-w-0 gap-5 text-[#2b4638] [&_button]:cursor-pointer [&_button:disabled]:cursor-not-allowed [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-offset-3 [&_:focus-visible]:outline-[#176b60] [&_select]:rounded-lg [&_select]:border [&_select]:border-[#dce6df] [&_select]:bg-white [&_select]:px-3 [&_select]:py-2 [&_select]:text-xs";
-const tabIcons = { Overview: LayoutDashboard, Items: Package, Payment: Wallet, Payout: IndianRupee, Policy: ShieldAlert, "Status History": History, "Audit Logs": ScrollText, Quotation: FileText };
+const tabIcons = { Overview: LayoutDashboard, Items: Package, Payment: Wallet, Payout: IndianRupee, Policy: ShieldAlert, "Status History": History, "Audit Logs": ScrollText,  };
 
 function BookingStatus({ value }) {
   const tone = ["Confirmed", "Paid", "Completed", "Success"].includes(value)
@@ -502,7 +501,7 @@ export default function BookingDetailsPage() {
       "Policy",
       "Status History",
       "Audit Logs",
-      "Quotation",
+
     ],
     tab = tabs.includes(params.get("tab")) ? params.get("tab") : "Overview";
   const awaitingRefund = Number(state.data?.financial?.refundPending || 0) > 0;
@@ -576,15 +575,7 @@ export default function BookingDetailsPage() {
             <Wallet size={14} />
             View Payment
           </button>
-          {b.QuotationId && (
-            <button
-              className={button}
-              onClick={() => changeTab("Quotation")}
-            >
-              <FileText size={14} aria-hidden="true" />
-              View Quotation
-            </button>
-          )}
+
           <div className="flex flex-wrap items-center gap-2 min-[1350px]:ml-auto">
           {d.actions
             .filter((a) => !["view", "cancel", "refund"].includes(a))
@@ -634,7 +625,7 @@ export default function BookingDetailsPage() {
       )}
       <nav className="flex min-w-0 gap-1 overflow-x-auto rounded-xl border border-[#e0e9e3] bg-white px-3 py-1 [&_button]:flex [&_button]:min-h-11 [&_button]:shrink-0 [&_button]:items-center [&_button]:gap-2 [&_button]:border-b-2 [&_button]:border-transparent [&_button]:px-3 [&_button]:text-xs [&_button]:whitespace-nowrap [&_button]:text-[#7b8e81] [&_button]:transition-colors [&_button:hover]:text-[#176b60] [&_button[aria-current]]:border-[#176b60] [&_button[aria-current]]:font-semibold! [&_button[aria-current]]:text-[#176b60]" aria-label="Booking details">
         {tabs
-          .filter((t) => t !== "Quotation" || b.QuotationId)
+
           .map((t) => {
             const Icon = tabIcons[t];
             return (
@@ -883,31 +874,7 @@ export default function BookingDetailsPage() {
               {!d.audits.length && <p>No audit entries.</p>}
             </div>
           )}
-          {tab === "Quotation" &&
-            (d.quotation ? (
-              <>
-                <Definition
-                  values={{
-                    Number: d.quotation.QuotationNumber,
-                    Status: d.quotation.Status,
-                    Subtotal: money(d.quotation.SubTotal),
-                    Discount: money(d.quotation.DiscountAmount),
-                    Tax: money(d.quotation.TaxAmount),
-                    Total: money(d.quotation.TotalAmount),
-                    "Valid until": date(d.quotation.ValidUntil),
-                    "Vendor message": d.quotation.VendorMessage,
-                  }}
-                />
-                <Link
-                  className={button}
-                  to={`/admin/quotations?q=${encodeURIComponent(d.quotation.QuotationNumber)}`}
-                >
-                  View quotation record
-                </Link>
-              </>
-            ) : (
-              <p>No quotation linked.</p>
-            ))}
+
         </section>
         <aside className="grid min-w-0 gap-4">
           <PriceSummary f={f} />

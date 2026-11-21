@@ -80,16 +80,13 @@ test("each collection uses a bound customer predicate and bounded pagination", a
     if (sql.includes("COUNT_BIG")) return [{ total: 42 }];
     return [{ id: "record" }];
   });
-  for (const section of [
-    "events",
-    "bookings",
-    "quotations",
-    "payments",
-    "reviews",
-    "wishlist",
-    "addresses",
-    "audit",
-  ]) {
+  for (const section of ["events",
+"bookings",
+"payments",
+"reviews",
+"wishlist",
+"addresses",
+"audit"]) {
     const result = await customerRecords(
       id,
       section,

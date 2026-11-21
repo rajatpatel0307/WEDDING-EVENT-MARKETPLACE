@@ -1,4 +1,4 @@
-import QuotationBuilder from "../../quotations/QuotationBuilder";
+
 import { useEffect, useState } from "react";
 import {
   Link,
@@ -389,10 +389,6 @@ export function PackageForm() {
       </form>
     </>
   );
-}
-
-export function QuotationForm() {
-  return <QuotationBuilder />;
 }
 
 const defaults = {

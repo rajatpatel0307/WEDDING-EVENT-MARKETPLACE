@@ -45,7 +45,6 @@ test("booking creation stores and reuses the allocated reference in its response
     [{ ServiceId: service, ItemName: "Service", Quantity: 1, UnitPrice: 100 }],
     { auth: { user: { id: customer, active: true, emailVerified: true, roles: [{ code: "CUSTOMER", active: true }] } }, req: { ip: "test" } },
     transaction,
-    null,
     { source: "Commerce" },
   );
   assert.equal(result.number, "MNBK2600042");

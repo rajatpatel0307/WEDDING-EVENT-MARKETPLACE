@@ -44,7 +44,7 @@ export async function conversationDetails(id, ctx) {
   await membership(id, ctx);
   const user = requireAuth(ctx);
   const [row] = await query(
-    `SELECT c.ConversationId AS id,c.VendorId AS vendorId,c.BookingId AS bookingId,c.EventId AS eventId,c.ServiceId AS serviceId,c.PackageId AS packageId,c.QuotationId AS quotationId,c.RequestId AS requestId,
+    `SELECT c.ConversationId AS id,c.VendorId AS vendorId,c.BookingId AS bookingId,c.EventId AS eventId,c.ServiceId AS serviceId,c.PackageId AS packageId,
     CASE WHEN c.CustomerId=:user THEN v.BusinessName ELSE CONCAT(u.FirstName,' ',u.LastName) END AS customer,
     CASE WHEN c.CustomerId=:user THEN v.LogoUrl ELSE u.ProfilePhotoUrl END AS image,
     CASE WHEN c.CustomerId=:user THEN v.UserId ELSE c.CustomerId END AS peerId,e.EventName AS event,b.BookingNumber AS booking,
@@ -71,8 +71,7 @@ export const startInput = z
     serviceId: z.guid().optional(),
     packageId: z.guid().optional(),
     bookingId: z.guid().optional(),
-    quotationId: z.guid().optional(),
-    requestId: z.guid().optional(),
+
   })
   .strict();
 export async function startConversation(input, ctx, role) {
@@ -84,22 +83,16 @@ export async function startConversation(input, ctx, role) {
     let event = b.eventId || null;
     for (const [field, table, pk] of [
       ["bookingId", "Booking", "BookingId"],
-      ["quotationId", "Quotations", "QuotationId"],
-      ["requestId", "QuotationRequests", "RequestId"],
+
     ]) {
       if (!b[field]) continue;
       const [r] = await query(
-        `SELECT CustomerId,VendorId,EventId${field === "quotationId" ? ",Status,SentAt" : ""} FROM dbo.${table} WHERE ${pk}=:id AND ${role === "Vendor" ? "VendorId" : "CustomerId"}=:owner`,
+        `SELECT CustomerId,VendorId,EventId FROM dbo.${table} WHERE ${pk}=:id AND ${role === "Vendor" ? "VendorId" : "CustomerId"}=:owner`,
         { id: b[field], owner: role === "Vendor" ? user.vendor.id : user.id },
         tx,
       );
       if (!r) fail("Related record not found.", 404);
-      if (
-        field === "quotationId" &&
-        role === "Customer" &&
-        (r.Status === "Draft" || !r.SentAt)
-      )
-        fail("Quotation unavailable.", 404);
+
       if (
         (vendor && lower(vendor) !== lower(r.VendorId)) ||
         (role === "Vendor" &&
@@ -115,7 +108,7 @@ export async function startConversation(input, ctx, role) {
     }
     if (
       !vendor ||
-      (role === "Vendor" && !b.bookingId && !b.quotationId && !b.requestId)
+      (role === "Vendor" && !b.bookingId)
     )
       fail("Select an authorized vendor or related record.");
     const [v] = await query(
@@ -154,8 +147,7 @@ export async function startConversation(input, ctx, role) {
       booking: b.bookingId || null,
       service: b.serviceId || null,
       package: b.packageId || null,
-      quotation: b.quotationId || null,
-      request: b.requestId || null,
+
     };
     const [old] = await query(
       `SELECT ConversationId AS id FROM dbo.Conversations WHERE CustomerId=:customer AND VendorId=:vendor AND IsActive=1
@@ -163,15 +155,15 @@ export async function startConversation(input, ctx, role) {
       AND ISNULL(CONVERT(varchar(36),BookingId),'')=ISNULL(CONVERT(varchar(36),:booking),'')
       AND ISNULL(CONVERT(varchar(36),ServiceId),'')=ISNULL(CONVERT(varchar(36),:service),'')
       AND ISNULL(CONVERT(varchar(36),PackageId),'')=ISNULL(CONVERT(varchar(36),:package),'')
-      AND ISNULL(CONVERT(varchar(36),QuotationId),'')=ISNULL(CONVERT(varchar(36),:quotation),'')
-      AND ISNULL(CONVERT(varchar(36),RequestId),'')=ISNULL(CONVERT(varchar(36),:request),'')`,
+      AND QuotationId IS NULL AND RequestId IS NULL
+`,
       p,
       tx,
     );
     if (old) return old;
     const id = randomUUID();
     await query(
-      "INSERT dbo.Conversations(ConversationId,CustomerId,VendorId,EventId,BookingId,ServiceId,PackageId,QuotationId,RequestId) VALUES(:id,:customer,:vendor,:event,:booking,:service,:package,:quotation,:request)",
+      "INSERT dbo.Conversations(ConversationId,CustomerId,VendorId,EventId,BookingId,ServiceId,PackageId) VALUES(:id,:customer,:vendor,:event,:booking,:service,:package)",
       { ...p, id },
       tx,
     );
@@ -206,7 +198,7 @@ export async function conversations(input, ctx) {
   const user = requireAuth(ctx),
     b = listInput.parse(input);
   const rows = await query(
-    `SELECT c.ConversationId AS id,c.VendorId AS vendorId,c.BookingId AS bookingId,c.EventId AS eventId,c.ServiceId AS serviceId,c.PackageId AS packageId,c.QuotationId AS quotationId,c.RequestId AS requestId,
+    `SELECT c.ConversationId AS id,c.VendorId AS vendorId,c.BookingId AS bookingId,c.EventId AS eventId,c.ServiceId AS serviceId,c.PackageId AS packageId,
     CASE WHEN c.CustomerId=:user THEN v.BusinessName ELSE CONCAT(u.FirstName,' ',u.LastName) END AS customer,
     CASE WHEN c.CustomerId=:user THEN v.LogoUrl ELSE u.ProfilePhotoUrl END AS image,
     CASE WHEN c.CustomerId=:user THEN v.UserId ELSE c.CustomerId END AS peerId,

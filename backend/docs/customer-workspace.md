@@ -1,5 +1,7 @@
 # Customer planning workspace
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 Customer pages live at `/customer/dashboard`, with nested events, discovery, service/vendor details, bookings, quotations, wishlist, messages, notifications, payments, reviews, addresses, profile and settings. Every `/api/customer` endpoint authenticates the current session and requires an active, verified CUSTOMER role. Mutations require the configured frontend Origin and `X-Customer-Request: 1`. IDs and request bodies are validated; financial values and identity are never accepted from the browser.
 
 Run `npm run db:migrate` in `backend` before starting. Migration 009 adds event-linked conversations, immutable quotation-to-booking links, quotation requests and payment orders. It retains existing customer and vendor records.

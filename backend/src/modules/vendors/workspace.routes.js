@@ -19,7 +19,7 @@ import * as operations from "./workspace.operations.js";
 import * as messaging from "./workspace.messaging.js";
 import { dashboard } from "./workspace.analytics.js";
 import * as lifecycle from "../bookings/bookings.service.js";
-import * as quotations from "../quotations/quotations.service.js";
+
 import { earnings } from "../payments/finance-reports.js";
 import { communicationCounts } from "../notifications/communications.service.js";
 
@@ -306,53 +306,6 @@ export function createVendorRouter({
   );
   mutation("post", "/bookings/:id/decision", (req) =>
     operations.bookingDecision(req.params.id, req.body, req.vendorContext),
-  );
-  const quoteLimit = rateLimit({
-    windowMs: 60000,
-    limit: 25,
-    standardHeaders: "draft-8",
-    legacyHeaders: false,
-  });
-  router.use(["/quotations", "/quotation-requests"], (req, res, next) =>
-    ["GET", "HEAD"].includes(req.method) ? next() : quoteLimit(req, res, next),
-  );
-  get("/quotation-requests", (req) =>
-    quotations.list(req.query, req.vendorContext, "Vendor", true),
-  );
-  get("/quotation-requests/:id", (req) =>
-    quotations.requestDetail(req.params.id, req.vendorContext, "Vendor"),
-  );
-  mutation("post", "/quotation-requests/:id/action", (req) =>
-    quotations.requestAction(
-      req.params.id,
-      req.body,
-      req.vendorContext,
-      "Vendor",
-    ),
-  );
-  get("/quotations", (req) =>
-    quotations.list(req.query, req.vendorContext, "Vendor"),
-  );
-  get("/quotations/statistics", (req) =>
-    quotations.statistics(req.vendorContext, "Vendor"),
-  );
-  mutation("post", "/quotations/preview", (req) =>
-    quotations.save(null, req.body, req.vendorContext, true),
-  );
-  get("/quotation-options", (req) =>
-    operations.quotationOptions(req.vendorContext),
-  );
-  get("/quotations/:id", (req) =>
-    operations.quoteDetails(req.params.id, req.vendorContext),
-  );
-  mutation("post", "/quotations", (req) =>
-    operations.saveQuote(null, req.body, req.vendorContext),
-  );
-  mutation("put", "/quotations/:id", (req) =>
-    operations.saveQuote(req.params.id, req.body, req.vendorContext),
-  );
-  mutation("post", "/quotations/:id/action", (req) =>
-    operations.quoteAction(req.params.id, req.body, req.vendorContext),
   );
   get("/calendar", (req) =>
     operations.calendar(req.query.month, req.vendorContext),

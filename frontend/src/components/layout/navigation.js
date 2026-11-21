@@ -24,13 +24,13 @@ export function navigationFor(user) {
           "Dashboard",
           "My Services",
           "Bookings",
-          "Quotes",
+
           "Messages",
           "Availability",
           "Reviews",
         ].map((name, i) => [
           name,
-          `/vendor/${["dashboard", "services", "bookings", "quotations", "messages", "availability", "reviews"][i]}`,
+          `/vendor/${["dashboard", "services", "bookings", "messages", "availability", "reviews"][i]}`,
         ])
       : publicNavigation;
   return publicNavigation;
@@ -62,7 +62,7 @@ export function profileFor(user) {
             ["My Business", "profile"],
             ["My Services", "services"],
             ["Bookings", "bookings"],
-            ["Quotations", "quotations"],
+
             ["Messages", "messages"],
             ["Notifications", "notifications"],
           ]

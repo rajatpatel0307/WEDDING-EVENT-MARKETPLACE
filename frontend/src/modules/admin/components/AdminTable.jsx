@@ -332,7 +332,7 @@ export default function AdminTable({
       navigate(`/admin/bookings/${row.id}`);
       return;
     }
-    if (["quotations", "payments", "refunds", "payouts", "commission"].includes(resource) &&
+    if ([ "payments", "refunds", "payouts", "commission"].includes(resource) &&
         action === "view") {
       navigate(`/admin/finance/${resource}/${row.id}`);
       return;

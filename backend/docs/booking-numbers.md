@@ -1,5 +1,7 @@
 # Permanent sequential Booking IDs
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 The human-readable Booking ID is stored in the existing `dbo.Booking.BookingNumber` column. Internal `BookingId` GUIDs, URLs, foreign keys, ownership checks, payment identifiers, statuses and booking rules retain their existing behavior. The fixed prefix is `MNBK26`; the positive numeric suffix has a minimum of five digits and grows past `99999` without truncation or an annual reset.
 
 The configured database was backed up and migration `032-booking-numbers` was applied on November 17, 2026. Its five existing bookings now have `MNBK2600001` through `MNBK2600005` in `CreatedAt, BookingId` order. The next successful new booking receives **`MNBK2600006`**. Original references are preserved in `LegacyBookingNumber`. Every other column on each existing booking was compared before commit and remained identical.

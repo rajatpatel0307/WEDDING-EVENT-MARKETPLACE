@@ -3,23 +3,7 @@ import AccessStatus from "../components/AccessStatus";
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 
-import {
-  AlertCircle,
-  ArrowRight,
-  ArrowUpRight,
-  BadgeCheck,
-  BriefcaseBusiness,
-  CalendarDays,
-  CheckCircle2,
-  CircleDollarSign,
-  Clock3,
-  Inbox,
-  Plus,
-  ReceiptText,
-  RefreshCw,
-  Star,
-  Wallet,
-} from "lucide-react";
+import { AlertCircle, ArrowRight, ArrowUpRight, BadgeCheck, BriefcaseBusiness, CalendarDays, CheckCircle2, CircleDollarSign, Clock3, Inbox, Plus, RefreshCw, Star, Wallet } from "lucide-react";
 
 import { useAuth } from "../../../context/AuthContext";
 import { useVendorData } from "../components/WorkspaceUI";
@@ -71,13 +55,6 @@ const metrics = [
     icon: BadgeCheck,
     path: "bookings/completed",
     description: "Memories you helped create",
-  },
-  {
-    key: "pendingQuotations",
-    label: "Pending quotations",
-    icon: ReceiptText,
-    path: "quotations/sent",
-    description: "Draft, sent & viewed quotations",
   },
   {
     key: "totalRevenue",
@@ -841,7 +818,7 @@ export default function VendorDashboard({
         className="
           grid grid-cols-1 gap-[13px]
           sm:grid-cols-2
-          lg:grid-cols-4
+          lg:grid-cols-3
         "
       >
         {metrics.map(

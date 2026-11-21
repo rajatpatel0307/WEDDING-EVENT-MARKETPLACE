@@ -15,7 +15,7 @@ export const audit = (ctx, action, entity, id, old, next, tx) =>
 const targets = {
   events: ["Events", "EventId", "CustomerId"],
   bookings: ["Booking", "BookingId", "CustomerId"],
-  quotations: ["Quotations", "QuotationId", "CustomerId"],
+
   conversations: ["Conversations", "ConversationId", "CustomerId"],
   addresses: ["Addresses", "AddressId", "UserId"],
   notifications: ["Notifications", "NotificationId", "UserId"],

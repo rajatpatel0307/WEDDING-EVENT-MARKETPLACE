@@ -225,7 +225,7 @@ export default function NotificationCenter({ role }) {
               setPage(1);
             }}
           >
-            {["all", "chat", "booking", "quotation", "general"].map((v) => (
+            {["all", "chat", "booking",  "general"].map((v) => (
               <option key={v} value={v}>
                 {v}
               </option>
@@ -338,10 +338,7 @@ export function NotificationSettings({ role }) {
               "Booking reminders",
               "Optional reminders for upcoming bookings.",
             ],
-            quotationEnabled: [
-              "Quotation reminders",
-              "Optional reminders about quotation expiry.",
-            ],
+
           }).map(([key, [title, description]]) => (
             <label key={key}>
               <span>
@@ -359,7 +356,7 @@ export function NotificationSettings({ role }) {
             </label>
           ))}
           <p>
-            Essential account, booking and quotation status changes are always
+            Essential account and booking status changes are always
             delivered in-app.
           </p>
           <button className="comm-send max-[640.001px]:[&&_>_span]:hidden" disabled={busy}>

@@ -1,5 +1,7 @@
 # Booking lifecycle implementation report
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 Implemented against the existing React/Tailwind, Express REST, JWT and Sequelize/MSSQL architecture. Verified on 30 October 2026. Migration 015 is prepared and registered, but has **not been committed to the configured database**. Verification applies it in a transaction and rolls back all schema changes and fixtures.
 
 ## Audit and reuse

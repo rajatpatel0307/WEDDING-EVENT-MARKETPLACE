@@ -74,34 +74,29 @@ test("customer services all require the customer role before database access", a
   const ctx = {
     auth: { user: { ...customer, roles: [{ code: "VENDOR", active: true }] } },
   };
-  for (const fn of [
-    () => w.dashboard(ctx),
-    () => w.profile(ctx),
-    () => w.records("events", {}, ctx),
-    () => w.eventDetails(id, ctx),
-    () => w.saveEvent(null, {}, ctx),
-    () => w.guest(id, null, {}, ctx),
-    () => w.saveProfile({}, ctx),
-    () => w.saveAddress(null, {}, ctx),
-    () => w.readNotification(id, ctx),
-    () => d.discover({}, ctx),
-    () => d.serviceDetails(id, ctx),
-    () => d.vendorDetails(id, ctx),
-    () => d.wishlist(ctx),
-    () => d.saveWishlist({}, ctx),
-    () => o.book({}, ctx),
-    () => o.requestQuote({}, ctx),
-    () => o.quoteDetails(id, ctx),
-    () => o.decideQuote(id, {}, ctx),
-    () => o.bookingDetails(id, ctx),
-    () => o.review({}, ctx),
-    () => m.conversations(ctx),
-    () => m.startConversation({}, ctx),
-    () => m.chat(id, {}, ctx),
-    () => m.sendMessage(id, {}, ctx),
-    () => m.attachmentUpload(id, {}, ctx),
-    () => m.attachmentFile(id, id, ctx),
-  ])
+  for (const fn of [() => w.dashboard(ctx),
+() => w.profile(ctx),
+() => w.records("events", {}, ctx),
+() => w.eventDetails(id, ctx),
+() => w.saveEvent(null, {}, ctx),
+() => w.guest(id, null, {}, ctx),
+() => w.saveProfile({}, ctx),
+() => w.saveAddress(null, {}, ctx),
+() => w.readNotification(id, ctx),
+() => d.discover({}, ctx),
+() => d.serviceDetails(id, ctx),
+() => d.vendorDetails(id, ctx),
+() => d.wishlist(ctx),
+() => d.saveWishlist({}, ctx),
+() => o.book({}, ctx),
+() => o.bookingDetails(id, ctx),
+() => o.review({}, ctx),
+() => m.conversations(ctx),
+() => m.startConversation({}, ctx),
+() => m.chat(id, {}, ctx),
+() => m.sendMessage(id, {}, ctx),
+() => m.attachmentUpload(id, {}, ctx),
+() => m.attachmentFile(id, id, ctx)])
     await assert.rejects(fn, (e) => e.extensions?.code === "FORBIDDEN");
 });
 test("owned customer resources accept sequential MSSQL GUIDs and bind the current customer", async () => {
@@ -112,19 +107,16 @@ test("owned customer resources accept sequential MSSQL GUIDs and bind the curren
     return [];
   };
   try {
-    for (const kind of [
-      "events",
-      "bookings",
-      "quotations",
-      "conversations",
-      "addresses",
-      "notifications",
-    ])
+    for (const kind of ["events",
+"bookings",
+"conversations",
+"addresses",
+"notifications"])
       await assert.rejects(
         () => owned(kind, id, id, undefined, false),
         (e) => e.status === 404,
       );
-    assert.equal(seen.length, 6);
+    assert.equal(seen.length, 5);
     for (const r of seen) {
       assert.match(r.sql, /AND \[(CustomerId|UserId)\]=:id/);
       assert.equal(r.options.replacements.id, id);

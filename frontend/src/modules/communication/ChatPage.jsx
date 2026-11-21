@@ -451,7 +451,7 @@ export default function ChatPage({ role, emptyState, renderHeader, inboxFooter }
                 <MessageCircle />
                 <h3>No conversations here</h3>
                 <p>
-                  Open a vendor, service, booking or quotation to start planning
+                  Open a vendor, service, booking to start planning
                   together.
                 </p>
               </div>
@@ -522,13 +522,7 @@ export default function ChatPage({ role, emptyState, renderHeader, inboxFooter }
                         View booking
                       </Link>
                     )}
-                    {conversation?.quotationId && (
-                      <Link
-                        to={`/${role.toLowerCase()}/quotations/${conversation.quotationId}`}
-                      >
-                        View quotation
-                      </Link>
-                    )}
+
                     {conversation?.serviceId && (
                       <Link
                         to={`/${role.toLowerCase()}/services/${conversation.serviceId}`}

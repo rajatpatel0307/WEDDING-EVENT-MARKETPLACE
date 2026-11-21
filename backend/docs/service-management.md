@@ -1,5 +1,7 @@
 # Vendor service management
 
+> Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
+
 This feature extends the existing React/Tailwind/Lucide vendor portal and Express/MSSQL REST API. It uses the existing JWT cookies, refresh flow, live user/role lookup, Cloudinary provider and audit log. There are no seeded demonstration records or frontend secrets.
 
 ## Setup and rollout

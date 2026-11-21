@@ -54,13 +54,6 @@ try {
     throw new Error(
       "Admin bookings migration is missing. Run npm run db:migrate before starting the API.",
     );
-  const [quotationMigration] = await sequelize.query(
-    "SELECT Name FROM dbo.AuthMigrations WHERE Name='018-quotation-history-hardening'",
-  );
-  if (!quotationMigration.length)
-    throw new Error(
-      "Quotation lifecycle migration is missing. Run npm run db:migrate before starting the API.",
-    );
   const [paymentMigration] = await sequelize.query(
     "SELECT Name FROM dbo.AuthMigrations WHERE Name='020-financial-controls'",
   );

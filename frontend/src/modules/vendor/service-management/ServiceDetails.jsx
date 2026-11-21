@@ -2,22 +2,7 @@ import { OfferReview } from "../../commerce/OfferEditor";
 import ApprovalTimeline from "../../../components/common/ApprovalTimeline";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import {
-  MapPin,
-  Star,
-  ArrowLeft,
-  Eye,
-  CalendarCheck,
-  IndianRupee,
-  MessageCircle,
-  FileText,
-  TrendingUp,
-  ArrowUpRight,
-  CalendarDays,
-  Clock3,
-  LayoutGrid,
-  ShieldCheck,
-} from "lucide-react";
+import { MapPin, Star, ArrowLeft, Eye, CalendarCheck, IndianRupee, MessageCircle, TrendingUp, ArrowUpRight, CalendarDays, Clock3, LayoutGrid, ShieldCheck } from "lucide-react";
 import {
   Panel,
   Loading,
@@ -48,7 +33,7 @@ function PricingDetails({ pricing = {} }) {
     ["seasonalFrom", "Season starts"],
     ["seasonalTo", "Season ends"],
     ["additionalCharges", "Additional charges"],
-    ["customQuote", "Custom quotation available"],
+
   ];
   const types = {
     Fixed: "Fixed price",
@@ -56,7 +41,7 @@ function PricingDetails({ pricing = {} }) {
     PerHour: "Hourly",
     PerDay: "Daily",
     PerItem: "Per item",
-    CustomQuote: "Custom quote",
+    CustomQuote: "Custom pricing",
   };
   const format = (key, value) => {
     if (value == null || value === "")
@@ -68,7 +53,7 @@ function PricingDetails({ pricing = {} }) {
     if (["seasonalFrom", "seasonalTo"].includes(key)) return date(value);
     if (key === "unit")
       return value === "Custom"
-        ? "Custom Quote"
+        ? "Custom pricing"
         : value === "Per KM"
           ? "Per Kilometer"
           : value;
@@ -433,14 +418,14 @@ function Performance({ id }) {
       <div
         className="
         grid grid-cols-[repeat(4,_minmax(0,_1fr))] gap-[14px] [margin:24px_0]
-        service-wide:grid-cols-[repeat(9,_minmax(0,_1fr))]
+        service-wide:grid-cols-[repeat(8,_minmax(0,_1fr))]
         service-mobile:grid-cols-[repeat(2,_minmax(0,_1fr))] service-mobile:gap-[10px]
       "
       >
         {[
           ["views", "Total Views", Eye],
           ["enquiries", "Total Enquiries", MessageCircle],
-          ["quotations", "Total Quotations", FileText],
+
           ["bookings", "Total Bookings", CalendarCheck],
           ["completedBookings", "Completed Bookings", CalendarCheck],
           ["conversionRate", "Conversion Rate", TrendingUp],

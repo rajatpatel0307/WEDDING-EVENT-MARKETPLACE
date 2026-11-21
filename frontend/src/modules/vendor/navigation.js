@@ -1,29 +1,5 @@
 import { canAccessVendorWorkspace } from "../../routes/authNavigation.js";
-import {
-  LayoutDashboard,
-  Store,
-  ShoppingBag,
-  MapPin,
-  Files,
-  ShieldCheck,
-  BriefcaseBusiness,
-  PlusCircle,
-  Package,
-  ListChecks,
-  CalendarDays,
-  ReceiptText,
-  Users,
-  IndianRupee,
-  Wallet,
-  CreditCard,
-  Star,
-  BadgePercent,
-  TicketPercent,
-  MessagesSquare,
-  Bell,
-  ChartNoAxesCombined,
-  ContactRound,
-} from "lucide-react";
+import { LayoutDashboard, Store, ShoppingBag, MapPin, Files, ShieldCheck, BriefcaseBusiness, PlusCircle, Package, ListChecks, CalendarDays, Users, IndianRupee, Wallet, CreditCard, Star, BadgePercent, TicketPercent, MessagesSquare, Bell, ChartNoAxesCombined, ContactRound } from "lucide-react";
 export const vendorNavigation = [
   { label: "WORKSPACE", items: [["dashboard", "Dashboard", LayoutDashboard]] },
   {
@@ -54,10 +30,6 @@ export const vendorNavigation = [
     items: [["bookings/all", "All Bookings", ListChecks]],
   },
   { label: "ORDERS", items: [["orders", "Orders", ShoppingBag]] },
-  {
-    label: "QUOTATIONS",
-    items: [["quotations/all", "All Quotations", ReceiptText]],
-  },
   { label: "CUSTOMERS", items: [["customers", "Customers", Users]] },
   {
     label: "ACCOUNT",

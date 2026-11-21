@@ -13,7 +13,7 @@ export async function communicationCounts(ctx) {
         (SELECT COUNT(*) FROM dbo.Notifications
           WHERE UserId=:userId AND IsRead=0
             AND DismissedAt IS NULL
-            AND (ReferenceType IS NULL OR ReferenceType<>'Conversation')) AS unreadNotificationCount,
+            AND (ReferenceType IS NULL OR ReferenceType<>'Conversation' AND ReferenceType NOT LIKE '%Quotation%')) AS unreadNotificationCount,
         (SELECT COUNT(DISTINCT m.SenderUserId) FROM dbo.Messages m
           JOIN dbo.Conversations c ON c.ConversationId=m.ConversationId
           JOIN dbo.Vendors v ON v.VendorId=c.VendorId

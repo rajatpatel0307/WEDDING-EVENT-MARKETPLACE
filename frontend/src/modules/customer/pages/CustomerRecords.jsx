@@ -7,42 +7,15 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import {
-  ArrowUpRight,
-  Check,
-  MessagesSquare,
-  ShieldCheck,
-  Camera,
-  LoaderCircle,
-  LockKeyhole,
-  Mail,
-  Save,
-  UserRound,
-} from "lucide-react";
+import { ArrowUpRight, Check, ShieldCheck, Camera, LoaderCircle, LockKeyhole, Mail, Save, UserRound } from "lucide-react";
 import { gql } from "@apollo/client";
 import { useAuth } from "../../../context/AuthContext";
 import { client, userFields } from "../../../services/apollo";
 import PhotoUpload from "../../../components/common/PhotoUpload";
-import {
-  useCustomerData,
-  Heading,
-  Loading,
-  ErrorView,
-  Empty,
-  Badge,
-  Modal,
-  Field,
-} from "../components/WorkspaceUI";
+import { useCustomerData, Heading, Loading, ErrorView, Empty, Badge, Modal } from "../components/WorkspaceUI";
 import { ServiceCard } from "../components/ServiceCards";
-import {
-  save,
-  money,
-  date,
-  timestamp,
-  customerRequest,
-  today,
-} from "../services/workspace.api";
-import BookingItemDetails from "../../bookings/BookingItemDetails";
+import { save, money, date, timestamp, today } from "../services/workspace.api";
+
 import CustomerBookingDetails from "./CustomerBookingDetails";
 import CustomerBookingsPage from "./CustomerBookingsPage";
 import CustomerPaymentsPage from "./CustomerPaymentsPage";
@@ -59,15 +32,7 @@ const columns = {
     ["paymentStatus", "Payment"],
     ["status", "Status"],
   ],
-  quotations: [
-    ["number", "Quotation"],
-    ["vendor", "Vendor"],
-    ["event", "Event"],
-    ["services", "Services"],
-    ["amount", "Total"],
-    ["validUntil", "Valid until"],
-    ["status", "Status"],
-  ],
+
   payments: [
     ["reference", "Reference"],
     ["booking", "Booking"],
@@ -77,14 +42,7 @@ const columns = {
     ["status", "Status"],
     ["paidAt", "Payment date"],
   ],
-  requests: [
-    ["vendor", "Vendor"],
-    ["event", "Event"],
-    ["service", "Service"],
-    ["message", "Requirements"],
-    ["status", "Status"],
-    ["createdAt", "Requested"],
-  ],
+
   reviews: [
     ["vendor", "Vendor"],
     ["rating", "Rating"],
@@ -96,8 +54,7 @@ const columns = {
 };
 const names = {
   bookings: "My bookings",
-  quotations: "My quotations",
-  requests: "Quotation requests",
+
   wishlist: "Saved with love",
   payments: "Payments",
   reviews: "Your experiences",
@@ -213,7 +170,7 @@ function CustomerRecordList({ section }) {
         description={
           {
             bookings: "Your dream team, from the first request to the big day.",
-            quotations: "Compare the details. Choose what feels right.",
+
             wishlist: "Beautiful possibilities, kept in one place.",
             payments: "Every payment, clearly accounted for.",
             reviews: "Help another celebration find its perfect match.",
@@ -222,28 +179,13 @@ function CustomerRecordList({ section }) {
           }[section]
         }
       >
-        {["wishlist", "bookings", "quotations"].includes(section) ? (
+        {["wishlist", "bookings", ].includes(section) ? (
           <Link className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" to="/services">
             Find services <ArrowUpRight size={15} />
           </Link>
         ) : null}
       </Heading>
-      {section === "quotations" && (
-        <div className="cw-inline-tabs flex gap-[25px] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e8ded5] mb-[25px] [&_>_a]:pt-[13px] [&_>_a]:pr-[3px] [&_>_a]:pb-[13px] [&_>_a]:pl-[3px] [&_>_a]:text-[12px] [&_>_a]:text-[#a38a7b] [&_>_a.active]:text-[#9a5b70] [&_>_a.active]:[border-bottom-width:2px] [&_>_a.active]:[border-bottom-style:solid] [&_>_a.active]:[border-bottom-color:#9a5b70]">
-          <Link to="/customer/quotations" className="active">
-            Received quotations
-          </Link>
-          <Link to="/customer/requests">My requests</Link>
-        </div>
-      )}
-      {section === "requests" && (
-        <div className="cw-inline-tabs flex gap-[25px] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e8ded5] mb-[25px] [&_>_a]:pt-[13px] [&_>_a]:pr-[3px] [&_>_a]:pb-[13px] [&_>_a]:pl-[3px] [&_>_a]:text-[12px] [&_>_a]:text-[#a38a7b] [&_>_a.active]:text-[#9a5b70] [&_>_a.active]:[border-bottom-width:2px] [&_>_a.active]:[border-bottom-style:solid] [&_>_a.active]:[border-bottom-color:#9a5b70]">
-          <Link to="/customer/quotations">Received quotations</Link>
-          <Link to="/customer/requests" className="active">
-            My requests
-          </Link>
-        </div>
-      )}
+
       {section === "payments" && (
         <section className="cw-info-strip flex items-center gap-[15px] [background:#f0f2e9] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e1e5d4] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e1e5d4] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e1e5d4] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e1e5d4] pt-[16px] pr-[22px] pb-[16px] pl-[22px] rounded-[7px] mb-[24px] text-[#93a07d] [&_p]:mt-[0] [&_p]:mr-[0] [&_p]:mb-[0] [&_p]:ml-[0]">
           <ShieldCheck size={22} />
@@ -265,20 +207,19 @@ function CustomerRecordList({ section }) {
             {
               wishlist: "Keep a little inspiration",
               bookings: "Your dream team is waiting",
-              quotations: "Good things are on their way",
+
               payments: "Your payment history starts here",
               reviews: "Your experience matters",
               addresses: "Make yourself at home",
               notifications: "You’re all caught up",
-              requests: "Tell a vendor what you have in mind",
+
             }[section]
           }
           text={
             {
               wishlist:
                 "Save the vendors, services and packages you love while you explore.",
-              quotations:
-                "Request a quotation from a service to receive a tailored proposal.",
+
               reviews: "Review a completed booking from its details page.",
               notifications: "New updates from your vendors will appear here.",
             }[section] ||
@@ -308,15 +249,7 @@ function CustomerRecordList({ section }) {
                 <h3>{n.title}</h3>
                 <p>{n.message}</p>
                 <small>{timestamp(n.createdAt)}</small>
-                {["Quotation", "QuotationRequest"].includes(n.referenceType) &&
-                  /^[0-9a-f-]{36}$/i.test(n.referenceId || "") && (
-                    <Link
-                      className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-                      to={`/customer/${n.referenceType === "Quotation" ? "quotations" : "requests"}/${n.referenceId}`}
-                    >
-                      View details
-                    </Link>
-                  )}
+
               </div>
               {!n.isRead && (
                 <button
@@ -349,7 +282,7 @@ function CustomerRecordList({ section }) {
                 {columns[section]?.map(([key, title]) => (
                   <th key={key}>{title}</th>
                 ))}
-                {["bookings", "quotations"].includes(section) && (
+                {["bookings", ].includes(section) && (
                   <th>Actions</th>
                 )}
               </tr>
@@ -362,7 +295,7 @@ function CustomerRecordList({ section }) {
                       <Cell name={key} value={row[key]} row={row} />
                     </td>
                   ))}
-                  {["bookings", "quotations"].includes(section) && (
+                  {["bookings", ].includes(section) && (
                     <td>
                       <Link
                         className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
@@ -403,12 +336,12 @@ function CustomerRecordList({ section }) {
     </>
   );
 }
-export function CustomerRecordDetails({ quote = false }) {
+export function CustomerRecordDetails() {
   const { id } = useParams(),
     [version, setVersion] = useState(0),
-    r = useCustomerData(`/${quote ? "quotations" : "bookings"}/${id}`, version),
+    r = useCustomerData(`/${"bookings"}/${id}`, version),
     config = useCustomerData("/payments/config"),
-    [decision, setDecision] = useState(null),
+
     [review, setReview] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -416,14 +349,14 @@ export function CustomerRecordDetails({ quote = false }) {
     navigate = useNavigate();
   if (r.loading) return <Loading />;
   if (r.error) return <ErrorView error={r.error} retry={r.retry} />;
-  const b = quote ? r.data.quotation : r.data.booking;
+  const b = r.data.booking;
   async function message() {
     setBusy(true);
     try {
       const c = await save("/conversations", "POST", {
         vendorId: b.VendorId,
         eventId: b.EventId,
-        ...(!quote ? { bookingId: b.BookingId } : { quotationId: b.QuotationId }),
+        ...({ bookingId: b.BookingId }),
       });
       navigate(`/customer/messages?conversation=${c.id}`);
     } catch (e) {
@@ -432,7 +365,7 @@ export function CustomerRecordDetails({ quote = false }) {
       setBusy(false);
     }
   }
-  if (!quote) return (
+  return (
     <>
       <CustomerBookingDetails
         id={id}
@@ -452,212 +385,7 @@ export function CustomerRecordDetails({ quote = false }) {
       {review && <ReviewForm bookingId={id} close={() => setReview(false)} />}
     </>
   );
-  return (
-    <>
-      <Link
-        className="cw-back"
-        to={`/customer/${quote ? "quotations" : "bookings"}`}
-      >
-        ← {quote ? "My quotations" : "My bookings"}
-      </Link>
-      <Heading
-        title={b.QuotationNumber || b.BookingNumber}
-        description={
-          quote
-            ? "Every detail of your proposal, in one place."
-            : "Follow your booking from first request to lasting memories."
-        }
-      >
-        <Badge>{b.Status || b.BookingStatus}</Badge>
-        <button className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" onClick={message} disabled={busy}>
-          <MessagesSquare size={16} /> Message vendor
-        </button>
-      </Heading>
-      <section className="cw-panel cw-prose [background:#fff] [border-top-width:1px] [border-top-style:solid] [border-top-color:#e4eade] [border-right-width:1px] [border-right-style:solid] [border-right-color:#e4eade] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#e4eade] [border-left-width:1px] [border-left-style:solid] [border-left-color:#e4eade] rounded-[10px] min-w-0 overflow-x-hidden overflow-y-hidden pt-[25px] [@media(width<=520px)]:pt-[23px] pr-[28px] [@media(width<=520px)]:pr-[20px] pb-[25px] [@media(width<=520px)]:pb-[23px] pl-[28px] [@media(width<=520px)]:pl-[20px] mb-[24px] [&_>_h2]:mb-[20px] [&_>_h3]:mt-[24px] [&_p]:[white-space:pre-line]">
-        <div className="cw-record-line flex justify-between items-center gap-[18px] pt-[12px] pr-[0] pb-[12px] pl-[0] [&_>_h2]:mt-[0] [&_>_h2]:mr-[0] [&_>_h2]:mb-[0] [&_>_h2]:ml-[0] [@media(width<=520px)]:flex-wrap">
-          <div>
-            <span className="cw-eyebrow text-[#9aa890] text-[8px] tracking-[1.6px] font-[500]">
-              {quote ? "QUOTATION TOTAL" : "BOOKING TOTAL"}
-            </span>
-            <h2>{money(b.TotalAmount)}</h2>
-          </div>
-          {quote ? (
-            <p>Valid until {date(b.ValidUntil)}</p>
-          ) : (
-            <div>
-              <Badge>{b.PaymentStatus}</Badge>
-              <p>
-                {money(b.PaidAmount)} paid · {money(b.RemainingAmount)}{" "}
-                remaining
-              </p>
-              <p>Event date: {date(b.BookingDate)}</p>
-            </div>
-          )}
-        </div>
-        <div className="cw-table-wrap overflow-x-auto max-w-full min-w-0">
-          <table>
-            <thead>
-              <tr>
-                <th>Service / package</th>
-                <th>Quantity</th>
-                <th>Unit price</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {r.data.items.map((i, k) => (
-                <tr key={k}>
-                  <td>
-                    {i.name}
-                    <BookingItemDetails description={i.description} />
-                  </td>
-                  <td>
-                    {Number(i.quantity)}
-                  </td>
-                  <td>{money(i.price)}</td>
-                  <td>{money(i.total)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <dl>
-          <dt>Subtotal</dt>
-          <dd>{money(b.SubTotal)}</dd>
-          <dt>Discount</dt>
-          <dd>{money(b.DiscountAmount)}</dd>
-          <dt>Tax</dt>
-          <dd>{money(b.TaxAmount)}</dd>
 
-        </dl>
-        {b.VendorMessage && <p>{b.VendorMessage}</p>}
-        {b.CustomerMessage && <p>Your note: {b.CustomerMessage}</p>}
-        {quote && r.data.revisions?.length > 0 && (
-          <section>
-            <h2>Requested revisions</h2>
-            {r.data.revisions.map((revision) => (
-              <p key={revision.id}>
-                {timestamp(revision.createdAt)} · {revision.status} ·{" "}
-                {revision.message}
-              </p>
-            ))}
-          </section>
-        )}
-        {quote && ["Sent", "Viewed"].includes(b.Status) && (
-          <div className="cw-detail-actions flex gap-[12px] flex-wrap mt-[22px] [@media(width<=520px)]:[&_>_.cw-button]:text-[11px]">
-            <button
-              className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-              disabled={busy}
-              onClick={() => setDecision("Accept")}
-            >
-              Accept quotation
-            </button>
-            <button
-              className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-              disabled={busy}
-              onClick={() => setDecision("Modify")}
-            >
-              Request modification
-            </button>
-            <button
-              className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-              disabled={busy}
-              onClick={() => setDecision("Reject")}
-            >
-              Reject
-            </button>
-          </div>
-        )}
-        {error && (
-          <p className="cw-form-error [background:#fff4ee] [border-top-width:1px] [border-top-style:solid] [border-top-color:#f0ddcf] [border-right-width:1px] [border-right-style:solid] [border-right-color:#f0ddcf] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#f0ddcf] [border-left-width:1px] [border-left-style:solid] [border-left-color:#f0ddcf] text-[#b6836e]! pt-[12px] pr-[15px] pb-[12px] pl-[15px] rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]" role="alert">
-            {error}
-          </p>
-        )}
-      </section>
-      {decision && (
-        <Modal
-          title={
-            {
-              Accept: "Accept this quotation?",
-              Reject: "Reject this quotation?",
-              Modify: "Request a revised quotation",
-            }[decision]
-          }
-          close={() => setDecision(null)}
-          busy={busy}
-        >
-          <form
-            className="cw-form min-w-0 [&_fieldset]:[border-top-width:0] [&_fieldset]:[border-top-style:none] [&_fieldset]:[border-top-color:currentColor] [&_fieldset]:[border-right-width:0] [&_fieldset]:[border-right-style:none] [&_fieldset]:[border-right-color:currentColor] [&_fieldset]:[border-bottom-width:0] [&_fieldset]:[border-bottom-style:none] [&_fieldset]:[border-bottom-color:currentColor] [&_fieldset]:[border-left-width:0] [&_fieldset]:[border-left-style:none] [&_fieldset]:[border-left-color:currentColor] [&_fieldset]:pt-[0] [&_fieldset]:pr-[0] [&_fieldset]:pb-[0] [&_fieldset]:pl-[0] [&_fieldset]:mt-[0] [&_fieldset]:mr-[0] [&_fieldset]:mb-[0] [&_fieldset]:ml-[0] [&_fieldset]:min-w-0 [&_>_.cw-panel_+_.cw-panel]:mt-[22px]"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              const f = new FormData(e.currentTarget);
-              setBusy(true);
-              setError("");
-              try {
-                const result = await save(
-                  `/quotations/${id}/decision`,
-                  "POST",
-                  { action: decision, message: f.get("message") || "" },
-                );
-                notify(result.message);
-                setDecision(null);
-                if (result.id && decision === "Accept")
-                  navigate(`/customer/bookings/${result.id}`);
-                else setVersion((v) => v + 1);
-              } catch (e) {
-                setError(e.message);
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            <p>
-              {decision === "Accept"
-                ? "This creates a booking request at the quoted price. Your vendor will confirm availability before payment."
-                : decision === "Modify"
-                  ? "Describe your changes. A new request will be sent and the current quotation will be closed, preserving its history."
-                  : "The vendor will be notified of your decision."}
-            </p>
-            <Field
-              label={
-                decision === "Modify" ? "Changes needed" : "Note (optional)"
-              }
-            >
-              <textarea
-                name="message"
-                required={decision === "Modify"}
-                minLength={decision === "Modify" ? 5 : 0}
-                maxLength="2000"
-                rows="4"
-              />
-            </Field>
-            {error && (
-              <p className="cw-form-error [background:#fff4ee] [border-top-width:1px] [border-top-style:solid] [border-top-color:#f0ddcf] [border-right-width:1px] [border-right-style:solid] [border-right-color:#f0ddcf] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#f0ddcf] [border-left-width:1px] [border-left-style:solid] [border-left-color:#f0ddcf] text-[#b6836e]! pt-[12px] pr-[15px] pb-[12px] pl-[15px] rounded-[6px] text-[11px]! leading-[1.8] [overflow-wrap:anywhere]" role="alert">
-                {error}
-              </p>
-            )}
-            <div className="cw-form-actions">
-              <button
-                type="button"
-                className="cw-button inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]"
-                onClick={() => setDecision(null)}
-                disabled={busy}
-              >
-                Cancel
-              </button>
-              <button className="cw-button cw-primary inline-flex items-center justify-center gap-[7px] [border-top-width:1px] [border-top-style:solid] [border-top-color:#dfe7d8] [border-right-width:1px] [border-right-style:solid] [border-right-color:#dfe7d8] [border-bottom-width:1px] [border-bottom-style:solid] [border-bottom-color:#dfe7d8] [border-left-width:1px] [border-left-style:solid] [border-left-color:#dfe7d8] rounded-[6px] text-[#738567] [background:#fff] pt-[9px] pr-[13px] pb-[9px] pl-[13px] text-[10px] leading-[1.5] font-[500] whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42] [&.cw-primary:hover]:[background:#2b523a] [&.cw-primary:hover]:text-[white] [&.cw-danger]:text-[#bd7b69] [&.cw-danger]:[background:#fff8f4] [&.cw-danger]:[border-top-color:#f0dfd4] [&.cw-danger]:[border-right-color:#f0dfd4] [&.cw-danger]:[border-bottom-color:#f0dfd4] [&.cw-danger]:[border-left-color:#f0dfd4] [&.cw-accept]:text-[#5f8650] [&.cw-accept]:[background:#f0f6e9] [&.cw-accept]:[border-top-color:#dfebd3] [&.cw-accept]:[border-right-color:#dfebd3] [&.cw-accept]:[border-bottom-color:#dfebd3] [&.cw-accept]:[border-left-color:#dfebd3]" disabled={busy}>
-                {busy
-                  ? "Saving…"
-                  : decision === "Modify"
-                    ? "Send changes"
-                    : `${decision} quotation`}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-    </>
-  );
 }
 function ReviewForm({bookingId,close}) {
  const {notify}=useAuth();

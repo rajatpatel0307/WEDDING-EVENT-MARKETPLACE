@@ -2,23 +2,7 @@ import VendorDocumentPreview from "../components/VendorDocumentPreview";
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  Download,
-  Eye,
-  MessageSquare,
-  Pencil,
-  Plus,
-  Power,
-  ReceiptText,
-  Search,
-  Star,
-  Upload,
-  X,
-} from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, Download, Eye, MessageSquare, Pencil, Plus, Power, Search, Star, Upload, X } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import {
   Badge,
@@ -43,14 +27,7 @@ import {
   vendorRequest,
 } from "../services/workspace.api";
 const columns = {
-  requests: [
-    ["customer", "Customer"],
-    ["event", "Event"],
-    ["service", "Service"],
-    ["message", "Requirements"],
-    ["status", "Status"],
-    ["createdAt", "Requested"],
-  ],
+
   packages: [
     ["name", "Package"],
     ["service", "Service"],
@@ -94,15 +71,7 @@ const columns = {
     ["paymentStatus", "Payment"],
     ["status", "Status"],
   ],
-  quotations: [
-    ["number", "Quotation"],
-    ["customer", "Customer"],
-    ["event", "Event"],
-    ["amount", "Total"],
-    ["status", "Status"],
-    ["validUntil", "Valid until"],
-    ["createdAt", "Created"],
-  ],
+
   customers: [
     ["name", "Customer"],
     ["email", "Email"],
@@ -309,20 +278,6 @@ export default function VendorResourcesPage({
       " to="/vendor/packages/new">
         <Plus size={15} /> Create package
       </Link>
-    ) : ["quotations", "requests"].includes(section) ? (
-      <Link className="
-        vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
-        [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
-        rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
-        font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
-        [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
-        [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
-        [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
-        [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
-        vw-primary
-      " to="/vendor/quotations/new">
-        <Plus size={15} /> Create quotation
-      </Link>
     ) : editor || section === "documents" ? (
       <button
         className="
@@ -409,7 +364,7 @@ export default function VendorResourcesPage({
           "services",
           "packages",
           "bookings",
-          "quotations",
+
           "customers",
           "offers",
           "coupons",
@@ -637,23 +592,7 @@ export default function VendorResourcesPage({
                         >
                           <Eye size={15} />
                         </button>
-                        {section === "requests" && (
-                          <Link
-                            className="
-                              vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
-                              [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
-                              rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
-                              font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
-                              [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
-                              [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
-                              [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
-                              [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
-                            "
-                            to={`/vendor/quotations/new?event=${encodeURIComponent(row.eventId)}`}
-                          >
-                            Create quotation
-                          </Link>
-                        )}
+
                         {section === "bookings" && (
                           <>
                             <Link
@@ -709,18 +648,7 @@ export default function VendorResourcesPage({
                                 </button>
                               </>
                             )}
-                            <Link
-                              className="
-                                vw-icon inline-flex items-center justify-center shrink-0 w-[29px] h-[29px] text-[#99a38e]
-                                [background:none] [border-top:1px_solid_transparent] [border-right:1px_solid_transparent]
-                                [border-bottom:1px_solid_transparent] [border-left:1px_solid_transparent] rounded-[5px] p-[0]
-                                [&:hover]:[background:#edf3e4] [&:hover]:text-[#608146]
-                              "
-                              title="Send quotation"
-                              to={`/vendor/quotations/new?event=${encodeURIComponent(row.eventId || "")}`}
-                            >
-                              <ReceiptText size={15} />
-                            </Link>
+                            <></>
                             <button
                               className="
                                 vw-icon inline-flex items-center justify-center shrink-0 w-[29px] h-[29px] text-[#99a38e]
@@ -777,57 +705,7 @@ export default function VendorResourcesPage({
                             <Power size={15} />
                           </button>
                         )}
-                        {section === "quotations" && (
-                          <>
-                            {row.status === "Draft" && (
-                              <>
-                                <Link
-                                  className="
-                                    vw-icon inline-flex items-center justify-center shrink-0 w-[29px] h-[29px] text-[#99a38e]
-                                    [background:none] [border-top:1px_solid_transparent] [border-right:1px_solid_transparent]
-                                    [border-bottom:1px_solid_transparent] [border-left:1px_solid_transparent] rounded-[5px] p-[0]
-                                    [&:hover]:[background:#edf3e4] [&:hover]:text-[#608146]
-                                  "
-                                  title="Edit draft"
-                                  to={`/vendor/quotations/${row.id}/edit`}
-                                >
-                                  <Pencil size={15} />
-                                </Link>
-                                <button
-                                  className="
-                                    vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
-                                    [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
-                                    rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
-                                    font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
-                                    [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
-                                    [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
-                                    [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
-                                    [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
-                                  "
-                                  onClick={() => open("Send", row)}
-                                >
-                                  Send
-                                </button>
-                              </>
-                            )}
-                            {["Draft", "Sent", "Viewed"].includes(
-                              row.status,
-                            ) && (
-                              <button
-                                className="
-                                  vw-icon inline-flex items-center justify-center shrink-0 w-[29px] h-[29px] text-[#99a38e]
-                                  [background:none] [border-top:1px_solid_transparent] [border-right:1px_solid_transparent]
-                                  [border-bottom:1px_solid_transparent] [border-left:1px_solid_transparent] rounded-[5px] p-[0]
-                                  [&:hover]:[background:#edf3e4] [&:hover]:text-[#608146]
-                                "
-                                title="Cancel quotation"
-                                onClick={() => open("Cancel", row)}
-                              >
-                                <X size={15} />
-                              </button>
-                            )}
-                          </>
-                        )}
+
                         {section === "documents" && (
                           <button
                             className="
@@ -854,27 +732,7 @@ export default function VendorResourcesPage({
                             <Download size={15} />
                           </button>
                         )}
-                        {section === "notifications" &&
-                          ["Quotation", "QuotationRequest"].includes(
-                            row.referenceType,
-                          ) &&
-                          /^[0-9a-f-]{36}$/i.test(row.referenceId || "") && (
-                            <Link
-                              className="
-                                vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
-                                [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
-                                rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
-                                font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
-                                [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
-                                [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
-                                [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
-                                [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
-                              "
-                              to={`/vendor/${row.referenceType === "Quotation" ? "quotations" : "requests"}/${row.referenceId}`}
-                            >
-                              View details
-                            </Link>
-                          )}
+
                         {section === "notifications" && !row.isRead && (
                           <button
                             className="
@@ -980,7 +838,7 @@ export default function VendorResourcesPage({
                 ? "Record details"
                 : dialog.action === "active"
                   ? `${dialog.row.active ? "Deactivate" : "Activate"} ${section === "services" ? "service" : "record"}`
-                  : `${dialog.action} ${section === "quotations" ? "quotation" : "booking"}`
+                  : `${dialog.action} ${"booking"}`
             }
             close={() => setDialog(null)}
             busy={busy}
@@ -1044,11 +902,6 @@ export default function VendorResourcesPage({
                       note: fields.note || "",
                       ...version,
                     });
-                  else
-                    act(`/quotations/${dialog.row.id}/action`, "POST", {
-                      action: dialog.action,
-                      ...version,
-                    });
                 }}
               >
                 {formError && (
@@ -1071,23 +924,7 @@ export default function VendorResourcesPage({
                       ? "This changes availability for sale. Existing bookings remain in your records."
                       : `Confirm your decision for ${dialog.row.number}. The customer will be notified.`}
                 </p>
-                {section === "requests" && (
-                  <Link
-                    className="
-                      vw-button inline-flex items-center justify-center gap-[7px] [border-top:1px_solid_#dfe7d8]
-                      [border-right:1px_solid_#dfe7d8] [border-bottom:1px_solid_#dfe7d8] [border-left:1px_solid_#dfe7d8]
-                      rounded-[6px] text-[#738567] [background:#fff] [padding:9px_13px] text-[10px] leading-[1.5]
-                      font-medium whitespace-nowrap [&:hover]:[background:#f0f5e9] [&:hover]:text-[#406b42]
-                      [&.vw-primary]:[background:#386348] [&.vw-primary]:text-[#fff] [&.vw-primary]:[border-color:#386348]
-                      [&.vw-primary:hover]:[background:#2b523a] [&.vw-primary:hover]:text-[white]
-                      [&.vw-danger]:text-[#bd7b69] [&.vw-danger]:[background:#fff8f4] [&.vw-danger]:[border-color:#f0dfd4]
-                      [&.vw-accept]:text-[#5f8650] [&.vw-accept]:[background:#f0f6e9] [&.vw-accept]:[border-color:#dfebd3]
-                    "
-                    to={`/vendor/quotations/new?event=${encodeURIComponent(row.eventId)}`}
-                  >
-                    Create quotation
-                  </Link>
-                )}
+
                 {section === "bookings" && (
                   <Field
                     label={
