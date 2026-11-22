@@ -1,4 +1,5 @@
 import * as productOrders from "../shopping/order-management.js";
+import { orderInvoice } from "../shopping/order-invoice.js";
 import * as adminLocations from "../addresses/admin-locations.service.js";
 import * as vendorAccess from "../vendors/access.service.js";
 import * as commission from "./commission.service.js";
@@ -61,6 +62,11 @@ export function createAdminRouter({ authenticateRequest = authenticate } = {}) {
   router.put("/vendors/:id/registered-location", standardJson, async (req, res) => res.json(await adminLocations.assignVendor(req.params.id, req.body, req.admin)));
   router.get("/orders", async (req,res) => res.json({success:true,data:await productOrders.listOrders(req.query,req.admin,"Admin")}));
   router.get("/orders/:id", async (req,res) => res.json({success:true,data:await productOrders.orderDetails(req.params.id,req.admin,"Admin")}));
+  router.get("/orders/:id/invoice", async (req, res) => {
+    const file = await orderInvoice(req.params.id, req.admin, "Admin");
+    res.set({ "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${file.name}"`,
+      "Access-Control-Expose-Headers": "Content-Disposition", "X-Content-Type-Options": "nosniff" }).send(file.buffer);
+  });
   router.patch("/orders/:id/status", standardJson, async (req,res) => res.json(await productOrders.updateOrderStatus(req.params.id,req.body,req.admin,"Admin")));
   router.get("/bookings/:id/change-requests", async (req, res) =>
     res.json(

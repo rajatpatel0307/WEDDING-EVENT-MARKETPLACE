@@ -1,4 +1,5 @@
 import * as productOrders from "../shopping/order-management.js";
+import { orderInvoice } from "../shopping/order-invoice.js";
 import { categoryOptions } from "../shopping/configuration.js";
 import { completeBooking } from "../shopping/booking-management.js";
 import { vendorStatus } from "./access.service.js";
@@ -82,6 +83,11 @@ export function createVendorRouter({
   });
   get("/orders", req => productOrders.listOrders(req.query, req.vendorContext, "Vendor"));
   get("/orders/:id", req => productOrders.orderDetails(req.params.id, req.vendorContext, "Vendor"));
+  router.get("/orders/:id/invoice", async (req, res) => {
+    const file = await orderInvoice(req.params.id, req.vendorContext, "Vendor");
+    res.set({ "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${file.name}"`,
+      "Access-Control-Expose-Headers": "Content-Disposition", "X-Content-Type-Options": "nosniff" }).send(file.buffer);
+  });
   mutation("patch", "/orders/:id/status", req => productOrders.updateOrderStatus(req.params.id, req.body, req.vendorContext, "Vendor"));
   get("/earnings", (req) => earnings(req.vendorContext));
   get("/bookings/statistics", (req) => workspace.bookingStatistics(req.vendorContext));

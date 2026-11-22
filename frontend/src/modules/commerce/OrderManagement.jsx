@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowRight, LoaderCircle, LockKeyhole, SlidersHorizontal } from "lucide-react";
-import { adminRequest } from "../admin/api";
+import { adminRequest, saveBlob } from "../admin/api";
 import { vendorRequest } from "../vendor/services/workspace.api";
 import { useAuth } from "../../context/AuthContext";
 import { OrderStatusBadge } from "./OrderTracking";
@@ -88,8 +88,47 @@ function StatusForm({ data, role, onSaved }) {
 export function ManagedOrderDetails({ role }) {
   const { id } = useParams();
   const state = useOrdersData(role, `/orders/${id}`);
+  const [invoice, setInvoice] = useState({ busy: false, error: "", preview: null });
+  const invoiceRequest = useRef(null);
+  useEffect(() => {
+    setInvoice({ busy: false, error: "", preview: null });
+    return () => { invoiceRequest.current?.abort(); invoiceRequest.current = null; };
+  }, [id, role]);
+  useEffect(() => {
+    const url = invoice.preview?.url;
+    return () => { if (url) URL.revokeObjectURL(url); };
+  }, [invoice.preview?.url]);
   useOrderUpdates(state.refresh, id);
   const data = state.data;
+  async function loadInvoice(action) {
+    invoiceRequest.current?.abort();
+    const abort = new AbortController();
+    invoiceRequest.current = abort;
+    setInvoice(previous => ({ ...previous, busy: action, error: "" }));
+    try {
+      const file = await request(role, `/orders/${id}/invoice`, { download: true, includeFilename: true, signal: abort.signal });
+      if (abort.signal.aborted) return;
+      if (file.blob.type !== "application/pdf") throw new Error("The invoice could not be opened as a PDF. Please try again.");
+      if (action === "view") {
+        const url = URL.createObjectURL(file.blob);
+        setInvoice({ busy: false, error: "", preview: { url, name: file.name } });
+      } else {
+        saveBlob(file.blob, file.name);
+        setInvoice(previous => ({ ...previous, busy: false, error: "" }));
+      }
+      state.refresh();
+    } catch (error) {
+      if (!abort.signal.aborted) setInvoice(previous => ({ ...previous, busy: false, error: error.message || "Unable to load your invoice. Please try again." }));
+    } finally { if (invoiceRequest.current === abort) invoiceRequest.current = null; }
+  }
+  function closeInvoice() {
+    if (invoice.busy === "view") { invoiceRequest.current?.abort(); invoiceRequest.current = null; }
+    setInvoice(previous => ({ ...previous, preview: null, busy: previous.busy === "view" ? false : previous.busy }));
+  }
   if (!data) return state.error ? <ErrorState error={state.error} retry={state.refresh} /> : <div role="status" className="p-10 text-center text-sm text-[#839086]">Loading order details…</div>;
-  return <ManagedOrderDetailsView role={role} data={data} error={state.error} onRefresh={state.refresh} statusControl={<StatusForm key={`${data.id}-${data.version}`} data={data} role={role} onSaved={state.refresh} />} />;
+  return <ManagedOrderDetailsView role={role} data={data} error={state.error} onRefresh={state.refresh}
+    invoiceBusy={Boolean(invoice.busy)} invoiceViewBusy={invoice.busy === "view"} invoiceError={invoice.error}
+    invoicePreview={invoice.preview} onViewInvoice={() => loadInvoice("view")} onCloseInvoice={closeInvoice}
+    onDownloadInvoice={() => loadInvoice("download")}
+    statusControl={<StatusForm key={`${data.id}-${data.version}`} data={data} role={role} onSaved={state.refresh} />} />;
 }

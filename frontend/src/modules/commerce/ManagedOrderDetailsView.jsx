@@ -1,7 +1,8 @@
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft, ChevronRight, CreditCard, Mail, MapPin, Package,
-  Phone, ReceiptText, RefreshCw, ShoppingBag, UserRound,
+  ArrowLeft, ChevronRight, CreditCard, Download, Eye, LoaderCircle, Mail, MapPin, Package,
+  Phone, ReceiptText, RefreshCw, ShoppingBag, UserRound, X,
 } from "lucide-react";
 import { safeImage } from "../../services/public";
 import OrderTracking, { OrderStatusBadge } from "./OrderTracking";
@@ -17,12 +18,45 @@ function SectionHeading({ icon: Icon, title, children }) {
   </header>;
 }
 
-export default function ManagedOrderDetailsView({ role, data, error, onRefresh, statusControl }) {
+function InvoicePreviewDialog({ preview, onClose, returnFocusRef }) {
+  const dialogRef = useRef(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    const previous = document.activeElement;
+    const overflow = document.body.style.overflow;
+    dialog.showModal();
+    document.body.style.overflow = "hidden";
+    return () => {
+      if (dialog.open) dialog.close();
+      document.body.style.overflow = overflow;
+      if (returnFocusRef.current?.isConnected) returnFocusRef.current.focus();
+      else if (previous?.isConnected) previous.focus();
+    };
+  }, [returnFocusRef]);
+  return <dialog ref={dialogRef} id="managed-invoice-preview" aria-labelledby="managed-invoice-preview-title" aria-modal="true"
+    className="m-auto h-[90dvh] max-h-[90dvh] w-[calc(100vw-2rem)] max-w-[1000px] overflow-hidden rounded-xl border border-[#d9e3ef] bg-white p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm open:flex open:flex-col"
+    onCancel={event => { event.preventDefault(); onClose(); }} onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
+    <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[#e1e8e1] p-4">
+      <div><h2 id="managed-invoice-preview-title" className="m-0! text-base! font-semibold! text-[#164578]!">Invoice preview</h2><p className="mt-1 text-sm! text-[#5d7086]!">{preview.name}</p></div>
+      <div className="flex flex-wrap items-center gap-3">
+        <a className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#b7cce4] px-3 py-2 text-sm font-medium text-[#104a87] hover:bg-[#eaf2fc] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#104a87]" href={preview.url} download={preview.name}><Download size={16} aria-hidden="true" />Download PDF</a>
+        <button autoFocus type="button" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#dce5dd] px-3 py-2 text-sm font-medium text-[#526e5d] hover:bg-[#f2f7f2] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#176b60]" onClick={onClose}><X size={16} aria-hidden="true" />Close preview</button>
+      </div>
+    </header>
+    <object data={preview.url} type="application/pdf" title={`Invoice preview: ${preview.name}`} aria-label={`Invoice preview: ${preview.name}`} className="block min-h-0 w-full flex-1 bg-[#f3f5f7]">
+      <p className="p-5 text-sm">Your browser cannot display this PDF. <a className="text-[#104a87] underline" href={preview.url} download={preview.name}>Download the invoice</a> to view it.</p>
+    </object>
+  </dialog>;
+}
+
+export default function ManagedOrderDetailsView({ role, data, error, onRefresh, statusControl, invoiceBusy = false, invoiceViewBusy = false, invoiceError, onDownloadInvoice, invoicePreview, onViewInvoice, onCloseInvoice }) {
+  const viewInvoiceButton = useRef(null);
   const address = data.address || {};
   const customer = data.customer || {};
   const lines = data.lines || [];
   const quantity = lines.reduce((sum, line) => sum + Number(line.quantity || 0), 0);
   const paid = data.paymentStatus === "Paid";
+  const invoiceAvailable = data.invoiceAvailable ?? (paid && data.status === "Delivered");
   const info = [
     ["Order ID", <span key="reference" className="font-medium tracking-[.2px] text-[#377864]">{data.number}</span>],
     ["Order date", orderTime(data.createdAt)],
@@ -43,6 +77,23 @@ export default function ManagedOrderDetailsView({ role, data, error, onRefresh, 
       </div>
       <div className="flex flex-wrap items-center gap-3"><OrderStatusBadge status={data.status} /><button type="button" className={action} onClick={onRefresh}><RefreshCw size={13} aria-hidden="true" />Refresh</button></div>
     </header>
+
+    <section className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#d9e3ef] bg-[#f5f9fe] p-5" aria-labelledby="managed-invoice-title">
+      <div><h2 id="managed-invoice-title" className="m-0! text-base! font-semibold! text-[#164578]!">Invoice</h2><p className="mt-1 text-sm! text-[#5d7086]!">{invoiceAvailable
+        ? `${data.invoiceNumber ? `${data.invoiceNumber} · ` : ""}${role === "Vendor" ? "Your business's invoice copy is ready." : "The order invoice is ready."}`
+        : "Available after payment is verified and the complete order is delivered."}</p></div>
+      {invoiceAvailable && <div className="flex flex-wrap items-center gap-3">
+        <button ref={viewInvoiceButton} type="button" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#b7cce4] bg-white px-4 py-3 text-sm font-medium text-[#104a87] hover:bg-[#eaf2fc] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#104a87] disabled:cursor-wait disabled:opacity-55" onClick={onViewInvoice} disabled={invoiceBusy} aria-haspopup="dialog" aria-expanded={Boolean(invoicePreview)} aria-controls={invoicePreview ? "managed-invoice-preview" : undefined}>
+          {invoiceViewBusy ? <LoaderCircle size={17} className="motion-safe:animate-spin" aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}{invoiceViewBusy ? "Opening invoice…" : "View invoice"}
+        </button>
+        <button type="button" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#104a87] px-4 py-3 text-sm font-medium text-white hover:bg-[#122956] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#104a87] disabled:cursor-wait disabled:opacity-55" onClick={onDownloadInvoice} disabled={invoiceBusy}>
+          {invoiceBusy && !invoiceViewBusy ? <LoaderCircle size={17} className="motion-safe:animate-spin" aria-hidden="true" /> : <Download size={17} aria-hidden="true" />}{invoiceBusy && !invoiceViewBusy ? "Downloading invoice…" : "Download invoice (PDF)"}
+        </button>
+      </div>}
+      {invoiceError && <p className="w-full text-sm! text-[#a14a5c]!" role="alert">{invoiceError}</p>}
+    </section>
+
+    {invoiceAvailable && invoicePreview && <InvoicePreviewDialog preview={invoicePreview} onClose={onCloseInvoice} returnFocusRef={viewInvoiceButton} />}
 
     {error && <div role="alert" className="mb-4 rounded-lg border border-[#edd7d1] bg-[#fff8f4] p-4 text-[12px] text-[#a66e60]">{error.message}<button type="button" className="ml-3 underline" onClick={onRefresh}>Try again</button></div>}
 

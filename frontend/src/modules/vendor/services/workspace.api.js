@@ -34,7 +34,11 @@ export async function vendorRequest(path, options = {}, retry = true) {
       window.dispatchEvent(new Event("vendor:access-changed"));
     throw error;
   }
-  if (options.download) return response.blob();
+  if (options.download) {
+    const blob = await response.blob();
+    if (options.includeFilename) return { blob, name: response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] || "invoice.pdf" };
+    return blob;
+  }
   const body = await response.json();
   return body.data ?? body;
 }

@@ -71,9 +71,10 @@ export async function listOrders(input, ctx, role) {
 async function readOrder(id, ctx, role, tx) {
   const { owner, user } = access(ctx, role);
   z.guid().parse(id);
-  const [order] = await repo.select(`SELECT o.*,CONCAT(customer.FirstName,' ',customer.LastName) AS CustomerName,
+  const [order] = await repo.select(`SELECT o.*,invoice.InvoiceNumber AS SavedInvoiceNumber,CONCAT(customer.FirstName,' ',customer.LastName) AS CustomerName,
     customer.Email AS CustomerEmail,customer.PhoneNumber AS CustomerPhone FROM dbo.Orders o ${tx ? "WITH(UPDLOCK,HOLDLOCK)" : ""}
-    JOIN dbo.Users customer ON customer.UserId=o.CustomerId WHERE o.OrderId=:id AND ${scopeWhere(role)}`, { id, owner }, tx);
+    JOIN dbo.Users customer ON customer.UserId=o.CustomerId LEFT JOIN dbo.OrderInvoices invoice ON invoice.OrderId=o.OrderId
+    WHERE o.OrderId=:id AND ${scopeWhere(role)}`, { id, owner }, tx);
   if (!order) fail("Order not found in your account.", 404);
   return { order, owner, user };
 }
@@ -96,12 +97,13 @@ export async function orderDetails(id, ctx, role = "Customer") {
     const items = lines.filter(line => line.vendorId === vendorId);
     return { vendorId, vendor: items[0].vendor, status: aggregateOrderStatus(items.map(line => line.status)) };
   });
-  return { id: o.OrderId, number: o.OrderNumber, status: aggregateOrderStatus(lines.map(line => line.status)),
+  return { id: o.OrderId, number: o.OrderNumber, invoiceNumber: o.SavedInvoiceNumber || null,
+    invoiceAvailable: o.OrderStatus === "Delivered" && o.PaymentStatus === "Paid", status: aggregateOrderStatus(lines.map(line => line.status)),
     paymentStatus: o.PaymentStatus, paymentMethod: o.PaymentMethod || (o.PaymentStatus === "Paid" ? "Razorpay" : "Not paid"),
     createdAt: o.CreatedAt, updatedAt: o.UpdatedAt, statusUpdatedAt: o.StatusUpdatedAt || o.UpdatedAt, version: o.StatusVersion,
     subtotal, shipping: role === "Vendor" ? total("shipping") : Number(o.ShippingAmount), tax: role === "Vendor" ? total("tax") : Number(o.TaxAmount),
     discount, total: role === "Vendor" ? currency(total("total") - discount) : Number(o.TotalAmount),
-    address: JSON.parse(o.AddressSnapshot), customer: { name: o.CustomerName, email: o.CustomerEmail, phone: o.CustomerPhone },
+    address: JSON.parse(o.AddressSnapshot), customer: { id: o.CustomerId, name: o.CustomerName, email: o.CustomerEmail, phone: o.CustomerPhone },
     lines: lines.map(line => ({ ...line, quantity: Number(line.quantity), price: Number(line.price), total: Number(line.total) })), history, fulfillments,
     statuses: orderStatuses, vendorScoped: role === "Vendor" };
 }

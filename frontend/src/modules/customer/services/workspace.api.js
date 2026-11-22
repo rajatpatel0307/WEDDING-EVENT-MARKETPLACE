@@ -33,7 +33,11 @@ export async function customerRequest(path, options = {}, retry = true) {
 
     throw error;
   }
-  if (options.download) return response.blob();
+  if (options.download) {
+    const blob = await response.blob();
+    if (options.includeFilename) return { blob, name: response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] || "invoice.pdf" };
+    return blob;
+  }
   const body = await response.json();
   return Object.hasOwn(body, "data") ? body.data : body;
 }

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft, ArrowRight, Check, CheckCheck, Clock3, Heart, LoaderCircle,
+  ArrowLeft, ArrowRight, Check, CheckCheck, Clock3, Download, Heart, LoaderCircle,
   LockKeyhole, MapPin, Package, Phone, ReceiptText, RefreshCw, ShieldCheck, ShoppingBag,
 } from "lucide-react";
 import { money } from "../customer/services/workspace.api";
@@ -22,7 +22,7 @@ function CardHeading({ id, eyebrow, title, children }) {
   </header>;
 }
 
-export default function PurchaseOrderDetails({ data, busy, error, notice, onPay, onRefresh }) {
+export default function PurchaseOrderDetails({ data, busy, error, notice, onPay, onRefresh, invoiceBusy = false, invoiceError, onDownloadInvoice }) {
   const paid = data.paymentStatus === "Paid";
   const address = data.address || {};
   const lines = data.lines || [];
@@ -35,6 +35,14 @@ export default function PurchaseOrderDetails({ data, busy, error, notice, onPay,
       <div><p className="flex items-center gap-2 text-[9px]! font-medium tracking-[1.6px] text-[#a18066]! max-[600px]:text-[7px]! max-[600px]:tracking-[1.1px]"><span className="size-[5px] rounded-full bg-[#b48b62]" /> YOUR CELEBRATION, THOUGHTFULLY CURATED</p><h1 className="mt-[7px]! mb-[10px]! font-serif! text-[42px]! font-normal! leading-[1.2]! tracking-[-1.5px]! text-[#49363e]! max-[600px]:text-[35px]!">Order details<span className="text-[#b89573]">.</span></h1><p className="text-[12px]! text-[#8b7880]! max-[600px]:text-[11px]!">Your selections, payment, and delivery details in one place.</p></div>
       <Link className="inline-flex min-h-[42px] shrink-0 items-center justify-center gap-[9px] rounded-[7px] border border-[#e3d2d8] bg-white px-4 py-[11px] text-[11px] font-medium leading-[1.5] text-[#996377] transition-colors hover:border-[#cda8b6] hover:bg-[#fcf4f6] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#873f52] motion-reduce:transition-none max-[600px]:min-h-9 max-[600px]:px-[9px] max-[600px]:py-2 max-[600px]:text-[9px] max-[600px]:[&_svg]:w-3" to="/customer/orders">All orders <ArrowRight size={15} aria-hidden="true" /></Link>
     </header>
+
+    <section className="mb-[25px] flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#d9e3ef] bg-[#f5f9fe] p-5" aria-labelledby="pod-invoice-title">
+      <div><h2 id="pod-invoice-title" className="m-0! text-base! font-semibold! text-[#164578]!">Customer invoice</h2><p className="mt-1 text-sm! text-[#5d7086]!">{paid && data.status === "Delivered" ? `${data.invoiceNumber ? `${data.invoiceNumber} · ` : ""}Your invoice is ready.` : "Your invoice will be available here after payment is verified and your order is delivered."}</p></div>
+      {paid && data.status === "Delivered" && <button type="button" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#104a87] px-4 py-3 text-sm font-medium text-white hover:bg-[#122956] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#104a87]" onClick={onDownloadInvoice} disabled={invoiceBusy}>
+        {invoiceBusy ? <LoaderCircle size={17} className="motion-safe:animate-spin" aria-hidden="true" /> : <Download size={17} aria-hidden="true" />}{invoiceBusy ? "Downloading invoice…" : "Download invoice (PDF)"}
+      </button>}
+      {invoiceError && <p className="w-full text-sm! text-[#a14a5c]!" role="alert">{invoiceError}</p>}
+    </section>
 
     <section className="mb-[25px] overflow-hidden rounded-[13px] border border-[#e9ded3] bg-[linear-gradient(110deg,#fffdfa,#f7f0e7)]" aria-labelledby="pod-reference-title">
       <div className="flex items-center justify-between gap-5 px-7 py-[25px] max-[600px]:flex-wrap max-[600px]:gap-[15px] max-[600px]:p-5">

@@ -17,6 +17,7 @@ import {
   save,
   money,
   date,
+  download,
 } from "../customer/services/workspace.api";
 import { loadCheckout } from "../customer/services/checkout-loader";
 import { offerState } from "./offer-state";
@@ -679,7 +680,23 @@ export function PurchaseOrder() {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const [invoiceBusy, setInvoiceBusy] = useState(false);
+  const [invoiceError, setInvoiceError] = useState("");
   useOrderUpdates(state.retry, id);
+  useEffect(() => { setInvoiceError(""); }, [id]);
+  async function downloadInvoice() {
+    setInvoiceBusy(true);
+    setInvoiceError("");
+    try {
+      const file = await customerRequest(`/orders/${id}/invoice`, { download: true, includeFilename: true });
+      download(file.blob, file.name);
+      state.retry();
+    } catch (e) {
+      setInvoiceError(e.message || "Unable to download your invoice. Please try again.");
+    } finally {
+      setInvoiceBusy(false);
+    }
+  }
   async function action(pay) {
     setBusy(true);
     setError("");
@@ -713,6 +730,9 @@ export function PurchaseOrder() {
     busy={busy}
     error={error}
     notice={notice}
+    invoiceBusy={invoiceBusy}
+    invoiceError={invoiceError}
+    onDownloadInvoice={downloadInvoice}
     onPay={() => action(true)}
     onRefresh={() => action(false)}
   />;

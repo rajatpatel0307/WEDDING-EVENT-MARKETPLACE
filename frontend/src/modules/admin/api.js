@@ -34,7 +34,12 @@ export async function adminRequest(path, options = {}, retry = true) {
     error.status = response.status;
     throw error;
   }
-  return options.download ? response.blob() : response.json();
+  if (options.download) {
+    const blob = await response.blob();
+    if (options.includeFilename) return { blob, name: response.headers.get("Content-Disposition")?.match(/filename="([^"]+)"/)?.[1] || "invoice.pdf" };
+    return blob;
+  }
+  return response.json();
 }
 export function saveBlob(blob, name) {
   const url = URL.createObjectURL(blob),

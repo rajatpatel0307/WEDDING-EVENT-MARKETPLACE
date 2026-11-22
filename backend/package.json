@@ -46,6 +46,7 @@
     "msnodesqlv8": "^6.2.1",
     "mssql": "^12.7.13",
     "nodemailer": "^10.2.1",
+    "pdfkit": "^0.21.0",
     "sequelize": "^6.37.8",
     "sharp": "^0.35.5",
     "socket.io": "^4.8.4",

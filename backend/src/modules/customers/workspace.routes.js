@@ -1,4 +1,5 @@
 import * as shopping from "../shopping/shopping.service.js";
+import { orderInvoice } from "../shopping/order-invoice.js";
 import { bookingCheckout } from "../shopping/booking-checkout.js";
 import * as locations from "../addresses/locations.service.js";
 import { z } from "zod";
@@ -73,6 +74,16 @@ export function createCustomerRouter({
   mut("post", "/orders", q => shopping.purchase(q.body,q.ctx));
   get("/orders", q => shopping.orders(q.ctx));
   get("/orders/:id", q => shopping.orderDetails(q.params.id,q.ctx));
+  r.get("/orders/:id/invoice", async (q, res) => {
+    const file = await orderInvoice(q.params.id, q.ctx);
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${file.name}"`,
+      "Access-Control-Expose-Headers": "Content-Disposition",
+      "X-Content-Type-Options": "nosniff",
+    });
+    res.send(file.buffer);
+  });
   mut("post", "/orders/:id/payment-order", q => shopping.paymentOrder(q.params.id,q.ctx));
   mut("post", "/orders/:id/payment-refresh", q => shopping.refreshPurchase(q.params.id,q.ctx));
   mut("post", "/order-payments/verify", q => shopping.verifyPurchase(q.body,q.ctx));

@@ -2,6 +2,8 @@
 
 React + Tailwind + Apollo Client frontend and Express + Apollo GraphQL + Sequelize/MSSQL backend.
 
+[Order management and customer invoices](backend/docs/order-management.md) covers fulfillment and the PDF download available after verified payment and delivery.
+
 [Automated email notifications](backend/docs/automated-email-notifications.md) covers approval, order and booking triggers, SMTP reuse, durable deduplication, delivery logs and the separate, unapplied `035-transactional-email.sql` migration.
 
 The customer planning workspace is at `/customer/dashboard`. See [Customer workspace and Razorpay setup](backend/docs/customer-workspace.md) for event and guest management, service discovery, bookings, private messaging, payments, migrations and verification commands.
