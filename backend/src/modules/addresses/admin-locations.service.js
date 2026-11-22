@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { requireRole } from "../../middleware/auth.middleware.js";
 import * as repo from "../admin/admin.repository.js";
-import { approvedVendor, visibleVendor, registeredLocation } from "./location-policy.js";
+import {
+  approvedVendor,
+  registeredLocation,
+  locationIdentitySql,
+} from "./location-policy.js";
 
 export function normalizeLocation(value) {
   const country = /^(india|in|ind)$/i.test(value.country.trim())
@@ -38,11 +42,24 @@ export async function availableLocations() {
     `SELECT ${fields} FROM dbo.AdminLocations WHERE IsActive=1 AND DeletedAt IS NULL ORDER BY City,State,Country,LocationId`,
   );
 }
+function marketplaceLocations(
+  includeCounts = false,
+  includeHidden = false,
+  tx,
+  sourceKey,
+) {
+  return repo.select(
+    `SELECT l.LocationId AS id,MIN(l.City) AS city,MIN(l.State) AS state,MIN(l.Country) AS country,CAST(1 AS bit) AS active${includeCounts ? ",COUNT(*) AS approvedVendors" : ""}
+    FROM dbo.Vendors v JOIN dbo.Users u ON u.UserId=v.UserId ${registeredLocation("l", includeHidden)}
+    WHERE ${approvedVendor} AND l.LocationId IS NOT NULL
+    ${sourceKey ? "AND l.LocationId=:sourceKey" : ""}
+    GROUP BY l.LocationId ORDER BY city,state,country,l.LocationId`,
+    sourceKey ? { sourceKey } : {},
+    tx,
+  );
+}
 export async function customerLocations() {
-  return repo.select(`SELECT l.LocationId AS id,MIN(l.City) AS city,MIN(l.State) AS state,MIN(l.Country) AS country,CAST(1 AS bit) AS active
-    FROM dbo.Vendors v JOIN dbo.Users u ON u.UserId=v.UserId ${registeredLocation("l")}
-    WHERE ${visibleVendor} AND l.LocationId IS NOT NULL
-    GROUP BY l.LocationId ORDER BY city,state,country,l.LocationId`);
+  return marketplaceLocations();
 }
 export async function assertActiveLocation(id, tx) {
   z.guid().parse(id);
@@ -57,19 +74,90 @@ export async function assertActiveLocation(id, tx) {
 }
 export async function list(ctx) {
   requireRole(ctx, "ADMIN");
-  return repo.select(`SELECT ${fields},UpdatedAt AS updatedAt,
+  const [managed, marketplace, rawMarketplace] = await Promise.all([
+    repo.select(`SELECT ${fields},UpdatedAt AS updatedAt,DeletedAt AS deletedAt,
     (SELECT COUNT(*) FROM dbo.Vendors v JOIN dbo.Users u ON u.UserId=v.UserId WHERE v.AdminLocationId=al.LocationId AND ${approvedVendor}) AS approvedVendors
-    FROM dbo.AdminLocations al WHERE DeletedAt IS NULL ORDER BY City,State,Country,LocationId`);
+    FROM dbo.AdminLocations al ORDER BY City,State,Country,LocationId`),
+    marketplaceLocations(true),
+    marketplaceLocations(true, true),
+  ]);
+  const keyOf = (location) => {
+    const normalized = normalizeLocation(location);
+    return [normalized.city, normalized.state, normalized.country]
+      .map((value) => value.trim().replace(/\s+/g, " ").toLowerCase())
+      .join("\u001f");
+  };
+  const publicByCity = new Map(
+    marketplace.map((location) => [keyOf(location), location]),
+  );
+  const allVendorCities = new Map(
+    [...rawMarketplace, ...marketplace].map((location) => [
+      keyOf(location),
+      location,
+    ]),
+  );
+  const directory = managed
+    .filter((location) => !location.deletedAt)
+    .map((location) => {
+      const key = keyOf(location);
+      const publicLocation = publicByCity.get(key);
+      return {
+        ...location,
+        managed: true,
+        source: "registered",
+        assignedVendors: Number(location.approvedVendors || 0),
+        approvedVendors: Number(allVendorCities.get(key)?.approvedVendors || 0),
+        customerVisible: Boolean(publicLocation),
+        marketplaceLocationId: publicLocation?.id || null,
+      };
+    });
+  for (const location of managed) allVendorCities.delete(keyOf(location));
+  // Cities become catalog entries only when an administrator changes them.
+  for (const location of allVendorCities.values()) {
+    directory.push({
+      ...location,
+      managed: false,
+      source: "vendor",
+      customerVisible: publicByCity.has(keyOf(location)),
+      marketplaceLocationId: location.id,
+    });
+  }
+  return directory.sort((a, b) => keyOf(a).localeCompare(keyOf(b)));
 }
 export async function save(id, input, ctx, remove = false) {
   const user = requireRole(ctx, "ADMIN");
-  if (id) z.guid().parse(id);
+  const automatic = Boolean(id && /^[a-f\d]{64}$/i.test(id));
+  if (id && !automatic) z.guid().parse(id);
   const body = remove
     ? z.object({}).strict().parse(input)
     : locationInput.parse(input);
   return repo.transaction(async (tx) => {
     let old;
-    if (id) {
+    if (automatic) {
+      const sourceKey = id;
+      let [source] = await marketplaceLocations(true, true, tx, sourceKey);
+      if (!source)
+        [source] = await marketplaceLocations(true, false, tx, sourceKey);
+      if (!source)
+        fail("Location not found. Refresh the directory and try again.", 404);
+      const normalized = normalizeLocation(source);
+      [old] = await repo.select(
+        "SELECT * FROM dbo.AdminLocations WITH(UPDLOCK,HOLDLOCK) WHERE City=:city AND State=:state AND Country=:country AND DeletedAt IS NULL",
+        {
+          city: normalized.city,
+          state: normalized.state,
+          country: normalized.country,
+        },
+        tx,
+      );
+      id = old?.LocationId || null;
+      old ||= {
+        City: normalized.city,
+        State: normalized.state,
+        Country: normalized.country,
+        IsActive: 1,
+      };
+    } else if (id) {
       [old] = await repo.select(
         "SELECT * FROM dbo.AdminLocations WITH(UPDLOCK,HOLDLOCK) WHERE LocationId=:id AND DeletedAt IS NULL",
         { id },
@@ -85,7 +173,7 @@ export async function save(id, input, ctx, remove = false) {
         tx,
       );
       if (existing && existing.id.toLowerCase() !== id?.toLowerCase()) {
-        if (id)
+        if (id || automatic)
           fail(
             "This location already exists. Edit the existing location instead.",
             409,
@@ -118,10 +206,40 @@ export async function save(id, input, ctx, remove = false) {
     else {
       const [row] = await repo.insert(
         { table: "AdminLocations", id: "LocationId" },
-        { ...values, CreatedBy: user.id },
+        {
+          ...(remove
+            ? { City: old.City, State: old.State, Country: old.Country }
+            : {}),
+          ...values,
+          CreatedBy: user.id,
+        },
         tx,
       );
       id = row.id;
+    }
+    if (
+      !remove &&
+      old?.City &&
+      (old.City !== body.city ||
+        old.State !== body.state ||
+        old.Country !== body.country)
+    ) {
+      // Rename the city consistently without changing street addresses, ownership,
+      // approval status, service records or historical booking locations.
+      await repo.select(
+        `UPDATE vl SET City=:city,State=:state,Country=:country,UpdatedAt=SYSUTCDATETIME()
+         FROM dbo.VendorLocations vl
+         WHERE ${locationIdentitySql("vl.City", "vl.State", "vl.Country")}=${locationIdentitySql(":oldCity", ":oldState", ":oldCountry")}`,
+        {
+          city: body.city,
+          state: body.state,
+          country: body.country,
+          oldCity: old.City,
+          oldState: old.State,
+          oldCountry: old.Country,
+        },
+        tx,
+      );
     }
     await repo.auditAdmin(
       ctx,

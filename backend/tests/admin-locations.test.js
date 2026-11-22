@@ -29,6 +29,104 @@ const body = {
   active: true,
 };
 
+test("admin directory includes homepage vendor cities without creating registered locations", async (t) => {
+  const managed = [
+    {
+      id,
+      city: "Lucknow",
+      state: "UP",
+      country: "IN",
+      active: true,
+      approvedVendors: 4,
+    },
+    {
+      id: "empty",
+      city: "RAE",
+      state: "Uttar Pradesh",
+      country: "India",
+      active: true,
+      approvedVendors: 1,
+    },
+  ];
+  const publicRows = [
+    {
+      id: "public-lucknow",
+      city: "lucknow",
+      state: "Uttar Pradesh",
+      country: "India",
+      active: true,
+      approvedVendors: 2,
+    },
+    {
+      id: "public-pune",
+      city: "pune",
+      state: "maharastra",
+      country: "India",
+      active: true,
+      approvedVendors: 1,
+    },
+    {
+      id: "public-sarojni",
+      city: "sarojni",
+      state: "delhi",
+      country: "India",
+      active: true,
+      approvedVendors: 1,
+    },
+  ];
+  const before = structuredClone(managed);
+  const query = t.mock.method(sequelize, "query", async (sql) =>
+    sql.includes("UpdatedAt AS updatedAt") ? managed : publicRows,
+  );
+  const directory = await locations.list(ctx("ADMIN"));
+  assert.equal(
+    directory.length,
+    4,
+    "matching managed and public cities are combined",
+  );
+  const lucknow = directory.find((row) => row.id === id);
+  assert.equal(lucknow.managed, true);
+  assert.equal(
+    lucknow.customerVisible,
+    true,
+    "an active catalog city with an approved vendor is visible",
+  );
+  assert.equal(lucknow.marketplaceLocationId, "public-lucknow");
+  assert.equal(
+    lucknow.approvedVendors,
+    2,
+    "count vendors in their effective public city, not their old assignment",
+  );
+  assert.equal(lucknow.assignedVendors, 4);
+  const empty = directory.find((row) => row.id === "empty");
+  assert.equal(empty.customerVisible, false);
+  assert.equal(empty.approvedVendors, 0);
+  for (const publicRow of publicRows) {
+    const row = directory.find(
+      (row) => row.marketplaceLocationId === publicRow.id,
+    );
+    assert.ok(row, publicRow.city);
+    assert.equal(row.customerVisible, true);
+    if (publicRow.id !== "public-lucknow") {
+      assert.equal(row.managed, false);
+      assert.equal(row.source, "vendor");
+    }
+  }
+  assert.deepEqual(managed, before);
+  const sql = query.mock.calls.map((call) => call.arguments[0]);
+  assert.ok(
+    sql.every((statement) => statement.startsWith("SELECT")),
+    "listing never inserts or updates catalog records",
+  );
+  assert.ok(
+    sql.some(
+      (statement) =>
+        statement.includes("COUNT(*) AS approvedVendors") &&
+        statement.includes("FROM dbo.VendorLocations vl"),
+    ),
+  );
+});
+
 test("repeating Add location returns the existing record without changing its availability", async (t) => {
   t.mock.method(sequelize, "transaction", async (fn) => fn({}));
   for (const active of [true, false]) {
@@ -127,6 +225,8 @@ test("only admins can create, edit, delete, assign or inspect managed locations"
       () => locations.save(null, body, context),
       () => locations.save(id, body, context),
       () => locations.save(id, {}, context, true),
+      () => locations.save("A".repeat(64), body, context),
+      () => locations.save("A".repeat(64), {}, context, true),
       () => locations.assignVendor(id, { locationId: id }, context),
     ])
       await assert.rejects(fn, (e) =>
@@ -134,6 +234,75 @@ test("only admins can create, edit, delete, assign or inspect managed locations"
       );
   }
   assert.equal(query.mock.callCount(), 0);
+});
+
+test("automatic city actions create a catalog control and rename only matching address city fields", async (t) => {
+  const sourceKey = "A".repeat(64);
+  const tx = {};
+  t.mock.method(sequelize, "transaction", async (fn) => fn(tx));
+  for (const action of ["deactivate", "rename", "delete"]) {
+    const query = t.mock.method(sequelize, "query", async (sql) => {
+      if (sql.includes("AND l.LocationId=:sourceKey"))
+        return [{ id: sourceKey, ...body, approvedVendors: 1 }];
+      if (sql.startsWith("INSERT INTO dbo.[AdminLocations]")) return [{ id }];
+      return [];
+    });
+    const next =
+      action === "delete"
+        ? {}
+        : {
+            ...body,
+            city: action === "rename" ? "New City" : body.city,
+            active: action !== "deactivate",
+          };
+    const result = await locations.save(
+      sourceKey,
+      next,
+      ctx("ADMIN"),
+      action === "delete",
+    );
+    assert.equal(result.id, id);
+    const statements = query.mock.calls.map((call) => call.arguments[0]);
+    const insert = query.mock.calls.find((call) =>
+      call.arguments[0].startsWith("INSERT INTO dbo.[AdminLocations]"),
+    );
+    assert.ok(insert);
+    assert.equal(insert.arguments[1].transaction, tx);
+    if (action === "delete") assert.match(insert.arguments[0], /\[DeletedAt\]/);
+    const rename = query.mock.calls.find((call) =>
+      call.arguments[0].startsWith("UPDATE vl SET City="),
+    );
+    if (action === "rename") {
+      assert.ok(rename);
+      assert.equal(rename.arguments[1].replacements.city, "New City");
+      assert.equal(rename.arguments[1].replacements.oldCity, "Pune");
+      assert.equal(rename.arguments[1].transaction, tx);
+      assert.doesNotMatch(
+        rename.arguments[0],
+        /SET.*(?:AddressLine|VendorId|IsActive|IsPrimary)/,
+      );
+    } else assert.equal(rename, undefined);
+    assert.ok(
+      !statements.some(
+        (sql) =>
+          sql.startsWith("DELETE") ||
+          /^UPDATE dbo\.\[(Vendors|Booking|Services)\]/.test(sql),
+      ),
+    );
+    query.mock.restore();
+  }
+});
+
+test("stale automatic city actions return not found without writes", async (t) => {
+  t.mock.method(sequelize, "transaction", async (fn) => fn({}));
+  const query = t.mock.method(sequelize, "query", async () => []);
+  await assert.rejects(
+    () => locations.save("B".repeat(64), body, ctx("ADMIN")),
+    (error) => error.status === 404,
+  );
+  assert.ok(
+    query.mock.calls.every((call) => call.arguments[0].startsWith("SELECT")),
+  );
 });
 
 test("managed location input rejects spoofed creator, owner, deletion and approval fields", () => {
@@ -198,7 +367,11 @@ test("vendor signup checks duplicate accounts without requiring or looking up a 
     () => register(input, "VENDOR", ctx("VENDOR")),
     /already uses these details/,
   );
-  assert.ok(!query.mock.calls.some(call => call.arguments[0].includes("AdminLocations")));
+  assert.ok(
+    !query.mock.calls.some((call) =>
+      call.arguments[0].includes("AdminLocations"),
+    ),
+  );
   assert.equal(createUser.mock.callCount(), 0);
   assert.equal(createVendor.mock.callCount(), 0);
 });

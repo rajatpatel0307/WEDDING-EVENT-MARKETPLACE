@@ -127,6 +127,8 @@ export default function AdminManagement() {
               ? "Review applications and welcome trusted professionals to your marketplace."
               : resource === "settings"
                 ? "Manage your marketplace identity, contact details and reporting preferences."
+                : resource === "locations"
+                  ? "Manage cities, location availability and vendor assignments."
                 : "A clear view of your marketplace. Search, review, and manage every detail."}
           </p>
         </div>

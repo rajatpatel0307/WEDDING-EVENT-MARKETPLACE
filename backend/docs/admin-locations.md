@@ -12,6 +12,16 @@ For another environment: inspect and back up the database, then apply migration 
 
 ## Rules and API
 
+The admin directory includes both registered catalog locations and the cities currently shown on the homepage. Homepage cities are computed from approved vendors' effective active business addresses, using the registered location as a fallback. Matching city/state/country entries are combined; vendor cities missing from the registration catalog appear with `managed: false` and `source: "vendor"`. Listing performs reads only and does not create catalog records or change vendor addresses.
+
+Every directory row has the same Edit and Activate/Deactivate actions. The directory does not offer a Delete action. The existing admin location routes accept either a registered catalog GUID or an automatic city's 64-character key. An administrator's first action on an automatic city creates its catalog control inside the same transaction. Only registered catalog GUIDs are accepted for vendor registration assignments.
+
+Inactive and archived city controls suppress matching normalized cities in customer selectors, listings and direct public vendor lookups. Deactivation keeps a row available for reactivation; deletion archives it and prevents its vendor addresses from reintroducing it. Adding a city again creates an active control that supersedes older archived entries. Controls match normalized city/state/country, so archived duplicate records do not override an existing active catalog entry.
+
+Editing a city's name updates matching vendor address city/state/country fields in the same audited transaction. Street addresses, vendor ownership, approval statuses, services and historical bookings are preserved. Deactivation and deletion change only the catalog control. `customerVisible` follows the public location policy, `approvedVendors` retains the effective city count for inactive rows, and registered rows retain `assignedVendors` for their approved registration assignments.
+
+Run `node scripts/verify-location-actions.js` for MSSQL verification of automatic city editing, deactivation, reactivation, deletion, discovery filtering, record preservation and re-adding an archived city. The script uses isolated fixtures and always rolls back its transaction.
+
 - `GET /api/admin/locations`, `POST /api/admin/locations`, `PUT /api/admin/locations/:id`, `DELETE /api/admin/locations/:id`: admin-only management with existing authentication, origin/header protection, validation and audit logging.
 - `PUT /api/admin/vendors/:id/registered-location`: admin-only location assignment for existing vendors, without altering approval status.
 - `GET /api/marketplace/registration-locations`: active, undeleted admin locations, including locations without approved vendors.

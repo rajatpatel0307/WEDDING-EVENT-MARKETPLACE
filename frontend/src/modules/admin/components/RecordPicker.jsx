@@ -22,6 +22,10 @@ export default function RecordPicker({
     [rows, setRows] = useState([]),
     [loading, setLoading] = useState(false),
     [error, setError] = useState("");
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const currentValue = value ?? selected;
+  const retainedRecord = selectedRecord && String(selectedRecord.id) === String(currentValue)
+    && !rows.some(row => String(row.id) === String(currentValue)) ? selectedRecord : null;
   useEffect(() => {
     const abort = new AbortController();
     const timer = setTimeout(() => {
@@ -58,7 +62,7 @@ export default function RecordPicker({
   );
   const selectInput = searchableDropdown ? (
       <SearchableFilterSelect
-        value={value ?? selected}
+        value={currentValue}
         options={[
           ...(initialValue && !rows.some(row => String(row.id) === String(initialValue))
             ? [{ value: initialValue, label: initialLabel || "Current selection" }] : []),
@@ -78,10 +82,11 @@ export default function RecordPicker({
       <select
         className={controlClassName}
         name={name}
-        value={value ?? selected}
+        value={currentValue}
         required={required}
         onChange={(e) => {
           setSelected(e.target.value);
+          setSelectedRecord(rows.find(row => String(row.id) === e.target.value) || null);
           onChange?.(e.target.value);
         }}
         aria-label={`Select ${resource}`}
@@ -93,7 +98,9 @@ export default function RecordPicker({
               ? "Select a record"
               : "All categories"}
         </option>
+        {retainedRecord && <option value={retainedRecord.id}>{retainedRecord.name}</option>}
         {initialValue &&
+          String(retainedRecord?.id) !== String(initialValue) &&
           !rows.some((r) => String(r.id) === String(initialValue)) && (
             <option value={initialValue}>
               {initialLabel || "Current selection"}
