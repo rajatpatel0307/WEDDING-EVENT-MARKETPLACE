@@ -1,9 +1,8 @@
 import { randomUUID, createHash } from "node:crypto";
 import { z } from "zod";
-import { requireRole } from "../../middleware/auth.middleware.js";
 import { assertVersion } from "../vendors/workspace.common.js";
 import * as repo from "./admin.repository.js";
-import { getBooking } from "./bookings-management.service.js";
+import { accessible, roleUser } from "../bookings/bookings.service.js";
 import { postLedger } from "../payments/ledger.js";
 import {
   minor,
@@ -23,8 +22,10 @@ export const refundInput = z
     notes: z.string().trim().max(2000).default(""),
   })
   .strict();
-export async function initiate(id, input, ctx, { transaction, amount } = {}) {
-  requireRole(ctx, "ADMIN");
+export async function initiate(id, input, ctx, { transaction, amount, role = "Admin" } = {}) {
+  if (!["Admin", "Vendor"].includes(role)) fail("Access denied.", 403);
+  roleUser(ctx, role);
+  ctx = { ...ctx, actorRole: role };
   z.guid().parse(id);
   const b = refundInput.parse(input),
     hash = createHash("sha256")
@@ -32,7 +33,7 @@ export async function initiate(id, input, ctx, { transaction, amount } = {}) {
       .digest("hex");
   const transact = transaction ? (fn) => fn(transaction) : repo.transaction;
   return transact(async (tx) => {
-    const row = await getBooking(id, ctx, tx, true);
+    const row = await accessible(id, ctx, role, tx, true);
     const [prior] = await repo.select(
       "SELECT * FROM dbo.AdminBookingOperations WITH(UPDLOCK,HOLDLOCK) WHERE IdempotencyKey=:key",
       { key: b.idempotencyKey },

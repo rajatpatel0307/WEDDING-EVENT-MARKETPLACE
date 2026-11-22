@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { assertBookingReservation } from "../bookings/bookings.service.js";
+import { accessible, roleUser, assertBookingReservation } from "../bookings/bookings.service.js";
+import { actionsFor, assertTransition } from "../bookings/booking-status.js";
+export { actionsFor, assertTransition } from "../bookings/booking-status.js";
 import * as repo from "./admin.repository.js";
 import { requireRole } from "../../middleware/auth.middleware.js";
 import { assertVersion } from "../vendors/workspace.common.js";
@@ -121,21 +123,6 @@ export function filters(q) {
     where.push("b.CreatedAt<:to");
   }
   return { p, where: where.join(" AND ") };
-}
-export function actionsFor(row) {
-  const status = row.status || row.BookingStatus;
-  return [
-    "view",
-    ...(["Pending", "Accepted", "PaymentPending", "Confirmed"].includes(status)
-      ? ["cancel"]
-      : []),
-    ...(status === "Accepted" || status === "PaymentPending"
-      ? ["Confirmed"]
-      : []),
-    ...(status === "Confirmed" ? ["InProgress", "Disputed"] : []),
-    ...(status === "InProgress" ? ["Completed", "Disputed"] : []),
-    ...(["Cancelled", "Rejected"].includes(status) ? ["refund"] : []),
-  ];
 }
 export async function list(input, ctx) {
   requireRole(ctx, "ADMIN");
@@ -315,27 +302,10 @@ const changeInput = z
     notes: z.string().trim().max(2000).default(""),
   })
   .strict();
-export function assertTransition(row, next) {
-  const transitions = {
-    Pending: ["Cancelled"],
-    Accepted: ["Confirmed", "Cancelled"],
-    PaymentPending: ["Confirmed", "Cancelled"],
-    Confirmed: ["InProgress", "Cancelled", "Disputed"],
-    InProgress: ["Completed", "Disputed"],
-    Completed: ["Disputed"],
-  };
-  if (!transitions[row.BookingStatus]?.includes(next))
-    fail("This booking status transition is not allowed.");
-  if (next === "Confirmed" && row.BookingStatus === "Pending")
-    fail("The vendor must first accept the booking.");
-  if (
-    next === "Confirmed" &&
-    Number(row.PaidAmount) < Number(row.AdvanceAmount)
-  )
-    fail("The required advance payment has not been received.");
-}
-export async function changeStatus(id, next, input, ctx) {
-  requireRole(ctx, "ADMIN");
+export async function changeStatus(id, next, input, ctx, role = "Admin") {
+  if (!["Admin", "Vendor"].includes(role)) fail("Access denied.", 403);
+  roleUser(ctx, role);
+  ctx = { ...ctx, actorRole: role };
   const body = changeInput.parse(input);
   if (
     !["Confirmed", "InProgress", "Completed", "Cancelled", "Disputed"].includes(
@@ -344,7 +314,7 @@ export async function changeStatus(id, next, input, ctx) {
   )
     fail("Unsupported booking action.", 400);
   return repo.transaction(async (tx) => {
-    const row = await getBooking(id, ctx, tx, true);
+    const row = await accessible(id, ctx, role, tx, true);
     assertVersion(row, body.expectedUpdatedAt);
     assertTransition(row, next);
     if (next === "Confirmed") await assertBookingReservation(row, tx);
@@ -368,6 +338,14 @@ export async function changeStatus(id, next, input, ctx) {
         : String(row.BookingDate).slice(0, 10);
     if (["InProgress", "Completed"].includes(next) && row.BookingDate && day > today)
       fail("The event date has not arrived.");
+    if (role === "Vendor" && next === "Completed" && row.CommerceCheckoutKey) {
+      const [future] = await repo.select(
+        "SELECT TOP(1) BookingId FROM dbo.BookingReservations WHERE BookingId=:id AND EndsAt>DATEADD(minute,330,SYSUTCDATETIME())",
+        { id },
+        tx,
+      );
+      if (future) fail("The reserved duration has not ended.");
+    }
     if (
       next === "Completed" &&
       (summary.remaining > 0 || summary.refundPending > 0)
@@ -376,7 +354,7 @@ export async function changeStatus(id, next, input, ctx) {
     const values = {
       BookingStatus: next,
       UpdatedAt: new Date(),
-      AdminNotes: body.notes || null,
+      [role === "Vendor" ? "VendorNotes" : "AdminNotes"]: body.notes || null,
       ...(next === "Cancelled"
         ? {
             CancelledAt: new Date(),

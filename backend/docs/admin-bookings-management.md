@@ -1,5 +1,15 @@
 # Admin bookings management
 
+## Vendor booking management (22 November 2026)
+
+Approved vendors can manage their own bookings from `/vendor/bookings/:bookingId` using the same status and financial rules as administrators. The detail header includes customer, vendor, event and payment shortcuts, booking/payment status, confirmation, cancellation, start, completion, dispute and eligible refund controls. Pending requests retain Accept/Reject. Customer change requests remain reviewable; vendors use direct cancellation instead of submitting a new cancellation request.
+
+Vendor mutations use `POST /api/vendor/bookings/:id/status` (`status` plus the normal version/reason/notes payload), `/cancel` (version/reason/notes), and `/refund` (version/reason/notes/idempotencyKey). These routes require an approved vendor session, the configured frontend Origin and `X-Vendor-Request: 1`. The authenticated vendor is bound in the locked booking lookup; foreign bookings return 404. The role is supplied by the server and cannot be selected in the payload.
+
+Status actions reuse the admin transition, reservation, captured-advance, event-date, balance and payout checks. Product reservations additionally retain their duration check before vendor completion. Vendor notes never overwrite administrator notes; history records the Vendor actor and exposes only the public reason. Refund initiation reuses the existing policy-limited, idempotent provider queue. Unreviewed policy terms and paid/processing payouts still block refunds; policy review remains an administrator action. No database migration is required for this update.
+
+Verification: `backend/tests/vendor-booking-management.test.js` covers authorization, ownership, stale updates, advance verification, event/duration/balance checks, history visibility, service start/completion, payout reconciliation, refund eligibility/idempotency and HTTP origin/header enforcement.
+
 > Current status: The Quotations feature is retired. Quotation pages, requests, proposals, conversion APIs, reminders and preferences described in this historical report are no longer available. Historical database records and migrations remain for compatibility.
 
 The dashboard is `/admin/bookings`; full details are at `/admin/bookings/:bookingId`. The navigation includes pending, confirmed, in-progress, completed, cancelled, rejected and disputed bookings. The table fetches a single page from the server and presents cards on mobile. Detail tabs cover parties/event, booked items, payments, payouts, policy, status history, audit logs and a linked quotation.

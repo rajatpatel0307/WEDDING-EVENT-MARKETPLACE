@@ -35,6 +35,7 @@ export default function BookingChanges({
   id,
   data,
   role = "Customer",
+  showRequestActions = true,
   request,
   saved,
 }) {
@@ -101,7 +102,7 @@ export default function BookingChanges({
           <p>Refund: {p.refund || "Subject to financial review."}</p>
         </div>
       ))}
-      {role !== "Admin" && (
+      {role !== "Admin" && showRequestActions && (
         <>
           <p className="my-3 text-sm">{data.actions?.reason}</p>
           <div className="flex flex-wrap gap-3">

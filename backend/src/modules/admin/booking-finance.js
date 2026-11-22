@@ -127,6 +127,7 @@ export async function history(
       ActorRole: role,
       Reason: reason || null,
       Notes: notes || null,
+      ...(role === "Vendor" ? { PublicNote: reason || null, ActionType: status } : {}),
     },
     tx,
   );

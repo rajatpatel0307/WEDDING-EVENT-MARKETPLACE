@@ -18,6 +18,7 @@ import {
 import { notifyAdmins } from "../notifications/admin-events.js";
 import { assertReservation, dayOf, clockOf } from "./reservations.js";
 import { requestInput, decisionInput } from "./bookings.validation.js";
+import { actionsFor } from "./booking-status.js";
 import { calculatePrice } from "../vendors/service-management.validation.js";
 
 export function roleUser(ctx, role) {
@@ -114,6 +115,13 @@ export async function details(id, ctx, role) {
   const summary = financialSummary(row, await financialRows(id));
   return {
     booking: safe,
+    ...(role === "Vendor" ? {
+      management: {
+        actions: actionsFor(row),
+        canRefund: summary.canRefund,
+        refundBlockedReason: summary.refundBlockedReason,
+      },
+    } : {}),
     ...(customer ? {customer} : {}),
     checkout: { vendor: vendorLabel?.name || "", event: eventSnapshot },
     items,

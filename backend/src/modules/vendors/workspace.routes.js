@@ -2,6 +2,8 @@ import * as productOrders from "../shopping/order-management.js";
 import { orderInvoice } from "../shopping/order-invoice.js";
 import { categoryOptions } from "../shopping/configuration.js";
 import { completeBooking } from "../shopping/booking-management.js";
+import { changeStatus } from "../admin/bookings-management.service.js";
+import { initiate as initiateRefund } from "../admin/booking-refunds.service.js";
 import { vendorStatus } from "./access.service.js";
 import * as vendorProfile from "./profile.service.js";
 import * as onboarding from "./onboarding.service.js";
@@ -92,6 +94,16 @@ export function createVendorRouter({
   get("/earnings", (req) => earnings(req.vendorContext));
   get("/bookings/statistics", (req) => workspace.bookingStatistics(req.vendorContext));
   mutation("post", "/bookings/:id/complete", req => completeBooking(req.params.id,req.body,req.vendorContext));
+  mutation("post", "/bookings/:id/status", req => {
+    const { status, ...input } = req.body;
+    return changeStatus(req.params.id, status, input, req.vendorContext, "Vendor");
+  });
+  mutation("post", "/bookings/:id/cancel", req =>
+    changeStatus(req.params.id, "Cancelled", req.body, req.vendorContext, "Vendor"),
+  );
+  mutation("post", "/bookings/:id/refund", req =>
+    initiateRefund(req.params.id, req.body, req.vendorContext, { role: "Vendor" }),
+  );
   get("/bookings/:id", (req) =>
     lifecycle.details(req.params.id, req.vendorContext, "Vendor"),
   );

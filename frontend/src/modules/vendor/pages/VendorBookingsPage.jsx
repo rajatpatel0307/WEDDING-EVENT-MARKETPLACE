@@ -4,6 +4,7 @@ import {
   ArrowLeft, ArrowRight, CalendarDays, Check, CircleCheck, ClipboardList,
   Clock3, History, LoaderCircle, Mail, MapPin, MessageSquare, Phone,
   ReceiptText, ShieldCheck, Users, X,
+  CalendarCheck, Store, Wallet,
 } from "lucide-react";
 import { useVendorData, Loading, ErrorView } from "../components/WorkspaceUI";
 import { vendorRequest, save, money, date, timestamp } from "../services/workspace.api";
@@ -11,6 +12,7 @@ import { BookingStatus } from "../../admin/components/BookingUI";
 import BookingChanges from "../../bookings/BookingChanges";
 import BookingItemDetails from "../../bookings/BookingItemDetails";
 import useBookingCustomerChat from "../services/useBookingCustomerChat";
+import VendorBookingActions from "../components/VendorBookingActions";
 
 const card = "min-w-0 rounded-2xl border border-[#dfe8e2] bg-white shadow-[0_2px_8px_#244d3403]";
 const caption = "text-[11px] font-medium uppercase tracking-[0.09em] text-[#61766a]";
@@ -75,29 +77,8 @@ export default function VendorBookingsPage() {
     setError("");
     setSuccess("");
     try {
-      await save(`/bookings/${id}/decision`, "POST", { action, note: note.trim() });
+      await save(`/bookings/${id}/decision`, "POST", { action, note: note.trim(), expectedUpdatedAt: new Date(r.data.booking.UpdatedAt).toISOString() });
       setSuccess(action === "Accept" ? "Booking accepted successfully." : "Booking rejected. Your decision has been saved.");
-      setVersion((v) => v + 1);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function completeBooking(e) {
-    e.preventDefault();
-    if (!window.confirm("Mark this booking as completed?")) return;
-    const reason = new FormData(e.currentTarget).get("reason");
-    setBusy(true);
-    setError("");
-    setSuccess("");
-    try {
-      await save(`/bookings/${id}/complete`, "POST", {
-        reason,
-        expectedUpdatedAt: new Date(r.data.booking.UpdatedAt).toISOString(),
-      });
-      setSuccess("Booking marked as completed.");
       setVersion((v) => v + 1);
     } catch (err) {
       setError(err.message);
@@ -117,21 +98,40 @@ export default function VendorBookingsPage() {
 
   return <div className="min-w-0 space-y-6 font-sans text-sm leading-relaxed text-[#34564f] [&_button]:cursor-pointer [&_button:disabled]:cursor-not-allowed [&_button:disabled]:opacity-55 [&_svg]:shrink-0 [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-offset-4 [&_:focus-visible]:outline-[#27735a]">
     <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-3 text-xs text-[#657b6e]">
-      <Link to="/vendor/bookings/requests" className="inline-flex min-h-8 items-center gap-2 font-medium text-[#527260] transition-colors hover:text-[#176b60]"><ArrowLeft size={15} aria-hidden="true" />Booking requests</Link>
+      <Link to="/vendor/bookings/all" className="inline-flex min-h-8 items-center gap-2 font-medium text-[#527260] transition-colors hover:text-[#176b60]"><ArrowLeft size={15} aria-hidden="true" />All bookings</Link>
       <span aria-hidden="true" className="text-[#bdc9c0]">/</span><span>Booking details</span>
     </nav>
 
-    <header className="flex flex-wrap items-center justify-between gap-5">
-      <div className="min-w-0">
-        <p className={`${caption} mb-2 text-[#5f7a67]`}>Booking management</p>
-        <h1 className="text-2xl leading-tight font-semibold tracking-tight wrap-anywhere text-[#284b3d] sm:text-[30px]">{b.BookingNumber}</h1>
-        <p className="mt-2 text-[13px] text-[#63796b]">All the details for a beautifully organised event.</p>
+    <header className={`${card} overflow-hidden`}>
+      <div className="flex flex-wrap items-center justify-between gap-5 p-5 sm:p-6">
+        <div className="flex min-w-0 items-start gap-3.5">
+          <span className="mt-1 grid size-12 shrink-0 place-items-center rounded-xl bg-[#eaf3ed] text-[#176b60]"><CalendarCheck size={24} aria-hidden="true" /></span>
+          <div className="min-w-0">
+            <p className={`${caption} mb-1.5`}>Booking details</p>
+            <h1 className="text-2xl leading-tight font-semibold tracking-tight wrap-anywhere text-[#284b3d] sm:text-[30px]">{b.BookingNumber}</h1>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-[#63796b]">
+              <span className="inline-flex items-center gap-1.5"><Clock3 size={14} aria-hidden="true" />Booked {date(b.CreatedAt)}</span>
+              <span className="inline-flex items-center gap-1.5"><CalendarDays size={14} aria-hidden="true" />Event {date(b.BookingDate)}</span>
+            </div>
+          </div>
+        </div>
+        <dl className="flex flex-wrap gap-x-6 gap-y-3 rounded-xl bg-[#fafcfb] px-4 py-3">
+          <div><dt className="mb-2 text-xs text-[#607768]">Booking status</dt><dd><BookingStatus value={b.BookingStatus} /></dd></div>
+          <div><dt className="mb-2 text-xs text-[#607768]">Payment status</dt><dd><BookingStatus value={b.PaymentStatus} /></dd></div>
+        </dl>
       </div>
-      <div className="flex items-center gap-3 rounded-xl border border-[#e0e8df] bg-white px-4 py-3">
-        <span className="text-xs text-[#607768]">Booking status</span><BookingStatus value={b.BookingStatus} />
+      <div className="flex flex-wrap items-center gap-2 border-t border-[#e6ece5] bg-[#fcfdfc] px-5 py-3 sm:px-6">
+        {[[Users, "View Customer", "#booking-customer"], [Store, "View Vendor", "/vendor/business/profile"], [CalendarDays, "View Event", "#booking-event"], [Wallet, "View Payment", "#booking-payment"]].map(([Icon, label, target]) => {
+          const classes = "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#d9e3dc] bg-white px-3.5 py-2.5 text-xs font-medium text-[#527260] hover:bg-[#f0f5f2]";
+          return target.startsWith("#") ? <a key={label} href={target} className={classes}><Icon size={15} aria-hidden="true" />{label}</a> : <Link key={label} to={target} className={classes}><Icon size={15} aria-hidden="true" />{label}</Link>;
+        })}
+        <div className="flex flex-wrap items-center gap-2 min-[1350px]:ml-auto">
+          <VendorBookingActions key={id} data={d} disabled={busy} saved={(message) => { setSuccess(message); setError(""); setVersion((v) => v + 1); }} />
+        </div>
       </div>
     </header>
 
+    {b.CancellationReason && <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"><strong>Cancellation reason: </strong>{b.CancellationReason}</p>}
     {success && <p role="status" className="flex items-center gap-2.5 rounded-xl border border-[#cfe5d4] bg-[#eaf5ed] px-4 py-3 text-sm text-[#326548]"><CircleCheck size={18} aria-hidden="true" />{success}</p>}
     {chatError && <p role="alert" className="rounded-xl border border-[#efd2cd] bg-[#fff3f0] px-4 py-3 text-sm text-[#a24338]">{chatError}</p>}
     {error && !pending && <p role="alert" className="rounded-xl border border-[#efd2cd] bg-[#fff3f0] px-4 py-3 text-sm text-[#a24338]">{error}</p>}
@@ -142,7 +142,7 @@ export default function VendorBookingsPage() {
 
     <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(300px,1fr)]">
       <div className="contents xl:block xl:min-w-0 xl:space-y-6">
-        <section className={`${card} overflow-hidden`} aria-labelledby="event-overview-title">
+        <section id="booking-event" className={`${card} scroll-mt-6 overflow-hidden`} aria-labelledby="event-overview-title">
           <div className="flex items-center gap-4 border-b border-[#e6ece5] bg-[#fbfcf9] p-5 sm:px-6">
             <span className="grid size-12 shrink-0 place-items-center rounded-xl border border-[#dce7d9] bg-[#edf3e9] text-[#658559]"><CalendarDays size={23} strokeWidth={1.6} aria-hidden="true" /></span>
             <div className="min-w-0"><p className={`${caption} mb-1`}>Event overview</p><h2 id="event-overview-title" className="text-lg font-semibold wrap-anywhere text-[#2f5140]">{event.name || "Event booking"}</h2></div>
@@ -195,7 +195,7 @@ export default function VendorBookingsPage() {
       </div>
 
       <aside className="order-1 min-w-0 space-y-6 xl:order-none" aria-label="Booking summary and actions">
-        <section className={`${card} p-5 sm:p-6`} aria-label="Customer details">
+        <section id="booking-customer" className={`${card} scroll-mt-6 p-5 sm:p-6`} aria-label="Customer details">
           <SectionHeading icon={Users} title="Customer details" />
           {customer ? <>
             <div className="flex items-center gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#eaf0e5] text-sm font-semibold text-[#66824f]" aria-hidden="true">{initials}</span><div className="min-w-0"><h3 className="text-sm font-semibold wrap-anywhere text-[#3f5e35]">{customer.name || "Customer"}</h3><p className="mt-0.5 text-xs text-[#697f5a]">Booking customer</p></div></div>
@@ -210,7 +210,7 @@ export default function VendorBookingsPage() {
           </button>
         </section>
 
-        <section className={`${card} overflow-hidden`} aria-label="Payment summary">
+        <section id="booking-payment" className={`${card} scroll-mt-6 overflow-hidden`} aria-label="Payment summary">
           <div className="p-5 sm:p-6">
             <SectionHeading icon={ReceiptText} title="Payment summary" />
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e7ece3] pb-4"><span className="text-xs text-[#647b58]">Payment status</span><BookingStatus value={b.PaymentStatus} /></div>
@@ -245,15 +245,11 @@ export default function VendorBookingsPage() {
           </form>
         </section>}
 
-        {b.CommerceCheckoutKey && ["Confirmed", "InProgress"].includes(b.BookingStatus) && <section className={`${card} p-5 sm:p-6`} aria-label="Complete booking">
-          <SectionHeading icon={CircleCheck} title="Complete this booking" />
-          <form onSubmit={completeBooking} className="space-y-4"><label className="block text-xs font-medium text-[#58714b]">Completion note<input name="reason" required minLength={3} maxLength={1000} disabled={busy} placeholder="How did the event go?" className={`${control} mt-2`} /></label><button disabled={busy} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#426d37] px-4 py-3 text-xs font-semibold text-white hover:bg-[#345b2a]">{busy ? <LoaderCircle size={16} className="animate-spin" aria-hidden="true" /> : <CircleCheck size={16} aria-hidden="true" />}{busy ? "Saving…" : "Mark as completed"}</button></form>
-        </section>}
       </aside>
     </div>
 
     <div className="[&>section]:my-0 [&>section]:rounded-2xl [&>section]:border-[#dfe8e2] [&>section]:p-5 [&>section]:text-[#527247] sm:[&>section]:p-6 [&_h2]:text-[15px] [&_h2]:text-[#3f6036] [&_p]:leading-relaxed [&_button]:min-h-10 [&_button]:border-[#dce6d5] [&_button]:text-xs [&_button]:transition-colors [&_button:enabled:hover]:bg-[#f0f5eb] [&_button:disabled]:cursor-not-allowed [&_textarea]:border-[#dce6d5] [&_select]:border-[#dce6d5]">
-      <BookingChanges id={id} data={d} role="Vendor" request={vendorRequest} saved={() => setVersion((v) => v + 1)} />
+      <BookingChanges id={id} data={d} role="Vendor" showRequestActions={false} request={vendorRequest} saved={(message) => { setSuccess(message); setVersion((v) => v + 1); }} />
     </div>
   </div>;
 }
