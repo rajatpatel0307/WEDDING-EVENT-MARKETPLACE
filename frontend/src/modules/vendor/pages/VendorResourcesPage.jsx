@@ -72,14 +72,6 @@ const columns = {
     ["status", "Status"],
   ],
 
-  customers: [
-    ["name", "Customer"],
-    ["email", "Email"],
-    ["phone", "Phone"],
-    ["bookings", "Bookings"],
-    ["amount", "Booked value"],
-    ["lastInteractionAt", "Last interaction"],
-  ],
   revenue: [
     ["booking", "Booking"],
     ["gross", "Gross"],
@@ -365,7 +357,6 @@ export default function VendorResourcesPage({
           "packages",
           "bookings",
 
-          "customers",
           "offers",
           "coupons",
         ].includes(section) && (

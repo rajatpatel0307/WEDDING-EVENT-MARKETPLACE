@@ -495,7 +495,6 @@ export default function AppRoutes() {
                 "items",
                 "locations",
                 "documents",
-                "customers",
                 "payouts",
                 "transactions",
                 "reviews",

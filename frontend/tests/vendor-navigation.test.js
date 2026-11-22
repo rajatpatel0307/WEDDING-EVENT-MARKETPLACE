@@ -10,6 +10,13 @@ const vendor = {
   vendor: { active: true, verificationStatus: "Approved" },
 };
 
+test("vendor menus do not expose a customer directory", () => {
+  const groups = vendorNavigationFor(vendor);
+  assert.equal(groups.some(group => group.label === "CUSTOMERS"), false);
+  assert.equal(groups.flatMap(group => group.items).some(([path]) => path === "customers" || path.startsWith("customers/")), false);
+  assert.equal(vendorTitle("customers"), "Vendor workspace");
+});
+
 test("approved vendors have one Business Profile entry and a distinct personal Account Profile", () => {
   const items = vendorNavigationFor(vendor).flatMap((group) => group.items);
   assert.equal(items.filter(([path]) => path === "business/profile").length, 1);

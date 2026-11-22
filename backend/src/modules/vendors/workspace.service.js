@@ -77,7 +77,6 @@ const allowed = new Set([
   "availability",
   "bookings",
 
-  "customers",
   "revenue",
   "payouts",
   "transactions",
@@ -135,7 +134,6 @@ export async function records(section, input, ctx) {
     packages: "t.PackageName",
     bookings: "t.BookingNumber",
 
-    customers: "CONCAT(t.FirstName,' ',t.LastName)",
     offers: "t.OfferName",
     coupons: "t.CouponCode",
     documents: "t.DocumentType",

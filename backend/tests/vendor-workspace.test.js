@@ -175,10 +175,29 @@ test("vendor records cannot select audit logs, verification notes or authenticat
     "constructor",
     "__proto__",
     "services;DROP TABLE Users",
+    "customers",
   ])
     await assert.rejects(() => workspace.records(section, {}, ctx), {
       status: 404,
     });
+  assert.equal(query.mock.callCount(), 0);
+});
+
+test("vendor customer directory HTTP requests are denied before accessing customer data", async (t) => {
+  const query = t.mock.method(sequelize, "query", async () => { throw Error("Customer data must not be queried"); });
+  const app = express();
+  app.use("/api/vendor", createVendorRouter({ authenticateRequest: async () => ctx.auth }));
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  for (const suffix of ["", "?q=customer", "?page=2&pageSize=100"]) {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/vendor/records/customers${suffix}`);
+    assert.equal(response.status, 404);
+    const body = await response.json();
+    assert.equal(body.success, false);
+    assert.equal(body.data, null);
+    assert.equal(body.message, "Vendor section not found.");
+  }
   assert.equal(query.mock.callCount(), 0);
 });
 test("vendor coupons and notifications are scoped to the current business and owner", async (t) => {
