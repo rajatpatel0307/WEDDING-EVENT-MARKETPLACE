@@ -11,7 +11,7 @@ import { DiscoveryCard } from "../../marketplace/BrowsePage";
 const control = "min-h-12 w-full min-w-0 rounded-xl border border-[#e3e7e1]! bg-[#fafbf9]! px-4 py-3 text-sm text-[#344c3e]! transition placeholder:text-[#879187] hover:border-[#aab8a8]! focus:border-[#54775f]! focus:outline-none focus:ring-4 focus:ring-[#54775f]/10 motion-reduce:transition-none";
 const field = "grid min-w-0 gap-2 text-xs font-medium text-[#647062]";
 const primaryButton = "group inline-flex min-h-12 items-center justify-center gap-3 rounded-xl border border-[#294b3b]! bg-[#294b3b]! px-5 py-3 text-sm font-medium text-white! shadow-[0_4px_12px_#294b3b12] transition hover:border-[#1e382c]! hover:bg-[#1e382c]! hover:shadow-md motion-reduce:transition-none";
-const cardGrid = "grid min-w-0 grid-cols-[repeat(auto-fill,minmax(min(100%,300px),300px))] items-stretch gap-5";
+const cardGrid = "grid min-w-0 grid-cols-1 items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 const listCardGrid = "grid min-w-0 grid-cols-1 items-start gap-4 sm:[&>.cm-card]:grid! sm:[&>.cm-card]:grid-cols-[208px_minmax(0,1fr)] sm:[&_.cm-photo]:h-full! sm:[&_.cm-photo]:min-h-[200px] sm:[&_.cm-photo]:aspect-auto";
 
 const types = [
@@ -175,7 +175,7 @@ export default function CustomerWishlist() {
         </header>
 
         {wish.loading ? (
-          <div role="status" aria-label="Loading saved items" className={list ? listCardGrid : cardGrid}>{[0, 1, 2].map((key) => <div key={key} className="overflow-hidden rounded-[14px] border border-[#e9e0db] bg-white"><div className="h-[145px] animate-pulse bg-[#eee7db] motion-reduce:animate-none" /><div className="space-y-3 p-3.5"><div className="h-5 w-3/4 animate-pulse rounded-md bg-[#f0ebe1] motion-reduce:animate-none" /><div className="h-3 w-1/2 rounded bg-[#f5f1e9]" /><div className="h-11 rounded-lg bg-[#faf7f1]" /></div></div>)}</div>
+          <div role="status" aria-label="Loading saved items" className={list ? listCardGrid : cardGrid}>{[0, 1, 2, 3].map((key) => <div key={key} className="overflow-hidden rounded-[14px] border border-[#e9e0db] bg-white"><div className="h-[145px] animate-pulse bg-[#eee7db] motion-reduce:animate-none" /><div className="space-y-3 p-3.5"><div className="h-5 w-3/4 animate-pulse rounded-md bg-[#f0ebe1] motion-reduce:animate-none" /><div className="h-3 w-1/2 rounded bg-[#f5f1e9]" /><div className="h-11 rounded-lg bg-[#faf7f1]" /></div></div>)}</div>
         ) : wish.error ? <ErrorView error={wish.error} retry={wish.refresh} /> : !rows.length ? (
           <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-[#dfd2ba] bg-white px-6 py-10 text-center">
             <span className="flex size-16 items-center justify-center rounded-2xl bg-[#f3ece0] text-[#b49a70]">{wish.rows.length ? <Search size={26} strokeWidth={1.5} aria-hidden="true" /> : <Heart size={27} strokeWidth={1.5} aria-hidden="true" />}</span>
