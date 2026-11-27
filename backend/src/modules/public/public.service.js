@@ -4,6 +4,7 @@ import { sequelize } from "../../config/database.js";
 import { limit } from "../auth/security.service.js";
 import { contactInput, listingInput } from "./public.validation.js";
 import { visibleVendor, registeredLocation } from "../addresses/location-policy.js";
+import { publicPredicate } from "../reviews/reviews.policy.js";
 
 export const eligibleVendor = visibleVendor;
 const locationSql = registeredLocation("loc");
@@ -41,16 +42,18 @@ export async function featuredVenues(args = {}) {
   return select(
     `SELECT TOP (:limit) s.ServiceId AS id, s.ServiceName AS name, s.Description AS description,
     c.CategoryName AS category, CONCAT(loc.City, CASE WHEN loc.State IS NOT NULL THEN ', ' + loc.State ELSE '' END) AS location,
-    COALESCE(img.MediaUrl, v.CoverImageUrl) AS image, v.AverageRating AS rating, v.TotalReviews AS reviewCount,
+    COALESCE(img.MediaUrl, v.CoverImageUrl) AS image, COALESCE(sr.rating,0) AS rating, COALESCE(sr.reviews,0) AS reviewCount,
     COALESCE(s.MinimumPrice, s.BasePrice) AS startingPrice, s.PricingType AS pricingType, s.MaximumGuests AS capacity,
     CAST(1 AS bit) AS verified, CAST(0 AS bit) AS featured, v.VendorId AS vendorId, v.BusinessName AS vendorName
     FROM dbo.Services s JOIN dbo.Categories c ON c.CategoryId = s.CategoryId
     JOIN dbo.Vendors v ON v.VendorId = s.VendorId JOIN dbo.Users u ON u.UserId = v.UserId
     ${locationSql} ${imageSql("s.ServiceId")}
+    OUTER APPLY (SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS rating, COUNT_BIG(*) AS reviews
+      FROM dbo.Reviews r WHERE ${publicPredicate()} AND r.ServiceId=s.ServiceId) sr
     WHERE ${eligibleVendor} AND s.IsActive = 1 AND s.ApprovalStatus = 'Approved' AND c.IsActive = 1 AND (c.CategoryCode='AUTH_SERVICE_1' OR c.CategoryName = 'Venue & Location')
     AND (:city IS NULL OR loc.City = :city OR loc.LocationId = :city) AND (:id IS NULL OR s.ServiceId = :id)
     AND (:q IS NULL OR s.ServiceName LIKE :q OR v.BusinessName LIKE :q OR c.CategoryName LIKE :q OR loc.City LIKE :q)
-    ORDER BY v.AverageRating DESC, v.TotalReviews DESC, s.ServiceId`,
+    ORDER BY COALESCE(sr.rating,0) DESC, COALESCE(sr.reviews,0) DESC, s.ServiceId`,
     filters(args),
   );
 }

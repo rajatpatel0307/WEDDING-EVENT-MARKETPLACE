@@ -23,14 +23,14 @@ export default function PackageCard({ item }) {
         <h3>{item.name}</h3>
         <strong className="mp-price text-[25px] font-[Georgia,serif] font-normal text-[#8c414e]">{money(item.price)}</strong>
         {item.description && <p>{item.description}</p>}
-        <ul>
+        {item.items?.length > 0 && <ul>
           {item.items.map((name, i) => (
             <li key={`${name}-${i}`}>
               <Check size={14} />
               {name}
             </li>
           ))}
-        </ul>
+        </ul>}
         <Link
           className="mn-button bg-[#8c414e] text-white! inline-flex items-center justify-center gap-[19px] border border-[#8c414e] py-[12px] px-[19px] rounded-[5px] text-[12px] font-medium whitespace-nowrap hover:bg-[#74333f] hover:border-[#74333f] hover:transform-[translateY(-1px)] mn-button-outline [&.mn-button-outline]:text-[#81424c]! [&.mn-button-outline]:bg-transparent [&.mn-button-outline]:border-[#c4a5a2] [&.mn-button-outline:hover]:bg-[#e8d9d3]"
           to={`/packages/${item.id}`}

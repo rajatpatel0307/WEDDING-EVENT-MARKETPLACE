@@ -3,11 +3,11 @@ export default function CollectionState({ loading, failed, empty, retry }) {
   if (loading)
     return (
       <div
-        className="mp-skeleton-grid grid grid-cols-[repeat(3,_1fr)] gap-[20px] [@media(width<=767px)]:grid-cols-[1fr]"
+        className="mp-skeleton-grid grid grid-cols-1 gap-[20px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         role="status"
         aria-label="Loading marketplace listings"
       >
-        {[1, 2, 3].map((n) => (
+        {[1, 2, 3, 4].map((n) => (
           <div className="mp-skeleton h-[260px] rounded-[7px] bg-[linear-gradient(110deg,_#eee6df_20%,_#f8f3ed_40%,_#eee6df_60%)] bg-size-[200%_100%] animate-mp-shimmer [@media(width<=767px)]:[&.mp-skeleton:not(:first-child)]:hidden" key={n} />
         ))}
         <span className="sr-only">Loading listings…</span>
