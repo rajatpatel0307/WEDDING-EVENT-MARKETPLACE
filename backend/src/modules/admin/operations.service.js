@@ -65,7 +65,7 @@ export async function details(kind, id, ctx) {
     );
     const captures = rows.filter(
       (row) =>
-        row.TransactionType === "Capture" &&
+        (row.TransactionType === "Capture" || (record.GatewayName === "VendorManual" && row.TransactionType === "ManualPayment")) &&
         row.TransactionStatus === "Success",
     );
     record.reconciliation = !captures.length
@@ -73,7 +73,7 @@ export async function details(kind, id, ctx) {
       : Math.round(
             captures.reduce((sum, row) => sum + Number(row.Amount), 0) * 100,
           ) === Math.round(Number(record.Amount) * 100)
-        ? "Recorded capture amounts match this payment."
+        ? record.GatewayName === "VendorManual" ? "Vendor-recorded amounts match this payment." : "Recorded capture amounts match this payment."
         : "Payment and capture ledger amounts differ. Reconcile with the provider before further financial action.";
     record.refunds = await repo.select(
       "SELECT RefundId AS id,RefundReference AS name,RefundAmount AS amount,RefundStatus AS status FROM dbo.Refunds WHERE PaymentId=:id ORDER BY CreatedAt",

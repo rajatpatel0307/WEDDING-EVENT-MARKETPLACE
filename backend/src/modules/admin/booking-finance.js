@@ -415,6 +415,7 @@ export async function syncPayout(row, ctx, tx) {
   }
   const status =
     summary.refundPending ||
+    ledger.payments.some((payment) => payment.GatewayName === "VendorManual" && ["Success", "Refunded"].includes(payment.PaymentStatus)) ||
     !summary.commissionRecorded ||
     summary.paid < Number(row.TotalAmount)
       ? "OnHold"

@@ -18,7 +18,7 @@ import {
 import { notifyAdmins } from "../notifications/admin-events.js";
 import { assertReservation, dayOf, clockOf } from "./reservations.js";
 import { requestInput, decisionInput } from "./bookings.validation.js";
-import { actionsFor } from "./booking-status.js";
+import { actionsFor, manualPaymentBlockedReason } from "./booking-status.js";
 import { calculatePrice } from "../vendors/service-management.validation.js";
 
 export function roleUser(ctx, role) {
@@ -112,7 +112,9 @@ export async function details(id, ctx, role) {
   const pending = requests.some((r) => r.status === "Pending");
   // Read the policy estimate through the existing captured/refunded ledger, and
   // expose only customer-facing financial fields (no payout or review notes).
-  const summary = financialSummary(row, await financialRows(id));
+  const ledger = await financialRows(id);
+  const summary = financialSummary(row, ledger);
+  const paymentBlockedReason = role === "Vendor" ? manualPaymentBlockedReason(row, ledger, summary) : null;
   return {
     booking: safe,
     ...(role === "Vendor" ? {
@@ -120,6 +122,9 @@ export async function details(id, ctx, role) {
         actions: actionsFor(row),
         canRefund: summary.canRefund,
         refundBlockedReason: summary.refundBlockedReason,
+        canMarkPaid: !paymentBlockedReason,
+        paymentBlockedReason,
+        paymentAmount: summary.remaining,
       },
     } : {}),
     ...(customer ? {customer} : {}),

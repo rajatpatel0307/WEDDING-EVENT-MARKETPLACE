@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { LoaderCircle, RotateCcw, X, XCircle } from "lucide-react";
+import { CircleCheck, LoaderCircle, RotateCcw, X, XCircle } from "lucide-react";
 import { money, save } from "../services/workspace.api";
 
 const labels = {
@@ -10,6 +10,7 @@ const labels = {
   Disputed: "Mark Disputed",
   cancel: "Cancel Booking",
   refund: "Initiate Refund",
+  paid: "Mark as Paid",
 };
 const button = "inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3.5 py-2.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
 
@@ -19,9 +20,12 @@ function ActionDialog({ action, data, close, saved }) {
   const [error, setError] = useState("");
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
+  const [method, setMethod] = useState("Cash");
+  const [reference, setReference] = useState("");
   const [key] = useState(() => crypto.randomUUID());
   const refund = action === "refund";
   const cancel = action === "cancel";
+  const paid = action === "paid";
 
   useEffect(() => { ref.current.showModal(); }, []);
 
@@ -31,11 +35,11 @@ function ActionDialog({ action, data, close, saved }) {
     setBusy(true);
     setError("");
     try {
-      const result = await save(`/bookings/${data.booking.BookingId}/${refund ? "refund" : cancel ? "cancel" : "status"}`, "POST", {
+      const result = await save(`/bookings/${data.booking.BookingId}/${paid ? "mark-paid" : refund ? "refund" : cancel ? "cancel" : "status"}`, "POST", {
         expectedUpdatedAt: new Date(data.booking.UpdatedAt).toISOString(),
         reason: reason.trim(),
         notes: notes.trim(),
-        ...(refund ? { idempotencyKey: key } : cancel ? {} : { status: action }),
+        ...(paid ? { idempotencyKey: key, method, reference: reference.trim() } : refund ? { idempotencyKey: key } : cancel ? {} : { status: action }),
       });
       saved(result.message);
     } catch (err) {
@@ -54,12 +58,26 @@ function ActionDialog({ action, data, close, saved }) {
     </div>
     <p className="mb-4">{data.booking.BookingNumber}{data.customer?.name && <> · {data.customer.name}</>}</p>
     <form onSubmit={submit} className="space-y-4">
+      {paid && <>
+        <div className="rounded-xl border border-[#d9e6dd] bg-[#f4f8f5] p-4">
+          <p>Amount received: <strong>{money(data.management.paymentAmount)}</strong></p>
+          <p className="mt-2 text-xs leading-relaxed">Record the remaining balance you have already received from the customer. This will mark the booking payment as fully paid.</p>
+        </div>
+        <label className="block text-sm font-medium">Payment method
+          <select disabled={busy} value={method} onChange={(e) => setMethod(e.target.value)} className="mt-2 w-full rounded-xl border border-[#d9e3dc] bg-white p-3 font-normal">
+            <option value="Cash">Cash</option><option value="UPI">UPI</option><option value="BankTransfer">Bank transfer</option><option value="Card">Card</option><option value="Other">Other</option>
+          </select>
+        </label>
+        <label className="block text-sm font-medium">{method === "Cash" ? "Receipt reference (optional)" : "Transaction reference"}
+          <input disabled={busy} required={method !== "Cash"} minLength={method === "Cash" ? undefined : 3} maxLength={200} value={reference} onChange={(e) => setReference(e.target.value)} className="mt-2 w-full rounded-xl border border-[#d9e3dc] p-3 font-normal" />
+        </label>
+      </>}
       {cancel && <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">This will cancel the booking and update its payout eligibility. Any eligible refund must be initiated separately.</p>}
       {refund && <div className="rounded-xl border border-[#d9e6dd] bg-[#f4f8f5] p-4">
         <p>Eligible refund: <strong>{money(data.refundEstimate)}</strong></p>
         <p className="mt-2 text-xs leading-relaxed">The refund will be queued for the payment provider. Completion appears after provider confirmation.</p>
       </div>}
-      <label className="block text-sm font-medium">Reason shared with customer
+      <label className="block text-sm font-medium">{paid ? "Payment note shared with customer" : "Reason shared with customer"}
         <textarea autoFocus required minLength={3} maxLength={1000} disabled={busy} value={reason} onChange={(e) => setReason(e.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[#d9e3dc] p-3 font-normal" />
       </label>
       <label className="block text-sm font-medium">Internal vendor note <span className="font-normal text-[#61766a]">(optional)</span>
@@ -81,6 +99,7 @@ export default function VendorBookingActions({ data, disabled, saved }) {
   const management = data.management;
   const actions = management?.actions || [];
   return <>
+    <button type="button" disabled={disabled || !management?.canMarkPaid} title={management?.paymentBlockedReason || "Record payment received from the customer"} onClick={() => setAction("paid")} className={`${button} border-[#cbded3] bg-[#edf6f0] text-[#176b60] hover:bg-[#dfeee4]`}><CircleCheck size={15} aria-hidden="true" />Mark as Paid</button>
     {actions.filter((value) => !["view", "cancel", "refund"].includes(value)).map((value) => <button type="button" key={value} disabled={disabled} onClick={() => setAction(value)} className={`${button} border-[#176b60] bg-[#176b60] text-white hover:bg-[#12584f]`}>{labels[value]}</button>)}
     {actions.includes("cancel") && <button type="button" disabled={disabled} onClick={() => setAction("cancel")} className={`${button} border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100`}><XCircle size={15} aria-hidden="true" />Cancel Booking</button>}
     <button type="button" disabled={disabled || !management?.canRefund} title={management?.refundBlockedReason || "Initiate eligible refund"} onClick={() => setAction("refund")} className={`${button} border-[#d9e3dc] bg-white text-[#527260] hover:bg-[#f0f5f2]`}><RotateCcw size={15} aria-hidden="true" />Refund</button>

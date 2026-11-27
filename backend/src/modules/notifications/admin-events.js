@@ -23,6 +23,7 @@ const events = {
   SERVICE_REJECT: "Service rejected",
   CUSTOMER_PAYMENT_FAILED: "Payment failed",
   BOOKING_REFUND_INITIATED: "Refund requested",
+  BOOKING_PAYMENT_MARKED_PAID: "Vendor recorded a booking payment",
   BOOKING_PAYOUT_REVIEW_REQUIRED: "Payout needs reconciliation",
   ADMIN_PAYOUT_DECISION: "Payout status updated",
   ADMIN_PAYOUT_FAILED: "Payout failed",

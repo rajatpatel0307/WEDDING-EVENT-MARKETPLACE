@@ -40,6 +40,8 @@ export function eligiblePayout(booking, row, ledger) {
     fail("Commission ownership does not match the payout.");
   if (booking.BookingStatus !== "Completed")
     fail("Only completed bookings can be settled.");
+  if (ledger.payments.some((payment) => payment.GatewayName === "VendorManual" && ["Success", "Refunded"].includes(payment.PaymentStatus)))
+    fail("Vendor-collected payments require settlement reconciliation before a platform payout.");
   if (ledger.payouts.length !== 1)
     fail("Multiple payouts require reconciliation before settlement.");
   if (!ledger.commissions.length) fail("A recorded commission is required.");

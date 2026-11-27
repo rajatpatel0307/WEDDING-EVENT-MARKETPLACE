@@ -4,6 +4,7 @@ import { categoryOptions } from "../shopping/configuration.js";
 import { completeBooking } from "../shopping/booking-management.js";
 import { changeStatus } from "../admin/bookings-management.service.js";
 import { initiate as initiateRefund } from "../admin/booking-refunds.service.js";
+import { markBookingPaid } from "../bookings/manual-payment.service.js";
 import { vendorStatus } from "./access.service.js";
 import * as vendorProfile from "./profile.service.js";
 import * as onboarding from "./onboarding.service.js";
@@ -103,6 +104,9 @@ export function createVendorRouter({
   );
   mutation("post", "/bookings/:id/refund", req =>
     initiateRefund(req.params.id, req.body, req.vendorContext, { role: "Vendor" }),
+  );
+  mutation("post", "/bookings/:id/mark-paid", req =>
+    markBookingPaid(req.params.id, req.body, req.vendorContext),
   );
   get("/bookings/:id", (req) =>
     lifecycle.details(req.params.id, req.vendorContext, "Vendor"),
