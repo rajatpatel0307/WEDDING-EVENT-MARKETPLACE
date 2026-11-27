@@ -53,13 +53,15 @@ test("customer workspace renders its customer header, sidebar, counts and nested
     const workspace = render();
     assert.doesNotMatch(workspace, /quotations/i);
     assert.equal((workspace.match(/<header\b/g) || []).length, 1);
-    assert.ok(workspace.includes('aria-label="Marketplace navigation"'));
+    assert.ok(workspace.includes('aria-label="MarryNest home"'));
+    assert.ok(workspace.includes('aria-label="Customer navigation"'));
     assert.ok(workspace.includes('aria-label="Customer profile menu"'));
     assert.ok(workspace.includes('aria-label="Search customer pages"'));
     assert.ok(workspace.includes('aria-label="Open search"'));
     assert.ok(workspace.includes('id="customer-sidebar"'));
     assert.ok(workspace.includes('aria-label="Customer pages"'));
-    for (const path of ["dashboard", "profile", "events", "discover", "bookings", "wishlist", "messages", "notifications", "payments", "reviews", "addresses", "settings", "cart", "orders", "legal"]) {
+    // The sidebar exposes workspace pages; marketplace and event links live in search.
+    for (const path of ["dashboard", "profile", "bookings", "wishlist", "messages", "notifications", "payments", "reviews", "addresses", "settings", "cart", "orders", "legal"]) {
       assert.ok(workspace.includes(`href="/customer/${path}"`), `${path} is reachable`);
     }
     assert.ok(workspace.includes('aria-label="Wishlist, 3 items"'));

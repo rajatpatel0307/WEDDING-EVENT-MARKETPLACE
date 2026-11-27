@@ -9,6 +9,7 @@ const root = new URL("../", import.meta.url),
       "utf8",
     ),
   );
+// Keep this static baseline aligned with reviewed public UI changes, including the Tailwind conversion.
 test("finalized Home Page, navigation, footer, global styles, shared components and assets stay unchanged", () => {
   for (const [path, expected] of Object.entries(manifest)) {
     const buffer = readFileSync(new URL(path, root));

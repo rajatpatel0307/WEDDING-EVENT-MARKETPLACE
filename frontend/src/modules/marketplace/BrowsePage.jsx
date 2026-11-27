@@ -21,7 +21,6 @@ import {
   LayoutGrid,
   List,
   ShieldCheck,
-  ArrowUpRight,
   ChevronRight,
   ChevronDown,
   Flower2,
@@ -43,7 +42,7 @@ export function ReadState({ state }) {
     </div>
   ) : null;
 }
-export function DiscoveryCard({ item, compare, toggleCompare, compareFull, saved: savedItem = false }) {
+export function DiscoveryCard({ item, saved: savedItem = false }) {
   const { user, notify, reload } = useAuth(),
     navigate = useNavigate(),
     [busy, setBusy] = useState(false),
@@ -102,7 +101,7 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull, saved
   return (
     <article className="cm-card relative isolate [.customer-marketplace_&]:overflow-hidden [.customer-marketplace_&]:border [.customer-marketplace_&]:border-[#e8dfd9] [.customer-marketplace_&]:rounded-[16px] [.customer-marketplace_&]:bg-white [.customer-marketplace_&]:min-w-0 [.customer-marketplace_&_.cm-actions]:mb-0 [.customer-marketplace.cm-browse_&]:flex [.customer-marketplace.cm-browse_&]:flex-col [.customer-marketplace.cm-browse_&]:rounded-[14px] [.customer-marketplace.cm-browse_&]:border-[#e9e0db] [.customer-marketplace.cm-browse_&]:shadow-[0_4px_18px_#55393108] [.customer-marketplace.cm-browse_&]:transition-[border-color,box-shadow,transform] [.customer-marketplace.cm-browse_&]:duration-200 [.customer-marketplace.cm-browse_&]:ease-[ease] [.customer-marketplace.cm-browse_&:hover]:border-[#cfaaa4] [.customer-marketplace.cm-browse_&:hover]:shadow-[0_10px_26px_#5539310d] [.customer-marketplace.cm-browse_&:hover]:[transform:translateY(-3px)] [.customer-marketplace.cm-browse_&:hover_.cm-photo_img]:[transform:scale(1.035)] [.customer-marketplace.cm-browse_&_h3]:mt-[6px] [.customer-marketplace.cm-browse_&_h3]:mx-0 [.customer-marketplace.cm-browse_&_h3]:mb-[4px] [.customer-marketplace.cm-browse_&_h3]:text-[21px] [.customer-marketplace.cm-browse_&_h3]:leading-[1.3] [.customer-marketplace.cm-browse_&_h3]:tracking-[-0.4px] [.customer-marketplace.cm-browse_&_h3]:text-[#4a353a] [.customer-marketplace.cm-browse_&_h3]:capitalize [.customer-marketplace.cm-browse_&_.cm-meta]:mb-0 [.customer-marketplace.cm-browse_&_.cm-meta]:text-[11px] [.customer-marketplace.cm-browse_&_.cm-meta]:text-[#8e7c76] [.customer-marketplace.cm-browse_&_.cm-meta]:capitalize cm-discovery-card [.customer-marketplace_&_.commerce-price]:[flex-wrap:nowrap] [.customer-marketplace_&_.commerce-price]:gap-[8px] [.customer-marketplace_&_.commerce-price]:m-0 [.customer-marketplace_&_.commerce-price_>_div]:flex-1 [.customer-marketplace_&_.commerce-price_>_div]:min-w-0 [.customer-marketplace_&_.commerce-price_>_div]:py-[7px] [.customer-marketplace_&_.commerce-price_>_div]:px-[9px] [.customer-marketplace_&_.commerce-price_>_div]:border [.customer-marketplace_&_.commerce-price_>_div]:border-[#eee5df] [.customer-marketplace_&_.commerce-price_>_div]:rounded-[8px] [.customer-marketplace_&_.commerce-price_>_div]:bg-[#faf7f3] [.customer-marketplace_&_.commerce-price_small]:mt-0 [.customer-marketplace_&_.commerce-price_small]:mx-0 [.customer-marketplace_&_.commerce-price_small]:mb-[3px] [.customer-marketplace_&_.commerce-price_small]:text-[#9a7c76] [.customer-marketplace_&_.commerce-price_small]:text-[9px] [.customer-marketplace_&_.commerce-price_small]:tracking-[0.1px] [.customer-marketplace_&_.commerce-price_strong]:block [.customer-marketplace_&_.commerce-price_strong]:text-[#76434d] [.customer-marketplace_&_.commerce-price_strong]:text-[19px] [.customer-marketplace_&_.commerce-price_strong]:font-semibold [.customer-marketplace_&_.commerce-price_strong]:leading-[1.2] [.customer-marketplace_&_.commerce-price_strong]:tabular-nums [.customer-marketplace_&_.commerce-price_p]:mt-[3px] [.customer-marketplace_&_.commerce-price_p]:mx-0 [.customer-marketplace_&_.commerce-price_p]:mb-0 [.customer-marketplace_&_.commerce-price_p]:text-[#a18d83] [.customer-marketplace_&_.commerce-price_p]:text-[9px] [.customer-marketplace_&_.commerce-price_p]:leading-[1.5] [.customer-marketplace_&_.commerce-offer-actions]:[flex-wrap:nowrap] [.customer-marketplace_&_.commerce-offer-actions]:gap-[7px] [.customer-marketplace_&_.commerce-offer-actions]:mt-[8px] [.customer-marketplace_&_.commerce-offer-actions]:mx-0 [.customer-marketplace_&_.commerce-offer-actions]:mb-0 [.customer-marketplace_&_.commerce-offer-actions_>_button]:inline-flex [.customer-marketplace_&_.commerce-offer-actions_>_button]:[flex:1_1_0] [.customer-marketplace_&_.commerce-offer-actions_>_button]:items-center [.customer-marketplace_&_.commerce-offer-actions_>_button]:justify-center [.customer-marketplace_&_.commerce-offer-actions_>_button]:min-w-0 [.customer-marketplace_&_.commerce-offer-actions_>_button]:min-h-[36px] [.customer-marketplace_&_.commerce-offer-actions_>_button]:py-[7px] [.customer-marketplace_&_.commerce-offer-actions_>_button]:px-[5px] [.customer-marketplace_&_.commerce-offer-actions_>_button]:border [.customer-marketplace_&_.commerce-offer-actions_>_button]:border-[#e6d6d0] [.customer-marketplace_&_.commerce-offer-actions_>_button]:rounded-[7px] [.customer-marketplace_&_.commerce-offer-actions_>_button]:bg-[#fffdfa] [.customer-marketplace_&_.commerce-offer-actions_>_button]:text-[#80555d] [.customer-marketplace_&_.commerce-offer-actions_>_button]:text-[10px] [.customer-marketplace_&_.commerce-offer-actions_>_button]:font-medium [.customer-marketplace_&_.commerce-offer-actions_>_button]:leading-[1.4] [.customer-marketplace_&_.commerce-offer-actions_>_button]:whitespace-nowrap [.customer-marketplace_&_.commerce-offer-actions_>_a]:inline-flex [.customer-marketplace_&_.commerce-offer-actions_>_a]:[flex:1_1_0] [.customer-marketplace_&_.commerce-offer-actions_>_a]:items-center [.customer-marketplace_&_.commerce-offer-actions_>_a]:justify-center [.customer-marketplace_&_.commerce-offer-actions_>_a]:min-w-0 [.customer-marketplace_&_.commerce-offer-actions_>_a]:min-h-[36px] [.customer-marketplace_&_.commerce-offer-actions_>_a]:py-[7px] [.customer-marketplace_&_.commerce-offer-actions_>_a]:px-[5px] [.customer-marketplace_&_.commerce-offer-actions_>_a]:border [.customer-marketplace_&_.commerce-offer-actions_>_a]:border-[#e6d6d0] [.customer-marketplace_&_.commerce-offer-actions_>_a]:rounded-[7px] [.customer-marketplace_&_.commerce-offer-actions_>_a]:bg-[#fffdfa] [.customer-marketplace_&_.commerce-offer-actions_>_a]:text-[#80555d] [.customer-marketplace_&_.commerce-offer-actions_>_a]:text-[10px] [.customer-marketplace_&_.commerce-offer-actions_>_a]:font-medium [.customer-marketplace_&_.commerce-offer-actions_>_a]:leading-[1.4] [.customer-marketplace_&_.commerce-offer-actions_>_a]:whitespace-nowrap [.customer-marketplace_&_.commerce-offer-actions_>_button.cm-primary]:border-[#d8b5b7] [.customer-marketplace_&_.commerce-offer-actions_>_button.cm-primary]:bg-[#f8edef] [.customer-marketplace_&_.commerce-offer-actions_>_button.cm-primary]:text-[#8c414e] [.customer-marketplace_&_.commerce-offer-actions_>_a.cm-primary]:border-[#d8b5b7] [.customer-marketplace_&_.commerce-offer-actions_>_a.cm-primary]:bg-[#f8edef] [.customer-marketplace_&_.commerce-offer-actions_>_a.cm-primary]:text-[#8c414e] [.customer-marketplace_&_.commerce-offer-actions_>_button:hover:not(:disabled)]:border-[#743440] [.customer-marketplace_&_.commerce-offer-actions_>_button:hover:not(:disabled)]:bg-[#743440] [.customer-marketplace_&_.commerce-offer-actions_>_button:hover:not(:disabled)]:text-[#fff] [.customer-marketplace_&_.commerce-offer-actions_>_a:hover]:border-[#743440] [.customer-marketplace_&_.commerce-offer-actions_>_a:hover]:bg-[#743440] [.customer-marketplace_&_.commerce-offer-actions_>_a:hover]:text-[#fff] [.customer-marketplace_&_.commerce-offer-actions_>_span]:text-[#a08b83] [.customer-marketplace_&_.commerce-offer-actions_>_span]:text-[11px]">
       <div className="cm-card-visual [.customer-marketplace_&]:relative [.customer-marketplace_&]:min-w-0 [.customer-marketplace_&]:overflow-hidden">
-        <Link to={path} className="cm-photo [.customer-marketplace_&]:[aspect-ratio:4/3] [.customer-marketplace_&]:bg-[#f3ece7] [.customer-marketplace_&]:grid [.customer-marketplace_&]:[place-items:center] [.customer-marketplace_&]:overflow-hidden [.customer-marketplace_&_img]:w-full [.customer-marketplace_&_img]:h-full [.customer-marketplace_&_img]:object-cover [.customer-marketplace.cm-browse_&]:h-[145px] [.customer-marketplace.cm-browse_&]:[aspect-ratio:auto] [.customer-marketplace.cm-browse_&]:text-[#b7a298] [.customer-marketplace.cm-browse_&_img]:transition-[transform] [.customer-marketplace.cm-browse_&_img]:duration-500 [.customer-marketplace.cm-browse_&_img]:ease-[ease]" aria-label={type === "Vendor" ? undefined : `View ${item.name}`} tabIndex={type === "Vendor" ? -1 : undefined} aria-hidden={type === "Vendor" ? true : undefined}>
+        <Link to={path} className="cm-photo [.customer-marketplace_&]:[aspect-ratio:4/3] [.customer-marketplace_&]:bg-[#f3ece7] [.customer-marketplace_&]:grid [.customer-marketplace_&]:[place-items:center] [.customer-marketplace_&]:overflow-hidden [.customer-marketplace_&_img]:w-full [.customer-marketplace_&_img]:h-full [.customer-marketplace_&_img]:object-cover [.customer-marketplace.cm-browse_&]:h-[145px] [.customer-marketplace.cm-browse_&]:[aspect-ratio:auto] [.customer-marketplace.cm-browse_&]:text-[#b7a298] [.customer-marketplace.cm-browse_&_img]:transition-[transform] [.customer-marketplace.cm-browse_&_img]:duration-500 [.customer-marketplace.cm-browse_&_img]:ease-[ease]" tabIndex={-1} aria-hidden="true">
           {image && !failed ? (
             <img
               src={optimizedMediaUrl(image, "card")}
@@ -138,7 +137,7 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull, saved
           )}
         </div>
         <h3>
-          <Link to={path} className={type === "Vendor" ? "after:absolute after:inset-0 after:z-10 after:rounded-2xl after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-rose-brand" : undefined}>{item.name}</Link>
+          <Link to={path} className="after:absolute after:inset-0 after:z-10 after:rounded-2xl after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-rose-brand">{item.name}</Link>
         </h3>
         <div className="cm-card-meta-row [.customer-marketplace_&]:flex [.customer-marketplace_&]:flex-wrap [.customer-marketplace_&]:items-center [.customer-marketplace_&]:justify-between [.customer-marketplace_&]:gap-[5px_10px]">
           <p className="cm-meta [.customer-marketplace_&]:text-[13px] [.customer-marketplace_&]:text-[#75645d] [.customer-marketplace_&]:flex [.customer-marketplace_&]:gap-[6px] [.customer-marketplace_&]:items-center [.customer-marketplace_&]:flex-wrap">
@@ -173,7 +172,7 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull, saved
           </p>
         ) : (
           <>
-            <div className="cm-card-commerce [.customer-marketplace_&]:mt-auto [.customer-marketplace_&]:pt-[9px]">
+            <div className="cm-card-commerce [&_.commerce-offer-actions]:relative [&_.commerce-offer-actions]:z-20 [.customer-marketplace_&]:mt-auto [.customer-marketplace_&]:pt-[9px]">
               {!offer.type && (
                 <p className="cm-card-price [.customer-marketplace_&]:mt-[15px] [.customer-marketplace_&]:pt-[12px] [.customer-marketplace_&]:border-t [.customer-marketplace_&]:border-t-[#efe7e1] [.customer-marketplace_&]:text-[#a28b82] [.customer-marketplace_&]:text-[10px] [.customer-marketplace_&_>_small]:block [.customer-marketplace_&_>_small]:mb-[3px] [.customer-marketplace_&_>_small]:text-[#a08b80] [.customer-marketplace_&_>_small]:text-[9px] [.customer-marketplace_&_>_strong]:text-[#7e454e] [.customer-marketplace_&_>_strong]:text-[17px] [.customer-marketplace_&_>_strong]:font-medium">
                   <small>
@@ -197,22 +196,6 @@ export function DiscoveryCard({ item, compare, toggleCompare, compareFull, saved
               : <span>Price on request</span>}
           </p>
         )}
-        {(type !== "Vendor" || toggleCompare) && <div className="cm-card-footer [.customer-marketplace_&]:flex [.customer-marketplace_&]:items-center [.customer-marketplace_&]:justify-between [.customer-marketplace_&]:gap-[10px] [.customer-marketplace_&]:mt-[9px] [.customer-marketplace_&]:pt-[6px] [.customer-marketplace_&]:border-t [.customer-marketplace_&]:border-t-[#efe7e1]">
-          {toggleCompare && (
-            <label className="cm-compare-label relative z-20 [.customer-marketplace_&]:flex [.customer-marketplace_&]:items-center [.customer-marketplace_&]:mt-[14px] [.customer-marketplace_&_input]:w-[16px] [.customer-marketplace.cm-browse_&]:gap-[7px] [.customer-marketplace.cm-browse_&]:mt-0 [.customer-marketplace.cm-browse_&]:text-[10px] [.customer-marketplace.cm-browse_&]:text-[#9c8b86] [.customer-marketplace.cm-browse_&_input]:w-[13px] [.customer-marketplace.cm-browse_&_input]:h-[13px] [.customer-marketplace.cm-browse_&_input]:[accent-color:#8c414e]">
-              <input
-                type="checkbox"
-                checked={compare}
-                disabled={compareFull && !compare}
-                onChange={() => toggleCompare(item)}
-              />
-              Compare
-            </label>
-          )}
-          {type !== "Vendor" && <Link className="cm-card-details [.customer-marketplace_&]:inline-flex [.customer-marketplace_&]:items-center [.customer-marketplace_&]:justify-end [.customer-marketplace_&]:gap-[6px] [.customer-marketplace_&]:min-h-[24px] [.customer-marketplace_&]:ml-auto [.customer-marketplace_&]:text-[#8c414e] [.customer-marketplace_&]:text-[11px] [.customer-marketplace_&]:font-medium [.customer-marketplace_&:hover]:underline [.customer-marketplace_&:hover]:[text-underline-offset:4px]" to={path}>
-            View details <ArrowUpRight size={15} />
-          </Link>}
-        </div>}
         {type === "Vendor" && (
           <div className="relative z-20 mt-auto grid grid-cols-2 gap-2 pt-4">
             <button
@@ -298,8 +281,7 @@ export default function BrowsePage({ embedded = false }) {
     location = useLocation(),
     catalog = useMarketplace("/catalog"),
     [open, setOpen] = useState(false),
-    [view, setView] = useState("grid"),
-    [compare, setCompare] = useState([]);
+    [view, setView] = useState("grid");
   const kind = embedded
     ? params.get("type") || "services"
     : { vendors: "vendors", packages: "packages", offers: "offers" }[
@@ -477,14 +459,6 @@ export default function BrowsePage({ embedded = false }) {
       </details>
     </>
   );
-  const toggleCompare = (item) =>
-    setCompare((current) =>
-      current.some((i) => i.id === item.id)
-        ? current.filter((i) => i.id !== item.id)
-        : current.length < 3
-          ? [...current, item]
-          : current,
-    );
   return (
     <main
       className={`customer-marketplace [&]:max-w-[1320px] [&]:m-auto [&]:pt-[140px] [&]:px-[32px] [&]:pb-[70px] [&]:text-[#302725] [&]:[font-family:inherit] [&]:min-h-[70vh] [&]:wrap-anywhere [&_*]:box-border [&_h1]:[font:clamp(32px,_5vw,_56px)/1.12_Georgia,_serif] [&_h1]:my-[20px] [&_h1]:mx-0 [&_h2]:[font:28px/1.2_Georgia,_serif] [&_h2]:my-[20px] [&_h2]:mx-0 [&_h3]:[font:21px/1.3_Georgia,_serif] [&_h3]:my-[10px] [&_h3]:mx-0 [&_p]:leading-[1.7] [&_.cm-actions]:flex [&_.cm-actions]:items-center [&_.cm-actions]:gap-[12px] [&_.cm-actions]:flex-wrap [&_.cm-actions]:my-[20px] [&_.cm-actions]:mx-0 [&_button]:cursor-pointer [&_button]:border [&_button]:border-[#dfd4ce] [&_button]:rounded-[9px] [&_button]:bg-white [&_button]:py-[11px] [&_button]:px-[16px] [&_button]:inline-flex [&_button]:gap-[8px] [&_button]:items-center [&_button]:text-inherit [&_button]:no-underline [&_button]:[font:inherit] [&_.cm-button]:cursor-pointer [&_.cm-button]:border [&_.cm-button]:border-[#dfd4ce] [&_.cm-button]:rounded-[9px] [&_.cm-button]:bg-white [&_.cm-button]:py-[11px] [&_.cm-button]:px-[16px] [&_.cm-button]:inline-flex [&_.cm-button]:gap-[8px] [&_.cm-button]:items-center [&_.cm-button]:text-inherit [&_.cm-button]:no-underline [&_.cm-button]:[font:inherit] [&_button:disabled]:opacity-45 [&_button:disabled]:[cursor:not-allowed] [&_.cm-primary]:bg-[#8c414e] [&_.cm-primary]:text-white [&_.cm-primary]:border-[#8c414e] [&_:focus-visible]:outline-3 [&_:focus-visible]:outline-[#8c414e] [&_:focus-visible]:outline-offset-[3px] [&_input]:bg-white [&_input]:border [&_input]:border-[#dfd4ce] [&_input]:rounded-[8px] [&_input]:p-[11px] [&_input]:w-full [&_input]:[font:inherit] [&_input]:text-inherit [&_input]:min-w-0 [&_select]:bg-white [&_select]:border [&_select]:border-[#dfd4ce] [&_select]:rounded-[8px] [&_select]:p-[11px] [&_select]:w-full [&_select]:[font:inherit] [&_select]:text-inherit [&_select]:min-w-0 [&_label]:grid [&_label]:gap-[7px] [&_label]:text-[13px] [&_table]:w-full [&_table]:border-collapse [&_th]:text-left [&_th]:border-b [&_th]:border-b-[#e8dfd9] [&_th]:p-[12px] [&_th]:min-w-[130px] [&_td]:text-left [&_td]:border-b [&_td]:border-b-[#e8dfd9] [&_td]:p-[12px] [&_td]:min-w-[130px] max-[760.001px]:[&]:pt-[110px] max-[760.001px]:[&]:px-[18px] max-[760.001px]:[&]:pb-[40px] cm-browse [.customer-marketplace&]:max-w-[1440px] [.customer-marketplace&]:pt-[28px] [.customer-marketplace&]:px-[5%] [.customer-marketplace&]:pb-[72px] [.customer-marketplace&]:text-[#3d3032] max-[760.001px]:[.customer-marketplace&]:pt-[20px] max-[760.001px]:[.customer-marketplace&]:px-[6%] max-[760.001px]:[.customer-marketplace&]:pb-[45px] ${embedded ? "cm-embedded [.customer-marketplace&]:p-0 [.customer-marketplace&]:max-w-none [.customer-marketplace.cm-browse&]:p-0" : ""}`}
@@ -684,16 +658,11 @@ export default function BrowsePage({ embedded = false }) {
             <ReadState state={results} />
           ) : results.data?.rows.length ? (
             <>
-              <div className={`cm-grid [.customer-marketplace_&]:grid [.customer-marketplace_&]:grid-cols-[repeat(3,_minmax(0,_1fr))] [.customer-marketplace_&]:gap-[22px] [.customer-marketplace_&.cm-list]:grid-cols-[1fr] max-[1100.001px]:[.customer-marketplace_&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[480.001px]:[.customer-marketplace_&]:grid-cols-[1fr] max-[480.001px]:[.customer-marketplace_&.cm-list_.cm-card]:grid-cols-[1fr] [.customer-marketplace.cm-browse_&]:gap-[20px] [.customer-marketplace.cm-browse_&:not(.cm-list)]:grid-cols-[repeat(auto-fill,_minmax(min(100%,_300px),_300px))] [.customer-marketplace.cm-browse_&:not(.cm-list)]:[justify-content:start] max-[1100.001px]:[.customer-marketplace.cm-browse_&]:gap-[16px] max-[1100.001px]:[.customer-marketplace.cm-browse_&.cm-list]:grid-cols-[1fr] max-[520.001px]:[.customer-marketplace.cm-browse_&]:gap-[20px] max-[520.001px]:[.customer-marketplace.cm-browse_&.cm-list_.cm-card]:grid-cols-[110px_minmax(0,_1fr)] ${view === "list" ? "cm-list [.customer-marketplace_&_.cm-card]:grid [.customer-marketplace_&_.cm-card]:grid-cols-[210px_1fr] [.customer-marketplace_&_.cm-photo]:[aspect-ratio:auto] [.customer-marketplace_&_.cm-photo]:min-h-[190px] max-[760.001px]:[.customer-marketplace_&_.cm-card]:grid-cols-[130px_1fr] [.customer-marketplace.cm-browse_&_.cm-card]:grid [.customer-marketplace.cm-browse_&_.cm-card]:grid-cols-[minmax(200px,_34%)_minmax(0,_1fr)] [.customer-marketplace.cm-browse_&_.cm-photo]:h-full [.customer-marketplace.cm-browse_&_.cm-photo]:min-h-[260px] [.customer-marketplace.cm-browse_&_.cm-photo]:[aspect-ratio:auto] [.customer-marketplace.cm-browse_&_.cm-card-body]:p-[24px] [.customer-marketplace.cm-browse_&_.cm-card-body_>_.cm-actions]:max-w-[240px] max-[1100.001px]:[.customer-marketplace.cm-browse_&_.cm-card]:grid-cols-[minmax(160px,_35%)_minmax(0,_1fr)] max-[760.001px]:[.customer-marketplace.cm-browse_&_.cm-card-body]:p-[17px] max-[520.001px]:[.customer-marketplace.cm-browse_&_.cm-photo]:min-h-[230px] max-[520.001px]:[.customer-marketplace.cm-browse_&_.cm-card_h3]:text-[19px] max-[520.001px]:[.customer-marketplace.cm-browse_&_.cm-card-body]:p-[12px] max-[520.001px]:[.customer-marketplace_&_.cm-discovery-card_.commerce-price]:flex-wrap max-[520.001px]:[.customer-marketplace_&_.cm-discovery-card_.commerce-offer-actions]:flex-wrap max-[520.001px]:[.customer-marketplace_&_.cm-discovery-card_.commerce-offer-actions_>_button]:[flex-basis:70px] max-[520.001px]:[.customer-marketplace_&_.cm-discovery-card_.commerce-offer-actions_>_a]:[flex-basis:70px] max-[520.001px]:[.customer-marketplace_&_.cm-discovery-card_.cm-card-footer]:flex-wrap max-[520.001px]:[.customer-marketplace.cm-browse_&_.cm-card-topline]:items-start max-[520.001px]:[.customer-marketplace.cm-browse_&_.cm-card-topline]:flex-col" : ""}`}>
+              <div className={`cm-grid [.customer-marketplace_&]:grid [.customer-marketplace_&]:grid-cols-[repeat(3,_minmax(0,_1fr))] [.customer-marketplace_&]:gap-[22px] [.customer-marketplace_&.cm-list]:grid-cols-[1fr] max-[1100.001px]:[.customer-marketplace_&]:grid-cols-[repeat(2,_minmax(0,_1fr))] max-[480.001px]:[.customer-marketplace_&]:grid-cols-[1fr] max-[480.001px]:[.customer-marketplace_&.cm-list_.cm-card]:grid-cols-[1fr] [.customer-marketplace.cm-browse_&]:gap-[20px] [.customer-marketplace.cm-browse_&:not(.cm-list)]:grid-cols-[repeat(auto-fill,_minmax(min(100%,_300px),_300px))] [.customer-marketplace.cm-browse_&:not(.cm-list)]:[justify-content:start] max-[1100.001px]:[.customer-marketplace.cm-browse_&]:gap-[16px] max-[1100.001px]:[.customer-marketplace.cm-browse_&.cm-list]:grid-cols-[1fr] max-[520.001px]:[.customer-marketplace.cm-browse_&]:gap-[20px] max-[520.001px]:[.customer-marketplace.cm-browse_&.cm-list_.cm-card]:grid-cols-[110px_minmax(0,_1fr)] ${view === "list" ? "cm-list [.customer-marketplace_&_.cm-card]:grid [.customer-marketplace_&_.cm-card]:grid-cols-[210px_1fr] [.customer-marketplace_&_.cm-photo]:[aspect-ratio:auto] [.customer-marketplace_&_.cm-photo]:min-h-[190px] max-[760.001px]:[.customer-marketplace_&_.cm-card]:grid-cols-[130px_1fr] [.customer-marketplace.cm-browse_&_.cm-card]:grid [.customer-marketplace.cm-browse_&_.cm-card]:grid-cols-[minmax(200px,_34%)_minmax(0,_1fr)] [.customer-marketplace.cm-browse_&_.cm-photo]:h-full [.customer-marketplace.cm-browse_&_.cm-photo]:min-h-[260px] [.customer-marketplace.cm-browse_&_.cm-photo]:[aspect-ratio:auto] [.customer-marketplace.cm-browse_&_.cm-card-body]:p-[24px] [.customer-marketplace.cm-browse_&_.cm-card-body_>_.cm-actions]:max-w-[240px] max-[1100.001px]:[.customer-marketplace.cm-browse_&_.cm-card]:grid-cols-[minmax(160px,_35%)_minmax(0,_1fr)] max-[760.001px]:[.customer-marketplace.cm-browse_&_.cm-card-body]:p-[17px] max-[520.001px]:[.customer-marketplace.cm-browse_&_.cm-photo]:min-h-[230px] max-[520.001px]:[.customer-marketplace.cm-browse_&_.cm-card_h3]:text-[19px] max-[520.001px]:[.customer-marketplace.cm-browse_&_.cm-card-body]:p-[12px] max-[520.001px]:[.customer-marketplace_&_.cm-discovery-card_.commerce-price]:flex-wrap max-[520.001px]:[.customer-marketplace_&_.cm-discovery-card_.commerce-offer-actions]:flex-wrap max-[520.001px]:[.customer-marketplace_&_.cm-discovery-card_.commerce-offer-actions_>_button]:[flex-basis:70px] max-[520.001px]:[.customer-marketplace_&_.cm-discovery-card_.commerce-offer-actions_>_a]:[flex-basis:70px] max-[520.001px]:[.customer-marketplace.cm-browse_&_.cm-card-topline]:items-start max-[520.001px]:[.customer-marketplace.cm-browse_&_.cm-card-topline]:flex-col" : ""}`}>
                 {results.data.rows.map((item) => (
                   <DiscoveryCard
                     key={item.id}
                     item={item}
-                    compare={compare.some((c) => c.id === item.id)}
-                    compareFull={compare.length >= 3}
-                    toggleCompare={
-                      kind === "services" ? toggleCompare : undefined
-                    }
                   />
                 ))}
               </div>
@@ -751,42 +720,6 @@ export default function BrowsePage({ embedded = false }) {
           )}
         </section>
       </div>
-      {compare.length > 0 && (
-        <section className="cm-panel [.customer-marketplace_&]:border [.customer-marketplace_&]:border-[#e8dfd9] [.customer-marketplace_&]:rounded-[16px] [.customer-marketplace_&]:p-[24px] [.customer-marketplace_&]:mb-[20px] [.customer-marketplace_&]:bg-white">
-          <h2>Compare your shortlist ({compare.length}/3)</h2>
-          <div className="cm-table-wrap [.customer-marketplace_&]:max-w-full [.customer-marketplace_&]:overflow-auto">
-            <table>
-              <thead>
-                <tr>
-                  <th>Service</th>
-                  {compare.map((i) => (
-                    <th key={i.id}>
-                      <Link to={`/services/${i.id}`}>{i.name}</Link>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ["Vendor", (i) => i.vendor],
-                  ["Starting price", (i) => money(i.price)],
-                  ["Location", (i) => i.city],
-                  ["Rating", (i) => Number(i.rating || 0).toFixed(1)],
-                  ["Guest limit", (i) => i.maxGuests || "Flexible"],
-                ].map(([label, value]) => (
-                  <tr key={label}>
-                    <th>{label}</th>
-                    {compare.map((i) => (
-                      <td key={i.id}>{value(i)}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <button onClick={() => setCompare([])}>Clear comparison</button>
-        </section>
-      )}
     </main>
   );
 }
