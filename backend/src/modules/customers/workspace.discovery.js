@@ -270,7 +270,7 @@ export async function publicVendorDetails(id) {
       { id },
     ),
     repo.select(
-      `SELECT TOP(20) r.ReviewId AS id,CONCAT(u.FirstName,' ',LEFT(u.LastName,1)) AS customer,r.Rating AS rating,r.ReviewText AS text,r.IsVerified AS verified FROM dbo.Reviews r JOIN dbo.Users u ON u.UserId=r.CustomerId WHERE r.VendorId=:id AND r.BookingItemId IS NULL AND ${publicPredicate()} ORDER BY r.CreatedAt DESC,r.ReviewId`,
+      `SELECT TOP(20) r.ReviewId AS id,CONCAT(u.FirstName,' ',LEFT(u.LastName,1)) AS customer,r.Rating AS rating,r.ReviewText AS text,r.IsVerified AS verified FROM dbo.Reviews r JOIN dbo.Users u ON u.UserId=r.CustomerId WHERE r.VendorId=:id AND r.BookingItemId IS NULL AND r.OrderItemId IS NULL AND ${publicPredicate()} ORDER BY r.CreatedAt DESC,r.ReviewId`,
       { id },
     ),
   ]);

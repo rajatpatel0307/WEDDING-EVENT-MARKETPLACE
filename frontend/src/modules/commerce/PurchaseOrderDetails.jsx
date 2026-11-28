@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Check, CheckCheck, Clock3, Download, Heart, LoaderCircle,
-  LockKeyhole, MapPin, Package, Phone, ReceiptText, RefreshCw, ShieldCheck, ShoppingBag,
+  LockKeyhole, MapPin, Package, Phone, ReceiptText, RefreshCw, ShieldCheck, ShoppingBag, Star,
 } from "lucide-react";
 import { money } from "../customer/services/workspace.api";
 import OrderTracking from "./OrderTracking";
@@ -22,12 +22,14 @@ function CardHeading({ id, eyebrow, title, children }) {
   </header>;
 }
 
-export default function PurchaseOrderDetails({ data, busy, error, notice, onPay, onRefresh, invoiceBusy = false, invoiceError, onDownloadInvoice }) {
+export default function PurchaseOrderDetails({ data, busy, error, notice, onPay, onRefresh, onReview, invoiceBusy = false, invoiceError, onDownloadInvoice }) {
   const paid = data.paymentStatus === "Paid";
   const address = data.address || {};
   const lines = data.lines || [];
   const addressLines = [address.line1, address.line2, [address.city, address.state, address.postalCode].filter(Boolean).join(", "), address.country].filter(Boolean);
   const quantity = lines.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const delivered = paid && data.status === "Delivered";
+  const feedback = lines.filter(item => item.review || (delivered && item.status === "Delivered" && item.canReview));
 
   return <div className="mx-auto w-full min-w-0 max-w-[1360px] font-[Inter,'Segoe_UI',sans-serif] text-[13px] leading-[1.7] text-[#49363e] [&_svg]:shrink-0 [&_button]:cursor-pointer [&_button:disabled]:cursor-wait [&_button:disabled]:opacity-55 [&_a]:no-underline">
     <nav className="mb-[25px] flex flex-wrap items-center gap-3 text-[11px] text-[#a08d8c] max-[600px]:mb-[23px] max-[600px]:text-[10px]" aria-label="Breadcrumb"><Link className="inline-flex items-center gap-2 text-[#916173] hover:text-[#873f52] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#873f52]" to="/customer/orders"><ArrowLeft size={15} aria-hidden="true" /> My Orders</Link><span className="text-[#c5b6ac]" aria-hidden="true">/</span><span>Order details</span></nav>
@@ -108,6 +110,20 @@ export default function PurchaseOrderDetails({ data, busy, error, notice, onPay,
           </div>
           <footer className="flex items-center justify-center gap-[7px] border-t border-[#eee5dc] bg-[#fdfaf6] px-[18px] py-[13px] text-[9px] text-[#aa9684]"><ShieldCheck size={15} aria-hidden="true" /> Checkout powered by Razorpay</footer>
         </section>
+        {(delivered || feedback.length > 0) && <section className="min-w-0 overflow-hidden rounded-xl border border-[#ece2dc] bg-white shadow-[0_4px_18px_#593f3503]" aria-labelledby="pod-reviews-title">
+          <header className="flex items-center gap-2.5 border-b border-[#eaded9] bg-[#fbf3f1] px-5 py-4 text-[#ad817d]"><Star size={18} aria-hidden="true" /><h2 id="pod-reviews-title" className="m-0! font-serif! text-xl! font-normal! text-[#6b4550]!">Ratings &amp; reviews</h2></header>
+          <div className="divide-y divide-[#eee5dd] px-5">
+            {feedback.map(item => <article key={item.id} className="min-w-0 space-y-3 py-5">
+              <div><h3 className="m-0! break-words text-sm! font-semibold! text-[#735746]!">{item.name}</h3><p className="mt-1 text-[10px]! text-[#9a8065]!">{item.vendor}</p></div>
+              {item.review ? <>
+                <div className="flex flex-wrap items-center gap-2.5" role="img" aria-label={`Your rating for ${item.name}: ${item.review.rating} out of 5 stars`}><span className="flex gap-1 text-[#b28a43]" aria-hidden="true">{[1, 2, 3, 4, 5].map(star => <Star key={star} size={16} strokeWidth={1.5} fill={star <= Number(item.review.rating) ? "currentColor" : "none"} />)}</span><strong className="text-xs font-semibold tabular-nums text-[#674d3d]" aria-hidden="true">{item.review.rating} / 5</strong></div>
+                {item.review.title && <p className="break-words text-xs! font-medium text-[#674e57]!">{item.review.title}</p>}
+                <p className="whitespace-pre-wrap break-words text-xs! leading-relaxed! text-[#857564]!">{item.review.text}</p>
+              </> : <button type="button" disabled={busy || !onReview} onClick={() => onReview?.(item.id)} aria-label={`Write a review for ${item.name}`} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#873f52] px-4 py-3 text-xs font-medium text-white transition-colors hover:bg-[#713347] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#873f52]"><Star size={15} aria-hidden="true" />Write a review</button>}
+            </article>)}
+            {!feedback.length && <p className="py-5 text-xs! text-[#95817c]!">There are no remaining items to review for this order.</p>}
+          </div>
+        </section>}
         <div className="flex items-start gap-3 rounded-[10px] border border-[#e9dfcf] bg-[#f9f3e9] p-[19px]"><span className="text-[#b59b72]"><ShieldCheck size={19} strokeWidth={1.4} aria-hidden="true" /></span><div><strong className="text-[11px] font-medium text-[#a08260]">{paid ? "One more detail taken care of" : "A little closer to your celebration"}</strong><p className="mt-[6px] text-[10px]! leading-[1.9]! text-[#ad9784]!">{paid ? "Keep your order reference handy for any questions about your purchase." : "Review your order details, then continue to checkout when you’re ready."}</p></div></div>
       </aside>
     </div>

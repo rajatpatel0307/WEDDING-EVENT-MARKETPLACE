@@ -44,5 +44,16 @@ export function editAllowed(row, now = Date.now()) {
     now - new Date(row.CreatedAt).getTime() <= days * 86400000
   );
 }
+export function assertOrderEligibility(order, customerId, item) {
+  if (!order || !sameId(order.CustomerId, customerId))
+    throw Object.assign(new Error("Order not found in your account."), { status: 404 });
+  if (order.OrderStatus !== "Delivered" || order.PaymentStatus !== "Paid")
+    throw Object.assign(new Error("Only paid, delivered orders can be reviewed."), { status: 409 });
+  if (!item || !sameId(item.OrderId, order.OrderId) || item.FulfillmentStatus !== "Delivered")
+    throw Object.assign(new Error("Choose a delivered item from this order."), { status: 409 });
+}
 export const publicPredicate = (alias = "r") =>
-  `${alias}.ModerationStatus='Approved' AND ${alias}.IsPublished=1 AND ${alias}.DeletedAt IS NULL AND ${alias}.IsVerified=1 AND EXISTS(SELECT 1 FROM dbo.Booking rb WHERE rb.BookingId=${alias}.BookingId AND rb.CustomerId=${alias}.CustomerId AND rb.VendorId=${alias}.VendorId AND rb.BookingStatus='Completed')`;
+  `${alias}.ModerationStatus='Approved' AND ${alias}.IsPublished=1 AND ${alias}.DeletedAt IS NULL AND ${alias}.IsVerified=1 AND (
+    (${alias}.OrderId IS NULL AND EXISTS(SELECT 1 FROM dbo.Booking rb WHERE rb.BookingId=${alias}.BookingId AND rb.CustomerId=${alias}.CustomerId AND rb.VendorId=${alias}.VendorId AND rb.BookingStatus='Completed')) OR
+    (${alias}.BookingId IS NULL AND EXISTS(SELECT 1 FROM dbo.Orders ro JOIN dbo.OrderLineItems ri ON ri.OrderId=ro.OrderId WHERE ro.OrderId=${alias}.OrderId AND ro.CustomerId=${alias}.CustomerId AND ro.OrderStatus='Delivered' AND ro.PaymentStatus='Paid' AND ri.ItemId=${alias}.OrderItemId AND ri.VendorId=${alias}.VendorId AND ri.FulfillmentStatus='Delivered'))
+  )`;

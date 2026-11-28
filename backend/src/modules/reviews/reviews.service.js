@@ -9,6 +9,7 @@ import {
 } from "../../middleware/auth.middleware.js";
 import {
   assertEligibility,
+  assertOrderEligibility,
   editAllowed,
   publicPredicate,
   sameId,
@@ -77,7 +78,7 @@ export async function reconcile(vendorId, tx) {
     tx,
   );
   await db.select(
-    `UPDATE dbo.Vendors SET AverageRating=(SELECT COALESCE(AVG(CAST(r.Rating AS decimal(10,2))),0) FROM dbo.Reviews r WHERE r.VendorId=:vendorId AND r.BookingItemId IS NULL AND ${publicPredicate()}),TotalReviews=(SELECT COUNT(*) FROM dbo.Reviews r WHERE r.VendorId=:vendorId AND r.BookingItemId IS NULL AND ${publicPredicate()}) WHERE VendorId=:vendorId`,
+    `UPDATE dbo.Vendors SET AverageRating=(SELECT COALESCE(AVG(CAST(r.Rating AS decimal(10,2))),0) FROM dbo.Reviews r WHERE r.VendorId=:vendorId AND r.BookingItemId IS NULL AND r.OrderItemId IS NULL AND ${publicPredicate()}),TotalReviews=(SELECT COUNT(*) FROM dbo.Reviews r WHERE r.VendorId=:vendorId AND r.BookingItemId IS NULL AND r.OrderItemId IS NULL AND ${publicPredicate()}) WHERE VendorId=:vendorId`,
     { vendorId },
     tx,
   );
@@ -88,6 +89,34 @@ export async function eligible(ctx) {
     `SELECT b.BookingId AS bookingId,b.BookingNumber AS number,b.VendorId AS vendorId,v.BusinessName AS vendor,bi.BookingItemId AS bookingItemId,bi.ItemName AS service FROM dbo.Booking b JOIN dbo.Vendors v ON v.VendorId=b.VendorId LEFT JOIN dbo.BookingItems bi ON bi.BookingId=b.BookingId JOIN dbo.Services s ON s.ServiceId=bi.ServiceId AND s.VendorId=b.VendorId WHERE b.CustomerId=:user AND b.BookingStatus='Completed' ORDER BY b.CreatedAt DESC`,
     { user: user.id },
   );
+}
+export async function eligibleOrders(ctx) {
+  const user = who(ctx, "Customer");
+  return db.select(
+    `SELECT o.OrderId AS orderId,o.OrderNumber AS number,i.ItemId AS orderItemId,
+      i.ProductNameSnapshot AS service,i.VendorId AS vendorId,v.BusinessName AS vendor
+      FROM dbo.Orders o JOIN dbo.OrderLineItems i ON i.OrderId=o.OrderId
+      JOIN dbo.Vendors v ON v.VendorId=i.VendorId
+      WHERE o.CustomerId=:user AND o.OrderStatus='Delivered' AND o.PaymentStatus='Paid'
+      AND i.FulfillmentStatus='Delivered'
+      AND NOT EXISTS(SELECT 1 FROM dbo.Reviews r WHERE r.OrderId=o.OrderId AND r.OrderItemId=i.ItemId)
+      ORDER BY o.CreatedAt DESC,i.ItemId`,
+    { user: user.id },
+  );
+}
+async function orderReviewTarget(orderId, orderItemId, customerId, tx, lockOrder = true) {
+  const [order] = await db.select(
+    `SELECT * FROM dbo.Orders ${lockOrder ? "WITH(UPDLOCK,HOLDLOCK)" : ""} WHERE OrderId=:id AND CustomerId=:customerId`,
+    { id: orderId, customerId }, tx,
+  );
+  if (!order) fail("Order not found in your account.", 404);
+  const [item] = await db.select(
+    `SELECT i.*,p.ServiceId FROM dbo.OrderLineItems i JOIN dbo.Products p ON p.ProductId=i.ProductId
+      WHERE i.ItemId=:item AND i.OrderId=:orderId`,
+    { item: orderItemId, orderId }, tx,
+  );
+  assertOrderEligibility(order, customerId, item);
+  return { order, item };
 }
 export function validateImages(images) {
   for (const img of images) {
@@ -172,6 +201,26 @@ const values = (b) => ({
   ValueForMoneyRating: b.valueForMoneyRating ?? null,
   ProfessionalismRating: b.professionalismRating ?? null,
 });
+async function createOrderReview(b, user, ctx, tx, uploaded) {
+  const { item } = await orderReviewTarget(b.orderId, b.orderItemId, user.id, tx);
+  const [old] = await db.select(
+    "SELECT ReviewId FROM dbo.Reviews WHERE OrderId=:orderId AND OrderItemId=:item",
+    { orderId: b.orderId, item: b.orderItemId }, tx,
+  );
+  if (old) fail("This delivered item has already been reviewed.", 409);
+  const review = await insert("Reviews", "ReviewId", {
+    BookingId: null, BookingItemId: null, OrderId: b.orderId, OrderItemId: b.orderItemId,
+    CustomerId: user.id, VendorId: item.VendorId, ServiceId: item.ServiceId || null,
+    ...values(b), IsVerified: 1, IsPublished: 1, ModerationStatus: "Approved",
+  }, tx);
+  await saveImages(review.id, b, tx, uploaded, ctx);
+  await reconcile(item.VendorId, tx);
+  await audit(ctx, "PUBLISHED", review.id, null, { ...values(b), orderId: b.orderId, orderItemId: b.orderItemId }, tx);
+  await notify(user.id, "Your review is now published", review.id, tx);
+  const [vendor] = await db.select("SELECT UserId FROM dbo.Vendors WHERE VendorId=:id", { id: item.VendorId }, tx);
+  if (vendor) await notify(vendor.UserId, "New delivered-order review published", review.id, tx);
+  return { id: review.id, message: "Thank you. Your order review is now published." };
+}
 export async function create(input, ctx) {
   const user = who(ctx, "Customer"),
     b = v.createInput.parse(input);
@@ -181,6 +230,7 @@ export async function create(input, ctx) {
   const uploaded = [];
   try {
     return await db.transaction(async (tx) => {
+      if (b.orderId) return createOrderReview(b, user, ctx, tx, uploaded);
       const [booking] = await db.select(
         "SELECT * FROM dbo.Booking WITH(UPDLOCK,HOLDLOCK) WHERE BookingId=:id",
         { id: b.bookingId },
@@ -264,6 +314,8 @@ export async function edit(id, input, ctx, remove = false) {
       if (r.DeletedAt) fail("Review already deleted.", 409);
       if (!remove && !editAllowed(r))
         fail("The review editing window is closed.", 409);
+      if (!remove && r.OrderId)
+        await orderReviewTarget(r.OrderId, r.OrderItemId, user.id, tx, false);
       const next = remove
         ? { DeletedAt: new Date(), IsPublished: 0 }
         : {
@@ -367,13 +419,13 @@ function filter(input, role, user, target) {
     z.guid().parse(target.id);
     clauses.push(`r.${col}=:target`);
     p.target = target.id;
-    if (target.type === "vendor") clauses.push("r.BookingItemId IS NULL");
+    if (target.type === "vendor") clauses.push("r.BookingItemId IS NULL AND r.OrderItemId IS NULL");
   }
   if (role !== "Admin") clauses.push("r.DeletedAt IS NULL");
   return { b, p, where: clauses.join(" AND ") || "1=1" };
 }
 const source =
-  "FROM dbo.Reviews r JOIN dbo.Users u ON u.UserId=r.CustomerId JOIN dbo.Vendors v ON v.VendorId=r.VendorId LEFT JOIN dbo.Services s ON s.ServiceId=r.ServiceId LEFT JOIN dbo.ServicePackages p ON p.PackageId=r.PackageId";
+  "FROM dbo.Reviews r JOIN dbo.Users u ON u.UserId=r.CustomerId JOIN dbo.Vendors v ON v.VendorId=r.VendorId LEFT JOIN dbo.Services s ON s.ServiceId=r.ServiceId LEFT JOIN dbo.ServicePackages p ON p.PackageId=r.PackageId LEFT JOIN dbo.OrderLineItems oi ON oi.ItemId=r.OrderItemId";
 async function enrich(rows, role) {
   if (!rows.length) return rows;
   const ids = rows.map((r) => r.id);
@@ -413,7 +465,7 @@ export async function list(input, ctx, role = "Public", target) {
     p,
   );
   const rows = await db.select(
-    `SELECT r.ReviewId AS id,r.BookingId AS bookingId,r.BookingItemId AS bookingItemId,r.ServiceId AS serviceId,r.VendorId AS vendorId,r.Rating AS rating,r.ReviewTitle AS title,r.ReviewText AS text,r.CreatedAt AS createdAt,r.UpdatedAt AS updatedAt,r.ModerationStatus AS status,r.IsVerified AS verified,r.ModerationReason AS reason,r.ServiceQualityRating AS serviceQualityRating,r.CommunicationRating AS communicationRating,r.ValueForMoneyRating AS valueForMoneyRating,r.ProfessionalismRating AS professionalismRating,r.CreatedAt,r.DeletedAt,r.ModerationStatus,CONCAT(u.FirstName,' ',LEFT(u.LastName,1)) AS customer,v.BusinessName AS vendor,s.ServiceName AS service,p.PackageName AS package ${source} WHERE ${where} ORDER BY r.CreatedAt DESC,r.ReviewId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
+    `SELECT r.ReviewId AS id,r.BookingId AS bookingId,r.BookingItemId AS bookingItemId,r.OrderId AS orderId,r.OrderItemId AS orderItemId,r.ServiceId AS serviceId,r.VendorId AS vendorId,r.Rating AS rating,r.ReviewTitle AS title,r.ReviewText AS text,r.CreatedAt AS createdAt,r.UpdatedAt AS updatedAt,r.ModerationStatus AS status,r.IsVerified AS verified,r.ModerationReason AS reason,r.ServiceQualityRating AS serviceQualityRating,r.CommunicationRating AS communicationRating,r.ValueForMoneyRating AS valueForMoneyRating,r.ProfessionalismRating AS professionalismRating,r.CreatedAt,r.DeletedAt,r.ModerationStatus,CONCAT(u.FirstName,' ',LEFT(u.LastName,1)) AS customer,v.BusinessName AS vendor,COALESCE(oi.ProductNameSnapshot,s.ServiceName) AS service,p.PackageName AS package ${source} WHERE ${where} ORDER BY r.CreatedAt DESC,r.ReviewId OFFSET :offset ROWS FETCH NEXT :size ROWS ONLY`,
     p,
   );
   await enrich(rows, role);
@@ -426,6 +478,8 @@ export async function list(input, ctx, role = "Public", target) {
       delete row.reason;
       delete row.bookingId;
       delete row.bookingItemId;
+      delete row.orderId;
+      delete row.orderItemId;
       delete row.status;
       delete row.canEdit;
     }
@@ -448,7 +502,7 @@ export async function details(id, ctx, role = "Customer") {
   const [row] = await enrich([{ ...r, id: r.ReviewId }], role);
   if (role === "Admin") {
     const [info] = await db.select(
-      "SELECT CONCAT(u.FirstName,' ',u.LastName) AS CustomerName,u.Email AS CustomerEmail,v.BusinessName AS VendorName,b.BookingNumber,s.ServiceName FROM dbo.Reviews r JOIN dbo.Users u ON u.UserId=r.CustomerId JOIN dbo.Vendors v ON v.VendorId=r.VendorId JOIN dbo.Booking b ON b.BookingId=r.BookingId LEFT JOIN dbo.Services s ON s.ServiceId=r.ServiceId WHERE r.ReviewId=:id",
+      "SELECT CONCAT(u.FirstName,' ',u.LastName) AS CustomerName,u.Email AS CustomerEmail,v.BusinessName AS VendorName,b.BookingNumber,o.OrderNumber,COALESCE(oi.ProductNameSnapshot,s.ServiceName) AS ServiceName FROM dbo.Reviews r JOIN dbo.Users u ON u.UserId=r.CustomerId JOIN dbo.Vendors v ON v.VendorId=r.VendorId LEFT JOIN dbo.Booking b ON b.BookingId=r.BookingId LEFT JOIN dbo.Orders o ON o.OrderId=r.OrderId LEFT JOIN dbo.OrderLineItems oi ON oi.ItemId=r.OrderItemId LEFT JOIN dbo.Services s ON s.ServiceId=r.ServiceId WHERE r.ReviewId=:id",
       { id },
     );
     Object.assign(row, info);
@@ -520,12 +574,15 @@ export async function moderate(id, action, input, ctx) {
     if (r.DeletedAt) fail("Deleted reviews cannot be published.", 409);
     if (r.ModerationStatus === status)
       return { message: "Review already has this status." };
-    const [booking] = await db.select(
-      "SELECT * FROM dbo.Booking WHERE BookingId=:id",
-      { id: r.BookingId },
-      tx,
-    );
-    if (status === "Approved") assertEligibility(booking, r.CustomerId);
+    if (status === "Approved") {
+      if (r.OrderId) {
+        const { item } = await orderReviewTarget(r.OrderId, r.OrderItemId, r.CustomerId, tx, false);
+        if (!sameId(item.VendorId, r.VendorId)) fail("Invalid order review target.", 409);
+      } else {
+        const [booking] = await db.select("SELECT * FROM dbo.Booking WHERE BookingId=:id", { id: r.BookingId }, tx);
+        assertEligibility(booking, r.CustomerId);
+      }
+    }
     await update(
       "Reviews",
       "ReviewId",
@@ -822,7 +879,7 @@ export async function analytics(ctx) {
     "SELECT COUNT_BIG(*) AS pendingReports FROM dbo.ReviewReports WHERE ReportStatus='Pending'",
   );
   const vendors = await db.select(
-    `SELECT v.VendorId AS id,v.BusinessName AS name,AVG(CAST(r.Rating AS decimal(10,2))) AS rating,COUNT_BIG(*) AS count FROM dbo.Reviews r JOIN dbo.Vendors v ON v.VendorId=r.VendorId WHERE r.BookingItemId IS NULL AND ${publicPredicate()} GROUP BY v.VendorId,v.BusinessName ORDER BY rating DESC`,
+    `SELECT v.VendorId AS id,v.BusinessName AS name,AVG(CAST(r.Rating AS decimal(10,2))) AS rating,COUNT_BIG(*) AS count FROM dbo.Reviews r JOIN dbo.Vendors v ON v.VendorId=r.VendorId WHERE r.BookingItemId IS NULL AND r.OrderItemId IS NULL AND ${publicPredicate()} GROUP BY v.VendorId,v.BusinessName ORDER BY rating DESC`,
   );
   const trends = await db.select(
     `SELECT CONVERT(char(7),r.CreatedAt,126) AS month,AVG(CAST(r.Rating AS decimal(10,2))) AS rating,COUNT_BIG(*) AS count FROM dbo.Reviews r WHERE ${publicPredicate()} GROUP BY CONVERT(char(7),r.CreatedAt,126) ORDER BY month DESC`,

@@ -78,6 +78,9 @@ export function createReviewRouter({
     );
   }
   for (const root of ["/reviews", "/customer/reviews"]) {
+    route("get", `${root}/eligible-orders`, "Customer", (_, c) =>
+      service.eligibleOrders(c),
+    );
     route("get", `${root}/eligible-bookings`, "Customer", (_, c) =>
       service.eligible(c),
     );

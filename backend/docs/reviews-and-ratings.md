@@ -24,6 +24,23 @@ npm run build
 
 Restart the backend after updating its source. Existing authenticated navigation links open `/customer/reviews`, `/vendor/reviews`, and `/admin/reviews`. `/admin/review-reports` opens the same moderation workspace with the report history section. Public vendor, service, and package detail pages include the review component; customer booking details open the complete submission form.
 
+## Delivered order reviews
+
+Migration `038-order-reviews` adds order targets to the existing review table and preserves booking reviews. A review has either a booking target or an `(orderId, orderItemId)` target. Database constraints and unique indexes enforce this separation and prevent duplicate item reviews, including after deletion.
+
+Customers can review their purchased items after the entire order is paid and delivered. Cancelled items and items from another order are not eligible. The server derives the customer, seller and service from the authenticated order and item; the browser cannot override ownership or delivery state. `GET /api/reviews/eligible-orders` returns only unreviewed delivered items in the customer's account.
+
+The existing order details page shows a separate ratings card with **Write a review** for eligible items. Submitting the shared review form refreshes the order and displays its stars and text in that card. Order feedback also appears in the customer, vendor and admin review workspaces and participates in service ratings, without being mixed into the overall vendor rating. Restoring or editing an order review rechecks delivery eligibility.
+
+```json
+{
+  "orderId": "an-order-guid",
+  "orderItemId": "an-order-item-guid",
+  "rating": 5,
+  "text": "The items arrived on time and matched the description."
+}
+```
+
 ## Configuration
 
 | Variable                                       | Purpose                                                                                                                                   |
@@ -43,9 +60,9 @@ The current database has one vendor per booking and multiple service/package boo
 
 Omit `bookingItemId` for an overall vendor review. Provide a booked item ID for a service/package experience. The unique database index `(BookingId, VendorId, BookingItemId)` and a locked booking transaction prevent duplicates, including duplicates after soft deletion. Customer/vendor/service IDs cannot be supplied as ownership overrides.
 
-New reviews publish immediately without administrator approval. The existing database status `Approved` represents a published review for compatibility with rating and visibility queries. Eligible public reviews must be published, verified, undeleted, and still associated with a completed booking owned by the same customer/vendor. The central `publicPredicate()` is shared by public review queries, ratings, discovery, and management performance views.
+New reviews publish immediately without administrator approval. The existing database status `Approved` represents a published review for compatibility with rating and visibility queries. Eligible public reviews must be published, verified, undeleted, and still associated with a completed booking or a paid, delivered order item owned by the same customer/vendor. The central `publicPredicate()` is shared by public review queries, ratings, discovery, and management performance views.
 
-- **Vendor rating:** only overall vendor reviews (`BookingItemId IS NULL`).
+- **Vendor rating:** only overall vendor reviews (`BookingItemId IS NULL AND OrderItemId IS NULL`).
 - **Service rating:** only reviews explicitly assigned to that `ServiceId`, including package experiences for that service.
 - **Package rating:** only reviews assigned to that exact `PackageId`.
 

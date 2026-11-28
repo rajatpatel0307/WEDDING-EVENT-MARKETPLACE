@@ -156,7 +156,7 @@ export async function list(input, ctx, exporting = false) {
     { id },
   );
   const [rating] = await repo.select(
-    `SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS averageRating FROM dbo.Reviews r WHERE r.VendorId=:id AND r.BookingItemId IS NULL AND ${publicPredicate()}`,
+    `SELECT AVG(CAST(r.Rating AS decimal(6,2))) AS averageRating FROM dbo.Reviews r WHERE r.VendorId=:id AND r.BookingItemId IS NULL AND r.OrderItemId IS NULL AND ${publicPredicate()}`,
     { id },
   );
   return {

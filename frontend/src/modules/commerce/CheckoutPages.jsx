@@ -26,6 +26,7 @@ import CartItem from "./CartItem";
 import AddressForm from "../customer/components/CustomerAddressForm";
 import CustomerOrdersPage from "./CustomerOrdersPage";
 import PurchaseOrderDetails from "./PurchaseOrderDetails";
+import { ReviewForm } from "../reviews/Reviews";
 import { useOrderUpdates } from "./order-live";
 import { categoryImages } from "../../components/home/categoryImages";
 
@@ -682,8 +683,9 @@ export function PurchaseOrder() {
     [notice, setNotice] = useState("");
   const [invoiceBusy, setInvoiceBusy] = useState(false);
   const [invoiceError, setInvoiceError] = useState("");
+  const [reviewItem, setReviewItem] = useState(null);
   useOrderUpdates(state.retry, id);
-  useEffect(() => { setInvoiceError(""); }, [id]);
+  useEffect(() => { setInvoiceError(""); setReviewItem(null); }, [id]);
   async function downloadInvoice() {
     setInvoiceBusy(true);
     setInvoiceError("");
@@ -725,7 +727,7 @@ export function PurchaseOrder() {
   }
   if (state.error) return <ErrorView error={state.error} retry={state.retry} />;
   if (!state.data || state.data.id?.toLowerCase() !== id.toLowerCase()) return <Loading />;
-  return <PurchaseOrderDetails
+  return <><PurchaseOrderDetails
     data={state.data}
     busy={busy}
     error={error}
@@ -735,7 +737,10 @@ export function PurchaseOrder() {
     onDownloadInvoice={downloadInvoice}
     onPay={() => action(true)}
     onRefresh={() => action(false)}
-  />;
+    onReview={setReviewItem}
+  />
+    {reviewItem && <ReviewForm orderId={state.data.id} orderItemId={reviewItem} close={() => setReviewItem(null)} done={(message) => { notify(message); setReviewItem(null); state.retry(); }} />}
+  </>;
 }
 
 export function MyOrders() {

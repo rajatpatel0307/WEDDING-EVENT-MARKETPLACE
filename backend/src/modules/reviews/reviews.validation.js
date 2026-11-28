@@ -31,7 +31,7 @@ export const contentInput = z
   })
   .strict();
 export const createInput = contentInput.extend({
-  bookingId: z.guid(),
+  bookingId: z.guid().optional(),
   bookingItemId: z.coerce
     .number()
     .int()
@@ -39,6 +39,15 @@ export const createInput = contentInput.extend({
     .max(Number.MAX_SAFE_INTEGER)
     .nullable()
     .optional(),
+  orderId: z.guid().optional(),
+  orderItemId: z.guid().optional(),
+}).superRefine((value, ctx) => {
+  if (Boolean(value.bookingId) === Boolean(value.orderId))
+    ctx.addIssue({ code: "custom", message: "Choose exactly one completed booking or delivered order.", path: ["bookingId"] });
+  if (value.orderId && (!value.orderItemId || value.bookingItemId != null))
+    ctx.addIssue({ code: "custom", message: "Choose an item from the delivered order.", path: ["orderItemId"] });
+  if (value.bookingId && value.orderItemId)
+    ctx.addIssue({ code: "custom", message: "Order items cannot be attached to a booking review.", path: ["orderItemId"] });
 });
 export const listInput = z.object({
   page: z.coerce.number().int().min(1).max(10000).default(1),

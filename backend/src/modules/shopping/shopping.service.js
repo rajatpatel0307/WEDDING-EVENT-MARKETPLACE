@@ -545,5 +545,19 @@ export async function orders(ctx, role = "Customer") {
   );
 }
 export async function orderDetails(id, ctx) {
-  return managedOrderDetails(id, ctx, "Customer");
+  const { id: customerId } = scope(ctx);
+  const data = await managedOrderDetails(id, ctx, "Customer");
+  const reviews = await repo.select(
+    `SELECT ReviewId AS id,OrderItemId AS orderItemId,Rating AS rating,ReviewTitle AS title,
+      ReviewText AS text,ModerationStatus AS status,CreatedAt AS createdAt,DeletedAt AS deletedAt
+      FROM dbo.Reviews WHERE OrderId=:id AND CustomerId=:customerId`,
+    { id, customerId },
+  );
+  return { ...data, lines: data.lines.map(line => {
+    const submitted = reviews.find(review => String(review.orderItemId).toLowerCase() === String(line.id).toLowerCase());
+    const { deletedAt, ...review } = submitted || {};
+    return { ...line, review: submitted && !deletedAt ? review : null,
+      canReview: data.status === "Delivered" && data.paymentStatus === "Paid" && line.status === "Delivered" && !submitted,
+    };
+  }) };
 }

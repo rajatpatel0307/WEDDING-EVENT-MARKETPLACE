@@ -269,7 +269,7 @@ function ReviewCard({ review: r, children, report }) {
         {r.verified && (
           <span className="rr-badge [&&]:inline-flex [&&]:gap-[5px] [&&]:items-center [&&]:text-[11px] [&&]:bg-[#edf3e9] [&&]:rounded-[20px] [&&]:py-[4px] [&&]:px-[10px] [&&]:text-[#496442] [&&[data-status='Pending']]:bg-[#fff4dc] [&&[data-status='Pending']]:text-[#98722c] [&&[data-status='Flagged']]:bg-[#fff4dc] [&&[data-status='Flagged']]:text-[#98722c] [&&[data-status='Rejected']]:bg-[#fcebea] [&&[data-status='Rejected']]:text-[#9d4646] [&&[data-status='Hidden']]:bg-[#fcebea] [&&[data-status='Hidden']]:text-[#9d4646]">
             <ShieldCheck size={12} />
-            Verified booking
+            {r.orderId ? "Verified order" : "Verified booking"}
           </span>
         )}
       </div>
@@ -337,7 +337,7 @@ function VendorReviewsTable({ reviews, actions, report }) {
               return (
                 <tr key={r.id} className="transition-colors even:bg-[#fcfdf9] hover:bg-[#f5f9ee] [&:last-child_td]:border-b-0">
                   <td className="[&&]:px-5 [&&]:py-5 [&&]:align-top">
-                    <div className="flex items-start gap-2.5"><span className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#e8e2d1] bg-[#f7f3e9] text-xs font-semibold text-[#9e8451]" aria-hidden="true">{r.customer?.[0] || "C"}</span><div><span className="block text-xs font-semibold">{r.customer || "Customer"}</span>{r.verified && <span className="mt-1 flex items-center gap-1 text-[10px] text-[#688056]"><ShieldCheck size={12} aria-hidden="true" />Verified booking</span>}</div></div>
+                    <div className="flex items-start gap-2.5"><span className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#e8e2d1] bg-[#f7f3e9] text-xs font-semibold text-[#9e8451]" aria-hidden="true">{r.customer?.[0] || "C"}</span><div><span className="block text-xs font-semibold">{r.customer || "Customer"}</span>{r.verified && <span className="mt-1 flex items-center gap-1 text-[10px] text-[#688056]"><ShieldCheck size={12} aria-hidden="true" />{r.orderId ? "Verified order" : "Verified booking"}</span>}</div></div>
                   </td>
                   <td className="[&&]:max-w-48 [&&]:px-5 [&&]:py-5 [&&]:align-top [&&]:whitespace-normal"><span className="text-xs font-medium">{r.service || "Overall vendor experience"}</span>{r.package && <span className="mt-1 block text-[11px] text-[#71806a]">{r.package}</span>}</td>
                   <td className="[&&]:px-5 [&&]:py-5 [&&]:align-top"><div className="flex items-center gap-1 text-[#b78d3c]"><Star size={14} fill="currentColor" aria-hidden="true" /><span className="font-semibold tabular-nums text-[#344936]">{r.rating}<span className="font-normal text-[#71806a]"> / 5</span></span></div></td>
@@ -423,7 +423,7 @@ function AdminReviewsTable({ reviews, actions }) {
                 <td className="[&&]:px-5 [&&]:py-5 [&&]:align-top">
                   <div className="flex items-start gap-2.5">
                     <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#f1eee4] text-xs font-semibold text-[#8b7751]" aria-hidden="true">{r.customer?.[0] || "C"}</span>
-                    <div><span className="block text-xs font-semibold">{r.customer || "Customer"}</span>{r.verified && <span className="mt-1 flex items-center gap-1 text-[10px] text-[#688056]"><ShieldCheck size={12} aria-hidden="true" />Verified booking</span>}</div>
+                    <div><span className="block text-xs font-semibold">{r.customer || "Customer"}</span>{r.verified && <span className="mt-1 flex items-center gap-1 text-[10px] text-[#688056]"><ShieldCheck size={12} aria-hidden="true" />{r.orderId ? "Verified order" : "Verified booking"}</span>}</div>
                   </div>
                 </td>
                 <td className="[&&]:max-w-48 [&&]:px-5 [&&]:py-5 [&&]:align-top [&&]:whitespace-normal">
@@ -592,18 +592,25 @@ export function PublicReviews({ type, id }) {
     </section>
   );
 }
-export function ReviewForm({ review, bookingId, close, done }) {
+export function ReviewForm({ review, bookingId, orderId, orderItemId, close, done }) {
   const formId = useId();
   const [experience, setExperience] = useState(review?.text || "");
-  const eligible = useReviews("/reviews/eligible-bookings"),
-    [rating, setRating] = useState(review?.rating || 0),
+  const bookingEligible = useReviews(review || orderId ? null : "/reviews/eligible-bookings");
+  const orderEligible = useReviews(review || bookingId ? null : "/reviews/eligible-orders");
+  const eligible = {
+    loading: bookingEligible.loading || orderEligible.loading,
+    error: bookingEligible.error || orderEligible.error,
+    data: !bookingEligible.loading && !orderEligible.loading,
+  };
+  const [selectedTarget, setSelectedTarget] = useState(orderId && orderItemId ? `order:${orderId.toLowerCase()}:${orderItemId.toLowerCase()}` : "");
+  const [rating, setRating] = useState(review?.rating || 0),
     [images, setImages] = useState([]),
     [keep, setKeep] = useState(review?.images || []),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const targets = [];
   const bookings = new Set();
-  for (const b of eligible.data || []) {
+  for (const b of Array.isArray(bookingEligible.data) ? bookingEligible.data : []) {
     if (bookingId && b.bookingId.toLowerCase() !== bookingId.toLowerCase())
       continue;
     if (!bookings.has(b.bookingId)) {
@@ -620,6 +627,10 @@ export function ReviewForm({ review, bookingId, close, done }) {
         key: `${b.bookingId}:${b.bookingItemId}`,
         label: `${b.number} · ${b.service}`,
       });
+  }
+  for (const item of Array.isArray(orderEligible.data) ? orderEligible.data : []) {
+    if (orderId && item.orderId.toLowerCase() !== orderId.toLowerCase()) continue;
+    targets.push({ ...item, key: `order:${item.orderId.toLowerCase()}:${item.orderItemId.toLowerCase()}`, label: `${item.number} - ${item.service} (${item.vendor}, delivered order)` });
   }
   async function upload(files) {
     setError("");
@@ -702,6 +713,11 @@ export function ReviewForm({ review, bookingId, close, done }) {
             return;
           }
           const f = Object.fromEntries(new FormData(e.currentTarget));
+          const target = targets.find((item) => item.key === f.target);
+          if (!review && !target) {
+            setError("Choose an eligible booking or delivered order item.");
+            return;
+          }
           const [selectedBooking, selectedItem] = (f.target || "").split(":");
           delete f.target;
           for (const key of [
@@ -721,10 +737,9 @@ export function ReviewForm({ review, bookingId, close, done }) {
             })),
             keepImageIds: keep.map((i) => i.id),
             ...(!review
-              ? {
-                  bookingId: selectedBooking,
-                  bookingItemId: selectedItem ? Number(selectedItem) : null,
-                }
+              ? target.orderId
+                ? { orderId: target.orderId, orderItemId: target.orderItemId }
+                : { bookingId: selectedBooking, bookingItemId: selectedItem ? Number(selectedItem) : null }
               : {}),
           };
           setBusy(true);
@@ -746,14 +761,14 @@ export function ReviewForm({ review, bookingId, close, done }) {
         {!review && (
           <label>
             <span>Who are you reviewing? <span className="text-[#a16d40]" aria-hidden="true">*</span></span>
-            <select name="target" required defaultValue="" disabled={busy || eligible.loading}>
-              <option value="" disabled>Choose a vendor or booked service</option>
+            <select name="target" required value={selectedTarget} onChange={(event) => setSelectedTarget(event.target.value)} disabled={busy || eligible.loading}>
+              <option value="" disabled>Choose a booked service or delivered order item</option>
               {targets.map((b) => <option key={b.key} value={b.key}>{b.label}</option>)}
             </select>
             <span className="text-xs font-normal text-[#75816e]">
               {eligible.data && !targets.length
-                ? "Complete a booking to share your experience."
-                : "Only vendors and services from your completed bookings appear here."}
+                ? "No unreviewed, delivered order items or completed bookings are available."
+                : "Choose from your completed bookings and paid, delivered order items."}
             </span>
           </label>
         )}
@@ -1024,9 +1039,9 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
     <div className="flex flex-wrap items-center gap-2">
       <Link
         className="rr-link [&&]:inline-flex [&&]:items-center [&&]:justify-center [&&]:gap-1.5 [&&]:rounded-xl [&&]:border [&&]:border-[#dce4d7] [&&]:bg-white [&&]:px-3.5 [&&]:py-2 [&&]:text-[11px] [&&]:text-[#36533d] [&&]:no-underline [&&:hover]:bg-[#f2f6ee]"
-        to={`/vendor/bookings/${r.bookingId}`}
+        to={r.orderId ? `/vendor/orders/${r.orderId}` : `/vendor/bookings/${r.bookingId}`}
       >
-        View booking
+        {r.orderId ? "View order" : "View booking"}
       </Link>
       <button
         type="button"
@@ -1149,7 +1164,7 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
       {role === "Admin" && summary.data && <AdminReviewOverview data={summary.data} choose={choose} />}
       {role === "Admin" && (
         <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div><h2 className="[&&]:m-0 [&&]:text-lg">Customer reviews <span className="ml-1.5 rounded-full bg-[#eaf0e3] px-2 py-0.5 text-xs font-medium text-[#5d754c]">{state.data?.total ?? "..."}</span></h2><p className="[&&]:mt-1 [&&]:mb-0 [&&]:text-xs [&&]:text-[#71806a]">Verified bookings. Honest voices. Published instantly.</p></div>
+          <div><h2 className="[&&]:m-0 [&&]:text-lg">Customer reviews <span className="ml-1.5 rounded-full bg-[#eaf0e3] px-2 py-0.5 text-xs font-medium text-[#5d754c]">{state.data?.total ?? "..."}</span></h2><p className="[&&]:mt-1 [&&]:mb-0 [&&]:text-xs [&&]:text-[#71806a]">Verified purchases. Honest voices. Published instantly.</p></div>
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Review visibility">
             {[["", "All reviews"], ["Approved", "Published"], ["Flagged", "Flagged"], ["Hidden", "Hidden"]].map(([value, label]) => (
               <button type="button" key={value} aria-pressed={filters.status === value} onClick={() => choose("status", value)} className="[&&]:rounded-full [&&]:border-transparent [&&]:px-3 [&&]:py-1.5 [&&]:text-xs [&&[aria-pressed=true]]:border-[#cbdabd] [&&[aria-pressed=true]]:bg-[#eaf0e3] [&&[aria-pressed=true]]:text-[#486537]">{label}</button>
@@ -1160,7 +1175,7 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
       {role === "Vendor" && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2"><h2 className="[&&]:m-0 [&&]:text-base [&&]:font-semibold">Customer feedback</h2><span className="rounded-full border border-[#dce6cf] bg-[#edf3e5] px-2 py-0.5 text-[10px] font-semibold text-[#708957]">{state.data?.total ?? "..."}</span></div>
-          <span className="text-[10px] text-[#7a866d]">Overall vendor and service reviews from completed bookings</span>
+          <span className="text-[10px] text-[#7a866d]">Reviews from completed bookings and delivered orders</span>
         </div>
       )}
       <div className={role !== "Customer" ? "mb-5 min-w-0 rounded-2xl border border-[#dfe6d9] bg-white shadow-[0_3px_12px_#294f3c05]" : undefined}>
