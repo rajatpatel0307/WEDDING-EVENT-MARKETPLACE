@@ -44,6 +44,8 @@ test("booking details show the customer's actual vendor and service ratings with
     assert.ok(html.includes("Your rating for Wedding venue: 3 out of 5 stars"));
     assert.ok(html.includes("Excellent vendor") && html.includes("The venue was fine"));
     assert.ok(html.includes("Communication") && html.includes("4 / 5"));
+    assert.ok(html.indexOf("Payments processed through secure checkout") < html.indexOf('id="bd-ratings-title"'), "ratings belong in a separate card after the payment summary");
+    assert.equal((html.match(/aria-label="Your overall vendor rating: 5 out of 5 stars"/g) || []).length, 1);
     const feedbackCard = (markup) => markup.slice(markup.indexOf('id="bd-feedback-title"'), markup.indexOf("bd-review "));
     assert.ok(feedbackCard(html).includes("Your overall vendor rating: 5 out of 5 stars"));
     assert.ok(feedbackCard(html).includes("Excellent vendor") && feedbackCard(html).includes("The venue was fine"));
@@ -53,7 +55,7 @@ test("booking details show the customer's actual vendor and service ratings with
     assert.ok(feedbackCard(serviceOnly).includes("Your rating for Wedding venue: 3 out of 5 stars"));
     assert.ok(feedbackCard(serviceOnly).includes("The venue was fine"));
     const unrated = render({ ...booking, reviews: [] });
-    assert.ok(!unrated.includes('id="bd-ratings-title"'));
+    assert.ok(!unrated.includes('id="bd-feedback-title"'));
     assert.ok(unrated.includes("Write a review"));
     assert.ok(!unrated.includes("0 out of 5 stars"));
   } finally {
