@@ -213,15 +213,16 @@ export async function create(input, ctx) {
           PackageId: item?.PackageId ?? null,
           ...values(b),
           IsVerified: 1,
-          IsPublished: 0,
-          ModerationStatus: "Pending",
+          IsPublished: 1,
+          ModerationStatus: "Approved",
         },
         tx,
       );
       await saveImages(r.id, b, tx, uploaded, ctx);
+      await reconcile(item?.VendorId || booking.VendorId, tx);
       await audit(
         ctx,
-        "SUBMITTED",
+        "PUBLISHED",
         r.id,
         null,
         {
@@ -231,16 +232,16 @@ export async function create(input, ctx) {
         },
         tx,
       );
-      await notify(user.id, "Review submitted for moderation", r.id, tx);
+      await notify(user.id, "Your review is now published", r.id, tx);
       const [vendor] = await db.select(
         "SELECT UserId FROM dbo.Vendors WHERE VendorId=:id",
         { id: booking.VendorId },
         tx,
       );
-      await notify(vendor.UserId, "New review awaiting moderation", r.id, tx);
+      await notify(vendor.UserId, "New customer review published", r.id, tx);
       return {
         id: r.id,
-        message: "Thank you. Your review is awaiting moderation.",
+        message: "Thank you. Your review is now published.",
       };
     });
   } catch (error) {
@@ -267,8 +268,8 @@ export async function edit(id, input, ctx, remove = false) {
         ? { DeletedAt: new Date(), IsPublished: 0 }
         : {
             ...values(b),
-            ModerationStatus: "Pending",
-            IsPublished: 0,
+            ModerationStatus: "Approved",
+            IsPublished: 1,
             ModeratedBy: null,
             ModeratedAt: null,
             ModerationReason: null,
@@ -302,7 +303,7 @@ export async function edit(id, input, ctx, remove = false) {
         );
         await notify(
           vendor.UserId,
-          "Customer updated a review; moderation pending",
+          "Customer updated a published review",
           id,
           tx,
         );
@@ -310,7 +311,7 @@ export async function edit(id, input, ctx, remove = false) {
       return {
         message: remove
           ? "Review deleted."
-          : "Review updated and sent for moderation.",
+          : "Review updated and published.",
       };
     });
   } catch (error) {

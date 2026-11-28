@@ -1,3 +1,4 @@
+import { up as reviewAutoPublishUp } from "../migrations/037-review-auto-publish.js";
 import { up as sellBookUp } from "../migrations/030-sell-book.js";
 import { up as orderManagementUp } from "../migrations/033-order-management.js";
 import { up as outForDeliveryUp } from "../migrations/034-order-out-for-delivery.js";
@@ -498,6 +499,14 @@ try {
     if (!rows.length) {
       await invoiceUp(sequelize.getQueryInterface(), transaction);
       await sequelize.query("INSERT dbo.AuthMigrations(Name) VALUES('036-order-invoices')", { transaction });
+    }
+  });
+  await sequelize.transaction(async transaction => {
+    await sequelize.query("DECLARE @r int; EXEC @r=sp_getapplock @Resource='MarryNestAdminMigration',@LockMode='Exclusive',@LockOwner='Transaction',@LockTimeout=10000; IF @r<0 THROW 51000,'Migration lock unavailable',1;", { transaction });
+    const [rows] = await sequelize.query("SELECT Name FROM dbo.AuthMigrations WHERE Name='037-review-auto-publish'", { transaction });
+    if (!rows.length) {
+      await reviewAutoPublishUp(sequelize.getQueryInterface(), transaction);
+      await sequelize.query("INSERT dbo.AuthMigrations(Name) VALUES('037-review-auto-publish')", { transaction });
     }
   });
   console.log("Database migrations are current.");

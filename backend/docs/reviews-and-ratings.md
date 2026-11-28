@@ -43,15 +43,15 @@ The current database has one vendor per booking and multiple service/package boo
 
 Omit `bookingItemId` for an overall vendor review. Provide a booked item ID for a service/package experience. The unique database index `(BookingId, VendorId, BookingItemId)` and a locked booking transaction prevent duplicates, including duplicates after soft deletion. Customer/vendor/service IDs cannot be supplied as ownership overrides.
 
-All submissions enter `Pending`. Eligible public reviews must be approved, published, verified, undeleted, and still associated with a completed booking owned by the same customer/vendor. The central `publicPredicate()` is shared by public review queries, ratings, discovery, and management performance views.
+New reviews publish immediately without administrator approval. The existing database status `Approved` represents a published review for compatibility with rating and visibility queries. Eligible public reviews must be published, verified, undeleted, and still associated with a completed booking owned by the same customer/vendor. The central `publicPredicate()` is shared by public review queries, ratings, discovery, and management performance views.
 
 - **Vendor rating:** only overall vendor reviews (`BookingItemId IS NULL`).
 - **Service rating:** only reviews explicitly assigned to that `ServiceId`, including package experiences for that service.
 - **Package rating:** only reviews assigned to that exact `PackageId`.
 
-The backend computes `AVG(CAST(Rating AS decimal))` and counts from eligible rows. It never copies a vendor review into all services on a booking or accepts frontend aggregate values. Vendor cache columns are recalculated inside moderation/edit/delete transactions with a vendor lock. Service/package summaries are calculated directly from source reviews. Reconciliation rebuilds vendor caches and should also be run after external database maintenance that changes completed-booking eligibility.
+The backend computes `AVG(CAST(Rating AS decimal))` and counts from eligible rows. It never copies a vendor review into all services on a booking or accepts frontend aggregate values. Vendor cache columns are recalculated inside create/edit/delete and hide/restore transactions with a vendor lock. Service/package summaries are calculated directly from source reviews. Reconciliation rebuilds vendor caches and should also be run after external database maintenance that changes completed-booking eligibility.
 
-Customers can edit pending/approved reviews within the configured window. Edits immediately withdraw publication and require fresh moderation. Hidden, flagged, rejected, deleted, or expired reviews cannot be edited. Owners can withdraw undeleted reviews at any time. Deletion is soft, revokes public image access, preserves moderation/audit history, and does not free the target for a replacement review.
+Customers can edit published reviews within the configured window. Edits stay published and update ratings immediately without approval. Hidden, flagged, rejected, deleted, or expired reviews cannot be edited. Owners can withdraw undeleted reviews at any time. Deletion is soft, revokes public image access, preserves moderation/audit history, and does not free the target for a replacement review.
 
 ## Permissions
 
@@ -71,7 +71,7 @@ All paths below are prefixed with `/api`. Responses use `{ success: true, data: 
 | Method              | Path                                                    | Purpose                                                                                                |
 | ------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | GET                 | `/reviews/eligible-bookings`                            | Customer's completed bookings and booked items.                                                        |
-| POST                | `/reviews`                                              | Submit a pending review.                                                                               |
+| POST                | `/reviews`                                              | Publish a verified review immediately.                                                                               |
 | GET                 | `/reviews/my-reviews` or `/reviews`                     | Customer's paginated reviews.                                                                          |
 | GET / PUT / DELETE  | `/reviews/:id`                                          | Own review details, edit, or withdrawal.                                                               |
 | POST                | `/reviews/:id/report`                                   | Report a review or its public response.                                                                |
@@ -124,9 +124,9 @@ Moderation accepts `{ "reason": "Customer-visible decision reason", "notes": "Ad
 
 ## Moderation, reports, and notifications
 
-1. Customer submits or edits a review. It enters Pending and contributes no rating.
-2. Administrator reviews its booking, text, dimensions, images, and history. Approval publishes it and updates the correct rating target. Rejection/hidden/flagged status excludes it. Each decision records administrator, UTC time, reason and optional private note.
-3. Vendor can respond to an approved review. A unique `ReviewId` constraint allows one response row; deleted responses are reused rather than creating threads. Response edits use the configured window, and every create/edit/delete/hide action is audited.
+1. Customer submits or edits a review. It is published immediately and contributes to its correct rating target in the same transaction.
+2. Administrators monitor published feedback, reports, and history. They can hide or flag inappropriate content and restore it after investigation. No approval queue is required. Each visibility decision records administrator, UTC time, reason and optional private note.
+3. Vendor can respond to a published review. A unique `ReviewId` constraint allows one response row; deleted responses are reused rather than creating threads. Response edits use the configured window, and every create/edit/delete/hide action is audited.
 4. Customers/vendors can report a public review or response. Only one pending report per reporter/content is allowed. Reporting does not alter publication, status, or ratings. Administrators accept/dismiss reports, then explicitly hide the review/response when warranted. Report decisions and prior reports are retained.
 
 Notifications originate inside backend transactions and broadcast through the existing notification center after commit. Customers receive submission, moderation, response, and report-decision events. Vendors receive submission/update/publication/moderation and response-hiding events. Existing admin events cover submissions, edits, and reports. Repeated moderation to the current state and unchanged response saves do not create duplicate notifications. Existing notification preferences are reused; review lifecycle notifications are essential/general notifications because there is no separate review preference in the project.
@@ -145,7 +145,7 @@ Removed images are deleted from storage after commit; failed transactions attemp
 
 Migration `024-reviews` extends existing review/image tables, replaces the single-review-per-booking constraint with the booking/vendor/item target index, and adds `VendorReviewResponses`, `ReviewReports`, and `ReviewModerationHistory`. It adds foreign keys, rating/status checks, publication/customer/service/package/moderation indexes and a unique active-report index. `AuditLogs` supplies content/response revision history without adding a duplicate revision table.
 
-Legacy reviews enter Pending and are withdrawn until an administrator approves them under the new policy; text and existing records are retained. Legacy reviews have no explicit item target and therefore remain overall vendor reviews. Cache reconciliation runs during migration. The migration runner records `024-reviews` in the existing migration ledger, under the existing database application lock. The SQL file is also supplied; execute its GO batches within a transaction if applying manually.
+Migration `037-review-auto-publish` publishes existing verified, undeleted pending reviews linked to completed bookings, updates database defaults for future reviews, and rebuilds vendor rating caches. Hidden, rejected, flagged, deleted, and ineligible reviews are preserved. The old migration `024-reviews` initially put legacy reviews into Pending; migration 037 removes that approval requirement; text and existing records are retained. Legacy reviews have no explicit item target and therefore remain overall vendor reviews. Cache reconciliation runs during migration. The migration runner records `024-reviews` in the existing migration ledger, under the existing database application lock. The SQL file is also supplied; execute its GO batches within a transaction if applying manually.
 
 Created files:
 
@@ -174,7 +174,7 @@ Modified integration files:
 
 Validated on the configured workspace: 202 backend tests passed, 35 frontend tests passed, 55 live MSSQL/HTTP checks passed, the production frontend build passed, and lint on the new review frontend files passed. The established Home Page protection manifest passed; an additional 16-file Home/shared-source hash comparison reported no changes. Migration 024 and its final indexes/private-note column have been applied to the configured database. Integration fixtures were rolled back.
 
-The rollback-only integration script exercises real MSSQL: ownership, incomplete/mismatched bookings, duplicates, pending/public exclusion, moderation history and private notes, independent vendor/service/package ratings, cache updates, edits/deletion, vendor ownership/responses, reports, notification creation/idempotency, paging/filtering, marketplace package/service ratings, and HTTP response/image authorization. Cloudinary upload/download transport is mocked; no test image or customer fixture is committed or uploaded to a real account.
+The rollback-only integration script exercises real MSSQL: ownership, incomplete/mismatched bookings, duplicates, immediate publication, moderation history and private notes, independent vendor/service/package ratings, cache updates, edits/deletion, vendor ownership/responses, reports, notification creation/idempotency, paging/filtering, marketplace package/service ratings, and HTTP response/image authorization. Cloudinary upload/download transport is mocked; no test image or customer fixture is committed or uploaded to a real account.
 
 Unit/HTTP tests cover authorization, request origin, input ownership overrides, rating bounds, content and file validation, policy windows and public eligibility. Frontend protection tests verify the established Home Page file hashes and require every review CSS selector, including mobile rules, to be scoped beneath `.rr-module`.
 

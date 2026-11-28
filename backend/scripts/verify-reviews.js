@@ -7,6 +7,8 @@ import { createReviewRouter } from "../src/modules/reviews/reviews.routes.js";
 import { sequelize } from "../src/config/database.js";
 import * as reviews from "../src/modules/reviews/reviews.service.js";
 import { up } from "../migrations/024-reviews.js";
+import { up as autoPublishUp } from "../migrations/037-review-auto-publish.js";
+import { allocateBookingNumber } from "../src/modules/bookings/booking-numbers.js";
 import {
   publicDiscover,
   publicServiceDetails,
@@ -134,6 +136,8 @@ try {
       // Exercise migration idempotency against the actual schema.
       await up(sequelize.getQueryInterface(), tx);
       await up(sequelize.getQueryInterface(), tx);
+      await autoPublishUp(sequelize.getQueryInterface(), tx);
+      await autoPublishUp(sequelize.getQueryInterface(), tx);
       for (const id of [ids.customer, ids.other, ids.owner, ids.admin])
         await query(
           "INSERT dbo.Users(UserId,FirstName,Email,PasswordHash,IsEmailVerified) VALUES(:id,'Review fixture',:email,'not-a-login-password',1)",
@@ -142,6 +146,10 @@ try {
       await query(
         "INSERT dbo.Vendors(VendorId,UserId,BusinessName,BusinessSlug,VerificationStatus,IsActive) VALUES(:id,:owner,'Review fixture',:slug,'Approved',1)",
         { id: ids.vendor, owner: ids.owner, slug: `reviews-${ids.vendor}` },
+      );
+      await query(
+        "INSERT dbo.VendorLocations(VendorId,AddressLine1,City,State,Country,IsPrimary,IsActive) VALUES(:vendor,'Review fixture address',:city,'Fixture state','India',1,1)",
+        { vendor: ids.vendor, city: `Review fixture ${ids.vendor}` },
       );
       const [[category]] = await query(
         "SELECT TOP(1) CategoryId FROM dbo.Categories WHERE IsActive=1",
@@ -169,7 +177,7 @@ try {
           "INSERT dbo.Booking(BookingId,BookingNumber,EventId,CustomerId,VendorId,BookingDate,BookingStatus) VALUES(:id,:number,:event,:customer,:vendor,'2026-10-01',:status)",
           {
             id,
-            number: `RV-${id}`,
+            number: await allocateBookingNumber(tx),
             event: ids.event,
             customer: ids.customer,
             vendor: ids.vendor,
@@ -208,20 +216,19 @@ try {
             id: ids.vendor,
           })
         ).total,
-        0,
+        1,
       );
       check(
         Number(
           (await reviews.summary({ type: "vendor", id: ids.vendor }))
             .totalReviews,
         ),
-        0,
+        1,
       );
       check(
         (await reviews.list({}, customer, "Customer")).rows[0].status,
-        "Pending",
+        "Approved",
       );
-      await reviews.moderate(r.id, "approve", {}, admin);
       check(
         Number(
           (await reviews.summary({ type: "vendor", id: ids.vendor }))
@@ -370,7 +377,7 @@ try {
           (await reviews.summary({ type: "vendor", id: ids.vendor }))
             .totalReviews,
         ),
-        0,
+        1,
       );
       await reviews.moderate(
         r.id,
@@ -378,7 +385,7 @@ try {
         { reason: "Needs further verification" },
         admin,
       );
-      check((await reviews.details(r.id, admin, "Admin")).history.length, 4);
+      check((await reviews.details(r.id, admin, "Admin")).history.length, 3);
       await reviews.addNote(
         r.id,
         { notes: "Private moderation investigation note" },
@@ -446,12 +453,8 @@ try {
       );
       check(mine.images.length, 1);
       check(cloudUploads, 1);
-      await assert.rejects(
-        () => reviews.image(mine.images[0].id, { auth: null }),
-        (e) => e.extensions?.code === "UNAUTHENTICATED",
-      );
-      checks++;
-      await rejected(() => reviews.image(mine.images[0].id, other), 404);
+      check((await reviews.image(mine.images[0].id, { auth: null })).mimeType, "image/webp");
+      check((await reviews.image(mine.images[0].id, other)).mimeType, "image/webp");
       check(
         (await reviews.image(mine.images[0].id, customer)).mimeType,
         "image/webp",

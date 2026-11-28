@@ -7,8 +7,9 @@ const arrowClass =
 
 export default function Testimonials({ items, loading, retry }) {
   const [index, setIndex] = useState(0);
-  const selected = items?.length ? index % items.length : 0;
-  const item = items?.[selected];
+  const pageCount = Math.ceil((items?.length || 0) / 4);
+  const selected = pageCount ? index % pageCount : 0;
+  const visibleItems = items?.slice(selected * 4, selected * 4 + 4) || [];
   return (
     <section
       aria-labelledby="stories-heading"
@@ -27,96 +28,100 @@ export default function Testimonials({ items, loading, retry }) {
             Love stories, <em>in their own words.</em>
           </h2>
         </div>
-        {item ? (
+        {visibleItems.length ? (
           <div
-            className="mx-auto max-w-3xl text-center"
+            className="text-center"
             role="region"
-            aria-roledescription="carousel"
+            aria-roledescription={pageCount > 1 ? "carousel" : undefined}
             aria-label="Customer experiences"
           >
-            <div className="rounded-[24px] border border-white/80 bg-[#fffdfa] px-6 py-9 shadow-[0_8px_32px_#76504406] sm:px-12 sm:py-10">
-              <Quote
-                size={34}
-                strokeWidth={1}
-                className="mx-auto mb-5 text-[#b68e7b]"
-                aria-hidden="true"
-              />
-              <div aria-live="polite" aria-atomic="true">
-                <div
-                  className="flex justify-center gap-1 text-[#b68a47]"
-                  aria-label={`${item.rating} out of 5 stars`}
+            <div className="flex flex-wrap items-stretch justify-center gap-5" aria-live="polite" aria-atomic="true">
+              {visibleItems.map((item) => (
+                <article key={item.id} className="flex w-full min-w-0 shrink-0 flex-col rounded-[24px] border border-white/80 bg-[#fffdfa] px-5 py-7 shadow-[0_8px_32px_#76504406] sm:w-[calc(50%_-_10px)] lg:w-[calc(25%_-_15px)] xl:px-6">
+                  <Quote
+                    size={28}
+                    strokeWidth={1}
+                    className="mx-auto mb-5 text-[#b68e7b]"
+                    aria-hidden="true"
+                  />
+                  <div className="flex flex-1 flex-col">
+                    <div
+                      className="flex justify-center gap-1 text-[#b68a47]"
+                      aria-label={`${item.rating} out of 5 stars`}
+                    >
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <Star
+                          key={i}
+                          size={14}
+                          fill={i < Number(item.rating) ? "currentColor" : "none"}
+                          aria-hidden="true"
+                        />
+                      ))}
+                    </div>
+                    <blockquote className="my-6 flex-1 wrap-anywhere font-serif text-xl italic leading-relaxed text-[#6b4d50]">
+                      &ldquo;{item.review}&rdquo;
+                    </blockquote>
+                    <div className="flex items-center gap-3 text-left">
+                      <span
+                        className="grid size-11 shrink-0 place-items-center rounded-full bg-[#f0e1db] font-serif text-xl text-rose-brand"
+                        aria-hidden="true"
+                      >
+                        {item.customerName?.[0] || "M"}
+                      </span>
+                      <div className="min-w-0">
+                        <strong className="block wrap-anywhere text-xs font-medium">
+                          {item.customerName}
+                        </strong>
+                        <p className="mt-0.5 wrap-anywhere text-[10px]!">
+                          {[
+                            item.location ? `Celebrated in ${item.location}` : null,
+                            item.weddingDate?.slice(0, 4),
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+            {pageCount > 1 && (
+              <div className="mt-6 flex items-center justify-center gap-4">
+                <button
+                  type="button"
+                  className={arrowClass}
+                  aria-label="Previous testimonials"
+                  onClick={() =>
+                    setIndex((selected - 1 + pageCount) % pageCount)
+                  }
                 >
-                  {Array.from({ length: 5 }, (_, i) => (
-                    <Star
+                  <ChevronLeft size={18} aria-hidden="true" />
+                </button>
+                <div className="flex max-w-[50%] flex-wrap justify-center">
+                  {Array.from({ length: pageCount }, (_, i) => (
+                    <button
                       key={i}
-                      size={14}
-                      fill={i < Number(item.rating) ? "currentColor" : "none"}
-                      aria-hidden="true"
-                    />
+                      type="button"
+                      aria-label={`Show testimonials ${i * 4 + 1} to ${Math.min((i + 1) * 4, items.length)}`}
+                      aria-current={selected === i ? "true" : undefined}
+                      onClick={() => setIndex(i)}
+                      className="group grid min-h-11 w-7 cursor-pointer place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-rose-brand"
+                    >
+                      <span className="size-1.5 rounded-full bg-[#cbb3a6] transition-all group-hover:bg-rose-brand group-aria-current:w-4 group-aria-current:bg-rose-brand" />
+                    </button>
                   ))}
                 </div>
-                <blockquote className="my-6 wrap-anywhere font-serif text-[22px] italic leading-relaxed text-[#6b4d50] sm:text-[28px]">
-                  &ldquo;{item.review}&rdquo;
-                </blockquote>
-                <div className="flex items-center justify-center gap-3 text-left">
-                  <span
-                    className="grid size-11 shrink-0 place-items-center rounded-full bg-[#f0e1db] font-serif text-xl text-rose-brand"
-                    aria-hidden="true"
-                  >
-                    {item.customerName?.[0] || "M"}
-                  </span>
-                  <div>
-                    <strong className="text-xs font-medium">
-                      {item.customerName}
-                    </strong>
-                    <p className="mt-0.5 text-[10px]!">
-                      {[
-                        item.location ? `Celebrated in ${item.location}` : null,
-                        item.weddingDate?.slice(0, 4),
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  className={arrowClass}
+                  aria-label="Next testimonials"
+                  onClick={() => setIndex((selected + 1) % pageCount)}
+                >
+                  <ChevronRight size={18} aria-hidden="true" />
+                </button>
               </div>
-            </div>
-            <div className="mt-6 flex items-center justify-center gap-4">
-              <button
-                type="button"
-                className={arrowClass}
-                aria-label="Previous testimonial"
-                onClick={() =>
-                  setIndex((selected - 1 + items.length) % items.length)
-                }
-                disabled={items.length < 2}
-              >
-                <ChevronLeft size={18} aria-hidden="true" />
-              </button>
-              <div className="flex max-w-[50%] flex-wrap justify-center">
-                {items.map((review, i) => (
-                  <button
-                    key={review.id}
-                    type="button"
-                    aria-label={`Show testimonial ${i + 1}`}
-                    aria-current={selected === i ? "true" : undefined}
-                    onClick={() => setIndex(i)}
-                    className="group grid min-h-11 w-7 cursor-pointer place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-rose-brand"
-                  >
-                    <span className="size-1.5 rounded-full bg-[#cbb3a6] transition-all group-hover:bg-rose-brand group-aria-current:w-4 group-aria-current:bg-rose-brand" />
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                className={arrowClass}
-                aria-label="Next testimonial"
-                onClick={() => setIndex((selected + 1) % items.length)}
-                disabled={items.length < 2}
-              >
-                <ChevronRight size={18} aria-hidden="true" />
-              </button>
-            </div>
+            )}
           </div>
         ) : (
           <CollectionState
