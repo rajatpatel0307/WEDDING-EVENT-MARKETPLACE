@@ -178,7 +178,7 @@ Removed the unused `reviews.storage.js` helper after routing review images throu
 
 Modified:
 
-- `backend/{package.json,package-lock.json,.env.example,server.js}`, `backend/scripts/migrate.js`, `backend/src/app.js`
+- `backend/{package.json,package-lock.json,.env.example}`, `backend/scripts/migrate.js`, `backend/src/server.js`, `backend/src/app.js`
 - `backend/src/modules/media/cloudinary.service.js`
 - `backend/src/modules/vendors/{service-management.service.js,service-management.children.js,workspace.service.js}`
 - `backend/src/modules/admin/services-management.service.js`

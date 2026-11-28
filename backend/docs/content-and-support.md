@@ -148,7 +148,7 @@ Created:
 
 Integrated/modified:
 
-- `backend/.env.example`, `backend/scripts/migrate.js`, `backend/server.js`, `backend/src/app.js`
+- `backend/.env.example`, `backend/scripts/migrate.js`, `backend/src/server.js`, `backend/src/app.js`
 - `backend/src/graphql/auth/auth.typeDefs.js`, `backend/src/graphql/public.typeDefs.js`
 - `backend/src/modules/auth/{auth.service,auth.validation,otp.service}.js`
 - `backend/src/modules/public/{public.service,public.validation}.js`

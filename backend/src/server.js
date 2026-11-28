@@ -1,10 +1,10 @@
-import { startBookingJobs } from "./src/modules/admin/booking-jobs.js";
-import { startMediaJobs } from "./src/modules/media/media.jobs.js";
-import { startSupportJobs } from './src/modules/cms/support.jobs.js';
-import { startEmailJobs } from "./src/modules/notifications/email.jobs.js";
-import { validateEnvironment } from "./src/config/environment.js";
-import { sequelize } from "./src/config/database.js";
-import { createApp } from "./src/app.js";
+import { startBookingJobs } from "./modules/admin/booking-jobs.js";
+import { startMediaJobs } from "./modules/media/media.jobs.js";
+import { startSupportJobs } from './modules/cms/support.jobs.js';
+import { startEmailJobs } from "./modules/notifications/email.jobs.js";
+import { validateEnvironment } from "./config/environment.js";
+import { sequelize } from "./config/database.js";
+import { createApp } from "./app.js";
 try {
   validateEnvironment();
   try {

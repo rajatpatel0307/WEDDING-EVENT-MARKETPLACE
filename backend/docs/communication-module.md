@@ -178,7 +178,7 @@ See [communication-testing.md](communication-testing.md) for executable checks, 
 
 ## Modified files for this task
 
-- Backend `package.json`, `package-lock.json`, `server.js`, `src/app.js`, `scripts/migrate.js`
+- Backend `package.json`, `package-lock.json`, `src/server.js`, `src/app.js`, `scripts/migrate.js`
 - Backend `src/modules/customers/workspace.messaging.js`, `workspace.common.js`
 - Backend `src/modules/vendors/workspace.messaging.js`, `workspace.common.js`
 - Backend `src/modules/notifications/admin-events.js`, `communications.service.js`

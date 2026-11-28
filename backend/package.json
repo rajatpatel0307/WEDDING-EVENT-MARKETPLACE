@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "src/server.js",
   "directories": {
     "doc": "docs",
     "test": "tests"
@@ -10,8 +10,8 @@
   "scripts": {
     "test": "node --test",
     "test:orders:integration": "node scripts/check-order-management.js",
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
     "db:inspect": "node scripts/inspect-database.js",
     "db:migrate": "node scripts/migrate.js",
     "db:migrate:orders": "node scripts/migrate-orders.js",

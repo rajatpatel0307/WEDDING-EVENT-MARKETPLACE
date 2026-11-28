@@ -268,7 +268,7 @@ New:
 
 Updated existing files:
 
-- `backend/scripts/{migrate,process-booking-jobs,verify-customer-workspace}.js`, `backend/server.js`
+- `backend/scripts/{migrate,process-booking-jobs,verify-customer-workspace}.js`, `backend/src/server.js`
 - `backend/src/modules/customers/{workspace.payments,workspace.routes,workspace.operations}.js`
 - `backend/src/modules/admin/{admin.routes,booking-finance,booking-jobs,booking-refunds.service,payouts.service,operations.service}.js`
 - `backend/src/modules/bookings/bookings.service.js`, `backend/src/modules/quotations/quotations.service.js`
