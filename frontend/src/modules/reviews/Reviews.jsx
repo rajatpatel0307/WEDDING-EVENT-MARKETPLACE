@@ -13,7 +13,6 @@ import {
   ArrowRight,
   LoaderCircle,
   SlidersHorizontal,
-  CheckCircle2,
   RotateCw,
 } from "lucide-react";
 import AdminReviewOverview from "./AdminReviewOverview";
@@ -325,7 +324,7 @@ function ReviewCard({ review: r, children, report }) {
 }
 function VendorReviewsTable({ reviews, actions, report }) {
   return (
-    <div className="mb-5 overflow-hidden rounded-2xl border border-[#dfe6d9] bg-white shadow-[0_3px_12px_#294f3c05]">
+    <div className="overflow-hidden rounded-b-2xl bg-white">
       <div className="overflow-x-auto overscroll-x-contain focus-visible:outline-2 focus-visible:outline-[#648d66]" tabIndex={0} role="region" aria-label="Customer feedback table. Scroll horizontally to see all columns.">
         <table className="[&&]:w-full [&&]:min-w-[1120px] [&&]:text-xs">
           <caption className="sr-only">Customer feedback, service ratings, vendor responses and booking actions</caption>
@@ -359,7 +358,7 @@ function VendorReviewsTable({ reviews, actions, report }) {
     </div>
   );
 }
-function AdminReviewFilters({ filters, choose, metadata, clear }) {
+function ReviewTableFilters({ role, filters, choose, metadata, clear }) {
   const [expanded, setExpanded] = useState(false);
   const advancedId = useId();
   const activeCount = Object.values(filters).filter(Boolean).length;
@@ -370,7 +369,7 @@ function AdminReviewFilters({ filters, choose, metadata, clear }) {
         <label className="[&&]:relative [&&]:block [&&]:w-full [&&]:min-w-0 sm:[&&]:mr-auto sm:[&&]:w-[260px]">
           <span className="sr-only">Search experiences</span>
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#93a18b]" aria-hidden="true" />
-          <input className="[&&&]:min-h-10 [&&&]:rounded-lg [&&&]:bg-white [&&&]:py-2 [&&&]:pl-9 [&&&]:text-[11px]" value={filters.q} maxLength={200} onChange={(e) => choose("q", e.target.value)} placeholder="Search reviews..." />
+          <input className="[&&&]:min-h-10 [&&&]:rounded-lg [&&&]:bg-white [&&&]:py-2 [&&&]:pl-9 [&&&]:text-[11px]" value={filters.q} maxLength={200} onChange={(e) => choose("q", e.target.value)} placeholder={role === "Vendor" ? "Customer, review or service" : "Search reviews..."} />
         </label>
         <label className="[&&]:block [&&]:w-[120px]">
           <span className="sr-only">Rating</span>
@@ -379,13 +378,13 @@ function AdminReviewFilters({ filters, choose, metadata, clear }) {
             {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} stars</option>)}
           </select>
         </label>
-        <label className="[&&]:block [&&]:w-[126px]">
+        {role === "Admin" && <label className="[&&]:block [&&]:w-[126px]">
           <span className="sr-only">Status</span>
           <select className={selectClass} value={filters.status} onChange={(e) => choose("status", e.target.value)}>
             <option value="">All statuses</option>
             {["Approved", "Flagged", "Hidden", "Rejected"].map((status) => <option key={status} value={status}>{status === "Approved" ? "Published" : status}</option>)}
           </select>
-        </label>
+        </label>}
         <label className="[&&]:flex [&&]:items-center [&&]:gap-2 [&&]:text-[10px] [&&]:font-normal [&&]:text-[#819078]">
           From
           <input className="[&&&]:min-h-10 [&&&]:w-[135px] [&&&]:rounded-lg [&&&]:bg-white [&&&]:px-2 [&&&]:py-2 [&&&]:text-[11px]" type="date" value={filters.from} onChange={(e) => choose("from", e.target.value)} />
@@ -394,10 +393,10 @@ function AdminReviewFilters({ filters, choose, metadata, clear }) {
           To
           <input className="[&&&]:min-h-10 [&&&]:w-[135px] [&&&]:rounded-lg [&&&]:bg-white [&&&]:px-2 [&&&]:py-2 [&&&]:text-[11px]" type="date" value={filters.to} onChange={(e) => choose("to", e.target.value)} />
         </label>
-        <button type="button" aria-label="Vendor, service and report filters" aria-expanded={expanded} aria-controls={advancedId} onClick={() => setExpanded((value) => !value)} className="[&&]:min-h-10 [&&]:gap-1.5 [&&]:rounded-lg [&&]:px-3 [&&]:py-2 [&&]:text-[11px]"><SlidersHorizontal size={14} aria-hidden="true" />More filters<ChevronDown size={12} className={expanded ? "rotate-180" : ""} aria-hidden="true" /></button>
+        {role === "Admin" && <button type="button" aria-label="Vendor, service and report filters" aria-expanded={expanded} aria-controls={advancedId} onClick={() => setExpanded((value) => !value)} className="[&&]:min-h-10 [&&]:gap-1.5 [&&]:rounded-lg [&&]:px-3 [&&]:py-2 [&&]:text-[11px]"><SlidersHorizontal size={14} aria-hidden="true" />More filters<ChevronDown size={12} className={expanded ? "rotate-180" : ""} aria-hidden="true" /></button>}
         <button type="button" disabled={!activeCount} onClick={clear} className="[&&]:min-h-10 [&&]:gap-1.5 [&&]:rounded-lg [&&]:px-3 [&&]:py-2 [&&]:text-[11px] [&&:disabled]:cursor-default"><X size={13} aria-hidden="true" />Clear filters{activeCount > 0 && <span className="rounded bg-[#edf3e6] px-1.5 text-[10px] text-[#617e4b]">{activeCount}</span>}</button>
       </div>
-        <div id={advancedId} hidden={!expanded} className="mt-4 grid gap-3 border-t border-[#edf0e9] pt-4 sm:grid-cols-2 xl:grid-cols-4 [&[hidden]]:hidden">
+        {role === "Admin" && <div id={advancedId} hidden={!expanded} className="mt-4 grid gap-3 border-t border-[#edf0e9] pt-4 sm:grid-cols-2 xl:grid-cols-4 [&[hidden]]:hidden">
           {[["vendorId", "Vendor", "vendors"], ["serviceId", "Service", "services"], ["categoryId", "Category", "categories"]].map(([key, label, collection]) => (
             <label key={key}>{label}<select className={selectClass} value={filters[key]} onChange={(e) => choose(key, e.target.value)}>
               <option value="">All {label.toLowerCase()}s</option>
@@ -405,7 +404,7 @@ function AdminReviewFilters({ filters, choose, metadata, clear }) {
             </select></label>
           ))}
           <label>Reports<select className={selectClass} value={filters.reported} onChange={(e) => choose("reported", e.target.value)}><option value="">All content</option><option value="true">With pending reports</option></select></label>
-        </div>
+        </div>}
     </div>
   );
 }
@@ -1112,13 +1111,10 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
           <div className="flex items-start gap-4">
             <span className="mt-1 hidden size-12 shrink-0 items-center justify-center rounded-2xl border border-[#d6e2ca] bg-[#eaf1e1] text-[#65834e] sm:flex"><Star size={23} strokeWidth={1.5} aria-hidden="true" /></span>
             <div>
-              {role === "Vendor" && <p className="[&&]:mt-0 [&&]:mb-2 [&&]:text-[9px] [&&]:font-semibold [&&]:tracking-[0.16em] [&&]:text-[#7a8b70]">GROW YOUR BUSINESS <span className="mx-1.5 text-[#b6bfae]">/</span> CUSTOMER FEEDBACK</p>}
               <h1 className="[&&]:m-0 [&&]:text-[28px] [&&]:font-semibold [&&]:tracking-[-0.04em] sm:[&&]:text-[32px]">{role === "Admin" ? "Reviews & ratings" : "Customer experiences"}</h1>
-              {role === "Vendor" && <p className="[&&]:mt-2 [&&]:mb-0 [&&]:max-w-xl [&&]:text-xs [&&]:leading-relaxed [&&]:text-[#6d7b65]">Every review is a little insight. Listen, respond and build a reputation worth celebrating.</p>}
             </div>
           </div>
           <div className="flex shrink-0 items-center justify-between gap-4 sm:justify-end">
-            {role === "Vendor" && <div><span className="flex items-center gap-1.5 text-[11px] font-medium text-[#4f7042]"><CheckCircle2 size={14} aria-hidden="true" />Real bookings. Honest feedback.</span><span className="mt-1 block pl-5 text-[10px] text-[#71806a]">Thoughtful replies build lasting trust</span></div>}
             <button type="button" disabled={summary.loading || state.loading} onClick={() => setVersion((v) => v + 1)} className="[&&]:gap-1.5 [&&]:rounded-xl [&&]:border-[#d6dfcd] [&&]:bg-white [&&]:px-3 [&&]:py-2 [&&]:text-[11px] [&&]:font-medium [&&]:shadow-[0_1px_2px_#294f3c05]"><RotateCw size={13} className={summary.loading || state.loading ? "animate-spin" : ""} aria-hidden="true" />Refresh</button>
           </div>
         </header>
@@ -1161,18 +1157,18 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
           </div>
         </div>
       )}
-      <div className={role === "Admin" ? "mb-5 min-w-0 rounded-2xl border border-[#dfe6d9] bg-white shadow-[0_3px_12px_#294f3c05]" : undefined}>
-        {role === "Admin" ? (
-          <AdminReviewFilters filters={filters} choose={choose} metadata={metadata.data} clear={() => { setFilters(Object.fromEntries(Object.keys(filters).map((key) => [key, ""]))); setPage(1); }} />
+      {role === "Vendor" && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2"><h2 className="[&&]:m-0 [&&]:text-base [&&]:font-semibold">Customer feedback</h2><span className="rounded-full border border-[#dce6cf] bg-[#edf3e5] px-2 py-0.5 text-[10px] font-semibold text-[#708957]">{state.data?.total ?? "..."}</span></div>
+          <span className="text-[10px] text-[#7a866d]">Overall vendor and service reviews from completed bookings</span>
+        </div>
+      )}
+      <div className={role !== "Customer" ? "mb-5 min-w-0 rounded-2xl border border-[#dfe6d9] bg-white shadow-[0_3px_12px_#294f3c05]" : undefined}>
+        {role !== "Customer" ? (
+          <ReviewTableFilters role={role} filters={filters} choose={choose} metadata={metadata.data} clear={() => { setFilters(Object.fromEntries(Object.keys(filters).map((key) => [key, ""]))); setPage(1); }} />
         ) : (
           <section className="rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-2xl [&&]:p-5 [&&]:shadow-[0_2px_4px_#294f3c03] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]">
-            {role !== "Customer" && (
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0e9] pb-4">
-                <div className="flex items-center gap-2.5"><span className="grid size-7 place-items-center rounded-lg bg-[#f1f5e9] text-[#7b9166]"><SlidersHorizontal size={14} aria-hidden="true" /></span><h2 className="[&&]:m-0 [&&]:text-[13px] [&&]:font-semibold">{role === "Vendor" ? "Find a customer story" : "Find the feedback that matters"}</h2>{Object.values(filters).some(Boolean) && <span className="rounded-md bg-[#eaf0e2] px-1.5 py-0.5 text-[10px] font-medium text-[#617e4b]">{Object.values(filters).filter(Boolean).length} active</span>}</div>
-                <button type="button" disabled={!Object.values(filters).some(Boolean)} className="[&&]:gap-1 [&&]:rounded-lg [&&]:border-transparent [&&]:bg-transparent [&&]:px-2 [&&]:py-1 [&&]:text-[10px] [&&]:text-[#6c805e] [&&:disabled]:cursor-default" onClick={() => { setFilters(Object.fromEntries(Object.keys(filters).map((key) => [key, ""]))); setPage(1); }}><X size={12} aria-hidden="true" />Clear filters</button>
-              </div>
-            )}
-            <div className={role !== "Customer" ? (role === "Admin" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.5fr_repeat(4,minmax(0,1fr))]" : "grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.5fr_repeat(3,minmax(0,1fr))]") : "rr-grid [&&]:grid [&&]:grid-cols-[repeat(auto-fit,_minmax(180px,_1fr))] [&&]:gap-[16px] max-[600.001px]:[&&]:grid-cols-[1fr]"}>
+            <div className="rr-grid [&&]:grid [&&]:grid-cols-[repeat(auto-fit,_minmax(180px,_1fr))] [&&]:gap-[16px] max-[600.001px]:[&&]:grid-cols-[1fr]">
               <label>
                 <span className="rr-row [&&]:flex [&&]:items-center [&&]:gap-[12px] [&&]:flex-wrap">
                   <Search size={14} />
@@ -1234,12 +1230,6 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
             </div>
           </section>
         )}
-        {role === "Vendor" && (
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2"><h2 className="[&&]:m-0 [&&]:text-base [&&]:font-semibold">Customer feedback</h2><span className="rounded-full border border-[#dce6cf] bg-[#edf3e5] px-2 py-0.5 text-[10px] font-semibold text-[#708957]">{state.data?.total ?? "..."}</span></div>
-            <span className="text-[10px] text-[#7a866d]">Overall vendor and service reviews from completed bookings</span>
-          </div>
-        )}
         <State state={state} />
         {role === "Admin" && state.data?.rows.length > 0 && <AdminReviewsTable reviews={state.data.rows} actions={adminActions} />}
         {role === "Vendor" && state.data?.rows.length > 0 && <VendorReviewsTable reviews={state.data.rows} actions={vendorActions} report={(review, responseId) => setTarget({ review, responseId })} />}
@@ -1280,7 +1270,7 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
           </ReviewCard>
         ))}
         {state.data && !state.data.rows.length && (
-          <div className={role === "Admin" ? "p-6" : "rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]"}>
+          <div className={role !== "Customer" ? "p-6" : "rr-panel [&&]:bg-[#fff] [&&]:border [&&]:border-[#e2e8dd] [&&]:rounded-[16px] [&&]:p-[24px] [&&]:mb-[20px] [&&]:min-w-0 max-[600.001px]:[&&]:p-[18px]"}>
             <Star size={28} />
             <h3>No reviews here yet</h3>
             <p className="rr-muted [&&]:text-[#74816f] [&&]:text-[13px]">
@@ -1290,7 +1280,7 @@ export default function ReviewsWorkspace({ role = "Customer" }) {
             </p>
           </div>
         )}
-        <div className={role === "Admin" && state.data?.total > state.data?.pageSize ? "border-t border-[#e2e8dd] p-4 sm:px-5" : undefined}>
+        <div className={role !== "Customer" && state.data?.total > state.data?.pageSize ? "border-t border-[#e2e8dd] p-4 sm:px-5" : undefined}>
           <Pagination data={state.data} page={page} setPage={setPage} />
         </div>
       </div>

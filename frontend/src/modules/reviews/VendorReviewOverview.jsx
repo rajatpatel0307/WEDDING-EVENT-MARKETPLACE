@@ -1,61 +1,116 @@
-import { BriefcaseBusiness, ChevronDown, MessageSquare, ShieldCheck, Star, TrendingUp } from "lucide-react";
+import { BriefcaseBusiness, MessageSquare, Reply, Star, TrendingUp, BarChart3 } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Cell, ComposedChart, LabelList, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const reviewsLabel = (count) => `${count} ${Number(count) === 1 ? "review" : "reviews"}`;
-const progressClasses = "[&&]:h-2 [&&]:w-full [&&]:overflow-hidden [&&]:rounded-full [&&]:border-0 [&&]:bg-[#edf1e6] [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-[#edf1e6] [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-[#a7bb8d] [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-[#a7bb8d]";
+const monthLabel = (month) => new Date(`${month}-01T00:00:00Z`).toLocaleDateString("en-IN", { month: "short", year: "2-digit", timeZone: "UTC" });
+const panel = "min-w-0 overflow-hidden rounded-2xl border border-[#e0e7d9] bg-white shadow-[0_3px_12px_#294f3c04]";
+const chart = "h-[260px] min-w-0 w-full [&_text]:text-[10px] [&_text]:fill-[#71806a] [&_.recharts-surface:focus-visible]:outline-2 [&_.recharts-surface:focus-visible]:outline-[#547c5b]";
+const number = (value) => Number(value) || 0;
+
+function ChartHeader({ id, title, icon: Icon, children }) {
+  return <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0e7] px-5 py-4"><div className="flex items-center gap-2.5"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#f0f5e9] text-[#71895e]"><Icon size={16} aria-hidden="true" /></span><h2 id={id} className="[&&]:m-0 [&&]:text-[13px] [&&]:font-semibold">{title}</h2></div>{children}</header>;
+}
+
+function ChartEmpty({ children }) {
+  return <div className="flex min-h-[260px] items-center justify-center px-5 text-center text-xs text-[#7b8c70]">{children}</div>;
+}
+
+function ChartTooltip({ active, payload, kind }) {
+  const row = payload?.[0]?.payload;
+  if (!active || !row) return null;
+  return <div className="grid max-w-64 gap-2 rounded-xl border border-[#dfe7d8] bg-white p-3 text-[11px] text-[#62745b] shadow-lg">
+    <strong className="break-words font-semibold text-[#344e3b]">{kind === "trends" ? monthLabel(row.month) : kind === "distribution" ? `${row.rating}-star reviews` : row.name}</strong>
+    {kind !== "distribution" && <span className="flex items-center justify-between gap-5">Average rating<strong className="font-semibold tabular-nums text-[#547c5b]">{row.rating.toFixed(2)} / 5</strong></span>}
+    <span className="flex items-center justify-between gap-5">Reviews<strong className="font-semibold tabular-nums text-[#947638]">{row.count.toLocaleString("en-IN")}</strong></span>
+  </div>;
+}
 
 export default function VendorReviewOverview({ data, choose, selectedRating }) {
-  const total = Number(data.totalReviews || 0);
-  const average = Number(data.averageRating || 0);
-  const responseRate = Math.max(0, Math.min(100, Number(data.responseRate || 0)));
-  const services = data.services || [];
-  const trends = data.trends || [];
+  const total = number(data.totalReviews);
+  const average = number(data.averageRating);
+  const responseRate = Math.max(0, Math.min(100, number(data.responseRate)));
+  const services = (data.services || []).map((row) => ({ ...row, rating: number(row.rating), count: number(row.count) })).sort((a, b) => b.rating - a.rating || b.count - a.count);
+  const trends = [...(data.trends || [])].sort((a, b) => a.month.localeCompare(b.month)).slice(-6).map((row) => ({ ...row, rating: number(row.rating), count: number(row.count) }));
+  const distribution = [5, 4, 3, 2, 1].map((rating) => ({ rating, label: `${rating} stars`, count: number(data.distribution?.find((row) => number(row.rating) === rating)?.count) }));
+  const filterRating = (rating) => choose("rating", String(selectedRating) === String(rating) ? "" : String(rating));
+  const metrics = [
+    { label: "Overall vendor rating", value: average.toFixed(1), suffix: "/ 5", note: `Based on ${reviewsLabel(total)}`, icon: Star, featured: true },
+    { label: "Vendor reviews", value: total.toLocaleString("en-IN"), note: "Overall vendor feedback", icon: MessageSquare },
+    { label: "Response rate", value: responseRate.toFixed(0), suffix: "%", note: "Vendor reviews with a public reply", icon: Reply },
+    { label: "Services rated", value: services.length.toLocaleString("en-IN"), note: `${services.reduce((sum, row) => sum + row.count, 0).toLocaleString("en-IN")} service reviews`, icon: BriefcaseBusiness },
+  ];
   return (
-    <div className="mb-6 grid gap-5">
-      <div className="grid gap-5 xl:grid-cols-[2fr_1fr]">
-        <section aria-labelledby="vendor-rating-heading" className="overflow-hidden rounded-2xl border border-[#e0e7d9] bg-white shadow-[0_3px_12px_#294f3c04]">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#edf0e7] px-5 py-4">
-            <h2 id="vendor-rating-heading" className="[&&]:m-0 [&&]:text-[13px] [&&]:font-semibold">Your reputation, at a glance</h2>
-            <span className="inline-flex items-center gap-1.5 text-[10px] text-[#6b8059]"><ShieldCheck size={13} aria-hidden="true" />Verified bookings only</span>
-          </div>
-          <div className="grid gap-6 p-5 sm:grid-cols-[auto_1fr] sm:gap-7 sm:p-6">
-            <div className="flex items-center justify-between gap-5 rounded-xl border border-[#ece4d2] bg-[#fcfaf4] p-5 sm:block sm:min-w-40">
-              <div><span className="text-[9px] font-semibold tracking-[0.12em] text-[#8b805e] uppercase">Overall vendor rating</span><div className="mt-2 flex items-baseline gap-1.5"><span className="text-[44px] leading-none font-semibold tracking-[-0.05em] text-[#344e39]">{average.toFixed(1)}</span><span className="text-xs text-[#8b8d77]">/ 5</span></div>
-                <div className="mt-3 flex gap-1 text-[#b99148]" role="img" aria-label={`${average.toFixed(1)} out of 5 stars`}>{[1, 2, 3, 4, 5].map((n) => <Star key={n} size={15} strokeWidth={1.5} fill={n <= Math.round(average) ? "currentColor" : "none"} aria-hidden="true" />)}</div>
-              </div>
-              <span className="mt-3 block text-[11px] text-[#7b806b]">Based on {reviewsLabel(total)}</span>
-            </div>
-            <div className="grid content-center gap-2">
-              {[5, 4, 3, 2, 1].map((rating) => {
-                const count = Number(data.distribution?.find((row) => Number(row.rating) === rating)?.count || 0);
-                return (
-                  <button key={rating} type="button" onClick={() => choose("rating", String(selectedRating) === String(rating) ? "" : String(rating))} aria-pressed={String(selectedRating) === String(rating)} aria-label={`Filter ${rating} star reviews: ${count} ${count === 1 ? "review" : "reviews"}`} className="[&&]:grid [&&]:grid-cols-[1.75rem_1fr_1.5rem] [&&]:gap-3 [&&]:rounded-lg [&&]:border-transparent [&&]:bg-transparent [&&]:px-2 [&&]:py-1.5 [&&:hover]:bg-[#f7f9f2] [&&[aria-pressed=true]]:bg-[#edf3e5] [&&[aria-pressed=true]]:ring-1 [&&[aria-pressed=true]]:ring-[#cbdab9]">
-                    <span className="flex items-center gap-1 text-[11px] text-[#6b7b60]">{rating}<Star size={10} fill="currentColor" className="text-[#b1be9c]" aria-hidden="true" /></span>
-                    <progress className={progressClasses} value={count} max={total || 1} aria-label={`${rating} stars: ${reviewsLabel(count)}`} />
-                    <span className="text-right text-[11px] text-[#6b7b60] tabular-nums">{count}</span>
-                  </button>
-                );
-              })}
-              <span className="mt-1 px-2 text-[10px] text-[#7a866d]">Select a star row to filter your feedback.</span>
-            </div>
-          </div>
+    <div className="mb-6 grid min-w-0 gap-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map(({ label, value, suffix, note, icon: Icon, featured }) => <section key={label} aria-label={label} className={`grid min-w-0 min-h-36 content-between gap-4 rounded-2xl border p-5 ${featured ? "border-[#35573e] bg-[#35573e] text-white shadow-[0_5px_16px_#294f3c12]" : "border-[#e0e7d9] bg-white shadow-[0_3px_12px_#294f3c04]"}`}>
+          <div className="flex items-center justify-between gap-3"><span className={`text-[10px] font-semibold uppercase tracking-[0.1em] ${featured ? "text-[#d4e1ce]" : "text-[#71806a]"}`}>{label}</span><span className={`grid size-8 shrink-0 place-items-center rounded-lg ${featured ? "bg-white/10 text-[#e3c68e]" : "bg-[#f1f5e9] text-[#819568]"}`}><Icon size={16} aria-hidden="true" /></span></div>
+          <div className="flex items-baseline gap-1.5"><strong className="text-[34px] font-semibold leading-none tracking-tight tabular-nums">{value}</strong>{suffix && <span className={`text-sm ${featured ? "text-[#c0d1b7]" : "text-[#849575]"}`}>{suffix}</span>}</div>
+          <span className={`text-[10px] ${featured ? "text-[#cfddc5]" : "text-[#7a896f]"}`}>{note}</span>
+        </section>)}
+      </div>
+
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[1.2fr_1fr]">
+        <section className={panel} aria-labelledby="vendor-trend-heading">
+          <ChartHeader id="vendor-trend-heading" title="Monthly rating trends" icon={TrendingUp}><span className="text-[10px] text-[#7b8b70]">{trends.length ? `${trends.length} ${trends.length === 1 ? "month" : "months"}` : "No activity"}</span></ChartHeader>
+          {trends.length ? <>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 px-5 pt-4 text-[10px] text-[#71806a]"><span className="inline-flex items-center gap-2"><span className="h-0.5 w-4 bg-[#547c5b]" aria-hidden="true" />Rating (left axis, 0-5)</span><span className="inline-flex items-center gap-2"><span className="size-2.5 rounded-sm bg-[#d8c291]" aria-hidden="true" />Reviews (right axis)</span></div>
+            <div className="px-2 pt-4 pb-3 sm:px-4"><div className={chart}>
+              <ResponsiveContainer initialDimension={{ width: 640, height: 260 }}>
+                <ComposedChart data={trends} margin={{ top: 15, right: 5, bottom: 8, left: 0 }} accessibilityLayer>
+                  <CartesianGrid vertical={false} stroke="#edf1e8" strokeDasharray="3 3" />
+                  <XAxis dataKey="month" tickFormatter={monthLabel} axisLine={false} tickLine={false} tickMargin={12} minTickGap={20} />
+                  <YAxis yAxisId="rating" domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} width={28} axisLine={false} tickLine={false} tickMargin={8} />
+                  <YAxis yAxisId="reviews" orientation="right" allowDecimals={false} width={36} axisLine={false} tickLine={false} tickMargin={8} />
+                  <Tooltip content={<ChartTooltip kind="trends" />} cursor={{ fill: "#f5f8ef" }} />
+                  <Bar yAxisId="reviews" dataKey="count" name="Vendor reviews" fill="#d8c291" maxBarSize={36} radius={[5, 5, 0, 0]} isAnimationActive={false} />
+                  <Line yAxisId="rating" dataKey="rating" name="Average rating" type="linear" stroke="#547c5b" strokeWidth={2.5} dot={{ r: 4, fill: "#fff", strokeWidth: 2 }} activeDot={{ r: 6 }} isAnimationActive={false} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div></div>
+            <table className="sr-only"><caption>Monthly overall vendor rating data</caption><thead><tr><th scope="col">Month</th><th scope="col">Reviews</th><th scope="col">Rating out of 5</th></tr></thead><tbody>{trends.map((row) => <tr key={row.month}><th scope="row">{monthLabel(row.month)}</th><td>{row.count}</td><td>{row.rating.toFixed(2)}</td></tr>)}</tbody></table>
+          </> : <ChartEmpty>No monthly vendor reviews yet.</ChartEmpty>}
         </section>
 
-        <section aria-labelledby="vendor-replies-heading" className="flex flex-col justify-between gap-5 rounded-2xl border border-[#35573e] bg-[linear-gradient(135deg,#304d38,#466449)] p-5 text-white shadow-[0_5px_16px_#294f3c12] sm:p-6">
-          <div className="flex items-start justify-between gap-3"><div><span className="text-[9px] font-semibold tracking-[0.12em] text-[#c9d9be] uppercase">Keep the conversation going</span><h2 id="vendor-replies-heading" className="[&&]:mt-2 [&&]:mb-0 [&&]:text-base [&&]:font-medium [&&]:text-white">A little reply. A lasting impression.</h2></div><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/10 text-[#d6dfc0]"><MessageSquare size={18} strokeWidth={1.6} aria-hidden="true" /></span></div>
-          <div><div className="mb-2 flex items-baseline justify-between gap-3"><span className="text-[34px] leading-none font-semibold tracking-tight">{responseRate.toFixed(0)}<span className="ml-0.5 text-lg font-normal text-[#bfceb3]">%</span></span><span className="text-[11px] text-[#d4e0c8]">Response rate</span></div><progress className="[&&]:h-2 [&&]:w-full [&&]:overflow-hidden [&&]:rounded-full [&&]:border-0 [&&]:bg-white/10 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-white/10 [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-[#c5d7a4] [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-[#c5d7a4]" value={responseRate} max={100} aria-label={`${responseRate.toFixed(0)} percent of overall vendor reviews have a public reply`} /><p className="[&&]:mt-2 [&&]:mb-0 [&&]:text-[10px] [&&]:leading-relaxed [&&]:text-[#d4e0c8]">{total ? "The share of your overall vendor reviews with a public reply." : "Your response rate will appear after your first vendor review."}</p></div>
-          <div className="flex items-center gap-2 border-t border-white/15 pt-3 text-[11px] text-[#d4e0c8]"><BriefcaseBusiness size={14} aria-hidden="true" />{services.length} {services.length === 1 ? "service rated" : "services rated"} by your customers</div>
+        <section className={panel} aria-labelledby="vendor-distribution-heading">
+          <ChartHeader id="vendor-distribution-heading" title="Rating distribution" icon={BarChart3}><span className="text-[10px] text-[#7b8b70]">{reviewsLabel(total)}</span></ChartHeader>
+          {total > 0 ? <div className="px-2 pt-5 pb-3 sm:px-4"><div className={chart}>
+            <ResponsiveContainer initialDimension={{ width: 520, height: 260 }}>
+              <BarChart data={distribution} margin={{ top: 20, right: 12, bottom: 8, left: 0 }} accessibilityLayer>
+                <CartesianGrid vertical={false} stroke="#edf1e8" strokeDasharray="3 3" />
+                <XAxis dataKey="label" axisLine={false} tickLine={false} tickMargin={12} interval={0} />
+                <YAxis allowDecimals={false} width={32} axisLine={false} tickLine={false} tickMargin={8} />
+                <Tooltip content={<ChartTooltip kind="distribution" />} cursor={{ fill: "#f5f8ef" }} />
+                <Bar dataKey="count" name="Vendor reviews" maxBarSize={42} radius={[5, 5, 0, 0]} isAnimationActive={false} className="cursor-pointer" onClick={({ payload }) => payload && filterRating(payload.rating)}>
+                  {distribution.map((row) => <Cell key={row.rating} fill={String(selectedRating) === String(row.rating) ? "#35573e" : selectedRating ? "#c7d5bb" : "#91ad7d"} />)}
+                  <LabelList dataKey="count" position="top" />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div></div> : <ChartEmpty>No overall vendor reviews yet.</ChartEmpty>}
+          <div className="flex flex-wrap items-center justify-center gap-2 border-t border-[#edf0e7] bg-[#fafcf8] px-4 py-3" role="group" aria-label="Filter reviews by star rating">
+            {distribution.map((row) => <button key={row.rating} type="button" onClick={() => filterRating(row.rating)} aria-pressed={String(selectedRating) === String(row.rating)} aria-label={`Filter ${row.rating} star reviews: ${reviewsLabel(row.count)}`} className="[&&]:gap-1 [&&]:rounded-lg [&&]:px-2 [&&]:py-1.5 [&&]:text-[10px] [&&[aria-pressed=true]]:border-[#35573e] [&&[aria-pressed=true]]:bg-[#35573e] [&&[aria-pressed=true]]:text-white">{row.rating}<Star size={10} aria-hidden="true" /><span className="ml-1 opacity-70">({row.count})</span></button>)}
+          </div>
+          <table className="sr-only"><caption>Overall vendor star distribution data</caption><thead><tr><th scope="col">Stars</th><th scope="col">Reviews</th></tr></thead><tbody>{distribution.map((row) => <tr key={row.rating}><th scope="row">{row.rating}</th><td>{row.count}</td></tr>)}</tbody></table>
         </section>
       </div>
 
-      <details className="group overflow-hidden rounded-2xl border border-[#e0e7d9] bg-white shadow-[0_2px_4px_#294f3c03]">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 [&::-webkit-details-marker]:hidden">
-          <span className="flex items-center gap-3"><span className="grid size-8 place-items-center rounded-lg bg-[#f2f5eb] text-[#859c6d]"><TrendingUp size={16} aria-hidden="true" /></span><span><span className="block text-[13px] font-semibold">Rating insights</span><span className="mt-0.5 block text-[10px] text-[#71806a]">Monthly trends and individual service ratings</span></span></span><ChevronDown size={16} className="shrink-0 text-[#8b9b7b] transition-transform group-open:rotate-180" aria-hidden="true" />
-        </summary>
-        <div className="grid gap-6 border-t border-[#edf0e7] p-5 lg:grid-cols-2">
-          <section><h3 className="[&&]:mt-0 [&&]:mb-3 [&&]:text-xs [&&]:font-semibold">Monthly vendor ratings</h3>{trends.length ? <div className="overflow-x-auto"><table className="[&&]:text-[11px]"><thead className="bg-[#f7f9f2] text-[#71806a]"><tr><th scope="col">Month</th><th scope="col">Reviews</th><th scope="col">Rating</th></tr></thead><tbody>{trends.map((trend) => <tr key={trend.month}><td>{new Date(`${trend.month}-01T00:00:00`).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}</td><td>{trend.count}</td><td><span className="inline-flex items-center gap-1 font-medium text-[#a1813b]"><Star size={11} fill="currentColor" aria-hidden="true" />{Number(trend.rating).toFixed(1)}</span></td></tr>)}</tbody></table></div> : <p className="[&&]:m-0 [&&]:text-xs [&&]:text-[#71806a]">Your monthly trends will appear after your first vendor review.</p>}</section>
-          <section><h3 className="[&&]:mt-0 [&&]:mb-3 [&&]:text-xs [&&]:font-semibold">Service ratings</h3>{services.length ? <div className="divide-y divide-[#edf0e7]">{services.map((service) => <div key={service.id} className="flex items-center justify-between gap-4 py-3 first:pt-0"><div><span className="block text-xs font-medium">{service.name}</span><span className="mt-1 block text-[10px] text-[#71806a]">{reviewsLabel(service.count)}</span></div><span className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[#ece1c8] bg-[#fcf7eb] px-2 py-1 text-xs font-semibold text-[#a1813b]"><Star size={11} fill="currentColor" aria-hidden="true" />{Number(service.rating).toFixed(1)}</span></div>)}</div> : <p className="[&&]:m-0 [&&]:text-xs [&&]:text-[#71806a]">Reviews for individual services will appear here separately from your overall vendor rating.</p>}</section>
-        </div>
-      </details>
+      <section className={panel} aria-labelledby="vendor-services-heading">
+        <ChartHeader id="vendor-services-heading" title="Service ratings" icon={BriefcaseBusiness}><span className="text-[10px] text-[#7b8b70]">Scored separately from your overall vendor rating</span></ChartHeader>
+        {services.length ? <>
+          <div className="max-h-[360px] overflow-y-auto px-2 py-4 sm:px-5 [&_text]:text-[10px] [&_text]:fill-[#71806a]" tabIndex={0} role="region" aria-label="Service rating chart. Scroll to view all services.">
+            <ResponsiveContainer width="100%" height={Math.max(200, services.length * 48)} initialDimension={{ width: 1000, height: Math.max(200, services.length * 48) }}>
+              <BarChart data={services} layout="vertical" margin={{ top: 8, right: 38, bottom: 8, left: 0 }} accessibilityLayer>
+                <CartesianGrid horizontal={false} stroke="#edf1e8" strokeDasharray="3 3" />
+                <XAxis type="number" domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} axisLine={false} tickLine={false} tickMargin={10} />
+                <YAxis type="category" dataKey="name" width={110} axisLine={false} tickLine={false} tickMargin={10} tickFormatter={(name) => name.length > 18 ? `${name.slice(0, 17)}...` : name} />
+                <Tooltip content={<ChartTooltip kind="services" />} cursor={{ fill: "#f5f8ef" }} />
+                <Bar dataKey="rating" name="Service rating" fill="#83a17a" barSize={22} radius={[0, 5, 5, 0]} isAnimationActive={false}><LabelList dataKey="rating" position="right" formatter={(value) => Number(value).toFixed(1)} /></Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <table className="sr-only"><caption>Individual service rating data</caption><thead><tr><th scope="col">Service</th><th scope="col">Reviews</th><th scope="col">Rating out of 5</th></tr></thead><tbody>{services.map((row) => <tr key={row.id}><th scope="row">{row.name}</th><td>{reviewsLabel(row.count)}</td><td>{row.rating.toFixed(2)}</td></tr>)}</tbody></table>
+        </> : <ChartEmpty>No service reviews yet.</ChartEmpty>}
+      </section>
     </div>
   );
 }

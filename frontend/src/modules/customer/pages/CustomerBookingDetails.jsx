@@ -22,6 +22,7 @@ export default function CustomerBookingDetails({
 }) {
   const b = data.booking;
   const status = b.BookingStatus;
+  const reviews = data.reviews || [];
   const terminal = ["Cancelled", "Rejected", "Expired"].includes(status);
   const stage = status === "Completed" ? 4
     : status === "InProgress" ? 3
@@ -129,7 +130,34 @@ export default function CustomerBookingDetails({
             </div>}
           </section>
 
-          <section className="bd-card [&&]:overflow-hidden [&&]:border [&&]:border-[#eee5df] [&&]:rounded-[12px] [&&]:bg-[#fff] [&&]:shadow-[0_3px_15px_#51383d03] bd-journey [@media(min-width:_801px)_and_(max-width:_1000px),_(max-width:_700px)]:[&&]:[order:3]" aria-labelledby="bd-journey-title">
+          {reviews.length > 0 && (
+            <section className="min-w-0 overflow-hidden rounded-xl border border-[#eee5df] bg-white shadow-[0_3px_15px_#51383d03] [@media(min-width:_801px)_and_(max-width:_1000px),_(max-width:_700px)]:order-3" aria-labelledby="bd-ratings-title">
+              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f0e9e3] p-5 sm:px-6">
+                <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-[#faf4e8] text-[#b28a43]"><Star size={18} aria-hidden="true" /></span><h2 id="bd-ratings-title" className="font-serif text-2xl font-normal tracking-tight text-[#45343b]">Your ratings &amp; reviews</h2></div>
+              </header>
+              <div className="divide-y divide-[#f0e9e3]">
+                {reviews.map((review) => {
+                  const overall = review.bookingItemId == null;
+                  const target = overall ? "Overall vendor rating" : review.service || data.items.find((item) => String(item.id) === String(review.bookingItemId))?.name || "Booked service";
+                  const dimensions = [["Service quality", review.serviceQualityRating], ["Communication", review.communicationRating], ["Value for money", review.valueForMoneyRating], ["Professionalism", review.professionalismRating]].filter(([, value]) => Number(value) >= 1 && Number(value) <= 5);
+                  return (
+                    <article key={review.id} className="min-w-0 space-y-3 p-5 sm:px-6">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0"><h3 className="break-words text-sm font-semibold text-[#55404a]">{target}</h3>{overall && data.checkout?.vendor && <p className="mt-1 break-words text-[11px] text-[#95817c]">{data.checkout.vendor}</p>}</div>
+                        {review.status && <Badge>{review.status === "Approved" ? "Published" : review.status}</Badge>}
+                      </div>
+                      <SubmittedRating value={review.rating} label={overall ? "Your overall vendor rating" : `Your rating for ${target}`} />
+                      {(review.title || review.text) && <div className="space-y-1.5">{review.title && <p className="break-words text-xs font-semibold text-[#674e57]">{review.title}</p>}{review.text && <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-[#85737a]">{review.text}</p>}</div>}
+                      {dimensions.length > 0 && <dl className="grid gap-x-5 gap-y-2 rounded-lg bg-[#fcfaf7] p-3 text-[11px] sm:grid-cols-2">{dimensions.map(([label, value]) => <div key={label} className="flex justify-between gap-3"><dt className="text-[#8b7b73]">{label}</dt><dd className="font-medium tabular-nums text-[#735a42]">{value} / 5</dd></div>)}</dl>}
+                      {review.createdAt && <time dateTime={review.createdAt} className="block text-[10px] text-[#a28f87]">Reviewed on {date(review.createdAt)}</time>}
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          <section className="bd-card [&&]:overflow-hidden [&&]:border [&&]:border-[#eee5df] [&&]:rounded-[12px] [&&]:bg-[#fff] [&&]:shadow-[0_3px_15px_#51383d03] bd-journey [@media(min-width:_801px)_and_(max-width:_1000px),_(max-width:_700px)]:[&&]:[order:4]" aria-labelledby="bd-journey-title">
             <header className="bd-card-heading [&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-[16px] [&&]:pt-[23px] [&&]:px-[25px] [&&]:pb-[20px] [&&]:border-b [&&]:border-b-[#f0e9e3] [&&]:text-[#a48b78] [&&_.bd-eyebrow]:text-[8px] [&&_.bd-eyebrow]:tracking-[1.5px] [&&_h2]:mt-[5px] [&&_h2]:mx-0 [&&_h2]:mb-0 [&&_h2]:text-[#45343b] [&&_h2]:[font:400_24px/1.3_Georgia,_serif] [&&_h2]:tracking-[-.5px] [&&_.bd-vendor-name]:mt-[7px] [&&_.bd-vendor-name]:text-[#9a878c] [&&_.bd-vendor-name]:text-[10px] max-[1100.001px]:[&&]:p-[21px] max-[600.001px]:[&&]:p-[20px] max-[600.001px]:[&&_h2]:text-[23px]"><div><p className="bd-eyebrow [&&]:flex [&&]:items-center [&&]:gap-[8px] [&&]:text-[#a37c60] [&&]:text-[9px] [&&]:font-semibold [&&]:tracking-[1.9px] [&&]:leading-[1.7] [&&_>_span]:w-[5px] [&&_>_span]:h-[5px] [&&_>_span]:rounded-[50%] [&&_>_span]:bg-[#b6956d]">EVERY STEP, TOGETHER</p><h2 id="bd-journey-title">Your booking journey</h2></div><Clock3 size={20} strokeWidth={1.4} aria-hidden="true" /></header>
             {data.history.length ? <ol className="bd-history [&&]:m-0 [&&]:py-[24px] [&&]:px-[25px] [&&]:[list-style:none] [&&_li]:relative [&&_li]:flex [&&_li]:gap-[18px] [&&_li]:pb-[25px] [&&_li:last-child]:pb-0 [&&_li:not(:last-child)::before]:content-[''] [&&_li:not(:last-child)::before]:absolute [&&_li:not(:last-child)::before]:left-[4px] [&&_li:not(:last-child)::before]:top-[12px] [&&_li:not(:last-child)::before]:bottom-0 [&&_li:not(:last-child)::before]:w-[1px] [&&_li:not(:last-child)::before]:bg-[#e9ded8] [&&_li:first-child_.bd-history-dot]:bg-[#7f9971] [&&_li:first-child_.bd-history-dot]:shadow-[0_0_0_1px_#b3c6a7] max-[600.001px]:[&&]:p-[22px]">
               {data.history.map((entry, index) => <li key={index}>
@@ -143,7 +171,7 @@ export default function CustomerBookingDetails({
             </ol> : <p className="bd-empty-history [&&]:p-[25px] [&&]:text-[#81757a] [&&]:text-[12px]">Your booking updates will appear here.</p>}
           </section>
 
-          <div className="bd-manage [&&_>_section]:m-0 [&&_>_section]:py-[23px] [&&_>_section]:px-[25px] [&&_>_section]:border [&&_>_section]:border-[#eee5df] [&&_>_section]:rounded-[12px] [&&_>_section]:text-[#79686d] [&&_>_section]:bg-[#fff] [&&_h2]:mt-0 [&&_h2]:mx-0 [&&_h2]:mb-[15px] [&&_h2]:text-[#45343b] [&&_h2]:[font:400_24px/1.3_Georgia,_serif] [&&_h2]:tracking-[-.5px] [&&_:is(p,_strong,_button)]:text-[11px] [&&_strong]:text-[#69525c] [&&_strong]:font-medium [&&_button]:min-h-[40px] [&&_button]:border-[#e1d5d9] [&&_button]:rounded-[7px] [&&_button]:text-[#875d6b] [&&_button:disabled]:[cursor:not-allowed] [&&_button:enabled:hover]:bg-[#fbf4f5] [&&_p]:leading-[1.8] [@media(min-width:_801px)_and_(max-width:_1000px),_(max-width:_700px)]:[&&]:[order:4] max-[600.001px]:[&&_>_section]:p-[21px]"><BookingChanges id={id} data={data} request={customerRequest} saved={refresh} /></div>
+          <div className="bd-manage [&&_>_section]:m-0 [&&_>_section]:py-[23px] [&&_>_section]:px-[25px] [&&_>_section]:border [&&_>_section]:border-[#eee5df] [&&_>_section]:rounded-[12px] [&&_>_section]:text-[#79686d] [&&_>_section]:bg-[#fff] [&&_h2]:mt-0 [&&_h2]:mx-0 [&&_h2]:mb-[15px] [&&_h2]:text-[#45343b] [&&_h2]:[font:400_24px/1.3_Georgia,_serif] [&&_h2]:tracking-[-.5px] [&&_:is(p,_strong,_button)]:text-[11px] [&&_strong]:text-[#69525c] [&&_strong]:font-medium [&&_button]:min-h-[40px] [&&_button]:border-[#e1d5d9] [&&_button]:rounded-[7px] [&&_button]:text-[#875d6b] [&&_button:disabled]:[cursor:not-allowed] [&&_button:enabled:hover]:bg-[#fbf4f5] [&&_p]:leading-[1.8] [@media(min-width:_801px)_and_(max-width:_1000px),_(max-width:_700px)]:[&&]:[order:5] max-[600.001px]:[&&_>_section]:p-[21px]"><BookingChanges id={id} data={data} request={customerRequest} saved={refresh} /></div>
         </div>
 
         <aside className="bd-sidebar [&&]:grid [&&]:min-w-0 [&&]:gap-[22px] [@media(min-width:_801px)_and_(max-width:_1000px),_(max-width:_700px)]:[&&]:[order:2]" aria-label="Payment summary">
@@ -171,6 +199,21 @@ export default function CustomerBookingDetails({
                 {config.error && <ErrorView error={config.error} retry={config.retry} />}
               </div>}
               {status === "Pending" && <div className="bd-awaiting [&&]:flex [&&]:items-start [&&]:gap-[9px] [&&]:mt-[20px] [&&]:p-[13px] [&&]:border [&&]:border-[#eee3cf] [&&]:rounded-[7px] [&&]:bg-[#fffbf3] [&&]:text-[#a4854f] [&&_>_svg]:mt-[2px] [&&_strong]:text-[#8b7046] [&&_strong]:text-[10px] [&&_strong]:font-medium [&&_p]:mt-[4px] [&&_p]:text-[#8e7b61] [&&_p]:text-[10px] [&&_p]:leading-[1.7]"><Clock3 size={17} aria-hidden="true" /><div><strong>Awaiting vendor acceptance</strong><p>Payment will be available after your vendor accepts this request.</p></div></div>}
+              {reviews.length > 0 && <section className="mt-5 rounded-xl border border-[#ece2d3] bg-[#fcfaf5] p-4" aria-labelledby="bd-feedback-title">
+                <h3 id="bd-feedback-title" className="mb-3 text-[10px] font-medium uppercase tracking-wider text-[#9a8065]">Your submitted feedback</h3>
+                <div className="divide-y divide-[#ece2d3]">
+                  {reviews.map((review) => {
+                    const overall = review.bookingItemId == null;
+                    const target = overall ? "Overall vendor rating" : review.service || data.items.find((item) => String(item.id) === String(review.bookingItemId))?.name || "Booked service";
+                    return <article key={review.id} className="min-w-0 space-y-2.5 py-3 first:pt-0 last:pb-0">
+                      <h4 className="break-words text-xs font-semibold text-[#735746]">{target}</h4>
+                      <SubmittedRating value={review.rating} label={overall ? "Your overall vendor rating" : `Your rating for ${target}`} />
+                      {review.title && <p className="break-words text-xs font-medium text-[#674e57]">{review.title}</p>}
+                      {review.text && <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-[#857564]">{review.text}</p>}
+                    </article>;
+                  })}
+                </div>
+              </section>}
               {status === "Completed" && <button className="bd-button [&&]:inline-flex [&&]:items-center [&&]:justify-center [&&]:gap-[9px] [&&]:min-h-[43px] [&&]:py-[11px] [&&]:px-[17px] [&&]:border [&&]:border-[transparent] [&&]:rounded-[8px] [&&]:text-[11px] [&&]:font-medium [&&]:leading-[1.5] [&&]:text-center [&&]:no-underline [&&]:transition-[background,box-shadow] [&&]:duration-180 [&&]:ease-[ease] bd-button-primary [&&&]:bg-[#873f52] [&&&]:border-[#873f52] [&&&]:text-[#fff] [&&&]:shadow-[0_4px_10px_#74314713] [&&&:hover]:bg-[#713347] [&&&:hover]:border-[#713347] [&&&:hover]:shadow-[0_5px_16px_#74314722] bd-review [&&]:w-full [&&]:mt-[20px]" onClick={onReview}><Star size={16} aria-hidden="true" /> Write a review</button>}
             </div>
             <footer className="bd-summary-footer [&&]:flex [&&]:items-center [&&]:justify-center [&&]:gap-[7px] [&&]:py-[13px] [&&]:px-[15px] [&&]:border-t [&&]:border-t-[#f0e9e1] [&&]:bg-[#fdfbf8] [&&]:text-[#928575] [&&]:text-[9px]"><ShieldCheck size={15} aria-hidden="true" /><span>Payments processed through secure checkout</span></footer>
@@ -182,5 +225,18 @@ export default function CustomerBookingDetails({
 
       <footer className="bd-footer [&&]:flex [&&]:items-center [&&]:justify-between [&&]:gap-[15px] [&&]:mt-[30px] [&&]:pt-[20px] [&&]:px-0 [&&]:pb-[5px] [&&]:border-t [&&]:border-t-[#e9ded6] [&&]:text-[#ad9a92] [&&_p]:text-[9px] max-[600.001px]:[&&]:flex-wrap max-[600.001px]:[&&]:justify-center max-[600.001px]:[&&]:[column-gap:18px]"><span className="bd-footer-brand [&&]:text-[#96726c] [&&]:[font:400_22px/1.4_Georgia,_serif] [&&]:tracking-[-.7px] [&&_span]:text-[#ba9972]">MarryNest<span>.</span></span><p>For the day. For the memories. For you.</p><Heart size={14} strokeWidth={1.4} aria-hidden="true" /></footer>
     </div>
+  );
+}
+
+function SubmittedRating({ value, label = "Your rating" }) {
+  const rating = Number(value);
+  if (!Number.isFinite(rating) || rating < 1 || rating > 5) return null;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-2.5" role="img" aria-label={`${label}: ${rating} out of 5 stars`}>
+      <span className="inline-flex gap-1 text-[#b28a43]" aria-hidden="true">
+        {[1, 2, 3, 4, 5].map((star) => <Star key={star} size={16} fill={star <= rating ? "currentColor" : "none"} strokeWidth={1.5} />)}
+      </span>
+      <span className="text-xs font-semibold tabular-nums text-[#674d3d]" aria-hidden="true">{rating} / 5</span>
+    </span>
   );
 }

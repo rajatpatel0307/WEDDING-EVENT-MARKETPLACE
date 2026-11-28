@@ -1,4 +1,5 @@
-﻿import { ArrowUpRight, Flag, MessageSquare, ShieldCheck, Star, Trophy, TrendingUp } from "lucide-react";
+import { ArrowUpRight, Flag, MessageSquare, ShieldCheck, Star, BarChart3, TrendingUp } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, ComposedChart, LabelList, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const reviewCount = (count) => `${count} ${Number(count) === 1 ? "review" : "reviews"}`;
 const monthLabel = (month) => new Date(`${month}-01T00:00:00`).toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
@@ -7,8 +8,8 @@ export default function AdminReviewOverview({ data, choose }) {
   const total = (data.counts || []).reduce((sum, row) => sum + Number(row.count), 0);
   const published = Number(data.totalApproved || 0);
   const average = Number(data.averageRating || 0);
-  const vendors = (data.vendors || []).slice(0, 5);
-  const trends = (data.trends || []).slice(0, 6).reverse();
+  const vendors = (data.vendors || []).slice(0, 5).map((vendor) => ({ ...vendor, rating: Number(vendor.rating), count: Number(vendor.count) }));
+  const trends = [...(data.trends || [])].sort((a, b) => a.month.localeCompare(b.month)).slice(-6).map((trend) => ({ ...trend, rating: Number(trend.rating), count: Number(trend.count) }));
   const latest = trends.at(-1);
   const metrics = [
     { label: "Total reviews", value: total.toLocaleString("en-IN"), note: "From completed bookings", icon: MessageSquare, action: () => choose("status", "") },
@@ -40,48 +41,87 @@ export default function AdminReviewOverview({ data, choose }) {
           );
         })}
       </div>
-      <div className="grid gap-5 xl:grid-cols-[1.2fr_1fr]">
-        <section className="overflow-hidden rounded-2xl border border-[#e0e7dd] bg-white shadow-[0_2px_4px_#294f3c03]" aria-labelledby="review-trends-heading">
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[1.2fr_1fr]">
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-[#e0e7dd] bg-white shadow-[0_2px_4px_#294f3c03]" aria-labelledby="review-trends-heading">
           <div className="flex items-center justify-between gap-3 border-b border-[#edf0e9] px-5 py-4">
-            <div className="flex items-center gap-3"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#f0f5e9] text-[#71895e]"><TrendingUp size={16} aria-hidden="true" /></span><div><h2 id="review-trends-heading" className="[&&]:m-0 [&&]:text-[13px] [&&]:font-semibold">Rating activity</h2><p className="[&&]:mt-0.5 [&&]:mb-0 [&&]:text-[11px] [&&]:text-[#71806a]">The customer perspective, month by month</p></div></div>
-            <span className="rounded-md border border-[#e7ecdf] bg-[#fafbf7] px-2 py-1 text-[10px] text-[#6b7a62]">{trends.length ? `${trends.length} ${trends.length === 1 ? "month" : "months"}` : "No activity"}</span>
+            <div className="flex items-center gap-3">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#f0f5e9] text-[#71895e]"><TrendingUp size={16} aria-hidden="true" /></span>
+              <div><h2 id="review-trends-heading" className="[&&]:m-0 [&&]:text-[13px] [&&]:font-semibold">Rating &amp; review trends</h2><p className="[&&]:mt-0.5 [&&]:mb-0 [&&]:text-[11px] [&&]:text-[#71806a]">Monthly average rating and published review count</p></div>
+            </div>
+            <span className="shrink-0 rounded-md border border-[#e7ecdf] bg-[#fafbf7] px-2 py-1 text-[10px] text-[#6b7a62]">{trends.length ? `${trends.length} ${trends.length === 1 ? "month" : "months"}` : "No activity"}</span>
           </div>
           {trends.length ? (
-            <div className="grid gap-5 p-5 sm:grid-cols-[auto_1fr] sm:gap-7">
-              <div className="flex items-center justify-between gap-5 sm:block sm:min-w-24 sm:border-r sm:border-[#edf0e9] sm:pr-6">
-                <div><span className="text-[10px] font-medium tracking-wide text-[#71806a] uppercase">Latest month</span><div className="mt-1.5 flex items-center gap-2"><span className="text-[30px] leading-none font-semibold tracking-tight tabular-nums">{Number(latest.rating).toFixed(1)}</span><Star size={17} fill="currentColor" className="text-[#bd944e]" aria-hidden="true" /></div></div>
-                <span className="mt-2 block text-[10px] text-[#71806a]">{monthLabel(latest.month)}</span>
+            <>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-5 pt-4 text-[10px] text-[#71806a]">
+                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-4 bg-[#547c5b]" aria-hidden="true" />Average rating (left axis, 0-5)</span>
+                <span className="inline-flex items-center gap-2"><span className="size-2.5 rounded-sm bg-[#d8c291]" aria-hidden="true" />Published reviews (right axis)</span>
               </div>
-              <div className="grid content-center gap-4">
-                {trends.map((trend) => (
-                  <div key={trend.month} className="grid grid-cols-[3rem_1fr_1.75rem] items-center gap-x-3 gap-y-1.5">
-                    <span className="text-[11px] text-[#63745f]">{monthLabel(trend.month)}</span>
-                    <progress className="[&&]:h-2.5 [&&]:w-full [&&]:overflow-hidden [&&]:rounded-full [&&]:border-0 [&&]:bg-[#eef2e9] [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-[#eef2e9] [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-[linear-gradient(90deg,#8aa777,#b5c69c)] [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-[#91a67c]" value={Number(trend.rating)} max={5} aria-label={`${trend.month}: ${Number(trend.rating).toFixed(2)} out of 5 from ${reviewCount(trend.count)}`} />
-                    <span className="text-right text-[11px] font-semibold tabular-nums">{Number(trend.rating).toFixed(1)}</span>
-                    <span className="col-start-2 text-[10px] text-[#71806a]">{reviewCount(trend.count)}</span>
-                  </div>
-                ))}
+              <div className="px-2 pt-4 pb-1 sm:px-4">
+                <div className={chartClass}>
+                  <ResponsiveContainer initialDimension={{ width: 640, height: 270 }}>
+                    <ComposedChart data={trends} margin={{ top: 15, right: 5, bottom: 8, left: 0 }} accessibilityLayer>
+                      <CartesianGrid vertical={false} stroke="#edf1e8" strokeDasharray="3 3" />
+                      <XAxis dataKey="month" tickFormatter={monthLabel} axisLine={false} tickLine={false} tickMargin={12} minTickGap={20} />
+                      <YAxis yAxisId="rating" domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} width={28} axisLine={false} tickLine={false} tickMargin={8} />
+                      <YAxis yAxisId="reviews" orientation="right" allowDecimals={false} width={36} axisLine={false} tickLine={false} tickMargin={8} />
+                      <Tooltip content={<ReviewChartTooltip />} cursor={{ fill: "#f5f8ef" }} />
+                      <Bar yAxisId="reviews" dataKey="count" name="Published reviews" fill="#d8c291" maxBarSize={36} radius={[5, 5, 0, 0]} isAnimationActive={false} />
+                      <Line yAxisId="rating" dataKey="rating" name="Average rating" type="linear" stroke="#547c5b" strokeWidth={2.5} dot={{ r: 4, fill: "#fff", strokeWidth: 2 }} activeDot={{ r: 6 }} isAnimationActive={false} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#edf0e9] bg-[#fafcf8] px-5 py-3 text-[10px] text-[#71806a]"><span>Latest: {monthLabel(latest.month)}</span><span className="font-medium tabular-nums">{latest.rating.toFixed(1)} / 5 &middot; {reviewCount(latest.count)}</span></div>
+              <table className="sr-only"><caption>Monthly rating and published review data</caption><thead><tr><th scope="col">Month</th><th scope="col">Average rating out of 5</th><th scope="col">Published reviews</th></tr></thead><tbody>{trends.map((trend) => <tr key={trend.month}><th scope="row">{monthLabel(trend.month)}</th><td>{trend.rating.toFixed(2)}</td><td>{trend.count}</td></tr>)}</tbody></table>
+            </>
+          ) : <div className="grid min-h-72 place-content-center gap-2 px-5 text-center"><TrendingUp size={24} className="mx-auto text-[#a7b599]" aria-hidden="true" /><p className="[&&]:m-0 [&&]:text-xs [&&]:text-[#71806a]">Published reviews will bring your rating trends to life.</p></div>}
+        </section>
+        <section className="min-w-0 overflow-hidden rounded-2xl border border-[#e0e7dd] bg-white shadow-[0_2px_4px_#294f3c03]" aria-labelledby="review-vendors-heading">
+          <div className="flex items-center justify-between gap-3 border-b border-[#edf0e9] px-5 py-4">
+            <div className="flex items-center gap-3">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#faf4e8] text-[#b58c46]"><BarChart3 size={16} aria-hidden="true" /></span>
+              <div><h2 id="review-vendors-heading" className="[&&]:m-0 [&&]:text-[13px] [&&]:font-semibold">Vendor rating comparison</h2><p className="[&&]:mt-0.5 [&&]:mb-0 [&&]:text-[11px] [&&]:text-[#71806a]">Average published rating on a 0-5 scale</p></div>
+            </div>
+            <span className="shrink-0 text-[10px] text-[#71806a]">Top {vendors.length || 5}</span>
+          </div>
+          {vendors.length ? <>
+            <div className="px-2 pt-4 sm:px-4">
+              <div className={chartClass}>
+                <ResponsiveContainer initialDimension={{ width: 520, height: 270 }}>
+                  <BarChart data={vendors} layout="vertical" margin={{ top: 10, right: 36, bottom: 8, left: 0 }} accessibilityLayer>
+                    <CartesianGrid horizontal={false} stroke="#edf1e8" strokeDasharray="3 3" />
+                    <XAxis type="number" domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} axisLine={false} tickLine={false} tickMargin={10} />
+                    <YAxis type="category" dataKey="name" width={100} axisLine={false} tickLine={false} tickMargin={10} tickFormatter={(name) => name.length > 16 ? `${name.slice(0, 15)}...` : name} />
+                    <Tooltip content={<ReviewChartTooltip />} cursor={{ fill: "#f5f8ef" }} />
+                    <Bar dataKey="rating" name="Average rating" fill="#83a17a" barSize={22} radius={[0, 5, 5, 0]} isAnimationActive={false} className="cursor-pointer" onClick={({ payload }) => payload?.id && choose("vendorId", payload.id)}>
+                      <LabelList dataKey="rating" position="right" formatter={(value) => Number(value).toFixed(1)} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
-          ) : <div className="grid min-h-32 place-content-center gap-2 px-5 text-center"><Star size={24} className="mx-auto text-[#a7b599]" aria-hidden="true" /><p className="[&&]:m-0 [&&]:text-xs [&&]:text-[#71806a]">Published reviews will bring your rating trends to life.</p></div>}
-        </section>
-        <section className="overflow-hidden rounded-2xl border border-[#e0e7dd] bg-white shadow-[0_2px_4px_#294f3c03]" aria-labelledby="review-vendors-heading">
-          <div className="flex items-center justify-between gap-3 border-b border-[#edf0e9] px-5 py-4">
-            <div className="flex items-center gap-3"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#faf4e8] text-[#b58c46]"><Trophy size={16} aria-hidden="true" /></span><div><h2 id="review-vendors-heading" className="[&&]:m-0 [&&]:text-[13px] [&&]:font-semibold">Standout vendors</h2><p className="[&&]:mt-0.5 [&&]:mb-0 [&&]:text-[11px] [&&]:text-[#71806a]">Highest rated by verified customers</p></div></div>
-            <span className="text-[10px] text-[#71806a]">Top {vendors.length || 5}</span>
-          </div>
-          {vendors.length ? <ol className="divide-y divide-[#edf0e8] px-4 py-2">
-            {vendors.map((vendor, index) => <li key={vendor.id}>
-              <button type="button" onClick={() => choose("vendorId", vendor.id)} className="group [&&]:flex [&&]:w-full [&&]:justify-start [&&]:gap-3 [&&]:rounded-xl [&&]:border-0 [&&]:bg-transparent [&&]:px-2 [&&]:py-3 [&&]:text-left [&&:hover]:bg-[#f7f9f2]">
-                <span className={`grid size-8 shrink-0 place-items-center rounded-xl border text-[11px] font-semibold ${index === 0 ? "border-[#ebdfc5] bg-[#fbf5e8] text-[#aa8140]" : "border-[#e5ebdd] bg-[#f4f7ef] text-[#7c8d6a]"}`}>{String(index + 1).padStart(2, "0")}</span>
-                <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold">{vendor.name}</span><span className="mt-0.5 block text-[10px] text-[#71806a]">{reviewCount(vendor.count)} from verified bookings</span></span>
-                <span className="inline-flex items-center gap-1 rounded-lg border border-[#eee2c9] bg-[#fcf7eb] px-2 py-1 text-xs font-semibold text-[#946e2e]"><Star size={11} fill="currentColor" aria-hidden="true" />{Number(vendor.rating).toFixed(1)}</span>
-                <ArrowUpRight size={13} className="text-[#9da990] transition-colors group-hover:text-[#4c6c3b]" aria-hidden="true" />
-              </button>
-            </li>)}
-          </ol> : <p className="[&&]:my-12 [&&]:px-5 [&&]:text-center [&&]:text-xs [&&]:text-[#71806a]">Vendor rankings appear after their first published review.</p>}
+            <div className="border-t border-[#edf0e9] bg-[#fafcf8] px-5 py-3">
+              <span className="mb-2 block text-[10px] text-[#71806a]">Select a vendor to filter reviews</span>
+              <div className="flex flex-wrap gap-2">{vendors.map((vendor) => <button key={vendor.id} type="button" onClick={() => choose("vendorId", vendor.id)} className="[&&]:max-w-full [&&]:rounded-lg [&&]:px-2 [&&]:py-1 [&&]:text-[10px]"><span className="truncate">{vendor.name}</span><ArrowUpRight size={11} className="shrink-0" aria-hidden="true" /></button>)}</div>
+            </div>
+            <table className="sr-only"><caption>Vendor rating comparison data</caption><thead><tr><th scope="col">Vendor</th><th scope="col">Average rating out of 5</th><th scope="col">Published reviews</th></tr></thead><tbody>{vendors.map((vendor) => <tr key={vendor.id}><th scope="row">{vendor.name}</th><td>{vendor.rating.toFixed(2)}</td><td>{vendor.count}</td></tr>)}</tbody></table>
+          </> : <div className="grid min-h-72 place-content-center gap-2 px-5 text-center"><BarChart3 size={24} className="mx-auto text-[#a7b599]" aria-hidden="true" /><p className="[&&]:m-0 [&&]:text-xs [&&]:text-[#71806a]">Vendor rankings appear after their first published review.</p></div>}
         </section>
       </div>
+    </div>
+  );
+}
+
+const chartClass = "h-[270px] min-w-0 w-full [&_text]:text-[10px] [&_text]:fill-[#71806a] [&_.recharts-surface:focus-visible]:outline-2 [&_.recharts-surface:focus-visible]:outline-[#547c5b]";
+
+function ReviewChartTooltip({ active, payload }) {
+  const item = payload?.[0]?.payload;
+  if (!active || !item) return null;
+  return (
+    <div className="grid max-w-64 gap-2 rounded-xl border border-[#dfe7d8] bg-white p-3 text-[11px] text-[#62745b] shadow-lg">
+      <strong className="break-words font-semibold text-[#344e3b]">{item.month ? monthLabel(item.month) : item.name}</strong>
+      <span className="flex items-center justify-between gap-5">Average rating<strong className="font-semibold tabular-nums text-[#547c5b]">{item.rating.toFixed(2)} / 5</strong></span>
+      <span className="flex items-center justify-between gap-5">Published reviews<strong className="font-semibold tabular-nums text-[#947638]">{item.count.toLocaleString("en-IN")}</strong></span>
     </div>
   );
 }

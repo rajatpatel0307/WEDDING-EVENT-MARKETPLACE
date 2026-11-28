@@ -566,7 +566,20 @@ export async function book(input, ctx) {
   });
 }
 export async function bookingDetails(recordId, ctx) {
-  scope(ctx);
-  return lifecycleDetails(recordId, ctx, "Customer");
+  const { id: customerId } = scope(ctx);
+  const data = await lifecycleDetails(recordId, ctx, "Customer");
+  const reviews = await repo.select(
+    `SELECT r.ReviewId AS id,r.BookingItemId AS bookingItemId,r.Rating AS rating,
+      r.ReviewTitle AS title,r.ReviewText AS text,r.ModerationStatus AS status,
+      r.CreatedAt AS createdAt,r.UpdatedAt AS updatedAt,
+      r.ServiceQualityRating AS serviceQualityRating,r.CommunicationRating AS communicationRating,
+      r.ValueForMoneyRating AS valueForMoneyRating,r.ProfessionalismRating AS professionalismRating,
+      bi.ItemName AS service
+      FROM dbo.Reviews r LEFT JOIN dbo.BookingItems bi ON bi.BookingItemId=r.BookingItemId AND bi.BookingId=r.BookingId
+      WHERE r.BookingId=:recordId AND r.CustomerId=:customerId AND r.DeletedAt IS NULL
+      ORDER BY CASE WHEN r.BookingItemId IS NULL THEN 0 ELSE 1 END,r.CreatedAt,r.ReviewId`,
+    { recordId, customerId },
+  );
+  return { ...data, reviews };
 }
 export { create as review } from '../reviews/reviews.service.js';
